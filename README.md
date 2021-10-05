@@ -142,13 +142,3 @@ See the repository https://github.com/Override-6/2DShooter, and more specially t
 Just jocking. but maybe in few years this would be possible to create a minecraft server from the Client's code and then using Linkit and some ".bhv" files to handle this ? :0
 
 don't forget to put a ⭐ on the project if you want !
-
-## Acknowledgements
-I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
-Here is a non-ordered list of different people that helped me writing the project, or helped me get more trained with programmation :
-
-- [TheElectronWill](https://github.com/TheElectronWill)
-- [Akami](https://github.com/Tran-Antoine)
-- [Hokkayado](https://github.com/Hokkaydo)
-- [Mesabloo](https://github.com/Mesabloo)
-- [MinusKube](https://github.com/MinusKube)
