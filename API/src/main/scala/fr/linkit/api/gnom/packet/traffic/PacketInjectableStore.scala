@@ -16,10 +16,14 @@ package fr.linkit.api.gnom.packet.traffic
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 import scala.reflect.ClassTag
 
 trait PacketInjectableStore extends TrafficPresence {
+
+    override lazy val reference: NetworkObjectReference = new TrafficNetworkPresenceReference(trafficPath)
 
     val defaultPersistenceConfig: PersistenceConfig
 
@@ -38,7 +42,7 @@ trait PacketInjectableStore extends TrafficPresence {
     }
 
     def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): C = {
-        getInjectable[C](injectableID, defaultPersistenceConfig, factory,  scopeFactory)
+        getInjectable[C](injectableID, defaultPersistenceConfig, factory, scopeFactory)
     }
 
     def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C

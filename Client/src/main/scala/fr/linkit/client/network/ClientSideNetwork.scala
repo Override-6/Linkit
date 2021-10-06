@@ -16,7 +16,7 @@ package fr.linkit.client.network
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.{CacheSearchBehavior, SharedCacheManager}
 import fr.linkit.api.gnom.network.NetworkInitialisable
-import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
+import fr.linkit.api.gnom.reference.MutableContextObjectStore
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
@@ -24,7 +24,7 @@ import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 
 class ClientSideNetwork(connection: ClientConnection,
-                        refStore: MutableReferencedObjectStore,
+                        refStore: MutableContextObjectStore,
                         privilegedInitialisables: Array[NetworkInitialisable]) extends AbstractNetwork(connection, refStore, privilegedInitialisables) {
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {

@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.packet.traffic.injection
 
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.InjectionContainer
-import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionController
+import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
@@ -26,11 +26,11 @@ class ParallelInjectionContainer extends InjectionContainer {
 
     private val processingInjections = new mutable.LinkedHashMap[Array[Int], ParallelInjection]
 
-    override def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionController = {
+    override def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionControl = {
         makeInjection(SimplePacketBundle(packet, attributes, coordinates))
     }
 
-    override def makeInjection(bundle: PacketBundle): PacketInjectionController = {
+    override def makeInjection(bundle: PacketBundle): PacketInjectionControl = {
         val packet      = bundle.packet
         val number      = packet.number
         val coordinates = bundle.coords
@@ -54,7 +54,7 @@ class ParallelInjectionContainer extends InjectionContainer {
         injection
     }
 
-    def removeInjection(injection: PacketInjectionController): Unit = {
+    def removeInjection(injection: PacketInjectionControl): Unit = {
         processingInjections.remove(injection.injectablePath)
     }
 

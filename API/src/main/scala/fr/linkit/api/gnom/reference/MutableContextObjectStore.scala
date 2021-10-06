@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.reference
 
-trait MutableReferencedObjectStore extends ReferencedObjectStore {
+trait MutableContextObjectStore extends ContextObjectStore {
 
     def ++=(refs: AnyRef*): this.type
 
@@ -26,4 +26,6 @@ trait MutableReferencedObjectStore extends ReferencedObjectStore {
     def +=(code: Int, anyRef: AnyRef): this.type
 
     def -=(ref: AnyRef): this.type
+
+    def transferTo(store: MutableContextObjectStore): this.type
 }

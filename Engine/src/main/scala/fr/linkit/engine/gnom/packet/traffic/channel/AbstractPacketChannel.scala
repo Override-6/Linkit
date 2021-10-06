@@ -16,6 +16,8 @@ package fr.linkit.engine.gnom.packet.traffic.channel
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.gnom.packet.traffic._
+import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.{AppLogger, Reason}
@@ -30,11 +32,12 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
-    protected val writer : PacketWriter  = scope.writer
-    override  val ownerID    : String        = writer.serverIdentifier
-    override  val trafficPath: Array[Int]    = writer.path
-    override  val traffic    : PacketTraffic = writer.traffic
-    private   val storedBundles          = mutable.HashSet.empty[ChannelPacketBundle]
+    protected val writer       : PacketWriter                     = scope.writer
+    override  val ownerID      : String                           = writer.serverIdentifier
+    override  val trafficPath  : Array[Int]                       = writer.path
+    override  val traffic      : PacketTraffic                    = writer.traffic
+    private   val storedBundles: mutable.Set[ChannelPacketBundle] = mutable.HashSet.empty[ChannelPacketBundle]
+    override  val reference    : NetworkObjectReference           = new TrafficNetworkPresenceReference(trafficPath)
 
     @volatile private var closed = true
 

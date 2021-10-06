@@ -13,25 +13,25 @@
 
 package fr.linkit.engine.gnom.persistence.context
 
-import java.lang.reflect.Modifier
-import java.net.URL
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder.fromScript
 import fr.linkit.engine.gnom.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
-import fr.linkit.engine.gnom.reference.WeakReferencedObjectStore
+import fr.linkit.engine.gnom.reference.WeakContextObjectStore
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 
+import java.lang.reflect.Modifier
+import java.net.URL
 import scala.reflect.{ClassTag, classTag}
 
 class PersistenceConfigBuilder {
 
     private val persistors     = new ClassMap[TypePersistence[_ <: AnyRef]]
-    private val referenceStore = new WeakReferencedObjectStore(null)
+    private val referenceStore = new WeakContextObjectStore(null)
 
     protected var unsafeUse           = true
     protected var referenceAllObjects = false
@@ -117,7 +117,9 @@ class PersistenceConfigBuilder {
             }
         }
         val profiles                  = collectProfiles(store)
-        config = new SimplePersistenceConfig(context, profiles, unsafeUse, referenceAllObjects, wide)
+        val refStore                  = new WeakContextObjectStore
+        refStore ++= referenceStore
+        config = new SimplePersistenceConfig(context, profiles, refStore, unsafeUse, referenceAllObjects, wide)
         config
     }
 
@@ -128,15 +130,15 @@ class PersistenceConfigBuilder {
 
         persistors.foreachEntry((clazz, persistence) => {
             map.getOrElseUpdate(clazz, new TypeProfileBuilder()(ClassTag(clazz)))
-                .addPersistence(cast(persistence))
+                    .addPersistence(cast(persistence))
         })
         val finalMap = map.toSeq
-            .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
-            .map(pair => {
-                val clazz   = pair._1
-                val profile = pair._2.build(store)
-                (clazz, profile)
-            }).toMap
+                .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
+                .map(pair => {
+                    val clazz   = pair._1
+                    val profile = pair._2.build(store)
+                    (clazz, profile)
+                }).toMap
         new ClassMap[TypeProfile[_]](finalMap)
     }
 
@@ -163,8 +165,8 @@ object PersistenceConfigBuilder {
             return new PersistenceConfigBuilder()
         val application = traffic.application
         val script      = ScriptExecutor
-            .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
-            .newScript(application, traffic)
+                .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
+                .newScript(application, traffic)
         script.execute()
         script
     }

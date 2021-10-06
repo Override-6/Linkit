@@ -13,24 +13,23 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import java.io.Closeable
-
 import fr.linkit.api.gnom.packet.channel.ChannelScope
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionController
+import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 
+import java.io.Closeable
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   override val defaultPersistenceConfig: PersistenceConfig,
                                   override val trafficPath: Array[Int])
-    extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence {
+        extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence {
 
-    private val presences       = mutable.HashMap.empty[Int, (TrafficPresence, PersistenceConfig)]
-    private var closed: Boolean = false
+    private  val presences                         = mutable.HashMap.empty[Int, (TrafficPresence, PersistenceConfig)]
+    private var closed    : Boolean                = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): C = {
         val childPath = trafficPath :+ id
@@ -57,11 +56,10 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         injectable
     }
 
-
     override def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig = {
         val len = path.length
         if (pos >= len) {
-            return failPresence(path)
+            return failPresence(classOf[PersistenceConfig], path)
         }
         presences.get(path(pos)) match {
             case None                     => defaultPersistenceConfig
@@ -74,19 +72,32 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         }
     }
 
-    private def failPresence(path: Array[Int]): Nothing = {
-        throw new NoSuchTrafficPresenceException(s"Could not find TrafficPresence at path ${path.mkString("/")}.")
+    override def findPresence(path: Array[Int], pos: Int): Option[TrafficPresence] = {
+        val len = path.length
+        if (pos >= len) {
+            return failPresence(classOf[TrafficPresence], path)
+        }
+        presences.get(path(pos)).map {
+            case (injectable: PacketInjectable, _)         => injectable
+            case (store: InternalPacketInjectableStore, _) =>
+                if (pos - len == 1) this //no more sub item in path: the targeted presence is this store.
+                else store.findPresence(path, pos + 1).orNull //else, path iteration is not complete, continue.
+        }
     }
 
-    override def inject(injection: PacketInjectionController): Unit = {
+    private def failPresence(kind: Class[_], path: Array[Int]): Nothing = {
+        throw new NoSuchTrafficPresenceException(s"Could not find ${kind.getSimpleName} at path ${path.mkString("/")}.")
+    }
+
+    override def inject(injection: PacketInjectionControl): Unit = {
         if (!injection.haveMoreIdentifier)
-            failPresence(injection.injectablePath)
+            failPresence(classOf[PacketInjectable], injection.injectablePath)
         presences.get(injection.nextIdentifier) match {
             case Some(value) => value._1 match {
                 case injectable: PacketInjectable         => injection.process(injectable)
                 case store: InternalPacketInjectableStore => store.inject(injection)
             }
-            case None        => failPresence(injection.injectablePath)
+            case None        => failPresence(classOf[PacketInjectable], injection.injectablePath)
         }
     }
 

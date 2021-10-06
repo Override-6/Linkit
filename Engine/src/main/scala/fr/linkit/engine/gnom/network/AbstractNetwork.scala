@@ -40,6 +40,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
     privilegedInitialisables.foreach(_.initNetwork(this))
     override  val objectManagementChannel: ObjectManagementChannel    = omc
     private   val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, omc)
+    private val tnol:
     private   val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinker(omc, this, scnol, null)
     protected val networkStore           : PacketInjectableStore      = connection.createStore(0)
     private   val currentIdentifier      : String                     = connection.currentIdentifier

@@ -27,7 +27,7 @@ import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, 
 
 import scala.collection.mutable
 
-abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: NetworkObjectReference](channel: ObjectManagementChannel)
+abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](channel: ObjectManagementChannel)
     extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
     //What other engines thinks about current engine references states

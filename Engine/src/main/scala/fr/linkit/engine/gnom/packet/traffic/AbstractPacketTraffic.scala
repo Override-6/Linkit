@@ -13,23 +13,23 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import java.net.URL
-
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionController
+import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.reference.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.injection.ParallelInjectionContainer
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
-import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.internal.utils.ClassMap
 
+import java.net.URL
 import scala.reflect.ClassTag
 
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
@@ -39,21 +39,26 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     override val defaultPersistenceConfig: PersistenceConfig = {
         defaultPersistenceConfigUrl
-            .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
-            .build(context)
+                .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
+                .build(context)
     }
 
     @volatile private var closed          = false
     override  val trafficPath: Array[Int] = Array.empty
     protected val rootStore               = new SimplePacketInjectableStore(this, defaultPersistenceConfig, trafficPath)
     private   val injectionContainer      = new ParallelInjectionContainer()
-    val objectChannel = new DefaultObjectManagementChannel(rootStore, ChannelScopes.BroadcastScope(newWriter(Array.empty, defaultPersistenceConfig), Array.empty))
+    private   val objectChannel           = new DefaultObjectManagementChannel(rootStore, ChannelScopes.BroadcastScope(newWriter(Array.empty, defaultPersistenceConfig), Array.empty))
+    private   val linker                  = new TrafficNetworkObjectLinker(objectChannel, this)
+
+    override def getObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference] = linker
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)
     }
 
-    override def getPersistenceConfig(path: Array[Int]): PersistenceConfig = rootStore.getPersistenceConfig(path)
+    override def getPersistenceConfig(path: Array[Int]): PersistenceConfig = {
+        rootStore.getPersistenceConfig(path)
+    }
 
     override def close(reason: Reason): Unit = {
         rootStore.close()
@@ -82,12 +87,16 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     def getObjectManagementChannel: ObjectManagementChannel = objectChannel
 
+    def findPresence(reference: TrafficNetworkPresenceReference): Option[TrafficPresence] = {
+        rootStore.findPresence(reference.channelPath)
+    }
+
     protected def ensureOpen(): Unit = {
         if (closed)
             throw new ClosedException("This Traffic handler is closed")
     }
 
-    private def processInjection0(injection: PacketInjectionController): Unit = {
+    private def processInjection0(injection: PacketInjectionControl): Unit = {
         injection.synchronized {
             if (injection.isProcessing) {
                 //If a thread is already processing the injection, don't do it with this thread.
@@ -99,7 +108,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         makeProcess(injection)
     }
 
-    private def makeProcess(injection: PacketInjectionController): Unit = {
+    private def makeProcess(injection: PacketInjectionControl): Unit = {
         //AppLogger.debug(s"Processing injection $injection...")
         ensureOpen()
         if (injection.haveMoreIdentifier) {

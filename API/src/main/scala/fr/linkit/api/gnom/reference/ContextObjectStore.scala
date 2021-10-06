@@ -11,10 +11,15 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.obj
+package fr.linkit.api.gnom.reference
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 
-class TrafficNetworkObjectReference(val id: Int) extends NetworkObjectReference {
+trait ContextObjectStore {
 
+    def findLocation(ref: AnyRef): Option[Int]
+
+    def isPresent(l: Int): Boolean
+
+    def findObject(location: ContextualObjectReference): Option[AnyRef]
 }

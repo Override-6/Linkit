@@ -13,16 +13,22 @@
 
 package fr.linkit.engine.gnom.reference
 
-import fr.linkit.api.gnom.reference.{MutableReferencedObjectStore, NetworkObjectReference}
+import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+import fr.linkit.api.gnom.reference.MutableContextObjectStore
 
 import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
 import java.util
 import java.util.Map.Entry
 
-class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends MutableReferencedObjectStore {
+class WeakContextObjectStore() extends MutableContextObjectStore {
 
-    private val codeToRef = new util.HashMap[Int, WeakReference[AnyRef]]()
-    private val refToCode = new util.WeakHashMap[AnyRef, Int]()
+    private val codeToRef                      = new util.HashMap[Int, WeakReference[AnyRef]]()
+    private val refToCode                      = new util.WeakHashMap[AnyRef, Int]()
+    private var parent: WeakContextObjectStore = _
+
+    def setParent(parent: WeakContextObjectStore): Unit = {
+        this.parent = parent
+    }
 
     override def isPresent(l: Int): Boolean = {
         (parent != null && parent.isPresent(l)) || codeToRef.containsKey(l)
@@ -35,13 +41,12 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
         Option(found)
     }
 
-    override def findObject(location: NetworkObjectReference): Option[AnyRef] = {
-        /*val code = location.refCode
+    override def findObject(location: ContextualObjectReference): Option[AnyRef] = {
+        val code  = location.objectID
         val found = codeToRef.get(code)
         if (found == null && parent != null)
             return parent.findObject(location)
-        Option(found)*/
-        ???
+        Option(found)
     }
 
     override def ++=(refs: Map[Int, AnyRef]): this.type = {
@@ -58,7 +63,7 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
         this
     }
 
-    def ++=(other: WeakReferencedObjectStore): this.type = {
+    def ++=(other: WeakContextObjectStore): this.type = {
         ++=(other.codeToRef
                 .entrySet()
                 .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
@@ -83,8 +88,9 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
         this
     }
 
-    private def newWeakReference(ref: AnyRef): WeakReference[AnyRef] = {
-        new WeakReference[AnyRef](ref, eventQueue)
+    override def transferTo(store: MutableContextObjectStore): this.type = {
+        store.++=(codeToRef)
+        this
     }
 
     override def -=(ref: AnyRef): this.type = {
@@ -100,6 +106,10 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
             val code = refToCode.get(super.poll())
             codeToRef.remove(code)
         }
+    }
+
+    private def newWeakReference(ref: AnyRef): WeakReference[AnyRef] = {
+        new WeakReference[AnyRef](ref, eventQueue)
     }
 
 }

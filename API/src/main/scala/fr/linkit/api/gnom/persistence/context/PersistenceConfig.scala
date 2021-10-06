@@ -13,12 +13,16 @@
 
 package fr.linkit.api.gnom.persistence.context
 
+import fr.linkit.api.gnom.reference.ContextObjectStore
+
 trait PersistenceConfig extends TypeProfileStore {
+
+    def contextualObjects: ContextObjectStore
 
     def widePacket: Boolean
 
     def useUnsafe: Boolean
 
-    def referenceAllReceivedObjects: Boolean
+    def autoContextObjects: Boolean
 
 }

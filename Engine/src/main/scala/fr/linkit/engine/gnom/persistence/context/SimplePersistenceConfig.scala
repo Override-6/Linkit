@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.context._
+import fr.linkit.api.gnom.reference.ContextObjectStore
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
 import fr.linkit.engine.internal.utils.ClassMap
@@ -23,8 +24,10 @@ import scala.collection.mutable
 
 class SimplePersistenceConfig private[context](context: PersistenceContext,
                                                customProfiles: ClassMap[TypeProfile[_]],
-                                               storeAllReceivedObjects: Boolean,
-                                               unsafeUse: Boolean, wide: Boolean) extends PersistenceConfig {
+                                               override val contextualObjects: ContextObjectStore,
+                                               override val autoContextObjects: Boolean,
+                                               override val useUnsafe: Boolean,
+                                               override val widePacket: Boolean) extends PersistenceConfig {
 
     private val defaultProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
 
@@ -62,7 +65,7 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
                 val deconstructor = context.findDeconstructor[T](nonSyncClass)
                 constructor.fold(getSafestTypeProfileOfAnyClass[T](nonSyncClass, deconstructor)) { ctr =>
                     if (deconstructor.isEmpty) {
-                        if (!unsafeUse)
+                        if (!useUnsafe)
                             throw new NoSuchElementException(s"Could not find constructor: A Deconstructor must be set for the class '${nonSyncClass.getName}' in order to create a safe TypePersistence.")
                         new UnsafeTypePersistence[T](nonSyncClass)
                     } else {
@@ -82,16 +85,12 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
     private def getSafestTypeProfileOfAnyClass[T <: AnyRef](clazz: Class[_], deconstructor: Option[Deconstructor[T]]): TypePersistence[T] = {
         val constructor = ConstructorTypePersistence.findConstructor[T](clazz)
         if (constructor.isEmpty || deconstructor.isEmpty) {
-            if (!unsafeUse)
+            if (!useUnsafe)
                 throw new NoSuchElementException(s"Could not find constructor: A Constructor and a Deconstructor must be set for the class '${clazz.getName}' in order to create a safe TypePersistence.")
             return new UnsafeTypePersistence[T](clazz)
         }
         new ConstructorTypePersistence[T](clazz, constructor.get, deconstructor.get)
     }
 
-    override def referenceAllReceivedObjects: Boolean = storeAllReceivedObjects
 
-    override def widePacket: Boolean = wide
-
-    override def useUnsafe: Boolean = unsafeUse
 }

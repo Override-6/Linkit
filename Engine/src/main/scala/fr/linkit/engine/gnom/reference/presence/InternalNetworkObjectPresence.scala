@@ -20,7 +20,7 @@ import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
-class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[_, R], val location: R) extends NetworkObjectPresence {
+class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[R], val location: R) extends NetworkObjectPresence {
 
     private val presences        = mutable.HashMap.empty[String, ObjectPresenceType]
     private var present: Boolean = false

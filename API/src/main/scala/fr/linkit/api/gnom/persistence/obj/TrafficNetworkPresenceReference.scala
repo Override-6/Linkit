@@ -11,13 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference
+package fr.linkit.api.gnom.persistence.obj
 
-trait ReferencedObjectStore {
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-    def findLocation(ref: AnyRef): Option[Int]
-
-    def isPresent(l: Int): Boolean
-
-    def findObject(location: NetworkObjectReference): Option[AnyRef]
-}
+class TrafficNetworkPresenceReference(val channelPath: Array[Int]) extends NetworkObjectReference

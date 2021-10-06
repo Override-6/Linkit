@@ -11,17 +11,21 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.packet.traffic
+package fr.linkit.api.gnom.packet.traffic.injection
 
-import fr.linkit.api.gnom.packet.traffic.TrafficPresence
-import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 
-trait InternalPacketInjectableStore {
+trait PacketInjectionControl extends PacketInjection {
 
-    def getPersistenceConfig(path: Array[Int], pos: Int = 0): PersistenceConfig
+    def isProcessing: Boolean
 
-    def findPresence(path: Array[Int], pos: Int = 0): Option[TrafficPresence]
+    def markAsProcessing(): Unit
 
-    def inject(injection: PacketInjectionControl): Unit
+    def canAcceptMoreInjection: Boolean
+
+    def nextIdentifier: Int
+
+    def haveMoreIdentifier: Boolean
+
+    def process(injectable: PacketInjectable): Unit
 }

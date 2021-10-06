@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 
 import java.sql.Timestamp
-import fr.linkit.api.gnom.reference.{MutableReferencedObjectStore, NetworkObject}
+import fr.linkit.api.gnom.reference.{MutableContextObjectStore, NetworkObject}
 
 trait Network extends NetworkObject[NetworkReference] {
 

@@ -11,21 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.packet.traffic.injection
+package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.gnom.packet.traffic.PacketInjectable
+import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
 
-trait PacketInjectionController extends PacketInjection {
-
-    def isProcessing: Boolean
-
-    def markAsProcessing(): Unit
-
-    def canAcceptMoreInjection: Boolean
-
-    def nextIdentifier: Int
-
-    def haveMoreIdentifier: Boolean
-
-    def process(injectable: PacketInjectable): Unit
-}
+class ContextualObjectReference(channelPath: Array[Int], val objectID: Int) extends TrafficNetworkPresenceReference(channelPath)

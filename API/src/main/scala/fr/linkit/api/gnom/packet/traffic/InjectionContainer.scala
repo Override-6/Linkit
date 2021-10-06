@@ -13,13 +13,13 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
-import fr.linkit.api.gnom.packet.traffic.injection.{PacketInjection, PacketInjectionController}
+import fr.linkit.api.gnom.packet.traffic.injection.{PacketInjection, PacketInjectionControl}
 import fr.linkit.api.gnom.packet.{DedicatedPacketBundle, DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 
 trait InjectionContainer {
 
-    def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionController
+    def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionControl
 
-    def makeInjection(bundle: PacketBundle): PacketInjectionController
+    def makeInjection(bundle: PacketBundle): PacketInjectionControl
 
 }

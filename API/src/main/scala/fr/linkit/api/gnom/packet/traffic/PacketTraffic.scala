@@ -15,8 +15,10 @@ package fr.linkit.api.gnom.packet.traffic
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.ConnectionContext
+import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.packet.{DedicatedPacketBundle, DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
+import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.reference.NetworkObjectLinker
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.JustifiedCloseable
 
@@ -30,8 +32,11 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
 
     def connection: ConnectionContext
 
+    def getObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference]
+
     @workerExecution
-    @inline def processInjection(packet: Packet, attr: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit
+    @inline
+    def processInjection(packet: Packet, attr: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit
 
     @workerExecution
     def processInjection(bundle: PacketBundle): Unit
@@ -45,6 +50,7 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
 }
 
 object PacketTraffic {
+
     val SystemChannelID = 1
     val RemoteConsoles  = 2
 }

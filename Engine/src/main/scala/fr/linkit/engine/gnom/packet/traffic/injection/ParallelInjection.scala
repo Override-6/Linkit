@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.packet.traffic.injection
 
 import fr.linkit.api.gnom.packet.traffic.PacketInjectable
-import fr.linkit.api.gnom.packet.traffic.injection.{PacketInjection, PacketInjectionController}
+import fr.linkit.api.gnom.packet.traffic.injection.{PacketInjection, PacketInjectionControl}
 import fr.linkit.api.gnom.packet.{Packet, PacketBundle}
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
@@ -22,7 +22,7 @@ import fr.linkit.engine.gnom.packet.traffic.injection.ParallelInjection.PacketBu
 
 import java.nio.BufferOverflowException
 
-class ParallelInjection(override val injectablePath: Array[Int]) extends PacketInjection with PacketInjectionController {
+class ParallelInjection(override val injectablePath: Array[Int]) extends PacketInjection with PacketInjectionControl {
 
     private var processing = false
     private val buff       = new PacketBuffer
