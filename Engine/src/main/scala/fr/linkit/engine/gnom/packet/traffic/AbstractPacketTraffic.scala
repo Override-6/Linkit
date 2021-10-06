@@ -13,6 +13,8 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
+import java.net.URL
+
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
@@ -25,9 +27,9 @@ import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.injection.ParallelInjectionContainer
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
+import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.internal.utils.ClassMap
 
-import java.net.URL
 import scala.reflect.ClassTag
 
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
@@ -36,8 +38,9 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     val context: ImmutablePersistenceContext = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
 
     override val defaultPersistenceConfig: PersistenceConfig = {
-        val builder = defaultPersistenceConfigUrl.fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
-        builder.build(context)
+        defaultPersistenceConfigUrl
+            .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
+            .build(context)
     }
 
     @volatile private var closed          = false

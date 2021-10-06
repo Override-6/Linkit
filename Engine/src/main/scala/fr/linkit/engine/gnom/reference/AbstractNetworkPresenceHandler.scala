@@ -28,7 +28,7 @@ import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, 
 import scala.collection.mutable
 
 abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: NetworkObjectReference](channel: ObjectManagementChannel)
-        extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
+    extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
     //What other engines thinks about current engine references states
     private val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
@@ -43,24 +43,24 @@ abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: Networ
         Some(externalPresences.getOrElseUpdate(ref, new ExternalNetworkObjectPresence[R](this, ref)))
     }
 
-    def askIfPresent(engineId: String, location: R): Boolean = {
+    private[reference] def askIfPresent(engineId: String, location: R): Boolean = {
         if (channel.traffic.currentIdentifier == engineId)
             return isLocationReferenced(location)
         channel
-                .makeRequest(ChannelScopes.include(engineId))
-                .addPacket(EmptyPacket)
-                .putAttribute(ReferenceAttributeKey, location)
-                .submit()
-                .nextResponse
-                .nextPacket[BooleanPacket]
+            .makeRequest(ChannelScopes.include(engineId))
+            .addPacket(EmptyPacket)
+            .putAttribute(ReferenceAttributeKey, location)
+            .submit()
+            .nextResponse
+            .nextPacket[BooleanPacket]
     }
 
-    def informPresence(engineId: String, location: R, presence: ObjectPresenceType): Unit = {
+    private[reference] def informPresence(enginesId: Array[String], location: R, presence: ObjectPresenceType): Unit = {
         channel
-                .makeRequest(ChannelScopes.include(engineId))
-                .addPacket(AnyRefPacket(presence))
-                .putAttribute(ReferenceAttributeKey, location)
-                .submit()
+            .makeRequest(ChannelScopes.include(enginesId: _*))
+            .addPacket(AnyRefPacket(presence))
+            .putAttribute(ReferenceAttributeKey, location)
+            .submit()
     }
 
     def bindListener(location: R, listener: ExternalNetworkObjectPresence[R]): Unit = {
@@ -69,7 +69,7 @@ abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: Networ
         externalPresences.put(location, listener)
     }
 
-    protected def registerLocation(ref: R): Unit = {
+    protected def registerReference(ref: R): Unit = {
         if (!internalPresences.contains(ref)) {
             internalPresences(ref) = new InternalNetworkObjectPresence[R](this, ref)
         } else {
@@ -77,7 +77,7 @@ abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: Networ
         }
     }
 
-    protected def unregisterLocation(ref: R): Unit = {
+    protected def unregisterReference(ref: R): Unit = {
         val opt = internalPresences.get(ref)
         if (opt.isDefined) {
             opt.get.setNotPresent()
@@ -93,8 +93,8 @@ abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: Networ
             case EmptyPacket =>
                 val response = isLocationReferenced(reference)
                 responseSubmitter
-                        .addPacket(BooleanPacket(response))
-                        .submit()
+                    .addPacket(BooleanPacket(response))
+                    .submit()
 
             case AnyRefPacket(presence: ObjectPresenceType) =>
                 val listener = externalPresences(reference)

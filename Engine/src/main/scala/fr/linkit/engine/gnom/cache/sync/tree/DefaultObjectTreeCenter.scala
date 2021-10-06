@@ -33,9 +33,9 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], o
         trees.get(id)
     }
 
-    override def registerLocation(ref: SyncObjectReference): Unit = super.registerLocation(ref)
+    override def registerReference(ref: SyncObjectReference): Unit = super.registerReference(ref)
 
-    override def unregisterLocation(ref: SyncObjectReference): Unit = super.unregisterLocation(ref)
+    override def unregisterReference(ref: SyncObjectReference): Unit = super.unregisterReference(ref)
 
     override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {

@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.reference.presence
 
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
 import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
@@ -32,20 +32,29 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
     }
 
     def setPresent(): Unit = {
-        presences.foreachEntry((engineId, presence) => presence match {
-            case NOT_PRESENT =>
-                handler.informPresence(engineId, location, PRESENT)
-            case PRESENT     => //Already thinks that an object is present on this location
-        })
+        //set to all engines who thinks that the reference is not present on this engine
+        //that it's no has been referenced
+        //on this current engine.
+        val enginesID = presences
+            .filter(_._2 eq NOT_PRESENT)
+            .keys
+            .toArray
+        handler.informPresence(enginesID, location, PRESENT)
+        presences.clear()
+        enginesID.foreach(presences.put(_, PRESENT)) //everyone now thinks
         present = true
     }
 
     def setNotPresent(): Unit = {
-        presences.foreachEntry((engineId, presence) => presence match {
-            case PRESENT     =>
-                handler.informPresence(engineId, location, NOT_PRESENT)
-            case NOT_PRESENT => //Already thinks that an object is not present on this location
-        })
+        //set to all engines who thinks that the reference is present on this engine
+        //that it's no longer referenced
+        //on this current engine.
+        val enginesID = presences
+            .filter(_._2 eq PRESENT)
+            .keys
+            .toArray
+        handler.informPresence(enginesID, location, NOT_PRESENT)
+        enginesID.foreach(presences.put(_, NOT_PRESENT)) //everyone now thinks
         present = false
     }
 

@@ -13,6 +13,8 @@
 
 package fr.linkit.engine.gnom.network
 
+import java.sql.Timestamp
+
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
@@ -29,8 +31,6 @@ import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorF
 import fr.linkit.engine.gnom.cache.sync.invokation.ExecutorEngine
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
-
-import java.sql.Timestamp
 
 abstract class AbstractNetwork(override val connection: ConnectionContext,
                                omc: ObjectManagementChannel,
@@ -84,8 +84,10 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
 
     private[network] def newCacheManager(family: String): SharedCacheManager = {
         AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
-        val store = networkStore.createStore(family.hashCode)
-        new SharedCacheOriginManager(family, this, store)
+        val store   = networkStore.createStore(family.hashCode)
+        val manager = new SharedCacheOriginManager(family, this, store)
+        scnol.registerReference(manager.reference)
+        manager
     }
 
     protected def retrieveDataTrunk(behaviors: ObjectBehaviorStore): NetworkDataTrunk

@@ -63,4 +63,7 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
         }
     }
 
+    override def registerReference(ref: SharedCacheManagerReference): Unit = super.registerReference(ref)
+
+    override def unregisterReference(ref: SharedCacheManagerReference): Unit = super.unregisterReference(ref)
 }

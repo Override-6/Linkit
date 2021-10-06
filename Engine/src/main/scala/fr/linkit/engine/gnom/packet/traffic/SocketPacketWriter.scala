@@ -35,7 +35,7 @@ class SocketPacketWriter(socket: DynamicSocket,
     override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
         val coords       = if (targetIDs.length == 1) {
             val target    = targetIDs.head
-            val dedicated = DedicatedPacketCoordinates(path, targetIDs(0), currentIdentifier)
+            val dedicated = DedicatedPacketCoordinates(path, target, currentIdentifier)
             if (target == currentIdentifier) {
                 traffic.processInjection(packet, attributes, dedicated)
                 return
