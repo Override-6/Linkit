@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, PacketWriter}
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.persistence.{PacketSerializationChoreographer, SimpleTransferInfo}
 
@@ -22,11 +23,11 @@ class SocketPacketWriter(socket: DynamicSocket,
                          choreographer: PacketSerializationChoreographer,
                          writerInfo: WriterInfo) extends PacketWriter {
 
-    override val traffic          : PacketTraffic = writerInfo.traffic
-    override val serverIdentifier : String        = traffic.serverIdentifier
-    override val currentIdentifier: String        = traffic.currentIdentifier
-    override val path             : Array[Int]    = writerInfo.path
-    private  val persistenceConfig                           = writerInfo.persistenceConfig
+    override val traffic          : PacketTraffic     = writerInfo.traffic
+    override val serverIdentifier : String            = traffic.serverIdentifier
+    override val currentIdentifier: String            = traffic.currentIdentifier
+    override val path             : Array[Int]        = writerInfo.path
+    private  val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
 
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)

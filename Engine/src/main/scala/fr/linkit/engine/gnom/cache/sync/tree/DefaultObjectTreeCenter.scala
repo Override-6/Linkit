@@ -24,7 +24,7 @@ import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import scala.collection.mutable
 
 class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[SynchronizedObject[_], SyncObjectReference](omc)
+        extends AbstractNetworkPresenceHandler[SyncObjectReference](omc)
                 with NetworkObjectLinker[SyncObjectReference] with SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]

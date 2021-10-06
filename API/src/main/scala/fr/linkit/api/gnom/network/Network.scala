@@ -15,10 +15,10 @@ package fr.linkit.api.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 
 import java.sql.Timestamp
-import fr.linkit.api.gnom.reference.{MutableContextObjectStore, NetworkObject}
 
 trait Network extends NetworkObject[NetworkReference] {
 

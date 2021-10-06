@@ -16,22 +16,24 @@ package fr.linkit.engine.gnom.persistence.context
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder.fromScript
+import fr.linkit.api.gnom.reference.ContextObjectLinker
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
-import fr.linkit.engine.gnom.reference.WeakContextObjectStore
+import fr.linkit.engine.gnom.reference.WeakContextObjectLinker
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 
 import java.lang.reflect.Modifier
 import java.net.URL
+import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class PersistenceConfigBuilder {
 
     private val persistors     = new ClassMap[TypePersistence[_ <: AnyRef]]
-    private val referenceStore = new WeakContextObjectStore(null)
+    private val referenceStore = mutable.HashMap.empty[Int, AnyRef]
 
     protected var unsafeUse           = true
     protected var referenceAllObjects = false
@@ -89,11 +91,11 @@ class PersistenceConfigBuilder {
     }
 
     def putContextReference(ref: AnyRef): Unit = {
-        referenceStore += ref
+        referenceStore put(ref.hashCode(), ref)
     }
 
     def putContextReference(id: Int, ref: AnyRef): Unit = {
-        referenceStore += (id, ref)
+        referenceStore put(id, ref)
     }
 
     def addPersistence[T <: AnyRef : ClassTag](persistence: TypePersistence[T]): this.type = {
@@ -106,8 +108,7 @@ class PersistenceConfigBuilder {
         this
     }
 
-    def build(context: PersistenceContext): PersistenceConfig = {
-        transfer(fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), context.traffic))
+    def build(context: PersistenceContext, storeParent: ContextObjectLinker, omc: ObjectManagementChannel): PersistenceConfig = {
         var config: PersistenceConfig = null
         val store                     = new TypeProfileStore {
             override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
@@ -117,8 +118,8 @@ class PersistenceConfigBuilder {
             }
         }
         val profiles                  = collectProfiles(store)
-        val refStore                  = new WeakContextObjectStore
-        refStore ++= referenceStore
+        val refStore                  = new WeakContextObjectLinker(storeParent, omc)
+        refStore ++= referenceStore.toMap
         config = new SimplePersistenceConfig(context, profiles, refStore, unsafeUse, referenceAllObjects, wide)
         config
     }
@@ -156,13 +157,7 @@ class PersistenceConfigBuilder {
 
 object PersistenceConfigBuilder {
 
-    implicit def autoBuild(context: PersistenceContext, builder: PersistenceConfigBuilder): PersistenceConfig = {
-        builder.build(context)
-    }
-
     def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
-        if (traffic == null) //TODO remove me, only for tests
-            return new PersistenceConfigBuilder()
         val application = traffic.application
         val script      = ScriptExecutor
                 .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)

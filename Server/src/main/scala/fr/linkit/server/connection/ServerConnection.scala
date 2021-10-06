@@ -54,7 +54,7 @@ class ServerConnection(applicationContext: ServerApplication,
     override val traffic                 : PacketTraffic              = serverTraffic
     override val defaultPersistenceConfig: PersistenceConfig          = traffic.defaultPersistenceConfig
     override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
-    private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(this, serverTraffic)
+    private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(serverTraffic)
     override val network                 : Network                    = sideNetwork
     override val trafficPath             : Array[Int]                 = traffic.trafficPath
     @volatile private var alive          : Boolean                    = false

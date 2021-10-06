@@ -16,12 +16,13 @@ package fr.linkit.engine.gnom.packet.traffic
 import fr.linkit.api.gnom.packet.traffic.TrafficPresence
 import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
 
 trait InternalPacketInjectableStore {
 
     def getPersistenceConfig(path: Array[Int], pos: Int = 0): PersistenceConfig
 
-    def findPresence(path: Array[Int], pos: Int = 0): Option[TrafficPresence]
+    def findPresence(path: Array[Int], pos: Int = 0): Option[TrafficPresence[TrafficNetworkPresenceReference]]
 
     def inject(injection: PacketInjectionControl): Unit
 }

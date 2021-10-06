@@ -22,7 +22,7 @@ import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils._
 
 class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[SharedCacheManager, SharedCacheManagerReference](omc)
+        extends AbstractNetworkPresenceHandler[SharedCacheManagerReference](omc)
                 with NetworkObjectLinker[SharedCacheManagerReference] {
 
     override def isPresentOnEngine(engineId: String, ref: SharedCacheManagerReference): Boolean = {

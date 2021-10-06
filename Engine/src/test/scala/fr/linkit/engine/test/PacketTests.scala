@@ -43,7 +43,7 @@ class PacketTests {
         val f      = new File("/test.txt")
         val config = new PersistenceConfigBuilder() {
             setTConverter[File, String](_.toString)(new File(_))
-        }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap))
+        }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap), null, null)
         testPacket(Array(f, f, f), config)
     }
 
@@ -79,7 +79,7 @@ class PacketTests {
         val packet = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache"), RequestPacket(1, Array(ObjectPacket((-65610, 18965131615655L, 478.215414D, 7854.42145F, true, false)))))
         val config = new PersistenceConfigBuilder() {
             setTConverter[File, String](_.toString)(new File(_))
-        }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap))
+        }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap), null, null)
         testPacket(Array(packet), config)
         testPacket(Array(packet), config)
     }
@@ -97,7 +97,7 @@ object PacketTests {
     private val serializer = new DefaultObjectPersistence(null)
 
     def testPacket(obj: Array[AnyRef]): Unit = {
-        testPacket(obj, new PersistenceConfigBuilder().build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap)))
+        testPacket(obj, new PersistenceConfigBuilder().build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap), null, null))
     }
 
     def testPacket(obj: Array[AnyRef], config: PersistenceConfig): Unit = {

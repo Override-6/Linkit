@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.packet.traffic
 
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 
-trait TrafficPresence extends NetworkObject[NetworkObjectReference] {
+trait TrafficPresence[R <: NetworkObjectReference] extends NetworkObject[R] {
 
     val trafficPath: Array[Int]
 

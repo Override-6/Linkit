@@ -14,40 +14,38 @@
 package fr.linkit.engine.gnom.reference
 
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.reference.MutableContextObjectStore
+import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
+import fr.linkit.api.gnom.reference.{ContextObjectLinker, NetworkObject}
+import org.jetbrains.annotations.Nullable
 
 import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
 import java.util
 import java.util.Map.Entry
 
-class WeakContextObjectStore() extends MutableContextObjectStore {
+class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: ObjectManagementChannel)
+        extends AbstractNetworkPresenceHandler[ContextualObjectReference](omc)
+                with ContextObjectLinker {
 
-    private val codeToRef                      = new util.HashMap[Int, WeakReference[AnyRef]]()
-    private val refToCode                      = new util.WeakHashMap[AnyRef, Int]()
-    private var parent: WeakContextObjectStore = _
+    private val codeToRef = new util.HashMap[Int, WeakReference[AnyRef]]()
+    private val refToCode = new util.WeakHashMap[AnyRef, Int]()
 
-    def setParent(parent: WeakContextObjectStore): Unit = {
-        this.parent = parent
+    override def findObject(reference: ContextualObjectReference): Option[NetworkObject[_ <: ContextualObjectReference]] = {
+        val result = codeToRef.get(reference.objectID)
+        if (result == null && parent != null)
+            return findObject(reference)
+        if (result eq null) None
+        else Option(new ContextObject(result.get(), reference))
     }
 
-    override def isPresent(l: Int): Boolean = {
-        (parent != null && parent.isPresent(l)) || codeToRef.containsKey(l)
+    override def transferTo(linker: ContextObjectLinker): this.type = {
+        linker ++= codeToRef
+                .entrySet()
+                .toArray(new Array[(Int, WeakReference[AnyRef])](_))
+                .toMap
+        this
     }
 
-    override def findLocation(ref: AnyRef): Option[Int] = {
-        val found = refToCode.get(ref)
-        if ((found == null) && parent != null)
-            return parent.findLocation(ref)
-        Option(found)
-    }
-
-    override def findObject(location: ContextualObjectReference): Option[AnyRef] = {
-        val code  = location.objectID
-        val found = codeToRef.get(code)
-        if (found == null && parent != null)
-            return parent.findObject(location)
-        Option(found)
-    }
+    override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
 
     override def ++=(refs: Map[Int, AnyRef]): this.type = {
         refs.foreachEntry((id, ref) => +=(id, ref))
@@ -63,7 +61,7 @@ class WeakContextObjectStore() extends MutableContextObjectStore {
         this
     }
 
-    def ++=(other: WeakContextObjectStore): this.type = {
+    def ++=(other: WeakContextObjectLinker): this.type = {
         ++=(other.codeToRef
                 .entrySet()
                 .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
@@ -85,11 +83,6 @@ class WeakContextObjectStore() extends MutableContextObjectStore {
         }
         refToCode.put(anyRef, code)
         codeToRef.put(code, newWeakReference(anyRef))
-        this
-    }
-
-    override def transferTo(store: MutableContextObjectStore): this.type = {
-        store.++=(codeToRef)
         this
     }
 

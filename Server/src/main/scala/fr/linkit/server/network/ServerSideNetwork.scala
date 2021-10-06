@@ -25,12 +25,12 @@ import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.server.connection.ServerConnection
 
-class ServerSideNetwork(serverConnection: ServerConnection, traffic: AbstractPacketTraffic)
-        extends AbstractNetwork(serverConnection, traffic.objectChannel, Array(traffic.context)) {
+class ServerSideNetwork(traffic: AbstractPacketTraffic)
+        extends AbstractNetwork(traffic) {
 
     trunk.addCacheManager(globalCache)
 
-    override def serverIdentifier: String = serverConnection.currentIdentifier
+    override def serverIdentifier: String = traffic.currentIdentifier
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](this))

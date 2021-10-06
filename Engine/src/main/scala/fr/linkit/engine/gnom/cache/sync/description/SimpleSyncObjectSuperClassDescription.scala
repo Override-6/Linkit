@@ -59,15 +59,24 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
     }
 
     private def getFiltered(clazz: Class[_]): Iterable[Method] = {
-        val filtered = clazz.getMethods
-        filtered.filterNot(isNotOverridable)
-                .filterNot(m => m.getName == "equals" && m.getParameterTypes.length == 1)//FIXME Weird bug due to scala's Any and AnyRef stuff...
+        clazz.getMethods
+                .distinctBy(m => (m.getName, m.getParameterTypes))
+                .filterNot(isNotOverridable)
+
+                //FIXME Weird bug due to scala's Any and AnyRef stuff...
+                .filterNot(m => m.getName == "equals" && m.getParameterTypes.length == 1)
+
+                //FIXME Bug occurred for objects that extends NetworkObject[A].
+                // as SynchronizedObject trait also extends NetworkObject[B],
+                // a collision may occur as the generated method would be
+                // syncClass#reference: A, which overrides SynchronizedObject#reference: B (there is an incompatible type definition)
+                .filterNot(m => m.getName == "reference" && m.getParameterTypes.isEmpty)
     }
 
     private def isNotOverridable(e: Executable): Boolean = {
         val mods = e.getModifiers
         import Modifier._
-        isStatic(mods) || isFinal(mods) || isPrivate(mods) || isNative(mods) || (mods & SyntheticMod) != 0
+        isPrivate(mods) || isStatic(mods) || isFinal(mods) || isNative(mods) || (mods & SyntheticMod) != 0
     }
 
     /*def asJavaMethod(method: u.MethodSymbol): (Method, Int) = {
@@ -117,7 +126,7 @@ object SimpleSyncObjectSuperClassDescription {
     def apply[A](clazz: Class[_]): SimpleSyncObjectSuperClassDescription[A] = cache.getOrElse(clazz, {
         if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
-        val AClass    = clazz.asInstanceOf[Class[A]]
+        val AClass = clazz.asInstanceOf[Class[A]]
         new SimpleSyncObjectSuperClassDescription[A](AClass, clazz.getClassLoader)
     }).asInstanceOf[SimpleSyncObjectSuperClassDescription[A]]
 

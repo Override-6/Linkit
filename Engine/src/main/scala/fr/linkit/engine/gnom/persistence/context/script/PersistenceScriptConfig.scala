@@ -16,6 +16,6 @@ package fr.linkit.engine.gnom.persistence.context.script
 import fr.linkit.api.internal.script.ScriptFile
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
 
-abstract class PersistenceScriptConfig extends PersistenceConfigBuilder with ScriptFile {
+abstract class PersistenceScriptConfig extends PersistenceConfigBuilder() with ScriptFile {
 
 }

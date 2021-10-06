@@ -166,7 +166,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
     }
 
     protected object ManagerCachesLinker
-        extends AbstractNetworkPresenceHandler[SharedCache, SharedCacheReference](network.objectManagementChannel)
+        extends AbstractNetworkPresenceHandler[SharedCacheReference](network.objectManagementChannel)
             with NetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH {
 
 

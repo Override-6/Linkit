@@ -13,7 +13,9 @@
 
 package fr.linkit.api.gnom.reference
 
-trait MutableContextObjectStore extends ContextObjectStore {
+import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+
+trait ContextObjectLinker extends NetworkObjectLinker[ContextualObjectReference] {
 
     def ++=(refs: AnyRef*): this.type
 
@@ -27,5 +29,5 @@ trait MutableContextObjectStore extends ContextObjectStore {
 
     def -=(ref: AnyRef): this.type
 
-    def transferTo(store: MutableContextObjectStore): this.type
+    def transferTo(linker: ContextObjectLinker): this.type
 }

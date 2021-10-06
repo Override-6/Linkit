@@ -36,21 +36,22 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                                      defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
 
     val context: ImmutablePersistenceContext = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
+    private val objectChannel = new DefaultObjectManagementChannel(null, ChannelScopes.BroadcastScope(newWriter(Array.empty, null), Array.empty))
 
     override val defaultPersistenceConfig: PersistenceConfig = {
         defaultPersistenceConfigUrl
                 .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
-                .build(context)
+                .transfer(PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this))
+                .build(context, null, objectChannel)
     }
 
     @volatile private var closed          = false
     override  val trafficPath: Array[Int] = Array.empty
     protected val rootStore               = new SimplePacketInjectableStore(this, defaultPersistenceConfig, trafficPath)
     private   val injectionContainer      = new ParallelInjectionContainer()
-    private   val objectChannel           = new DefaultObjectManagementChannel(rootStore, ChannelScopes.BroadcastScope(newWriter(Array.empty, defaultPersistenceConfig), Array.empty))
     private   val linker                  = new TrafficNetworkObjectLinker(objectChannel, this)
 
-    override def getObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference] = linker
+    override def getTrafficObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference] = linker
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)
@@ -87,8 +88,8 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     def getObjectManagementChannel: ObjectManagementChannel = objectChannel
 
-    def findPresence(reference: TrafficNetworkPresenceReference): Option[TrafficPresence] = {
-        rootStore.findPresence(reference.channelPath)
+    def findPresence(reference: TrafficNetworkPresenceReference): Option[TrafficPresence[TrafficNetworkPresenceReference]] = {
+        rootStore.findPresence(reference.trafficPath)
     }
 
     protected def ensureOpen(): Unit = {

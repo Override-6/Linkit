@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 
 import java.io.Closeable
@@ -26,9 +27,9 @@ import scala.reflect.{ClassTag, classTag}
 class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   override val defaultPersistenceConfig: PersistenceConfig,
                                   override val trafficPath: Array[Int])
-        extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence {
+        extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence[TrafficNetworkPresenceReference] {
 
-    private  val presences                         = mutable.HashMap.empty[Int, (TrafficPresence, PersistenceConfig)]
+    private  val presences                         = mutable.HashMap.empty[Int, (TrafficPresence[TrafficNetworkPresenceReference], PersistenceConfig)]
     private var closed    : Boolean                = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): C = {
@@ -72,10 +73,10 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         }
     }
 
-    override def findPresence(path: Array[Int], pos: Int): Option[TrafficPresence] = {
+    override def findPresence(path: Array[Int], pos: Int): Option[TrafficPresence[TrafficNetworkPresenceReference]] = {
         val len = path.length
         if (pos >= len) {
-            return failPresence(classOf[TrafficPresence], path)
+            return failPresence(classOf[TrafficPresence[TrafficNetworkPresenceReference]], path)
         }
         presences.get(path(pos)).map {
             case (injectable: PacketInjectable, _)         => injectable

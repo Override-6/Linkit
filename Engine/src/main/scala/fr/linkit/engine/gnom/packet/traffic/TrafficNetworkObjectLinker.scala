@@ -23,12 +23,27 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
         AbstractNetworkPresenceHandler[TrafficNetworkPresenceReference](omc) with NetworkObjectLinker[TrafficNetworkPresenceReference] {
 
     override def findObject(reference: TrafficNetworkPresenceReference): Option[NetworkObject[_ <: TrafficNetworkPresenceReference]] = {
-        val presence = traffic.findPresence(reference)
         reference match {
-            case reference: ContextualObjectReference =>
-            case _                                    =>
+            case reference: ContextualObjectReference   =>
+                traffic.getPersistenceConfig(reference.trafficPath)
+                        .contextualObjects
+                        .findObject(reference)
+            case _ if reference.trafficPath.length == 0 =>
+                Some(traffic)
+            case _                                      =>
+                traffic.findPresence(reference)
         }
     }
 
-    override def injectRequest(bundle: LinkerRequestBundle): Unit = ???
+    override def injectRequest(bundle: LinkerRequestBundle): Unit = {
+        val reference = bundle.linkerReference
+        reference match {
+            case reference: ContextualObjectReference =>
+                traffic.getPersistenceConfig(reference.trafficPath)
+                        .contextualObjects
+                        .injectRequest(bundle)
+            case _ =>
+                handleBundle(bundle)
+        }
+    }
 }

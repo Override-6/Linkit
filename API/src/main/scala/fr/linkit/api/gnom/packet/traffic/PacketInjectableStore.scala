@@ -21,9 +21,9 @@ import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 import scala.reflect.ClassTag
 
-trait PacketInjectableStore extends TrafficPresence {
+trait PacketInjectableStore extends TrafficPresence[TrafficNetworkPresenceReference] {
 
-    override lazy val reference: NetworkObjectReference = new TrafficNetworkPresenceReference(trafficPath)
+    override lazy val reference: TrafficNetworkPresenceReference = new TrafficNetworkPresenceReference(trafficPath)
 
     val defaultPersistenceConfig: PersistenceConfig
 

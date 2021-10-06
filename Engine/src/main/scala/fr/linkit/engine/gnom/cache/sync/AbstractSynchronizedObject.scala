@@ -55,7 +55,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
-    override def reference: SyncObjectReference = location
+    override final def reference: SyncObjectReference = location
 
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
 

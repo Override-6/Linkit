@@ -13,11 +13,12 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.gnom.reference.ContextObjectStore
+import fr.linkit.api.gnom.reference.ContextObjectLinker
+import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 
 trait PersistenceConfig extends TypeProfileStore {
 
-    def contextualObjects: ContextObjectStore
+    def contextualObjects: ContextObjectLinker with TrafficInterestedNPH
 
     def widePacket: Boolean
 

@@ -32,7 +32,7 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
 
     def connection: ConnectionContext
 
-    def getObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference]
+    def getTrafficObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference]
 
     @workerExecution
     @inline

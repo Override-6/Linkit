@@ -15,8 +15,8 @@ package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.network.{Network, Updatable}
 import fr.linkit.api.gnom.packet.traffic.TrafficPresence
+import fr.linkit.api.gnom.reference.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker}
 
 import scala.reflect.ClassTag
 
@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
  * For example, you can synchronise a list between engine A and engine B, in which each modification will be send to the other engine
  * in order to have the same list with the same items in the same orders.
  * */
-trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] with Updatable with TrafficPresence {
+trait SharedCacheManager extends TrafficPresence[SharedCacheManagerReference] with Updatable {
 
     /**
      * Each Cache manager have a family string, it's in fact the identifier of the cache manager.

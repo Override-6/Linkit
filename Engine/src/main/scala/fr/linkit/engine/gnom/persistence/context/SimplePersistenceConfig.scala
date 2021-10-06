@@ -15,7 +15,8 @@ package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.context._
-import fr.linkit.api.gnom.reference.ContextObjectStore
+import fr.linkit.api.gnom.reference.ContextObjectLinker
+import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
 import fr.linkit.engine.internal.utils.ClassMap
@@ -24,7 +25,7 @@ import scala.collection.mutable
 
 class SimplePersistenceConfig private[context](context: PersistenceContext,
                                                customProfiles: ClassMap[TypeProfile[_]],
-                                               override val contextualObjects: ContextObjectStore,
+                                               override val contextualObjects: ContextObjectLinker with TrafficInterestedNPH,
                                                override val autoContextObjects: Boolean,
                                                override val useUnsafe: Boolean,
                                                override val widePacket: Boolean) extends PersistenceConfig {

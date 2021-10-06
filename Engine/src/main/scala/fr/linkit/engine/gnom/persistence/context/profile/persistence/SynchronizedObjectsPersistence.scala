@@ -19,7 +19,6 @@ import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence.context.TypePersistence
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.api.gnom.reference.MutableContextObjectStore
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.gnom.persistence.context.structure.SyncObjectStructure
