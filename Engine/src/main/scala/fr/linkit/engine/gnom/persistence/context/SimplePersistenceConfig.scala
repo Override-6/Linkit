@@ -25,7 +25,7 @@ import scala.collection.mutable
 
 class SimplePersistenceConfig private[context](context: PersistenceContext,
                                                customProfiles: ClassMap[TypeProfile[_]],
-                                               override val contextualObjects: ContextObjectLinker with TrafficInterestedNPH,
+                                               override val contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH,
                                                override val autoContextObjects: Boolean,
                                                override val useUnsafe: Boolean,
                                                override val widePacket: Boolean) extends PersistenceConfig {

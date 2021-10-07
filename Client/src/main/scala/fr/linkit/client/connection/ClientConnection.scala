@@ -13,15 +13,15 @@
 
 package fr.linkit.client.connection
 
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.application.{ApplicationContext, ExternalConnection}
-import fr.linkit.api.application.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.internal.system.event.EventNotifier
@@ -41,16 +41,16 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     import session._
 
-    init()
+    initTraffic()
 
     override val currentIdentifier       : String            = configuration.identifier
-    override val port                    : Int              = configuration.remoteAddress.getPort
-    override val translator              : ObjectTranslator = session.translator
-    override val eventNotifier           : EventNotifier    = session.eventNotifier
+    override val port                    : Int               = configuration.remoteAddress.getPort
+    override val translator              : ObjectTranslator  = session.translator
+    override val eventNotifier           : EventNotifier     = session.eventNotifier
     override val traffic                 : PacketTraffic     = session.traffic
     override val boundIdentifier         : String            = serverIdentifier
     override val defaultPersistenceConfig: PersistenceConfig = traffic.defaultPersistenceConfig
-    private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(this, defaultPersistenceConfig.getReferenceStore, Array(session.traffic.context))
+    private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(session.traffic)
     override val network                 : Network           = sideNetwork
     override val trafficPath             : Array[Int]        = traffic.trafficPath
     @volatile private var alive                              = true
@@ -89,7 +89,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     }
 
     @workerExecution
-    private def init(): Unit = {
+    private def initTraffic(): Unit = {
         session.traffic.setConnection(this)
         initPacketReader()
     }
@@ -156,16 +156,15 @@ object ClientConnection {
         val translator = configuration.translatorFactory(context)
 
         //WelcomePacket informational fields
-        val identifier          = configuration.identifier
-        val translatorSignature = translator.signature
-        val hasherSignature     = configuration.hasher.signature
+        val identifier      = configuration.identifier
+        //val hasherSignature = configuration.hasher.signature
 
         //Aliases
         val IDbytes   = identifier.getBytes()
         val separator = Rules.WPArgsSeparator
 
         //Creating and sending welcomePacket
-        val bytes         = IDbytes ++ separator ++ translatorSignature ++ separator ++ hasherSignature
+        val bytes         = IDbytes ++ separator
         val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
         socket.write(welcomePacket)
 

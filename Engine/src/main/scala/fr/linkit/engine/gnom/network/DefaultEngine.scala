@@ -27,8 +27,8 @@ class DefaultEngine(override val identifier: String,
     override val network       : Network        = cache.network
     override val staticAccessor: StaticAccessor = null
 
-    override final val reference: EngineReference = new EngineReference(identifier)
-    override val versions : Versions        = StaticVersions.currentVersions
+    //val reference: EngineReference = new EngineReference(identifier)
+    override val versions: Versions = StaticVersions.currentVersions
 
     override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())
 

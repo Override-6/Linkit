@@ -15,8 +15,8 @@ package fr.linkit.api.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker, NetworkObjectReference}
 
 import java.sql.Timestamp
 
@@ -27,6 +27,8 @@ trait Network extends NetworkObject[NetworkReference] {
     val connection: ConnectionContext
 
     val objectManagementChannel: ObjectManagementChannel
+
+    val gnol: NetworkObjectLinker[NetworkObjectReference]
 
     def globalCache: SharedCacheManager
 

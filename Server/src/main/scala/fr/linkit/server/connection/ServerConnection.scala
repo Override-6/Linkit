@@ -112,13 +112,14 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 
-    def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, path: Array[Int], discarded: Array[String]): Unit = {
+    //TODO write an object for this (quite big) method entry
+    def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, path: Array[Int], config: PersistenceConfig, discarded: Array[String]): Unit = {
         if (connectionsManager.countConnections - discarded.length < 0) {
             // There is nowhere to send this packet.
             return
         }
         val broadcast = BroadcastPacketCoordinates(path, sender, true, discarded)
-        val result    = translator.translate(SimpleTransferInfo(broadcast, attributes, packet, null))
+        val result    = translator.translate(SimpleTransferInfo(broadcast, attributes, packet, config, network.gnol))
         connectionsManager.broadcastPacket(result, discarded: _*)
         if (!discarded.contains(currentIdentifier)) {
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, sender))
@@ -197,11 +198,9 @@ class ServerConnection(applicationContext: ServerApplication,
             return WelcomePacketVerdict(null, false, s"Arguments length does not conform to server's rules of ${Rules.WPArgsLength}")
         try {
             val identifier          = args(0)
-            val translatorSignature = args(1)
-            val hasherSignature     = args(2)
 
-            if (!(configuration.hasher.signature sameElements hasherSignature))
-                return WelcomePacketVerdict(identifier, false, "Hasher signatures mismatches !")
+            /*if (!(configuration.hasher.signature sameElements hasherSignature))
+                return WelcomePacketVerdict(identifier, false, "Hasher signatures mismatches !")*/
 
             if (!Rules.IdentifierPattern.matcher(identifier).matches())
                 return WelcomePacketVerdict(identifier, false, "Provided identifier does not matches server's rules.")

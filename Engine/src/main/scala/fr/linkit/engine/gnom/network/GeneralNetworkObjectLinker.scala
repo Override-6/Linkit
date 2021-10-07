@@ -40,7 +40,7 @@ class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
     }
 
     override def getPresence(reference: NetworkObjectReference): Option[NetworkObjectPresence] = reference match {
-        case _: NetworkReference                =>
+        case _: NetworkReference                  =>
             /* As Network, Engine and SCM are guaranteed
             * to be present on every engines as long as they come from the framework's system,
             * The result of their presence on any engine will be always present if they are legit objects.
@@ -52,8 +52,8 @@ class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
     }
 
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = reference match {
-        case _: NetworkReference                => Some(network)
-        case ref: EngineReference               => network.findEngine(ref.engineID)
+        case _: NetworkReference                  => Some(network)
+        //case ref: EngineReference                 => network.findEngine(ref.engineID)
         case ref: SharedCacheManagerReference     => cacheNOL.findObject(ref)
         case ref: TrafficNetworkPresenceReference => trafficNOL.findObject(ref)
         case _                                    => throwUnknownRef(reference)
@@ -70,7 +70,7 @@ class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
             case _: SharedCacheManagerReference     => cacheNOL.injectRequest(omcBundle)
             case _: TrafficNetworkPresenceReference => trafficNOL.injectRequest(omcBundle)
             case _: NetworkReference                => throw UnexpectedPacketException("Could not handle Object Manager Request for System objects")
-            case _                                => throwUnknownRef(ref)
+            case _                                  => throwUnknownRef(ref)
         }
     }
 

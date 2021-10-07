@@ -13,21 +13,27 @@
 
 package fr.linkit.api.gnom.reference
 
+import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 
-trait ContextObjectLinker extends NetworkObjectLinker[ContextualObjectReference] {
+trait ContextObjectLinker extends NetworkObjectLinker[ContextualObjectReference] with TrafficInterestedNPH {
 
-    def ++=(refs: AnyRef*): this.type
+    def findReferenceID(obj: AnyRef): Option[Int]
 
-    def ++=(refs: Map[Int, AnyRef]): this.type
+    def findPersistableReference(obj: AnyRef, coords: PacketCoordinates): Option[Int]
 
-    def putAllNotContained(refs: Map[Int, AnyRef]): this.type
+    def ++=(objs: AnyRef*): this.type
+
+    def ++=(objs: Map[Int, AnyRef]): this.type
+
+    def putAllNotContained(objs: Map[Int, AnyRef]): this.type
 
     def +=(anyRef: AnyRef): this.type
 
     def +=(code: Int, anyRef: AnyRef): this.type
 
-    def -=(ref: AnyRef): this.type
+    def -=(obj: AnyRef): this.type
 
     def transferTo(linker: ContextObjectLinker): this.type
 }

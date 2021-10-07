@@ -11,19 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.system
+package fr.linkit.engine.gnom.packet.traffic.injection
 
-import java.util.regex.Pattern
+import fr.linkit.api.gnom.packet.PacketException
 
-object Rules {
-
-    final val MaxConnectionIDLength: Int  = 16
-    final val ConnectionRefused    : Byte = 1
-    final val ConnectionAccepted   : Byte = 2
-
-    final val WPArgsLength   : Byte        = 1
-    final val WPArgsSeparator: Array[Byte] = ";".getBytes()
-
-    final val IdentifierPattern: Pattern = Pattern.compile("[^;]{0,1024}$")
+class EndOfInjectionChainException(msg: String) extends PacketException(msg) {
 
 }

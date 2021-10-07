@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle, TransferInfo}
-import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.{ContextObjectLinker, NetworkObjectLinker, NetworkObjectReference}
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
@@ -28,7 +28,8 @@ import scala.collection.mutable.ArrayBuffer
 case class SimpleTransferInfo(override val coords: PacketCoordinates,
                               override val attributes: PacketAttributes,
                               override val packet: Packet,
-                              config: PersistenceConfig) extends TransferInfo { info =>
+                              config: PersistenceConfig,
+                              gnol: NetworkObjectLinker[NetworkObjectReference]) extends TransferInfo { info =>
 
     override def makeSerial(serializer: ObjectPersistence, b: ByteBuffer): Unit = {
         val packetBuff = ArrayBuffer.empty[AnyRef]
@@ -44,7 +45,7 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
             override val buff       : ByteBuffer                                  = b
             override val coordinates: PacketCoordinates                           = coords
             override val config     : PersistenceConfig                           = info.config
-            override val gnol       : NetworkObjectLinker[NetworkObjectReference] = null
+            override val gnol       : NetworkObjectLinker[NetworkObjectReference] = info.gnol
         })
     }
 }

@@ -13,9 +13,11 @@
 
 package fr.linkit.engine.gnom.reference
 
+import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{ContextObjectLinker, NetworkObject}
+import fr.linkit.engine.gnom.packet.traffic.injection.EndOfInjectionChainException
 import org.jetbrains.annotations.Nullable
 
 import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
@@ -28,6 +30,22 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     private val codeToRef = new util.HashMap[Int, WeakReference[AnyRef]]()
     private val refToCode = new util.WeakHashMap[AnyRef, Int]()
+
+    override def findReferenceID(obj: AnyRef): Option[Int] = {
+        val result = refToCode.get()
+        if (result == null && parent == null)
+            parent.findReferenceID(obj)
+        else Option(result)
+    }
+
+    override def findPersistableReference(obj: AnyRef, coords: PacketCoordinates): Option[Int] = {
+        val result = parent.findReferenceID(obj)
+        if (result.isDefined && isPresentOnEngine(coords.senderID, new ContextualObjectReference(coords.path, result.get))) {
+            result
+        } else {
+            None
+        }
+    }
 
     override def findObject(reference: ContextualObjectReference): Option[NetworkObject[_ <: ContextualObjectReference]] = {
         val result = codeToRef.get(reference.objectID)
@@ -45,7 +63,16 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
         this
     }
 
-    override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
+    override def injectRequest(bundle: LinkerRequestBundle): Unit = {
+        bundle.linkerReference match {
+            case ref: ContextualObjectReference if refToCode.containsKey(ref.objectID) =>
+                handleBundle(bundle)
+            case _ if parent != null                                                   =>
+                parent.injectRequest(bundle)
+            case ref: ContextualObjectReference                                        =>
+                throw new EndOfInjectionChainException(s"Could not inject Linker Request Bundle : all context linkers from channel ${ref.trafficPath.mkString("/")} to the root context linker does not contains any object referenced with $ref.")
+        }
+    }
 
     override def ++=(refs: Map[Int, AnyRef]): this.type = {
         refs.foreachEntry((id, ref) => +=(id, ref))

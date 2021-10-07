@@ -14,15 +14,32 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.engine.gnom.reference.ContextObject
 
 class ObjectSelector(bundle: PersistenceBundle) {
 
-    private val gnol   = bundle.gnol
-    private val coords = bundle.coordinates
+    private val gnol        = bundle.gnol
+    private val col         = bundle.config.contextualObjectLinker
+    private val coords      = bundle.coordinates
+    private val channelPath = coords.path
 
-    def findObjectReference(obj: AnyRef):  Option[NetworkObjectReference] = ???
+    def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
+        obj match {
+            case obj: NetworkObject[NetworkObjectReference] => Some(obj.reference)
+            case _                                          =>
+                col
+                        .findPersistableReference(obj, coords)
+                        .map(new ContextualObjectReference(channelPath, _))
+        }
+    }
 
-    def findObject(reference: NetworkObjectReference): Option[AnyRef] = ???
+    def findObject(reference: NetworkObjectReference): Option[AnyRef] = {
+        gnol.findObject(reference) match {
+            case Some(value: ContextObject) => Some(value.obj)
+            case o                          => o
+        }
+    }
 
 }

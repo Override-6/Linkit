@@ -101,7 +101,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         runLater {
             val coords       = DedicatedPacketCoordinates(path, boundIdentifier, server.currentIdentifier)
             val config       = traffic.getPersistenceConfig(coords.path)
-            val transferInfo = SimpleTransferInfo(coords, attributes, packet, config)
+            val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network.gnol)
             val result       = translator.translate(transferInfo)
             session.send(result)
         }

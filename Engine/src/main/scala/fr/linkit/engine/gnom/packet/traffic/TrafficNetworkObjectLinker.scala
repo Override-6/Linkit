@@ -26,7 +26,7 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
         reference match {
             case reference: ContextualObjectReference   =>
                 traffic.getPersistenceConfig(reference.trafficPath)
-                        .contextualObjects
+                        .contextualObjectLinker
                         .findObject(reference)
             case _ if reference.trafficPath.length == 0 =>
                 Some(traffic)
@@ -40,7 +40,7 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
         reference match {
             case reference: ContextualObjectReference =>
                 traffic.getPersistenceConfig(reference.trafficPath)
-                        .contextualObjects
+                        .contextualObjectLinker
                         .injectRequest(bundle)
             case _ =>
                 handleBundle(bundle)

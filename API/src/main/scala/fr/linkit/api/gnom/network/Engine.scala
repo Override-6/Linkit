@@ -19,7 +19,7 @@ import fr.linkit.api.internal.system.Versions
 
 import java.sql.Timestamp
 
-trait Engine extends NetworkObject[EngineReference] with Updatable {
+trait Engine extends /*NetworkObject[EngineReference] with*/ Updatable {
 
     val identifier: String
 
