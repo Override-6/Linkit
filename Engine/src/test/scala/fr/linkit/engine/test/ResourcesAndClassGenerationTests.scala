@@ -16,7 +16,7 @@ package fr.linkit.engine.test
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.Synchronized
-import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceInstantiator, SyncInstanceGetter}
+import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceInstantiator, SyncInstanceCreator}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.internal.generation.TypeVariableTranslator
@@ -160,7 +160,7 @@ class ResourcesAndClassGenerationTests {
         private val generator = new DefaultSyncClassCenter(new DefaultCompilerCenter, resource)
 
 
-        override def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A]): A with SynchronizedObject[A] = {
+        override def newWrapper[A <: AnyRef](creator: SyncInstanceCreator[A]): A with SynchronizedObject[A] = {
             val cl           = creator.tpeClass
             val syncClass    = generator.getSyncClassFromDesc[A](SimpleSyncObjectSuperClassDescription[A](cl))
             val syncObject   = creator.getInstance(syncClass)

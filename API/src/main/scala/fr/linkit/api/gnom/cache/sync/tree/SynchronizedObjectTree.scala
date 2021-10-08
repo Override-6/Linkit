@@ -54,13 +54,13 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @throws NoSuchSyncNodeException    if the parent's path could not be found.
      * @param parent  the parent of the synchronized object that will be inserted.
      * @param id      the identifier of the created node
-     * @param obj     the object that will be converted to a synchronized object. (The given object may be corrupted)
+     * @param source     the object that will be converted to a synchronized object. (The given object may be corrupted)
      * @param ownerID the owner of the object (Generally the engine that have created the object)
      * @tparam B the type of the object.
      * @return the created node
      */
     //TODO Should be removed (or only used internally)
-    def insertObject[B <: AnyRef](parent: SyncNode[_], id: Int, obj: B, ownerID: String): SyncNode[B]
+    def insertObject[B <: AnyRef](parent: SyncNode[_], id: Int, source: B, ownerID: String): SyncNode[B]
 
     /**
      *
@@ -71,11 +71,11 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @throws NoSuchSyncNodeException    if the parent's path could not be found.
      * @param parentPath the parent's path of the synchronized object that will be inserted.
      * @param id         the identifier of the created node
-     * @param obj        the object that will be converted to a synchronized object. (The given object may be corrupted)
+     * @param source        the object that will be converted to a synchronized object. (The given object may be corrupted)
      * @param ownerID    the owner of the object (Generally the engine that have created the object)
      * @tparam B the type of the object.
      * @return the created node
      */
-    def insertObject[B <: AnyRef](parentPath: Array[Int], id: Int, obj: B, ownerID: String): SyncNode[B]
+    def insertObject[B <: AnyRef](parentPath: Array[Int], id: Int, source: B, ownerID: String): SyncNode[B]
 
 }

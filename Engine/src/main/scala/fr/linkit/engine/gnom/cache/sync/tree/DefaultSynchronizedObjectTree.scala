@@ -66,17 +66,17 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new InvalidNodePathException("Path is empty")
     }
 
-    override def insertObject[B <: AnyRef](parent: SyncNode[_], id: Int, obj: B, ownerID: String): SyncNode[B] = {
+    override def insertObject[B <: AnyRef](parent: SyncNode[_], id: Int, source: B, ownerID: String): SyncNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not owner by this tree's cache.")
-        insertObject[B](parent.treePath, id, obj, ownerID)
+        insertObject[B](parent.treePath, id, source, ownerID)
     }
 
-    override def insertObject[B <: AnyRef](parentPath: Array[Int], id: Int, obj: B, ownerID: String): SyncNode[B] = {
+    override def insertObject[B <: AnyRef](parentPath: Array[Int], id: Int, source: B, ownerID: String): SyncNode[B] = {
         val wrapperNode = findGrandChild[B](parentPath).getOrElse {
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
-        genSynchronizedObject[B](wrapperNode, id, obj)(ownerID)
+        genSynchronizedObject[B](wrapperNode, id, source)(ownerID)
     }
 
     private def findGrandChild[B <: AnyRef](path: Array[Int]): Option[ObjectSyncNode[B]] = {
@@ -98,14 +98,14 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         }
     }
 
-    private def genSynchronizedObject[B <: AnyRef](parent: ObjectSyncNode[_], id: Int, obj: B)(ownerID: String): SyncNode[B] = {
+    private def genSynchronizedObject[B <: AnyRef](parent: ObjectSyncNode[_], id: Int, source: B)(ownerID: String): SyncNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not present in this tree.")
 
-        if (obj.isInstanceOf[SynchronizedObject[_]])
+        if (source.isInstanceOf[SynchronizedObject[_]])
             throw new CanNotSynchronizeException("This object is already wrapped.")
 
-        val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](obj))
+        val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](source))
         val node       = initSynchronizedObject[B](parent, id, syncObject, ownerID)
         node
     }

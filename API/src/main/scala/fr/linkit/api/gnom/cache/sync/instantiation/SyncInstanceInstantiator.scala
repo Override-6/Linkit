@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 
 trait SyncInstanceInstantiator {
 
-    def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A]): A with SynchronizedObject[A]
+    def newWrapper[A <: AnyRef](creator: SyncInstanceCreator[A]): A with SynchronizedObject[A]
 
     //def initializeSyncObject[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeLocation, store: ObjectBehaviorStore): Unit
 

@@ -14,14 +14,14 @@
 package fr.linkit.engine.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceGetter
+import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.engine.gnom.cache.sync.instantiation.SyncConstructor.getAssignableConstructor
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 
 import java.lang.reflect.{Constructor, Modifier}
 import scala.reflect.{ClassTag, classTag}
 
-class SyncConstructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends SyncInstanceGetter[T] {
+class SyncConstructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends SyncInstanceCreator[T] {
 
     override val tpeClass: Class[_] = clazz
 

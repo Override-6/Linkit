@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCache
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
-import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceGetter
+import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTreeStore
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.PacketAttributesPresence
@@ -78,7 +78,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * @param obj the object to synchronize.
      * @return the synchronized object.
      * */
-    def syncObject(id: Int, creator: SyncInstanceGetter[A]): A with SynchronizedObject[A]
+    def syncObject(id: Int, creator: SyncInstanceCreator[A]): A with SynchronizedObject[A]
 
     /**
      * @param id       the identifier of the root object
@@ -86,7 +86,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * @param behavior the behavior tree of the object and its inner objects
      * @return the synchronized object.
      * */
-    def syncObject(id: Int, creator: SyncInstanceGetter[A], behavior: ObjectBehaviorStore): A with SynchronizedObject[A]
+    def syncObject(id: Int, creator: SyncInstanceCreator[A], behavior: ObjectBehaviorStore): A with SynchronizedObject[A]
 
     /**
      * Finds a synchronized object in the cache.
@@ -96,7 +96,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      */
     def findObject(id: Int): Option[A with SynchronizedObject[A]]
 
-    def getOrSynchronize(id: Int)(or: => SyncInstanceGetter[A]): A = findObject(id).getOrElse(syncObject(id, or))
+    def getOrSynchronize(id: Int)(or: => SyncInstanceCreator[A]): A = findObject(id).getOrElse(syncObject(id, or))
 
     /**
      * @param id the object's identifier.

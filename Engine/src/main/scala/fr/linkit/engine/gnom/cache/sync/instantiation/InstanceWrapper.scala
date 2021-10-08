@@ -14,9 +14,9 @@
 package fr.linkit.engine.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceGetter
+import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 
-class InstanceWrapper[T <: AnyRef](obj: T with SynchronizedObject[T]) extends SyncInstanceGetter[T] {
+class InstanceWrapper[T <: AnyRef](obj: T with SynchronizedObject[T]) extends SyncInstanceCreator[T] {
     override val tpeClass: Class[_] = obj.getSuperClass
 
     override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {

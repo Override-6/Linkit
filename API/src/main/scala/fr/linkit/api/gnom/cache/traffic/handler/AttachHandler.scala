@@ -22,13 +22,6 @@ import fr.linkit.api.gnom.network.Engine
 trait AttachHandler extends CacheHandler {
 
     /**
-     * Called when a [[Engine]] is accepted (see [[inspectEngine()]]) and attaches to the handled cache.
-     * This method is called on all handlers of a cache
-     * @param engine the engine that attaches to this cache.
-     * */
-    def onEngineAttached(engine: Engine): Unit = ()
-
-    /**
      * Controls if an engine is accepted or not.
      * This method is called only if the handler handles a cache where its manager handles itself.
      * @param engine the tested engine
@@ -38,6 +31,13 @@ trait AttachHandler extends CacheHandler {
      *         to specify why the engine is not accepted.
      * */
     def inspectEngine(engine: Engine, requestedCacheType: Class[_]): Option[String] = None //All engines accepted by default
+
+    /**
+     * Called when a [[Engine]] is accepted (see [[inspectEngine()]]) and attaches to the handled cache.
+     * This method is called on all handlers of a cache
+     * @param engine the engine that attaches to this cache.
+     * */
+    def onEngineAttached(engine: Engine): Unit = ()
 
     /**
      * Called when an [[Engine]] is detached.

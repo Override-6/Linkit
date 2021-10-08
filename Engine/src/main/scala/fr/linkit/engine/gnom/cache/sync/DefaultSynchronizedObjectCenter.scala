@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceGetter, SyncInstanceInstantiator}
+import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator}
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
@@ -42,6 +42,8 @@ import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.LinkitApplication
 
 import scala.reflect.ClassTag
+import scala.util.Failure
+import scala.util.control.NonFatal
 
 final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CachePacketChannel,
                                                                  generator: SyncClassCenter,
@@ -54,11 +56,11 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
     override val treeCenter       : DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
 
-    override def syncObject(id: Int, creator: SyncInstanceGetter[A]): A with SynchronizedObject[A] = {
+    override def syncObject(id: Int, creator: SyncInstanceCreator[A]): A with SynchronizedObject[A] = {
         syncObject(id, creator, defaultTreeViewBehavior)
     }
 
-    override def syncObject(id: Int, creator: SyncInstanceGetter[A], store: ObjectBehaviorStore): A with SynchronizedObject[A] = {
+    override def syncObject(id: Int, creator: SyncInstanceCreator[A], store: ObjectBehaviorStore): A with SynchronizedObject[A] = {
         val tree = createNewTree(id, currentIdentifier, creator, store)
         channel.makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(ObjectPacket(ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier)))
@@ -70,7 +72,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         wrapperNode.synchronizedObject
     }
 
-    private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceGetter[A], behaviorTree: ObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
+    private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceCreator[A], behaviorTree: ObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
         val nodeLocation = new SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
         val rootBehavior = behaviorTree.getFromClass[A](creator.tpeClass)
         val root         = DefaultInstantiator.newWrapper[A](creator)
@@ -145,12 +147,14 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
 
     private object DefaultInstantiator extends SyncInstanceInstantiator {
 
-        override def newWrapper[B <: AnyRef](creator: SyncInstanceGetter[B]): B with SynchronizedObject[B] = {
+        override def newWrapper[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
             val syncClass = generator.getSyncClass[B](creator.tpeClass.asInstanceOf[Class[B]])
             creator.getInstance(syncClass)
         }
 
     }
+
+
 
     private object CenterHandler extends CacheHandler with ContentHandler[CacheRepoContent[A]] with AttachHandler {
 
