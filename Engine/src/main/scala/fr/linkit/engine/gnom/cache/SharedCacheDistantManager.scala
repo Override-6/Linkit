@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.{CacheContent, CacheNotAcceptedException, CacheO
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
-import fr.linkit.api.gnom.persistence.context.Deconstructive
+import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket.EmptyPacket
@@ -30,7 +30,7 @@ import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 final class SharedCacheDistantManager @Persist()(family: String,
                                                  override val ownerID: String,
                                                  network: Network,
-                                                 store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) with Deconstructive {
+                                                 store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) with Deconstructible {
 
     @transient private val ownerScope = prepareScope(ChannelScopes.include(ownerID))
 

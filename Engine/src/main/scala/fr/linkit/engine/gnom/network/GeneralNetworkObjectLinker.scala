@@ -39,15 +39,15 @@ class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
         case _                                    => throwUnknownRef(reference)
     }
 
-    override def getPresence(reference: NetworkObjectReference): Option[NetworkObjectPresence] = reference match {
+    override def findPresence(reference: NetworkObjectReference): Option[NetworkObjectPresence] = reference match {
         case _: NetworkReference                  =>
             /* As Network, Engine and SCM are guaranteed
             * to be present on every engines as long as they come from the framework's system,
             * The result of their presence on any engine will be always present if they are legit objects.
             */
             Some(new SystemNetworkObjectPresence())
-        case ref: SharedCacheManagerReference     => cacheNOL.getPresence(ref)
-        case ref: TrafficNetworkPresenceReference => trafficNOL.getPresence(ref)
+        case ref: SharedCacheManagerReference     => cacheNOL.findPresence(ref)
+        case ref: TrafficNetworkPresenceReference => trafficNOL.findPresence(ref)
         case _                                    => throwUnknownRef(reference)
     }
 

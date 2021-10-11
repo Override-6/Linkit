@@ -13,12 +13,12 @@
 
 package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
-import fr.linkit.api.gnom.persistence.context.Deconstructive
+import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
 
 import java.lang.reflect.Constructor
 
-class DeconstructiveTypePersistence[D <: Deconstructive](clazz: Class[_], constructor: Constructor[D])
+class DeconstructiveTypePersistence[D <: Deconstructible](clazz: Class[_], constructor: Constructor[D])
         extends ConstructorTypePersistence[D](clazz: Class[_], constructor, (_: D).deconstruct()) {
     def this(clazz: Class[_]) {
         this(clazz, getConstructor[D](clazz))

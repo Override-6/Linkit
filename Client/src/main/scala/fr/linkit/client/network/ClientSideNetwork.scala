@@ -19,9 +19,9 @@ import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
-import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
+import fr.linkit.engine.gnom.packet.traffic.SocketPacketTraffic
 
-class ClientSideNetwork(traffic: AbstractPacketTraffic) extends AbstractNetwork(traffic) {
+class ClientSideNetwork(traffic: SocketPacketTraffic) extends AbstractNetwork(traffic) {
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
         val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](store, this), CacheSearchBehavior.GET_OR_CRASH)
@@ -33,6 +33,7 @@ class ClientSideNetwork(traffic: AbstractPacketTraffic) extends AbstractNetwork(
     }
 
     override protected def createGlobalCache: SharedCacheManager = {
+        traffic.setGnol(gnol)
         new SharedCacheDistantManager(GlobalCacheID, serverIdentifier, this, networkStore.createStore(GlobalCacheID.hashCode))
     }
 

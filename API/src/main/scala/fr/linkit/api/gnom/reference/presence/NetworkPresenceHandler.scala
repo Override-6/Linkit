@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 trait NetworkPresenceHandler[R <: NetworkObjectReference] {
 
-    def getPresence(ref: R): Option[NetworkObjectPresence]
+    def findPresence(ref: R): Option[NetworkObjectPresence]
 
     def isPresentOnEngine(engineId: String, ref: R): Boolean
 }

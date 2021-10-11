@@ -36,15 +36,22 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
     private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
 
     override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
-        externalPresences(ref).getPresenceFor(engineId) eq PRESENT
+        getPresence(ref).getPresenceFor(engineId) eq PRESENT
     }
 
-    def getPresence(ref: R): Option[NetworkObjectPresence] = {
-        Some(externalPresences.getOrElseUpdate(ref, new ExternalNetworkObjectPresence[R](this, ref)))
+    def findPresence(ref: R): Option[NetworkObjectPresence] = {
+        Some(getPresence(ref))
+    }
+
+    @inline
+    def getPresence(ref: R): NetworkObjectPresence = {
+        externalPresences.getOrElseUpdate(ref, new ExternalNetworkObjectPresence[R](this, ref))
     }
 
     private[reference] def askIfPresent(engineId: String, location: R): Boolean = {
-        if (channel.traffic.currentIdentifier == engineId)
+        val traffic = channel.traffic
+        //fixme quick wobbly fix
+        if (traffic != null && traffic.currentIdentifier == engineId)
             return isLocationReferenced(location)
         channel
             .makeRequest(ChannelScopes.include(engineId))

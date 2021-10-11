@@ -39,7 +39,7 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
     }
 
     override def findPersistableReference(obj: AnyRef, coords: PacketCoordinates): Option[Int] = {
-        val result = parent.findReferenceID(obj)
+        val result = findReferenceID(obj)
         if (result.isDefined && isPresentOnEngine(coords.senderID, new ContextualObjectReference(coords.path, result.get))) {
             result
         } else {

@@ -38,7 +38,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
 
     override def translate(packetInfo: TransferInfo): ObjectSerializationResult = {
         new LazyObjectSerializationResult(packetInfo, serializer) {
-            override def writeCoords(): Unit = coords match {
+            override def writeCoords(buff: ByteBuffer): Unit = coords match {
                 case BroadcastPacketCoordinates(path, senderID, discardTargets, targetIDs) =>
                     buff.put(BroadcastedFlag) //set the broadcast flag
                     buff.putInt(path.length) //path length

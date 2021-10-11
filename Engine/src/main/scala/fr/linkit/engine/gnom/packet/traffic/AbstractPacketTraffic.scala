@@ -20,13 +20,12 @@ import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
-import fr.linkit.api.gnom.reference.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.injection.ParallelInjectionContainer
-import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
+import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.internal.utils.ClassMap
 
 import java.net.URL
@@ -36,7 +35,11 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                                      defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
 
     val context: ImmutablePersistenceContext = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
-    private val objectChannel = new DefaultObjectManagementChannel(null, ChannelScopes.BroadcastScope(newWriter(Array.empty, null), Array.empty))
+    private val objectChannel = {
+        val config = new SimplePersistenceConfig(context, new ClassMap(), null, false, true, false)
+        val scope  = ChannelScopes.BroadcastScope(newWriter(Array.empty, config ), Array.empty)
+        new DefaultObjectManagementChannel(null, scope)
+    }
 
     override val defaultPersistenceConfig: PersistenceConfig = {
         defaultPersistenceConfigUrl
@@ -45,13 +48,14 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                 .build(context, null, objectChannel)
     }
 
-    @volatile private var closed          = false
+    @volatile private var closed = false
+
     override  val trafficPath: Array[Int] = Array.empty
     protected val rootStore               = new SimplePacketInjectableStore(this, defaultPersistenceConfig, trafficPath)
     private   val injectionContainer      = new ParallelInjectionContainer()
     private   val linker                  = new TrafficNetworkObjectLinker(objectChannel, this)
 
-    override def getTrafficObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference] = linker
+    override def getTrafficObjectLinker: TrafficNetworkObjectLinker = linker
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)

@@ -11,10 +11,10 @@
  * questions.
  */
 
-package fr.test;
+package fr.linkit.api.gnom.persistence.context
 
-public class Test {
-    public static void test() {
-        System.out.println("WOOWOWOOW");
-    }
+trait Deconstructible {
+
+    def deconstruct(): Array[Any]
+
 }

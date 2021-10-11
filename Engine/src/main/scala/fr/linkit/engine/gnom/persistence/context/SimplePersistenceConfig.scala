@@ -23,7 +23,7 @@ import fr.linkit.engine.internal.utils.ClassMap
 
 import scala.collection.mutable
 
-class SimplePersistenceConfig private[context](context: PersistenceContext,
+class SimplePersistenceConfig private[linkit](context: PersistenceContext,
                                                customProfiles: ClassMap[TypeProfile[_]],
                                                override val contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH,
                                                override val autoContextObjects: Boolean,
@@ -58,9 +58,9 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
         val nonSyncClass                    = if (isSyncClass(clazz)) clazz.getSuperclass else clazz
         val constructor                     = context.findConstructor[T](nonSyncClass)
         val persistence: TypePersistence[T] = {
-            if (classOf[Deconstructive].isAssignableFrom(nonSyncClass)) {
-                constructor.fold(new DeconstructiveTypePersistence[T with Deconstructive](nonSyncClass)) {
-                    ctr => new DeconstructiveTypePersistence[T with Deconstructive](nonSyncClass, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructive]])
+            if (classOf[Deconstructible].isAssignableFrom(nonSyncClass)) {
+                constructor.fold(new DeconstructiveTypePersistence[T with Deconstructible](nonSyncClass)) {
+                    ctr => new DeconstructiveTypePersistence[T with Deconstructible](nonSyncClass, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
                 }
             }.asInstanceOf[TypePersistence[T]] else {
                 val deconstructor = context.findDeconstructor[T](nonSyncClass)
@@ -84,7 +84,7 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
     }
 
     private def getSafestTypeProfileOfAnyClass[T <: AnyRef](clazz: Class[_], deconstructor: Option[Deconstructor[T]]): TypePersistence[T] = {
-        val constructor = ConstructorTypePersistence.findConstructor[T](clazz)
+        val constructor = ConstructorTypePersistence.findPersistConstructor[T](clazz)
         if (constructor.isEmpty || deconstructor.isEmpty) {
             if (!useUnsafe)
                 throw new NoSuchElementException(s"Could not find constructor: A Constructor and a Deconstructor must be set for the class '${clazz.getName}' in order to create a safe TypePersistence.")

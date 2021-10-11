@@ -14,9 +14,11 @@
 package fr.linkit.server.connection.packet
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
-import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, WriterInfo}
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
+import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, ChannelScopes, WriterInfo}
 import fr.linkit.server.connection.ServerConnection
 
 import java.net.URL
@@ -26,10 +28,12 @@ class ServerPacketTraffic(override val connection: ServerConnection,
 
     override def application: ApplicationContext = connection.getApp
 
+    override protected def objectChannel: ObjectManagementChannel = new DefaultObjectManagementChannel(null, ChannelScopes.BroadcastScope(newWriter(Array.empty, null), Array.empty))
+
     override val currentIdentifier: String = connection.currentIdentifier
     override val serverIdentifier : String = currentIdentifier
 
     override def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter = {
-        new ServerPacketWriter(connection, WriterInfo(this, persistenceConfig, path))
+        new ServerPacketWriter(connection, WriterInfo(this, persistenceConfig, path, () => connection.network.gnol))
     }
 }

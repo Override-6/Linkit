@@ -13,13 +13,12 @@
 
 package fr.test
 
-import jdk.incubator.foreign.GroupLayout
+import java.nio.file.{FileSystems, Files, Path}
 
 object Main {
 
-    case class Player(id: Int)
-
     def main(args: Array[String]): Unit = {
+        Path.of("D:/test/C:/Test")
     }
 
 }

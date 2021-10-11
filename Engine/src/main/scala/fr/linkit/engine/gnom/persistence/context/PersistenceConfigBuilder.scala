@@ -24,6 +24,7 @@ import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.gnom.reference.WeakContextObjectLinker
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
+import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.Modifier
 import java.net.URL
@@ -108,7 +109,9 @@ class PersistenceConfigBuilder {
         this
     }
 
-    def build(context: PersistenceContext, storeParent: ContextObjectLinker, omc: ObjectManagementChannel): PersistenceConfig = {
+    def build(context: PersistenceContext, @Nullable storeParent: ContextObjectLinker, omc: ObjectManagementChannel): PersistenceConfig = {
+        if (omc == null)
+            throw new NullPointerException("ObjectManagementChannel is null")
         var config: PersistenceConfig = null
         val store                     = new TypeProfileStore {
             override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {

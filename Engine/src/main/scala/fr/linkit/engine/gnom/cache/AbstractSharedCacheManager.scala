@@ -174,12 +174,12 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
         override def unregisterReference(ref: SharedCacheReference): Unit = super.unregisterReference(ref)
 
-        override def getPresence(reference: SharedCacheReference): Option[NetworkObjectPresence] = {
+        override def findPresence(reference: SharedCacheReference): Option[NetworkObjectPresence] = {
             if (reference.getClass == classOf[SharedCacheReference])
-                super.getPresence(reference)
+                super.findPresence(reference)
             else {
                 LocalCachesStore.findCache(reference.cacheID)
-                    .flatMap(_.objectLinker.flatMap(_.getPresence(silentCast(reference))))
+                    .flatMap(_.objectLinker.flatMap(_.findPresence(silentCast(reference))))
             }
         }
 

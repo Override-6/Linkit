@@ -28,7 +28,7 @@ class SocketPacketWriter(socket: DynamicSocket,
     override val currentIdentifier: String            = traffic.currentIdentifier
     override val path             : Array[Int]        = writerInfo.path
     private  val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
-    private  val gnol                                 = traffic.connection.network.gnol
+    private  val gnol                                 = writerInfo.gnol
 
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)

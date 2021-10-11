@@ -13,18 +13,26 @@
 
 package fr.linkit.engine.gnom.packet
 
-import fr.linkit.api.gnom.packet.{PacketAttributes, PacketAttributesPresence}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.gnom.packet.PacketAttributes
+import fr.linkit.api.gnom.persistence.context.Deconstructible
+import fr.linkit.engine.gnom.persistence.context.Persist
 
+import java.io.Serializable
 import scala.collection.mutable
 
-class SimplePacketAttributes extends PacketAttributes {
+class SimplePacketAttributes extends PacketAttributes with Deconstructible {
 
     protected[packet] val attributes: mutable.Map[Serializable, Serializable] = mutable.HashMap[Serializable, Serializable]()
 
     def this(attributes: SimplePacketAttributes) = {
         this()
         attributes.attributes.foreachEntry(putAttribute)
+    }
+
+    @Persist
+    def this(array: Array[(Serializable, Serializable)]) = {
+        this()
+        array.foreach(x => putAttribute(x._1, x._2))
     }
 
     override def getAttribute[S](name: Serializable): Option[S] = attributes.get(name) match {
@@ -58,6 +66,7 @@ class SimplePacketAttributes extends PacketAttributes {
 
     override def isEmpty: Boolean = attributes.isEmpty
 
+    override def deconstruct(): Array[Any] = attributes.toArray
 }
 
 object SimplePacketAttributes {

@@ -50,13 +50,13 @@ class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T]
 object ConstructorTypePersistence {
 
     def getConstructor[T](clazz: Class[_]): Constructor[T] = {
-        findConstructor(clazz)
+        findPersistConstructor(clazz)
                 .getOrElse {
-                    throw new NoSuchElementException(s"No Constructor is annotated for $clazz, please specify a constructor or annotate one using @${classOf[Persist].getSimpleName}")
+                    throw new NoSuchElementException(s"No Constructor is annotated for $clazz, please specify a constructor in your configuration or annotate one using @${classOf[Persist].getSimpleName}")
                 }.asInstanceOf[Constructor[T]]
     }
 
-    def findConstructor[T](clazz: Class[_]): Option[Constructor[T]] = {
+    def findPersistConstructor[T](clazz: Class[_]): Option[Constructor[T]] = {
         val opt = clazz.getDeclaredConstructors
                 .find(_.isAnnotationPresent(classOf[Persist]))
                 .asInstanceOf[Option[Constructor[T]]]
