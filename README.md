@@ -126,7 +126,7 @@ describe class fr.linkit.example.cache.obj.Player {
 ```
 Second: program
 ```scala
-// using the « Global Cache »
+// using the « Global Cache » manager
 val manager = helloConnection.network.globalCache
 // we want our object cache be opened with the id '10'
 val objectCenter = manager.retrieveCache(10, DefaultSynchronizedObjectCenter[ArrayList[Player]])
