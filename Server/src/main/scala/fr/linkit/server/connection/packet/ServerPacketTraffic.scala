@@ -28,8 +28,6 @@ class ServerPacketTraffic(override val connection: ServerConnection,
 
     override def application: ApplicationContext = connection.getApp
 
-    override protected def objectChannel: ObjectManagementChannel = new DefaultObjectManagementChannel(null, ChannelScopes.BroadcastScope(newWriter(Array.empty, null), Array.empty))
-
     override val currentIdentifier: String = connection.currentIdentifier
     override val serverIdentifier : String = currentIdentifier
 

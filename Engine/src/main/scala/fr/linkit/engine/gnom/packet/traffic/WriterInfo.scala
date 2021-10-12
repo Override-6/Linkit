@@ -20,6 +20,8 @@ import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference
 case class WriterInfo(traffic: PacketTraffic,
                       persistenceConfig: PersistenceConfig,
                       path: Array[Int],
-                      private val gnol0: (() => NetworkObjectLinker[NetworkObjectReference])) {
-    lazy val gnol: NetworkObjectLinker[NetworkObjectReference] = gnol0.apply()
+                      private val gnol0: () => NetworkObjectLinker[NetworkObjectReference]) {
+    lazy val gnol: NetworkObjectLinker[NetworkObjectReference] = {
+        gnol0.apply()
+    }
 }

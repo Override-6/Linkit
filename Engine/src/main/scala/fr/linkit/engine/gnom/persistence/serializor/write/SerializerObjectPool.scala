@@ -25,7 +25,6 @@ import fr.linkit.engine.internal.utils.UnWrapper
 class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends ObjectPool(sizes) {
 
     private         val config          = bundle.config
-    private         val coordinates     = bundle.coordinates
     private         val selector        = new ObjectSelector(bundle)
     protected final val chunksPositions = new Array[Int](chunks.length)
 

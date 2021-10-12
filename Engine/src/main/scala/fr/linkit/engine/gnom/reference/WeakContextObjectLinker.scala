@@ -32,10 +32,11 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
     private val refToCode = new util.WeakHashMap[AnyRef, Int]()
 
     override def findReferenceID(obj: AnyRef): Option[Int] = {
-        val result = refToCode.get()
-        if (result == null && parent == null)
-            parent.findReferenceID(obj)
-        else Option(result)
+        val result = refToCode.get(obj)
+        if (result == 0) {
+            if (parent != null) parent.findReferenceID(obj)
+            else None
+        } else Some(result)
     }
 
     override def findPersistableReference(obj: AnyRef, coords: PacketCoordinates): Option[Int] = {
@@ -105,6 +106,8 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
     }
 
     override def +=(code: Int, anyRef: AnyRef): this.type = {
+        if (code == 0)
+            throw new IllegalArgumentException("Object code cannot be 0.")
         if (codeToRef.containsKey(code)) {
             throw new ObjectAlreadyReferencedException(s"Object $anyRef is already referenced with identifier '${codeToRef.get(code)}'.")
         }

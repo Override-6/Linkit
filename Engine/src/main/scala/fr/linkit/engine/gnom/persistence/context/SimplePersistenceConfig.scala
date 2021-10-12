@@ -86,8 +86,8 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     private def getSafestTypeProfileOfAnyClass[T <: AnyRef](clazz: Class[_], deconstructor: Option[Deconstructor[T]]): TypePersistence[T] = {
         val constructor = ConstructorTypePersistence.findPersistConstructor[T](clazz)
         if (constructor.isEmpty || deconstructor.isEmpty) {
-            if (!useUnsafe)
-                throw new NoSuchElementException(s"Could not find constructor: A Constructor and a Deconstructor must be set for the class '${clazz.getName}' in order to create a safe TypePersistence.")
+            //FIXME if (!useUnsafe)
+            //    throw new NoSuchElementException(s"Could not find constructor: A Constructor and a Deconstructor must be set for the '${clazz}' in order to create a safe TypePersistence.")
             return new UnsafeTypePersistence[T](clazz)
         }
         new ConstructorTypePersistence[T](clazz, constructor.get, deconstructor.get)

@@ -23,12 +23,12 @@ class SocketPacketWriter(socket: DynamicSocket,
                          choreographer: PacketSerializationChoreographer,
                          writerInfo: WriterInfo) extends PacketWriter {
 
-    override val traffic          : PacketTraffic     = writerInfo.traffic
-    override val serverIdentifier : String            = traffic.serverIdentifier
-    override val currentIdentifier: String            = traffic.currentIdentifier
-    override val path             : Array[Int]        = writerInfo.path
-    private  val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
-    private  val gnol                                 = writerInfo.gnol
+    override     val traffic          : PacketTraffic     = writerInfo.traffic
+    override     val serverIdentifier : String            = traffic.serverIdentifier
+    override     val currentIdentifier: String            = traffic.currentIdentifier
+    override     val path             : Array[Int]        = writerInfo.path
+    private      val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
+    private lazy val gnol                                 = writerInfo.gnol
 
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)
@@ -58,7 +58,7 @@ class SocketPacketWriter(socket: DynamicSocket,
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
         val coords       = BroadcastPacketCoordinates(path, currentIdentifier, true, discardedIDs)
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, gnol )
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, gnol)
 
         if (!discardedIDs.contains(currentIdentifier))
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(coords.path, currentIdentifier, currentIdentifier))

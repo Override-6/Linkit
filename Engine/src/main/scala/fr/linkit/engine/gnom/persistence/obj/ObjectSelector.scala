@@ -28,6 +28,8 @@ class ObjectSelector(bundle: PersistenceBundle) {
     def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
         obj match {
             case obj: NetworkObject[NetworkObjectReference] => Some(obj.reference)
+            case _ if col eq null                           =>
+                None
             case _                                          =>
                 col
                         .findPersistableReference(obj, coords)

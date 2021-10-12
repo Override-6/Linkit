@@ -18,9 +18,7 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference}
-import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.persistence.PacketSerializationChoreographer
 
 import java.net.URL
@@ -32,20 +30,16 @@ class SocketPacketTraffic(socket: DynamicSocket,
                           override val currentIdentifier: String,
                           override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, defaultPersistenceConfigScript) {
 
-    private val choreographer                                               = new PacketSerializationChoreographer(translator)
-    private var connection0   : ConnectionContext                           = _
-    private var objectChannel0: ObjectManagementChannel                     = _
-    private var gnol          : NetworkObjectLinker[NetworkObjectReference] = _
+    private lazy val choreographer                                       = new PacketSerializationChoreographer(translator)
+    private var connection0: ConnectionContext                           = _
+    private var gnol       : NetworkObjectLinker[NetworkObjectReference] = _
 
     override def connection: ConnectionContext = connection0
-    override protected def objectChannel: ObjectManagementChannel = objectChannel0
 
     def setConnection(connection: ConnectionContext): Unit = {
         if (connection0 != null)
             throw new IllegalStateException("Connection already set !")
         this.connection0 = connection
-        val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, defaultPersistenceConfig), Array.empty)
-        this.objectChannel0 = new DefaultObjectManagementChannel(null, scope)
     }
 
     def setGnol(gnol: NetworkObjectLinker[NetworkObjectReference]): Unit = {
