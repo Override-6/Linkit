@@ -60,7 +60,7 @@ For further details about the Shared Cache Management, take a look at the wiki.
 
 ##### Introduction to Synchronized Objects.  
 If you want to synchronize your objects, you'll have to open a `SynchronizedObjectCenter[T]` Cache, in which you can post objects, identified by an int, and retrieve them using theirs identifier.  
-When you post an object on the cache (using `postObject(int, T)`), you'll create a SynchronizedObjectTree, in which the first object in the node tree is called a **root object**.   
+When you post an object on the cache (using `syncObject(int, T)`), you'll create a SynchronizedObjectTree, in which the first object in the node tree is called a **root object**.   
 All root objects of a `SynchronizedObjectCenter[T]` must have the type of `T`. but inner synchronized objects (such as fields, methods parameters or methods return values) can be any Object.  
 A `SynchronizedObjectTree` contains a `SynchronizedObjectBehaviorCenter`, which is where all `SynchronizedObjectBehavior` are stored.  
 
@@ -117,7 +117,7 @@ val manager = helloConnection.network.globalCache
 val objectCenter = manager.retrieveCache(10, DefaultSynchronizedObjectCenter[ArrayList[Player]])
 //our ListBuffer takes the identifier "0"
 //The third parameter is optional. It defines the behavior of the objects contained in the tree of the synchronized ListBuffer object.
-val synchronizedList = objectCenter.postObject(0, new ArrayList[Player](), BehaviorTreeResource("examples/PlayerTree.bhv")) 
+val synchronizedList = objectCenter.syncObject(0, new ArrayList[Player](), Behavior("examples/PlayerTree.bhv")) 
 // NOTE : Only the returned object is synchronized, the given one is only a base which will be cloned for the synchronization.
 // now do what you want. remove, add player, move or kill a player... everything is gonna be the same for all engines.
 ```
