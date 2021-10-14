@@ -38,6 +38,8 @@ class PoolChunk[@specialized() T](val tag: Byte,
     def array: Array[T] = buff
 
     def add(t: T): Unit = {
+        if (t == null)
+            throw new NullPointerException("Can't add null item")
         if (isFrozen)
             throw new IllegalStateException("Could not add item in chunk: This chunk (or its pool) is frozen !")
         if (pos != 0 && pos % BuffSteps == 0) {
@@ -63,6 +65,8 @@ class PoolChunk[@specialized() T](val tag: Byte,
     }
 
     def indexOf(t: Any): Int = {
+        if (t == null)
+            return -1
         var i = 0
         while (i < pos) {
             if (buff(i) == t)

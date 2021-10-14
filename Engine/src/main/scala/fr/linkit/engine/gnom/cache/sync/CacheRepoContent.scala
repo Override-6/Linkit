@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.engine.gnom.cache.CacheArrayContent
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter.ObjectTreeProfile
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 
 class CacheRepoContent[A<: AnyRef](content: Array[ObjectTreeProfile[A]]) extends CacheArrayContent[ObjectTreeProfile[A]](content)
 

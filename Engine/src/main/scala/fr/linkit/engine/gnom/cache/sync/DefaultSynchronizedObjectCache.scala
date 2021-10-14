@@ -28,7 +28,7 @@ import fr.linkit.api.gnom.reference.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter.ObjectTreeProfile
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehaviorStore}
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
@@ -45,10 +45,10 @@ import scala.reflect.ClassTag
 import scala.util.Failure
 import scala.util.control.NonFatal
 
-final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CachePacketChannel,
-                                                                 generator: SyncClassCenter,
-                                                                 override val defaultTreeViewBehavior: ObjectBehaviorStore,
-                                                                 override val network: Network)
+final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePacketChannel,
+                                                                generator: SyncClassCenter,
+                                                                override val defaultTreeViewBehavior: ObjectBehaviorStore,
+                                                                override val network: Network)
         extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] with SyncNodeDataFactory {
 
     override val reference        : SharedCacheReference       = new SharedCacheReference(cacheID, family)
@@ -205,7 +205,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         }
 
         override def inspectEngine(engine: Engine, requestedCacheType: Class[_]): Option[String] = {
-            val clazz = classOf[DefaultSynchronizedObjectCenter[A]]
+            val clazz = classOf[DefaultSynchronizedObjectCache[A]]
             if (requestedCacheType eq clazz)
                 None
             else Some(s"Requested cache class is not ${clazz.getName} (received: ${requestedCacheType.getName}).")
@@ -220,7 +220,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
 
 }
 
-object DefaultSynchronizedObjectCenter {
+object DefaultSynchronizedObjectCache {
 
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
@@ -254,7 +254,7 @@ object DefaultSynchronizedObjectCenter {
         val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
         val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
 
-        new DefaultSynchronizedObjectCenter[A](channel, generator, behaviors, network)
+        new DefaultSynchronizedObjectCache[A](channel, generator, behaviors, network)
     }
 
     case class ObjectTreeProfile[A <: AnyRef](treeID: Int, rootObject: A with SynchronizedObject[A], treeOwner: String) extends Serializable

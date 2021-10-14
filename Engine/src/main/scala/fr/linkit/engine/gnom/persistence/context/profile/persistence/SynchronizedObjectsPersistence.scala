@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence.context.TypePersistence
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.persistence.context.structure.SyncObjectStructure
 
 class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T], network: Network) extends TypePersistence[T] {
@@ -53,10 +53,10 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
         (objectPersistence.toArray(t): Array[Any]) :+ (t.reference: Any)
     }
 
-    private def findCache(info: SyncObjectReference): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
+    private def findCache(info: SyncObjectReference): Option[DefaultSynchronizedObjectCache[AnyRef]] = {
         val family = info.family
         network.findCacheManager(family)
-                .map(_.getCacheInStore[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
+                .map(_.getCacheInStore[DefaultSynchronizedObjectCache[AnyRef]](info.cacheID))
     }
 
     private def throwNoSuchCacheException(info: SyncObjectReference, wrappedClass: Option[Class[_]]): Nothing = {

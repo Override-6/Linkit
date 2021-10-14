@@ -96,7 +96,10 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
 
     private def readContextObject(): ReferencedNetworkObject = {
         val poolLoc  = readNextRef
-        val location = pool.getChunkFromFlag[InstanceObject[AnyRef]](Object).get(poolLoc).value match {
+        val location = pool
+            .getChunkFromFlag[InstanceObject[AnyRef]](Object)
+            .get(poolLoc)
+            .value match {
             case l: NetworkObjectReference => l
             case o                         => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
         }

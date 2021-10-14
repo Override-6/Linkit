@@ -60,9 +60,13 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         var n   = 0
         val len = array.length
         while (n < len) {
-            val idx = objChunk.indexOf(array(n))
-            if (idx != -1)
+            val obj = array(n)
+            val idx = objChunk.indexOf(obj)
+            if (idx != -1) {
                 objChunk.get(idx).initObject()
+            } else if (obj != null){
+                throw new NoSuchElementException(s"Could not find index of object $obj from object pool while initializing array content.")
+            }
             n += 1
         }
     }

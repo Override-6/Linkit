@@ -16,7 +16,7 @@ package fr.linkit.client.network
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.{CacheSearchBehavior, SharedCacheManager}
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.traffic.SocketPacketTraffic
@@ -24,7 +24,7 @@ import fr.linkit.engine.gnom.packet.traffic.SocketPacketTraffic
 class ClientSideNetwork(traffic: SocketPacketTraffic) extends AbstractNetwork(traffic) {
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
-        val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](store, this), CacheSearchBehavior.GET_OR_CRASH)
+        val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](store, this), CacheSearchBehavior.GET_OR_CRASH)
                 .findObject(0)
                 .getOrElse {
                     throw new NoSuchElementException("Engine Store not found.")
