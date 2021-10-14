@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.{ContextObjectLinker, NetworkObjectLinker, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
@@ -75,7 +75,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
                 val targetID = getString(buff) //targetID string
                 val senderID = getString(buff) //senderID string
                 DedicatedPacketCoordinates(path, targetID, senderID)
-            case unknown         => throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'")
+            case unknown         => throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'.")
         }
     }
 
@@ -107,6 +107,6 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
 
 object DefaultObjectTranslator {
 
-    private val DedicatedFlag  : Byte    = -20
-    private val BroadcastedFlag: Byte    = -21
+    private final val DedicatedFlag  : Byte    = -20
+    private final val BroadcastedFlag: Byte    = -21
 }

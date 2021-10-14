@@ -39,10 +39,10 @@ class ObjectPool(sizes: Array[Int]) extends Freezable {
         // Objects
         new PoolChunk[Enum[_]](Enum, this, sizes(Enum)),
         new PoolChunk[InstanceObject[AnyRef]](Object, this, sizes(Object)),
-        // Context Objects Locations
-        new PoolChunk[ReferencedNetworkObject](RNO, this, sizes(RNO)),
         // Arrays
-        new PoolChunk[Array[_]](Array, this, sizes(Array))
+        new PoolChunk[Array[_]](Array, this, sizes(Array)),
+        // Context Objects Locations
+        new PoolChunk[ReferencedNetworkObject](RNO, this, sizes(RNO))
     )
 
     override def freeze(): Unit = frozen = true
@@ -50,7 +50,7 @@ class ObjectPool(sizes: Array[Int]) extends Freezable {
     override def isFrozen: Boolean = frozen
 
     @inline
-    def getChunkFromFlag[T](idx: Byte): PoolChunk[T] = {
+    def  getChunkFromFlag[T](idx: Byte): PoolChunk[T] = {
         chunks(idx).asInstanceOf[PoolChunk[T]]
     }
 

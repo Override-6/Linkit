@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
+import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.{ObjectSelector, SimpleReferencedNetworkObject}
@@ -34,7 +34,6 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
     val buff: ByteBuffer = bundle.buff
     private val selector                           = new ObjectSelector(bundle)
     private val config                             = bundle.config
-    private val coordinates                        = bundle.coordinates
     private val (widePacket: Boolean, sizes, pool) = preReadPool()
     private var isInit                             = false
 
@@ -86,7 +85,7 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
 
         (flag: @switch) match {
             case Class     => collectAndUpdateChunk[Class[_]](readClass())
-            case SyncClass => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](center.getSyncClass(readClass())) //would compile the class if was not
+            case SyncClass => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](center.getSyncClass(readClass())) //would compile the class if it's Sync version does not exists on this engine
             case Enum      => collectAndUpdateChunk[Enum[_]](readEnum())
             case String    => collectAndUpdateChunk[String](readString())
             case Array     => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
@@ -96,8 +95,8 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
     }
 
     private def readContextObject(): ReferencedNetworkObject = {
-        val poolLoc  = buff.getInt()
-        val location = pool.getAny(poolLoc) match {
+        val poolLoc  = readNextRef
+        val location = pool.getChunkFromFlag[InstanceObject[AnyRef]](Object).get(poolLoc).value match {
             case l: NetworkObjectReference => l
             case o                         => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
         }

@@ -54,6 +54,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     override val network                 : Network           = sideNetwork
     override val trafficPath             : Array[Int]        = traffic.trafficPath
     @volatile private var alive                              = true
+    sideNetwork.initialize()
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         traffic.getInjectable(injectableID, config, factory, scopeFactory)

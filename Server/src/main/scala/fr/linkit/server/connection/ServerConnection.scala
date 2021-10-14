@@ -84,6 +84,7 @@ class ServerConnection(applicationContext: ServerApplication,
             throw new ServerException(this, "Server is already started.")
         AppLogger.info(s"Server '$currentIdentifier' starts on port ${configuration.port}")
         AppLogger.trace(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
+        sideNetwork.initialize()
 
         try {
             loadSocketListener()

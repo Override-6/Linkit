@@ -22,13 +22,13 @@ import java.sql.Timestamp
 
 trait Network extends NetworkObject[NetworkReference] {
 
-    val connectionEngine: Engine
-
     val connection: ConnectionContext
 
     val objectManagementChannel: ObjectManagementChannel
 
     val gnol: NetworkObjectLinker[NetworkObjectReference]
+
+    def connectionEngine: Engine
 
     def globalCache: SharedCacheManager
 
