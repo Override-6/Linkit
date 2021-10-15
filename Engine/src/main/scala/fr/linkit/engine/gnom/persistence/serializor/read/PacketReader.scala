@@ -16,16 +16,16 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
+import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject, ReferencedNetworkObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
-import fr.linkit.engine.gnom.persistence.obj.{ObjectSelector, SimpleReferencedNetworkObject}
+import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.internal.mapping.ClassMappings
-
 import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer
+
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
@@ -42,13 +42,13 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
             throw new IllegalStateException("This pool is already initialized.")
         isInit = true
         var i: Byte = 0
-        //println(s"Read chunks : ${buff.array().mkString(", ")}")
+        println(s"Read chunks : ${buff.array().mkString(", ")}")
         while (i < ChunkCount) {
             val size = sizes(i)
             if (size > 0) {
-                //println(s"Read chunk. pos of ${i} = ${buff.position()}")
+                println(s"Read chunk. pos of ${i} = ${buff.position()}")
                 readNextChunk(size, i)
-                //println(s"End Read chunk. end pos of ${i} = ${buff.position()}")
+                println(s"End Read chunk. end pos of ${i} = ${buff.position()}")
             }
             i = (i + 1).toByte
         }
@@ -75,9 +75,9 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
             val chunk = pool.getChunkFromFlag[Any](flag)
             val array = chunk.array
             while (i < size) {
-                //println(s"reading item (type: $flag, pos: ${buff.position()}")
+                println(s"reading item (type: $flag, pos: ${buff.position()})")
                 val item: T = action
-                //println(s"Item read ! (type: $flag, pos: ${buff.position()}")
+                println(s"Item read ! (type: $flag, pos: ${buff.position()})")
                 array(i) = item
                 i += 1
             }
@@ -88,25 +88,31 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
             case SyncClass => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](center.getSyncClass(readClass())) //would compile the class if it's Sync version does not exists on this engine
             case Enum      => collectAndUpdateChunk[Enum[_]](readEnum())
             case String    => collectAndUpdateChunk[String](readString())
-            case Array     => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
+            case Array     => collectAndUpdateChunk[PoolObject[_ <: AnyRef]](ArrayPersistence.readArray(this))
             case Object    => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
             case RNO       => collectAndUpdateChunk[ReferencedNetworkObject](readContextObject())
         }
     }
 
     private def readContextObject(): ReferencedNetworkObject = {
-        val poolLoc  = readNextRef
-        val location = pool
-            .getChunkFromFlag[InstanceObject[AnyRef]](Object)
-            .get(poolLoc)
-            .value match {
-            case l: NetworkObjectReference => l
-            case o                         => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
+        val poolLoc = readNextRef
+        new ReferencedNetworkObject {
+            override      val locationIdx: Int                    = poolLoc
+            override lazy val location   : NetworkObjectReference = pool
+                .getChunkFromFlag[InstanceObject[AnyRef]](Object)
+                .get(poolLoc)
+                .value match {
+                case l: NetworkObjectReference => l
+                case o                         => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
+            }
+
+            override lazy val value: AnyRef = {
+                val loc = location
+                selector.findObject(loc).getOrElse {
+                    throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
+                }
+            }
         }
-        val obj      = selector.findObject(location).getOrElse {
-            throw new NoSuchElementException(s"Could not find contextual object of identifier '$poolLoc' in provided configuration.")
-        }
-        new SimpleReferencedNetworkObject(poolLoc, location, obj)
     }
 
     private def readClass(): Class[_] = {

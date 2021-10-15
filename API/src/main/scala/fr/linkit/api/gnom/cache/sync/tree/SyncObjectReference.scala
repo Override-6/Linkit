@@ -25,4 +25,8 @@ import fr.linkit.api.gnom.cache.SharedCacheReference
 class SyncObjectReference(family: String,
                           cacheID: Int,
                           val owner: String,
-                          val nodePath: Array[Int]) extends SharedCacheReference(cacheID, family)
+                          val nodePath: Array[Int]) extends SharedCacheReference(cacheID, family) {
+    override def toString: String = {
+        s"@network/caches/$family/$cacheID//${nodePath.mkString("/")}"
+    }
+}

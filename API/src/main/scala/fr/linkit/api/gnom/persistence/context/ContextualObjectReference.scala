@@ -15,4 +15,8 @@ package fr.linkit.api.gnom.persistence.context
 
 import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
 
-class ContextualObjectReference(channelPath: Array[Int], val objectID: Int) extends TrafficNetworkPresenceReference(channelPath)
+class ContextualObjectReference(channelPath: Array[Int], val objectID: Int) extends TrafficNetworkPresenceReference(channelPath) {
+    override def toString: String = {
+        s"@traffic/${channelPath.mkString("/")}//$objectID"
+    }
+}

@@ -14,4 +14,8 @@
 package fr.linkit.api.gnom.cache
 
 class SharedCacheReference(val cacheID: Int,
-                           family: String) extends SharedCacheManagerReference(family)
+                           family: String) extends SharedCacheManagerReference(family) {
+    override def toString: String = {
+        s"@network/caches/$family/$cacheID"
+    }
+}

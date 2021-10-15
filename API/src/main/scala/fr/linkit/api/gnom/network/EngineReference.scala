@@ -14,5 +14,7 @@
 package fr.linkit.api.gnom.network
 
 class EngineReference(val engineID: String) extends NetworkReference() {
-
+    override def toString: String = {
+        s"@network/engines/$engineID"
+    }
 }

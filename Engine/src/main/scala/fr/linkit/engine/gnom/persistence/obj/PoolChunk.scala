@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.Freezable
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk.BuffSteps
+import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
 
@@ -58,10 +59,14 @@ class PoolChunk[@specialized() T](val tag: Byte,
             add(t)
     }
 
+    @NotNull
     def get(i: Int): T = {
         if (i >= pos)
             throw new IndexOutOfBoundsException(s"$i >= $pos")
-        buff(i)
+        val r = buff(i)
+        if (r == null)
+            throw new NullPointerException(s"Chunk '$tag' returned null item. (at index ${i})")
+        r
     }
 
     def indexOf(t: Any): Int = {

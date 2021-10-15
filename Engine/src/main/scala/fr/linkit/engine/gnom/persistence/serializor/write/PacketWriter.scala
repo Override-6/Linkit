@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
-import fr.linkit.engine.gnom.persistence.obj.{PoolChunk, SimpleReferencedNetworkObject}
+import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.write.PacketWriter.{Sizes2B, Sizes4B}
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
@@ -63,7 +63,7 @@ class PacketWriter(bundle: PersistenceBundle) extends Freezable {
 
     @inline
     private def writeChunks(): Unit = {
-        //println(s"Write chunks : ${buff.array().mkString(", ")}")
+        println(s"Write chunks : ${buff.array().mkString(", ")}")
         val pos     = buff.position()
         val refSize = if (widePacket) 4 else 2
         buff.position(pos + ChunkCount * refSize)
@@ -82,9 +82,9 @@ class PacketWriter(bundle: PersistenceBundle) extends Freezable {
             if (size > 0) {
                 putRef(pos + i * refSize, size)
                 totalSize += size
-                //println(s"Write chunk. pos of ${chunk.tag} = ${buff.position()}")
+                println(s"Write chunk. pos of ${chunk.tag} = ${buff.position()}")
                 writeChunk(i, chunk)
-                //println(s"End Write chunk. end pos of ${chunk.tag} = ${buff.position()}")
+                println(s"End Write chunk. end pos of ${chunk.tag} = ${buff.position()}")
             }
             i = (i + 1).toByte
         }
@@ -106,9 +106,9 @@ class PacketWriter(bundle: PersistenceBundle) extends Freezable {
             var i     = 0
             while (i < size) {
                 val item = items(i)
-                //println(s"Writing item $item (pos: ${buff.position()})")
+                println(s"Writing item $item (pos: ${buff.position()})")
                 action(item)
-                //println(s"Item Written! (pos: ${buff.position()})")
+                println(s"Item Written! (pos: ${buff.position()})")
                 i += 1
             }
         }

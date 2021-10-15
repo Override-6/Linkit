@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
-import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk, SimpleReferencedNetworkObject}
+import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
@@ -148,9 +148,15 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         } else {
             val pool = getChunkFromFlag[ReferencedNetworkObject](RNO)
             val nrl  = nrlOpt.get
-            val pos = chunks(Object).size
+            val pos  = chunks(Object).size
             addObj(nrl)
-            val rno = new SimpleReferencedNetworkObject(pos, nrl, ref)
+            val rno = new ReferencedNetworkObject {
+                override val locationIdx: Int = pos
+
+                override val location: NetworkObjectReference = nrl
+
+                override def value: AnyRef = ref
+            }
             pool.add(rno)
         }
     }

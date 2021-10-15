@@ -15,4 +15,8 @@ package fr.linkit.api.gnom.persistence.obj
 
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-class TrafficNetworkPresenceReference(val trafficPath: Array[Int]) extends NetworkObjectReference
+class TrafficNetworkPresenceReference(val trafficPath: Array[Int]) extends NetworkObjectReference {
+    override def toString: String = {
+        s"@traffic/${trafficPath.mkString("/")}"
+    }
+}

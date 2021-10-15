@@ -16,5 +16,7 @@ package fr.linkit.api.gnom.network
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 class NetworkReference() extends NetworkObjectReference {
-
+    override def toString: String = {
+        s"@network"
+    }
 }

@@ -15,12 +15,12 @@ package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.persistence.obj.PoolObject
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
-import fr.linkit.engine.gnom.persistence.serializor.read.PacketReader
+import fr.linkit.engine.gnom.persistence.serializor.read.{NotInstantiatedArray, PacketReader}
 import fr.linkit.engine.gnom.persistence.serializor.write.PacketWriter
-
 import java.lang
 import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer
+
 import scala.annotation.switch
 
 object ArrayPersistence {
@@ -88,27 +88,32 @@ object ArrayPersistence {
         writeArrayContent(writer, array)
     }
 
-    private def readObjectArray(reader: PacketReader): Array[Any] = {
+    private def readObjectArray(reader: PacketReader): PoolObject[Array[Any]] = {
         val buff    = reader.buff
         val depth   = buff.get() + lang.Byte.MAX_VALUE
         val compRef = reader.readNextRef
-        val comp    = reader.getPool.getType(compRef)
+        val pool    = reader.getPool
+        val comp    = pool.getType(compRef)
         val length  = buff.getInt()
         val array   = buildArray(comp, depth, length)
-        readArrayContent(reader, array)
-        array
+        val content = readArrayContent(reader, length)
+        new NotInstantiatedArray[Any](pool, content, array)
     }
 
-    def readArray(reader: PacketReader): AnyRef = {
+    def readArray(reader: PacketReader): PoolObject[_ <: AnyRef] = {
         val buff = reader.buff
         val kind = buff.get()
         kind match {
             case Object => readObjectArray(reader)
             case String =>
-                val array = new Array[String](buff.getInt())
-                readArrayContent(reader, array)
-                array
-            case _      => readPrimitiveArray(kind, reader)
+                val length = buff.getInt()
+                val array = new Array[String](length)
+                val content = readArrayContent(reader, length)
+                new NotInstantiatedArray[String](reader.getPool, content, array)
+            case _      =>
+                new PoolObject[AnyRef] {
+                    override val value: AnyRef = readPrimitiveArray(kind, reader)
+                }
         }
     }
 
@@ -161,32 +166,22 @@ object ArrayPersistence {
         readPrimitiveArray(reader.buff.getInt(), kind, reader)
     }
 
-    def readArrayContent(reader: PacketReader): Array[Any] = {
+    /*def readArrayContent(reader: PacketReader): PoolObject[Array[Any]] = {
         val buff  = reader.buff
         val size  = buff.getInt()
         val array = new Array[Any](size)
-        readArrayContent(reader, array)
+        readArrayContent(reader, size)
         array
-    }
+    }*/
 
-    def readArrayContent(reader: PacketReader, buff: Array[_]): Unit = {
-        val pool = reader.getPool
-        var n    = 0
-        while (n < buff.length) {
-            val globalIdx = reader.readNextRef
-            val any       = pool.getAny(globalIdx)
-
-            @inline
-            def cast[X](a: Any) = a.asInstanceOf[X]
-
-            if (any != null) {
-                buff(n) = any match {
-                    case p: PoolObject[_] => cast(p.value)
-                    case o                => cast(o)
-                }
-            }
+    def readArrayContent(reader: PacketReader, len: Int): Array[Int] = {
+        var n       = 0
+        val content = new Array[Int](len)
+        while (n < len) {
+            content(n) = reader.readNextRef
             n += 1
         }
+        content
     }
 
     private def putPrimitiveArrayFlag(buff: ByteBuffer, comp: Class[_]): Byte = {

@@ -22,4 +22,10 @@ trait ReferencedNetworkObject extends PoolObject[AnyRef] {
      * */
     val locationIdx: Int
     val location   : NetworkObjectReference
+
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case ref: AnyRef => (ref eq value) || (ref eq this)
+        }
+    }
 }
