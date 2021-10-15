@@ -42,8 +42,8 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override       val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
     protected      val networkStore           : PacketInjectableStore      = connection.createStore(0)
     private        val currentIdentifier      : String                     = connection.currentIdentifier
+    private        val tnol                   : TrafficNetworkObjectLinker = traffic.getTrafficObjectLinker
     private lazy   val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
-    private lazy   val tnol                   : TrafficNetworkObjectLinker = traffic.getTrafficObjectLinker
     override lazy  val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinker(objectManagementChannel, this, scnol, tnol)
     override lazy  val globalCache            : SharedCacheManager         = createGlobalCache
     protected lazy val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)

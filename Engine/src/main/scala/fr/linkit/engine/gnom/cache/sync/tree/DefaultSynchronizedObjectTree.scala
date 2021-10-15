@@ -116,7 +116,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
         val data = dataFactory.newData(parent, id, syncObject, ownerID)
         val node = new ObjectSyncNode[B](parent, data)
-        center.registerReference(node.location)
+        center.registerReference(node.reference)
         parent.addChild(node)
 
         scanSyncObjectFields(ownerID, syncObject)

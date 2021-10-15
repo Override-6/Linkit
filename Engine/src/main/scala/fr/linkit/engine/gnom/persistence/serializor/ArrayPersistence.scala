@@ -88,7 +88,7 @@ object ArrayPersistence {
         writeArrayContent(writer, array)
     }
 
-    private def readObjectArray(reader: PacketReader): PoolObject[Array[Any]] = {
+    private def readObjectArray(reader: PacketReader): PoolObject[Array[AnyRef]] = {
         val buff    = reader.buff
         val depth   = buff.get() + lang.Byte.MAX_VALUE
         val compRef = reader.readNextRef
@@ -97,7 +97,7 @@ object ArrayPersistence {
         val length  = buff.getInt()
         val array   = buildArray(comp, depth, length)
         val content = readArrayContent(reader, length)
-        new NotInstantiatedArray[Any](pool, content, array)
+        new NotInstantiatedArray[AnyRef](pool, content, array)
     }
 
     def readArray(reader: PacketReader): PoolObject[_ <: AnyRef] = {
@@ -216,14 +216,14 @@ object ArrayPersistence {
         (clazz, i)
     }
 
-    private def buildArray(compType: Class[_], arrayDepth: Int, arrayLength: Int): Array[Any] = {
+    private def buildArray(compType: Class[_], arrayDepth: Int, arrayLength: Int): Array[AnyRef] = {
         var finalCompType = compType
         var i             = 0
         while (i < arrayDepth) {
             finalCompType = finalCompType.arrayType()
             i += 1
         }
-        RArray.newInstance(finalCompType, arrayLength).asInstanceOf[Array[Any]]
+        RArray.newInstance(finalCompType, arrayLength).asInstanceOf[Array[AnyRef]]
     }
 
 }

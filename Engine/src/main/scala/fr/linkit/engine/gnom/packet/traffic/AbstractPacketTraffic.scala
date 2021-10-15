@@ -34,11 +34,11 @@ import scala.reflect.ClassTag
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                                      defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
 
-
     val context: ImmutablePersistenceContext = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
+    private val objectChannelConfig = new SimplePersistenceConfig(context, new ClassMap(), null, false, true, false)
+
     private val objectChannel = {
-        val config = new SimplePersistenceConfig(context, new ClassMap(), null, false, true, false)
-        val scope  = ChannelScopes.BroadcastScope(newWriter(Array.empty, config), Array.empty)
+        val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
         new DefaultObjectManagementChannel(null, scope)
     }
 
@@ -63,7 +63,10 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     }
 
     override def getPersistenceConfig(path: Array[Int]): PersistenceConfig = {
-        rootStore.getPersistenceConfig(path)
+        if (path.isEmpty)
+            objectChannelConfig
+        else
+            rootStore.getPersistenceConfig(path)
     }
 
     override def close(reason: Reason): Unit = {

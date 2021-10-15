@@ -39,7 +39,7 @@ trait SyncNode[A <: AnyRef] {
 
     val objectPresence: NetworkObjectPresence
 
-    val location: SyncObjectReference
+    val reference: SyncObjectReference
 
     /**
      * The tree in which this node is stored.

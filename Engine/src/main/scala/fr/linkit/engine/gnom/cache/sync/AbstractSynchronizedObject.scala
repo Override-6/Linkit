@@ -25,13 +25,13 @@ import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    @transient final protected var location         : SyncObjectReference = _
-    @transient final protected var puppeteer        : Puppeteer[A]        = _
+    @transient final protected var location         : SyncObjectReference     = _
+    @transient final protected var puppeteer        : Puppeteer[A]            = _
     @transient final protected var behavior         : ObjectBehavior[A]       = _
     @transient final protected var choreographer    : InvocationChoreographer = _
-    @transient final protected var store            : ObjectBehaviorStore   = _
-    @transient private         var presenceOnNetwork: NetworkObjectPresence = _
-    @transient private         var node             : SyncNode[A]           = _
+    @transient final protected var store            : ObjectBehaviorStore     = _
+    @transient private         var presenceOnNetwork: NetworkObjectPresence   = _
+    @transient private         var node             : SyncNode[A]             = _
     //fast cache for handleCall
     @transient private         var currentIdentifier: String                  = _
     @transient private         var ownerID          : String                  = _
@@ -44,7 +44,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         val puppeteer = node.puppeteer
         this.store = node.tree.behaviorStore
         this.puppeteer = node.puppeteer
-        this.location = node.location
+        this.location = node.reference
         this.behavior = puppeteer.objectBehavior
         this.presenceOnNetwork = node.objectPresence
         this.currentIdentifier = puppeteer.currentIdentifier
@@ -56,6 +56,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
     override final def reference: SyncObjectReference = location
+
+    override def presence: NetworkObjectPresence = presenceOnNetwork
 
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
 

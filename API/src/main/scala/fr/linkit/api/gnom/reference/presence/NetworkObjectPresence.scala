@@ -13,8 +13,16 @@
 
 package fr.linkit.api.gnom.reference.presence
 
+import fr.linkit.api.gnom.packet.PacketCoordinates
+
 trait NetworkObjectPresence {
 
     def getPresenceFor(engineId: String): ObjectPresenceType
+
+    def isPresentOn(engineId: String): Boolean = getPresenceFor(engineId) eq ObjectPresenceType.PRESENT
+
+    def isPresentOn(coords: PacketCoordinates): Boolean = {
+        coords.forallConcernedTargets(isPresentOn)
+    }
 
 }

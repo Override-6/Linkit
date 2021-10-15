@@ -96,7 +96,8 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         val responseSubmitter = bundle.responseSubmitter
         val request           = bundle.packet
         val reference: R      = bundle.linkerReference.asInstanceOf[R]
-        request.nextPacket[Packet] match {
+        val response = request.nextPacket[Packet]
+        response match {
             case EmptyPacket =>
                 val response = isLocationReferenced(reference)
                 responseSubmitter

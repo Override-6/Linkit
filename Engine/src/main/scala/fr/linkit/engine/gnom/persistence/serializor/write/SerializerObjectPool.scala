@@ -116,7 +116,8 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
 
     private def addObj(ref: AnyRef): Unit = {
         //just do not add null elements (automatically referenced to '0' when written)
-        if ((ref eq null) || getChunk(ref).indexOf(ref) > 0)
+        //nor do not add elements that are already contained in the pool
+        if ((ref eq null) || getChunk(ref).indexOf(ref) >= 0)
             return
         ref match {
             case _: String                              =>

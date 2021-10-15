@@ -15,8 +15,6 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject}
-import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference}
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol.Object
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
@@ -25,7 +23,6 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
 
     private var isInit: Boolean = false
     private val obj   : T       = ScalaUtils.allocate[T](profile.typeClass)
-    private val objChunk        = pool.getChunkFromFlag[NotInstantiatedObject[AnyRef]](Object)
 
     override def value: T = {
         if (!isInit)
@@ -45,10 +42,10 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         while (i < length) {
             args(i) = pool.getAny(content(i)) match {
                 case o: PoolObject[AnyRef] => o.value
-                case o: Array[AnyRef]      =>
-                    initArray(o)
-                    o
                 case o                     => o
+                /*case o: Array[AnyRef]      =>
+                    initArray(o)
+                    o*/
             }
             i += 1
         }
@@ -56,7 +53,7 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         //config.informObjectReceived(obj)
     }
 
-    private def initArray(array: Array[AnyRef]): Unit = {
+    /*private def initArray(array: Array[AnyRef]): Unit = {
         var n   = 0
         val len = array.length
         while (n < len) {
@@ -69,6 +66,6 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
             }
             n += 1
         }
-    }
+    }*/
 
 }

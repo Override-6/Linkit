@@ -42,8 +42,6 @@ import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.LinkitApplication
 
 import scala.reflect.ClassTag
-import scala.util.Failure
-import scala.util.control.NonFatal
 
 final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePacketChannel,
                                                                 generator: SyncClassCenter,
@@ -78,8 +76,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val root         = DefaultInstantiator.newWrapper[A](creator)
         val chip         = ObjectChip[A](rootBehavior, network, root)
         val puppeteer    = new ObjectPuppeteer[A](channel, this, nodeLocation, rootBehavior)
+        val presence     = treeCenter.getPresence(nodeLocation)
         val rootNode     = (tree: DefaultSynchronizedObjectTree[A]) => {
-            val data = new ObjectNodeData[A](puppeteer, chip, tree, nodeLocation, root, currentIdentifier)
+            val data = new ObjectNodeData[A](puppeteer, chip, tree, nodeLocation, presence, root, currentIdentifier)
             new RootObjectSyncNode[A](data)
         }
         val tree         = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, treeCenter, id, DefaultInstantiator, this, behaviorTree)(rootNode)
@@ -96,9 +95,10 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val behaviorStore = tree.behaviorStore
         val behavior      = behaviorStore.getFromClass[B](syncObject.getSuperClass)
         val chip          = ObjectChip[B](behavior, network, syncObject)
-        val nodeLocation  = new SyncObjectReference(family, cacheID, ownerID, path)
-        val puppeteer     = new ObjectPuppeteer[B](channel, this, nodeLocation, behavior)
-        new ObjectNodeData[B](puppeteer, chip, tree, nodeLocation, syncObject, currentIdentifier)
+        val reference     = new SyncObjectReference(family, cacheID, ownerID, path)
+        val puppeteer     = new ObjectPuppeteer[B](channel, this, reference, behavior)
+        val presence      = treeCenter.getPresence(reference)
+        new ObjectNodeData[B](puppeteer, chip, tree, reference, presence, syncObject, currentIdentifier)
     }
 
     override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
@@ -153,8 +153,6 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         }
 
     }
-
-
 
     private object CenterHandler extends CacheHandler with ContentHandler[CacheRepoContent[A]] with AttachHandler {
 

@@ -66,7 +66,7 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = {
         bundle.linkerReference match {
-            case ref: ContextualObjectReference if refToCode.containsKey(ref.objectID) =>
+            case ref: ContextualObjectReference if codeToRef.containsKey(ref.objectID) =>
                 handleBundle(bundle)
             case _ if parent != null                                                   =>
                 parent.injectRequest(bundle)

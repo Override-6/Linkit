@@ -2,7 +2,7 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.persistence.obj.PoolObject
 
-class NotInstantiatedArray[T](pool: DeserializerObjectPool, arrayContent: Array[Int], emptyArray: Array[T]) extends PoolObject[Array[T]] {
+class NotInstantiatedArray[T <: AnyRef](pool: DeserializerObjectPool, arrayContent: Array[Int], emptyArray: Array[T]) extends PoolObject[Array[T]] {
 
     override lazy val value: Array[T] = {
         var i = 0

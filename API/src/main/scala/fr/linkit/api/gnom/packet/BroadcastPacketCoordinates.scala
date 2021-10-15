@@ -18,15 +18,19 @@ case class BroadcastPacketCoordinates(override val path: Array[Int],
                                       discardTargets: Boolean,
                                       targetIDs: Seq[String]) extends PacketCoordinates {
 
-
-
     override def forallConcernedTargets(action: String => Boolean): Boolean = {
-        if (discardTargets)
+        //FIXME discuss about Packet Broadcasting utility,
+        // Broadcasting a packet is useful to clients to save bandwidth and persistence operation
+        // However, with incoming enhancements that comes with the GNOL, object persistence configuration etc,
+        // Broadcasting becomes hard to maintain as a serialized packet result can vary between engines,
+        // So, either remove packet broadcasting (which can lead to performance issues) or add constraints to serialisation
+        if (discardTargets) {
             return true
+        }
         targetIDs.forall(action)
     }
 
-    override def toString: String = s"BroadcastPacketCoordinates(${path.mkString("Array(", ", ", ")")}, $senderID, $discardTargets, $targetIDs)"
+    override def toString: String = s"BroadcastPacketCoordinates(${path.mkString("/")}, $senderID, $discardTargets, $targetIDs)"
 
     def listDiscarded(alreadyConnected: Seq[String]): Seq[String] = {
         if (discardTargets)

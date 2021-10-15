@@ -11,12 +11,12 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.context
+package fr.linkit.api.gnom.reference
 
-import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 
-class ContextualObjectReference(channelPath: Array[Int], val objectID: Int) extends TrafficNetworkPresenceReference(channelPath) {
-    override def toString: String = {
-        s"@traffic/${channelPath.mkString("/")}:$objectID"
-    }
+trait DynamicNetworkObject[R <: NetworkObjectReference] extends NetworkObject[R] {
+
+    def presence: NetworkObjectPresence
+
 }

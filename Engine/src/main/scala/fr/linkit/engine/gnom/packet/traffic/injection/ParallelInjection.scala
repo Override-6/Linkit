@@ -50,7 +50,7 @@ class ParallelInjection(override val injectablePath: Array[Int]) extends PacketI
         injectablePath(pathIndex)
     }
 
-    override def haveMoreIdentifier: Boolean = pathIndex <= limit
+    override def haveMoreIdentifier: Boolean = limit != 0 && pathIndex <= limit
 
     override def process(injectable: PacketInjectable): Unit = buff.process(injectable)
 }

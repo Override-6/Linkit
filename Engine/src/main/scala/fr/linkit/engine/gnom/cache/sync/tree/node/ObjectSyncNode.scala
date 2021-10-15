@@ -33,12 +33,12 @@ import scala.util.{Failure, Success, Try}
 class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
                                   data: ObjectNodeData[A]) extends TrafficInterestedSyncNode[A] {
 
-    override  val location          : SyncObjectReference       = data.location
-    override  val tree              : SynchronizedObjectTree[_] = data.tree
+    override  val reference         : SyncObjectReference          = data.reference
+    override  val tree              : SynchronizedObjectTree[_]    = data.tree
     override  val puppeteer         : Puppeteer[A]                 = data.puppeteer
     override  val chip              : Chip[A]                      = data.chip
     override  val synchronizedObject: A with SynchronizedObject[A] = data.synchronizedObject
-    override  val id                : Int                          = location.nodePath.last
+    override  val id                : Int                          = reference.nodePath.last
     /**
      * The identifier of the engine that posted this object.
      */
@@ -52,8 +52,8 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    private   val presences                                 = mutable.HashSet[String](ownerID, currentIdentifier)
-    override  val objectPresence    : NetworkObjectPresence = null
+    private   val presences                                        = mutable.HashSet[String](ownerID, currentIdentifier)
+    override  val objectPresence    : NetworkObjectPresence        = data.presence
 
     synchronizedObject.initialize(this)
 

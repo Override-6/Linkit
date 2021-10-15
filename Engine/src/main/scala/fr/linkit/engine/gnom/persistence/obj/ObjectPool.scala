@@ -50,7 +50,7 @@ class ObjectPool(sizes: Array[Int]) extends Freezable {
     override def isFrozen: Boolean = frozen
 
     @inline
-    def  getChunkFromFlag[T](idx: Byte): PoolChunk[T] = {
+    def getChunkFromFlag[T](idx: Byte): PoolChunk[T] = {
         chunks(idx).asInstanceOf[PoolChunk[T]]
     }
 
