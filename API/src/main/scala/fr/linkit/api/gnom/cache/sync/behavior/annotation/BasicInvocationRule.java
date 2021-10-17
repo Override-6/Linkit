@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.RemoteInvocationRule;
 
 /**
  * Basic RMI rules that defines simple agreements.
- * */
+ */
 public enum BasicInvocationRule implements RemoteInvocationRule {
 
     /**
@@ -75,7 +75,9 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * The return value of the invocation will come from the current machine.
      */
     //TODO Build the agreement
-    BROADCAST_IF_ROOT_OWNER(BROADCAST),
+    BROADCAST_IF_ROOT_OWNER((agreement ->
+            agreement.ifCurrentIsOwner(RMIRulesAgreementBuilder::acceptAll)
+                    .setDesiredCurrentEngineReturn())),
     /**
      * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.
      * If the current machine owns the wrapper object, the execution will be called only once.

@@ -32,8 +32,6 @@ class ObjectSelector(bundle: PersistenceBundle) {
                 else None
             case obj: NetworkObject[NetworkObjectReference]        =>
                 Some(obj.reference)
-            case _ if col eq null                                  =>
-                None
             case _                                                 =>
                 col
                         .findPersistableReference(obj, coords)

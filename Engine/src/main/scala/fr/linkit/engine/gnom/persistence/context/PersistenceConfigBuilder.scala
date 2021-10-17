@@ -56,6 +56,8 @@ class PersistenceConfigBuilder {
         }
     }
 
+    private[gnom] def forEachRefs(action: (Int, AnyRef) => Unit): Unit = referenceStore.foreachEntry(action)
+
     def transfer(other: PersistenceConfigBuilder): this.type = {
         persistors ++= other.persistors
         referenceStore ++= other.referenceStore
