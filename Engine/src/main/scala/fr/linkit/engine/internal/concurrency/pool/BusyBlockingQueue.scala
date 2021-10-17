@@ -59,8 +59,12 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
     @workerExecution
     override def take(): A = {
         AppLogger.vError(s"$currentTasksId <> Taking item in $this (${System.identityHashCode(this)})...")
-        if (content.isEmpty)
+        if (content.isEmpty) {
             controller.pauseTask() //will be released once the queue isn't empty anymore
+            content.synchronized {
+                return poll()
+            }
+        }
         AppLogger.vError(s"Something has been added ! $this (${System.identityHashCode(this)})")
         if (content.isEmpty)
             throw new Error("Content can't be empty.")
