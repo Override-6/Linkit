@@ -26,6 +26,7 @@ import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.injection.ParallelInjectionContainer
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
+import fr.linkit.engine.gnom.reference.ObjectChannelContextObjectLinker
 import fr.linkit.engine.internal.utils.ClassMap
 
 import java.net.URL
@@ -35,7 +36,11 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                                      defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
 
     val context: ImmutablePersistenceContext = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
-    private val objectChannelConfig = new SimplePersistenceConfig(context, new ClassMap(), null, false, true, false)
+    private val minimalConfigBuilder = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
+    private val objectChannelConfig = {
+        val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
+        new SimplePersistenceConfig(context, new ClassMap(), linker, false, true, false)
+    }
 
     private val objectChannel = {
         val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
@@ -45,7 +50,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     override val defaultPersistenceConfig: PersistenceConfig = {
         defaultPersistenceConfigUrl
                 .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
-                .transfer(PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this))
+                .transfer(minimalConfigBuilder)
                 .build(context, null, objectChannel)
     }
 

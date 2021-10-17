@@ -27,6 +27,6 @@ class SyncObjectReference(family: String,
                           val owner: String,
                           val nodePath: Array[Int]) extends SharedCacheReference(cacheID, family) {
     override def toString: String = {
-        s"@network/caches/$family/$cacheID//${nodePath.mkString("/")}"
+        s"@network/caches/$family/$cacheID:${nodePath.mkString("/")}"
     }
 }

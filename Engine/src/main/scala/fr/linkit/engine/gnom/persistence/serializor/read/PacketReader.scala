@@ -108,10 +108,9 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
 
             override lazy val value: AnyRef = {
                 val loc = location
-                val result = selector.findObject(loc).getOrElse {
+                selector.findObject(loc).getOrElse {
                     throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
                 }
-                result
             }
         }
     }

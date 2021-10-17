@@ -52,7 +52,7 @@ object DefaultMethodInvocationHandler extends MethodInvocationHandler {
             override val agreement: RMIRulesAgreement = methodAgreement
 
             override def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit = {
-                behavior.dispatch(dispatcher, network, syncObject.getStore, localInvocation)
+                behavior.dispatch(dispatcher, network, syncObject.getBehaviorStore, localInvocation)
             }
         }
         if (methodAgreement.getDesiredEngineReturn == currentIdentifier) {

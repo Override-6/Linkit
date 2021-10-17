@@ -56,7 +56,7 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
      */
     def getChoreographer: InvocationChoreographer
 
-    def getStore: ObjectBehaviorStore
+    def getBehaviorStore: ObjectBehaviorStore
 
     /**
      * Note: a synchronized object is always initialized if it was retrieved normally.

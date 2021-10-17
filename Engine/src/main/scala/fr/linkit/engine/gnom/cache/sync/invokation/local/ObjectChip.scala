@@ -30,7 +30,7 @@ class ObjectChip[S <: AnyRef] private(behavior: ObjectBehavior[S],
                                       syncObject: SynchronizedObject[S],
                                       network: Network) extends Chip[S] {
 
-    private val store = syncObject.getStore
+    private lazy val store = syncObject.getBehaviorStore
 
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(syncObject, obj)

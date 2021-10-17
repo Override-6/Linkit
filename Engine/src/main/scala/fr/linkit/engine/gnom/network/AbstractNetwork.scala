@@ -48,7 +48,8 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override lazy  val globalCache            : SharedCacheManager         = createGlobalCache
     protected lazy val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)
     private var engine0                       : Engine                     = _
-    override lazy  val connectionEngine       : Engine                     = engine0
+
+    override def connectionEngine: Engine = engine0
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
         throw new NoSuchElementException("Server Engine not found.")
@@ -96,12 +97,12 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     protected def createGlobalCache: SharedCacheManager
 
     def initialize(): this.type = {
-        ExecutorEngine.setCurrentEngine(connectionEngine)
         //init those lazy vals
         gnol
         globalCache
         trunk
         engine0 = trunk.newEngine(currentIdentifier)
+        ExecutorEngine.setCurrentEngine(connectionEngine)
         this
         //cacheManagerChannel.addRequestListener(handleRequest)
     }

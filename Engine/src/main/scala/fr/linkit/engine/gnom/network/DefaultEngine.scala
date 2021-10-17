@@ -37,21 +37,6 @@ class DefaultEngine(override val identifier: String,
     @MethodControl(BasicInvocationRule.BROADCAST_IF_ROOT_OWNER) //Root owner is the Network object owner, which is the server.
     def updateState(state: ExternalConnectionState): Unit = connectionState = state
 
-    @MethodControl(BasicInvocationRule.ONLY_OWNER)
-    override def isRootReferenceSet(refId: Int): Boolean = {
-        findRootReference(refId).isDefined
-    }
-
-    @MethodControl(BasicInvocationRule.ONLY_OWNER)
-    override def findRootReferenceType(refId: Int): Option[Class[_]] = {
-        findRootReference[AnyRef](refId).map(_.getClass)
-    }
-
-    @MethodControl(BasicInvocationRule.ONLY_OWNER)
-    override def findRootReference[T](refId: Int): Option[T] = {
-        ??? //rootRefStore.getReferenced(refId).asInstanceOf[Option[T]]
-    }
-
     override def getConnectionState: ExternalConnectionState = connectionState
 
     override def update(): this.type = {

@@ -15,14 +15,11 @@ package fr.linkit.engine.gnom.reference
 
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
 import fr.linkit.api.gnom.reference.traffic.LinkerRequestBundle
 import fr.linkit.api.gnom.reference.{ContextObjectLinker, NetworkObject}
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
 
-import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
-import java.util.Map.Entry
-import scala.collection.immutable.HashMap
 import scala.collection.mutable
 
 /**
@@ -35,10 +32,9 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
     private val refToCode = mutable.HashMap.empty[AnyRef, Int]
     builder.forEachRefs((id, ref) => +=(id, ref))
 
-    override def findReferenceID(obj: AnyRef): Option[Int] = ???
+    override def findReferenceID(obj: AnyRef): Option[Int] = refToCode.get(obj)
 
-    override def findPersistableReference(obj: AnyRef, coords: PacketCoordinates): Option[Int] = ???
-
+    override def findPersistableReference(obj: AnyRef, coords: PacketCoordinates): Option[Int] = findReferenceID(obj)
 
     override def ++=(refs: Map[Int, AnyRef]): this.type = {
         refs.foreachEntry((id, ref) => +=(id, ref))
@@ -53,6 +49,7 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
         refs.foreach(+=)
         this
     }
+
     override def +=(anyRef: AnyRef): this.type = {
         if (anyRef eq null)
             -=(anyRef)
@@ -93,10 +90,10 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
     }
 
     override def findPresence(ref: ContextualObjectReference): Option[NetworkObjectPresence] = {
-        throw new UnsupportedOperationException()
+        Some(_ => ObjectPresenceType.PRESENT)
     }
 
     override def isPresentOnEngine(engineId: String, ref: ContextualObjectReference): Boolean = {
-        throw new UnsupportedOperationException()
+        true //ObjectManagementChannel only uses objects that are mandatory on all engines
     }
 }

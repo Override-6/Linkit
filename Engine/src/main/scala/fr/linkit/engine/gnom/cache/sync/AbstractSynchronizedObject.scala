@@ -63,7 +63,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getChoreographer: InvocationChoreographer = choreographer
 
-    override def getStore: ObjectBehaviorStore = store
+    override def getBehaviorStore: ObjectBehaviorStore = store
 
     override def getPuppeteer: Puppeteer[A] = puppeteer
 

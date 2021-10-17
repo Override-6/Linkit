@@ -36,13 +36,6 @@ trait Engine extends /*NetworkObject[EngineReference] with*/ Updatable {
     def getConnectionState: ExternalConnectionState
 
     def toString: String
-
-    def isRootReferenceSet(refId: Int): Boolean
-
-    def findRootReferenceType(refId: Int): Option[Class[_]]
-
-    def findRootReference[T](refId: Int): Option[T]
-
     /*
     * connection.accessor
     * */
