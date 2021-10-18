@@ -64,24 +64,26 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], o
     override def initializeObject(obj: NetworkObject[_ <: SyncObjectReference]): Unit = {
         obj match {
             case syncObj: SynchronizedObject[_] => initializeSyncObject(syncObj)
-            case _ => throwUnknownObject(obj)
+            case _                              => throwUnknownObject(obj)
         }
     }
 
     private def initializeSyncObject(syncObj: SynchronizedObject[_]): Unit = {
-        val info = syncObj.reference
-        val path = info.nodePath
-        val treeOpt = findTreeInternal(path.head)
+        val reference = syncObj.reference
+        val path      = reference.nodePath
+        val treeOpt   = findTreeInternal(path.head)
         if (treeOpt.isEmpty) {
-            throw new NoSuchObjectTreeException(s"No Object Tree found of id ${path.head}")
+            AppLogger.warn(s"No Object Tree found of id ${path.head}.")
+            return
         }
         val tree    = treeOpt.get
         val nodeOpt = tree.findNode(path)
         if (nodeOpt.isEmpty) {
             def castedSyncObject[X <: AnyRef](): X with SynchronizedObject[X] = syncObj.asInstanceOf[X with SynchronizedObject[X]]
-            tree.registerSynchronizedObject(path.dropRight(1), path.last, castedSyncObject(), info.owner).synchronizedObject
+
+            tree.registerSynchronizedObject(path.dropRight(1), path.last, castedSyncObject(), reference.owner).synchronizedObject
         } else if (nodeOpt.get.synchronizedObject ne syncObj) {
-            throw new UnsupportedOperationException(s"Synchronized object already exists at path ${path.mkString("/")}")
+            throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
         }
     }
 

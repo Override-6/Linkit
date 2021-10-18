@@ -15,14 +15,14 @@ package fr.linkit.engine.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
-import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncObjectReference, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
 import fr.linkit.engine.gnom.cache.sync.instantiation.ContentSwitcher
 import fr.linkit.engine.gnom.cache.sync.tree.node.{IllegalWrapperNodeException, ObjectSyncNode, RootObjectSyncNode, SyncNodeDataFactory}
 import fr.linkit.engine.internal.utils.ScalaUtils
 
+import java.util.concurrent.ThreadLocalRandom
 import scala.util.Try
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
@@ -119,22 +119,26 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         center.registerReference(node.reference)
         parent.addChild(node)
 
-        scanSyncObjectFields(ownerID, syncObject)
+        scanSyncObjectFields(parent, ownerID, syncObject)
 
         node
     }
 
     @inline
-    private def scanSyncObjectFields(ownerID: String, syncObject: SynchronizedObject[_]): Unit = {
+    private def scanSyncObjectFields(parent: ObjectSyncNode[_], ownerID: String, syncObject: SynchronizedObject[_]): Unit = {
         val isCurrentOwner = ownerID == currentIdentifier
         val engine         = if (!isCurrentOwner) Try(network.findEngine(ownerID).get).getOrElse(null) else null //should not be used if isCurrentOwner = false
-        val behavior       = behaviorStore.getFromClass(syncObject.getSuperClass)
+        val behavior       = syncObject.getBehavior
         for (bhv <- behavior.listField()) {
             val field      = bhv.desc.javaField
             val fieldValue = field.get(syncObject)
-            val finalField = {
+            var finalField = {
                 if (isCurrentOwner) behaviorStore.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
                 else behaviorStore.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
+            }
+            if (bhv.isActivated) {
+                val id = ThreadLocalRandom.current().nextInt()
+                finalField = genSynchronizedObject(parent, id, finalField)(ownerID).synchronizedObject
             }
             ScalaUtils.setValue(syncObject, field, finalField)
         }

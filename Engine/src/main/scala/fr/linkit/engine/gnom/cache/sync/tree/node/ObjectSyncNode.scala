@@ -52,7 +52,6 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    private   val presences                                        = mutable.HashSet[String](ownerID, currentIdentifier)
     override  val objectPresence    : NetworkObjectPresence        = data.presence
 
     synchronizedObject.initialize(this)
@@ -72,10 +71,6 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
             case _                       => None
         }
     }
-
-    override def isPresentOnEngine(engineID: String): Boolean = presences.contains(engineID)
-
-    override def putPresence(engineID: String): Unit = presences += engineID
 
     override def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
         if (!(packet.path sameElements treePath)) {

@@ -66,7 +66,6 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                 .submit()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
-        wrapperNode.setPresentOnNetwork()
         wrapperNode.synchronizedObject
     }
 
@@ -136,8 +135,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
     private def handleRootObjectPacket(treeID: Int, rootObject: AnyRef with SynchronizedObject[AnyRef], owner: String): Unit = {
         if (!isRegistered(treeID)) {
-            val tree = createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), defaultTreeViewBehavior)
-            tree.getRoot.setPresentOnNetwork()
+            createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), defaultTreeViewBehavior)
         }
     }
 
@@ -190,8 +188,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                 }
                 //it's an object that must be remotely controlled because it is chipped by another objects cache.
                 else {
-                    val tree = createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), defaultTreeViewBehavior)
-                    tree.getRoot.setPresentOnNetwork()
+                    createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), defaultTreeViewBehavior)
                 }
             })
         }

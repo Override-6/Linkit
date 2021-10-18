@@ -23,8 +23,6 @@ trait PersistenceContext {
 
     val traffic: PacketTraffic
 
-    def getNetwork: Network
-
     def findConstructor[T](clazz: Class[_]): Option[Constructor[T]]
 
     def findDeconstructor[T](clazz: Class[_]): Option[Deconstructor[T]]
