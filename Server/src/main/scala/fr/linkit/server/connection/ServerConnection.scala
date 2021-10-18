@@ -105,6 +105,8 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
+    override def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C] = traffic.findInjectable[C](id)
+
     override def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 
     override def countConnections: Int = connectionsManager.countConnections

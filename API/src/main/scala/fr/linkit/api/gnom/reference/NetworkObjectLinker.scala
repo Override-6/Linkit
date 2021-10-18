@@ -26,4 +26,5 @@ trait NetworkObjectLinker[R <: NetworkObjectReference] extends NetworkPresenceHa
 
     def findObject(reference: R): Option[NetworkObject[_ <: R]]
 
+
 }

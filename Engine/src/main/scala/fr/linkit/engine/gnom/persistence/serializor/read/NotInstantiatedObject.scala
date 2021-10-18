@@ -13,16 +13,21 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
+import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject}
+import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
+                                         clazz: Class[_],
                                          content: Array[Int],
+                                         selector: ObjectSelector,
                                          pool: DeserializerObjectPool) extends InstanceObject[T] {
 
     private var isInit: Boolean = false
-    private val obj   : T       = ScalaUtils.allocate[T](profile.typeClass)
+    private val obj   : T       = ScalaUtils.allocate[T](clazz)
 
     override def value: T = {
         if (!isInit)
@@ -43,29 +48,15 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
             args(i) = pool.getAny(content(i)) match {
                 case o: PoolObject[AnyRef] => o.value
                 case o                     => o
-                /*case o: Array[AnyRef]      =>
-                    initArray(o)
-                    o*/
             }
             i += 1
         }
         profile.getPersistence(args).initInstance(obj, args)
-        //config.informObjectReceived(obj)
-    }
-
-    /*private def initArray(array: Array[AnyRef]): Unit = {
-        var n   = 0
-        val len = array.length
-        while (n < len) {
-            val obj = array(n)
-            val idx = objChunk.indexOf(obj)
-            if (idx != -1) {
-                objChunk.get(idx).initObject()
-            } else if (obj != null){
-                throw new NoSuchElementException(s"Could not find index of object $obj from object pool while initializing array content.")
-            }
-            n += 1
+        obj match {
+            case syncObj: NetworkObject[SharedCacheManagerReference]  =>
+                selector.initObject(syncObj)
+            case _ =>
         }
-    }*/
+    }
 
 }

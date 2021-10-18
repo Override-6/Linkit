@@ -53,6 +53,8 @@ trait PacketInjectableStore extends TrafficPresence[TrafficNetworkPresenceRefere
 
     def findStore(id: Int): Option[PacketInjectableStore]
 
+    def findInjectable[C <: PacketInjectable: ClassTag](id: Int): Option[C]
+
     def createStore(id: Int): PacketInjectableStore = createStore(id, defaultPersistenceConfig)
 
     def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore

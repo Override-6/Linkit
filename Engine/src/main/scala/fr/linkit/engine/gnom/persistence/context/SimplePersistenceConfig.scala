@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.reference.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
-import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
+import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, UnsafeTypePersistence}
 import fr.linkit.engine.internal.utils.ClassMap
 
 import scala.collection.mutable
@@ -39,19 +39,7 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
             profile = customProfiles.getOrElse(clazz, newDefaultProfile[T](clazz))
             defaultProfiles.put(clazz, profile)
         }
-        if (isSyncClass(clazz)) {
-            @inline
-            def cast[X](a: Any) = a.asInstanceOf[X]
-
-            profile = newSynchronizedObjectDefaultProfile(clazz, cast(profile))
-        }
         profile.asInstanceOf[TypeProfile[T]]
-    }
-
-    private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: TypeProfile[T]): DefaultTypeProfile[T] = {
-        val network                                 = context.getNetwork
-        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
-        new DefaultTypeProfile[T](clazz, this, persistences)
     }
 
     protected def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {

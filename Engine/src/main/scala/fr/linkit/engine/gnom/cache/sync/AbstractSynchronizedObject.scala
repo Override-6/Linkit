@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    @transient final protected var location         : SyncObjectReference     = _
+    final protected            var location         : SyncObjectReference     = _
     @transient final protected var puppeteer        : Puppeteer[A]            = _
     @transient final protected var behavior         : ObjectBehavior[A]       = _
     @transient final protected var choreographer    : InvocationChoreographer = _
@@ -40,11 +40,13 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def initialize(node: SyncNode[A]): Unit = {
         if (this.puppeteer != null)
-            throw new SyncObjectAlreadyInitialisedException(s"This puppet is already initialized !")
+            throw new SyncObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
+        if (location != null && location != node.reference)
+            throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
+        this.location = node.reference
         val puppeteer = node.puppeteer
         this.store = node.tree.behaviorStore
         this.puppeteer = node.puppeteer
-        this.location = node.reference
         this.behavior = puppeteer.objectBehavior
         this.presenceOnNetwork = node.objectPresence
         this.currentIdentifier = puppeteer.currentIdentifier

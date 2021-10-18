@@ -97,6 +97,8 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     override def findStore(id: Int): Option[PacketInjectableStore] = rootStore.findStore(id)
 
+    override def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C] = rootStore.findInjectable(id)
+
     override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = rootStore.createStore(id, persistenceConfig)
 
     def getObjectManagementChannel: ObjectManagementChannel = objectChannel

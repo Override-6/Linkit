@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.GeneralNetworkObjectLinker
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
@@ -27,9 +27,10 @@ import fr.linkit.engine.internal.LinkitApplication
 import java.nio.ByteBuffer
 
 class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator {
+
     private val serializer = {
         import fr.linkit.engine.application.resource.external.LocalResourceFolder._
-        val prop = LinkitApplication.getProperty("compilation.working_dir.classes")
+        val prop           = LinkitApplication.getProperty("compilation.working_dir.classes")
         val resources      = app.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](prop)
         val compilerCenter = app.compilerCenter
         val center         = new DefaultSyncClassCenter(compilerCenter, resources)
@@ -91,14 +92,14 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
     }
 
     override def translate(traffic: PacketTraffic, buffer: ByteBuffer): ObjectDeserializationResult = {
-        val coords = readCoordinates(buffer)
-        val conf   = traffic.getPersistenceConfig(coords.path)
+        val coords  = readCoordinates(buffer)
+        val conf    = traffic.getPersistenceConfig(coords.path)
         val network = traffic.connection.network
-        val bundle = new PersistenceBundle {
-            override val buff       : ByteBuffer                                  = buffer
-            override val coordinates: PacketCoordinates                           = coords
-            override val config     : PersistenceConfig                           = conf
-            override val gnol       : NetworkObjectLinker[NetworkObjectReference] = network.gnol
+        val bundle  = new PersistenceBundle {
+            override val buff       : ByteBuffer                 = buffer
+            override val coordinates: PacketCoordinates          = coords
+            override val config     : PersistenceConfig          = conf
+            override val gnol       : GeneralNetworkObjectLinker = network.gnol
         }
         new LazyObjectDeserializationResult(buffer, coords)(serializer.deserializeObjects(bundle))
     }
@@ -107,6 +108,6 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
 
 object DefaultObjectTranslator {
 
-    private final val DedicatedFlag  : Byte    = -20
-    private final val BroadcastedFlag: Byte    = -21
+    private final val DedicatedFlag  : Byte = -20
+    private final val BroadcastedFlag: Byte = -21
 }

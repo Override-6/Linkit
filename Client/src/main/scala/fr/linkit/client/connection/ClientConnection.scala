@@ -64,6 +64,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
+    override def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C] = traffic.findInjectable[C](id)
+
     override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
 
     override def runLaterControl[A](task: => A): AsyncTask[A] = appContext.runLaterControl(task)

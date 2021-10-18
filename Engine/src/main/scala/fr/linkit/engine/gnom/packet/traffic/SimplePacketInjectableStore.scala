@@ -29,8 +29,8 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   override val trafficPath: Array[Int])
         extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence[TrafficNetworkPresenceReference] {
 
-    private  val presences                         = mutable.HashMap.empty[Int, (TrafficPresence[TrafficNetworkPresenceReference], PersistenceConfig)]
-    private var closed    : Boolean                = false
+    private val presences       = mutable.HashMap.empty[Int, (TrafficPresence[TrafficNetworkPresenceReference], PersistenceConfig)]
+    private var closed: Boolean = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): C = {
         val childPath = trafficPath :+ id
@@ -114,6 +114,11 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     override def findStore(id: Int): Option[PacketInjectableStore] = presences.get(id).flatMap {
         case (store: SimplePacketInjectableStore, _) => Some(store)
         case _                                       => None
+    }
+
+    override def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C] = presences.get(id).flatMap {
+        case (value: C, _) if value.getClass.isAssignableFrom(classTag[C].runtimeClass) => Some(value)
+        case _                                                                          => None
     }
 
     override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = {

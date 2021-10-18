@@ -70,6 +70,8 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
 
+    override def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C] = traffic.findInjectable[C](id)
+
     override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
     override def getState: ExternalConnectionState = session.getSocketState

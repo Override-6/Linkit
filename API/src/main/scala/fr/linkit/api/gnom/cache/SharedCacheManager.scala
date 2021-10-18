@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.network.{Network, Updatable}
 import fr.linkit.api.gnom.packet.traffic.TrafficPresence
-import fr.linkit.api.gnom.reference.NetworkObjectLinker
+import fr.linkit.api.gnom.reference.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 
 import scala.reflect.ClassTag
@@ -44,7 +44,7 @@ trait SharedCacheManager extends TrafficPresence[SharedCacheManagerReference] wi
      * */
     val network: Network
 
-    def getCachesLinker: NetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH
+    def getCachesLinker: InitialisableNetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH
 
     def attachToCache[A <: SharedCache : ClassTag](cacheID: Int)(implicit factory: SharedCacheFactory[A]): A = {
         attachToCache[A](cacheID, CacheSearchBehavior.GET_OR_OPEN)

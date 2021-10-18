@@ -11,19 +11,6 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence
+package fr.linkit.api.gnom.cache
 
-import fr.linkit.api.gnom.packet.PacketCoordinates
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.{ContextObjectLinker, GeneralNetworkObjectLinker, NetworkObjectLinker, NetworkObjectReference}
-
-import java.nio.ByteBuffer
-
-trait PersistenceBundle {
-
-    val buff               : ByteBuffer
-    val coordinates        : PacketCoordinates
-    val config             : PersistenceConfig
-    val gnol               : GeneralNetworkObjectLinker
-
-}
+class NoSuchCacheManagerException(msg: String) extends CacheException(msg: String)

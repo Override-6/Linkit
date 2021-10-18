@@ -11,19 +11,15 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence
+package fr.linkit.api.gnom.reference
 
-import fr.linkit.api.gnom.packet.PacketCoordinates
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.{ContextObjectLinker, GeneralNetworkObjectLinker, NetworkObjectLinker, NetworkObjectReference}
+import fr.linkit.api.gnom.cache.SharedCacheManagerReference
+import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 
-import java.nio.ByteBuffer
+trait GeneralNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectReference] {
 
-trait PersistenceBundle {
-
-    val buff               : ByteBuffer
-    val coordinates        : PacketCoordinates
-    val config             : PersistenceConfig
-    val gnol               : GeneralNetworkObjectLinker
+    val cacheNOL  : InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH
+    val trafficNOL: NetworkObjectLinker[TrafficNetworkPresenceReference] with TrafficInterestedNPH
 
 }

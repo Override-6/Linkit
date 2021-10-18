@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.packet.traffic
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker}
+import fr.linkit.api.gnom.reference.{InitialisableNetworkObjectLinker, NetworkObject, NetworkObjectLinker}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: AbstractPacketTraffic) extends
