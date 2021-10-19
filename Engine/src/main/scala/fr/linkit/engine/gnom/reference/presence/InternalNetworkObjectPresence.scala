@@ -27,6 +27,8 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
 
     def isPresent: Boolean = present
 
+    def setPresenceFor(engineId: String, kind: ObjectPresenceType): Unit = presences.put(engineId, kind)
+
     override def getPresenceFor(engineId: String): ObjectPresenceType = {
         presences.getOrElse(engineId, NEVER_ASKED)
     }
@@ -35,14 +37,16 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
         //set to all engines who thinks that the reference is not present on this engine
         //that it's no has been referenced
         //on this current engine.
+        present = true
         val enginesID = presences
             .filter(_._2 eq NOT_PRESENT)
             .keys
             .toArray
+        if (enginesID.isEmpty)
+            return
         handler.informPresence(enginesID, location, PRESENT)
         presences.clear()
         enginesID.foreach(presences.put(_, PRESENT)) //everyone now thinks
-        present = true
     }
 
     def setNotPresent(): Unit = {
@@ -53,6 +57,8 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
             .filter(_._2 eq PRESENT)
             .keys
             .toArray
+        if (enginesID.isEmpty)
+            return
         handler.informPresence(enginesID, location, NOT_PRESENT)
         enginesID.foreach(presences.put(_, NOT_PRESENT)) //everyone now thinks
         present = false

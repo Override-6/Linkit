@@ -20,7 +20,8 @@ import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.reference.NetworkObjectLinker
+import fr.linkit.api.gnom.reference.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
@@ -37,7 +38,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     val context: ImmutablePersistenceContext = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
     private val minimalConfigBuilder = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
-    private val objectChannelConfig = {
+    private val objectChannelConfig  = {
         val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
         new SimplePersistenceConfig(context, new ClassMap(), linker, false, true, false)
     }
@@ -57,11 +58,13 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     @volatile private var closed = false
 
     override  val trafficPath: Array[Int] = Array.empty
-    protected val rootStore               = new SimplePacketInjectableStore(this, defaultPersistenceConfig, trafficPath)
     private   val injectionContainer      = new ParallelInjectionContainer()
     private   val linker                  = new TrafficNetworkObjectLinker(objectChannel, this)
+    protected val rootStore               = new SimplePacketInjectableStore(this, linker, defaultPersistenceConfig, trafficPath)
 
-    override def getTrafficObjectLinker: TrafficNetworkObjectLinker = linker
+    override def getTrafficObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference] with TrafficInterestedNPH = {
+        linker
+    }
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)

@@ -47,6 +47,6 @@ trait ApplicationContext extends ProcrastinatorControl {
 
     def getConnection(identifier: String): Option[ConnectionContext]
 
-    def getConnection(port: Int): Option[ConnectionContext]
+    def findConnection(port: Int): Option[ConnectionContext]
 
 }

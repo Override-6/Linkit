@@ -35,17 +35,17 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
     //What current engine thinks about other engines references states
     private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
 
+    @inline
+    def getPresence(ref: R): NetworkObjectPresence = {
+        externalPresences.getOrElseUpdate(ref, new ExternalNetworkObjectPresence[R](this, ref))
+    }
+
     override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
         getPresence(ref).getPresenceFor(engineId) eq PRESENT
     }
 
     def findPresence(ref: R): Option[NetworkObjectPresence] = {
         Some(getPresence(ref))
-    }
-
-    @inline
-    def getPresence(ref: R): NetworkObjectPresence = {
-        externalPresences.getOrElseUpdate(ref, new ExternalNetworkObjectPresence[R](this, ref))
     }
 
     private[reference] def askIfPresent(engineId: String, location: R): Boolean = {
@@ -78,7 +78,9 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
 
     protected def registerReference(ref: R): Unit = {
         if (!internalPresences.contains(ref)) {
-            internalPresences(ref) = new InternalNetworkObjectPresence[R](this, ref)
+            val presence = new InternalNetworkObjectPresence[R](this, ref)
+            presence.setPresent()
+            internalPresences(ref) = presence
         } else {
             internalPresences(ref).setPresent()
         }
@@ -96,17 +98,19 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         val responseSubmitter = bundle.responseSubmitter
         val request           = bundle.packet
         val reference: R      = bundle.linkerReference.asInstanceOf[R]
-        val response = request.nextPacket[Packet]
-        response match {
+        val pct = request.nextPacket[Packet]
+        val senderId = bundle.coords.senderID
+        pct match {
             case EmptyPacket =>
-                val response = isLocationReferenced(reference)
+                val isPresent = isLocationReferenced(reference)
                 responseSubmitter
-                    .addPacket(BooleanPacket(response))
+                    .addPacket(BooleanPacket(isPresent))
                     .submit()
+                val presence = internalPresences(reference)
+                presence.setPresenceFor(senderId, if (isPresent) PRESENT else NOT_PRESENT)
 
             case AnyRefPacket(presence: ObjectPresenceType) =>
                 val listener = externalPresences(reference)
-                val senderId = bundle.coords.senderID
                 presence match {
                     case NOT_PRESENT => listener.onObjectRemoved(senderId)
                     case PRESENT     => listener.onObjectSet(senderId)
@@ -123,8 +127,9 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
             val presence = new InternalNetworkObjectPresence[R](this, location)
             internalPresences(location) = presence
             val present = findObject(location).isDefined
-            if (present)
+            if (present) {
                 presence.setPresent()
+            }
             present
         } else {
             opt.get.isPresent

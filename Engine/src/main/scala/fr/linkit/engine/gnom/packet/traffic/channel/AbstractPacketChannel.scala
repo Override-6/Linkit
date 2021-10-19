@@ -17,6 +17,9 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.{AppLogger, Reason}
@@ -37,6 +40,12 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
     override  val traffic      : PacketTraffic                    = writer.traffic
     private   val storedBundles: mutable.Set[ChannelPacketBundle] = mutable.HashSet.empty[ChannelPacketBundle]
     override  val reference    : TrafficNetworkPresenceReference  = new TrafficNetworkPresenceReference(trafficPath)
+    override  val presence     : NetworkObjectPresence            = {
+        if (this.isInstanceOf[ObjectManagementChannel])
+            new SystemNetworkObjectPresence()
+        else
+            traffic.getTrafficObjectLinker.findPresence(reference).get
+    }
 
     @volatile private var closed = true
 

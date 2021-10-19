@@ -14,4 +14,10 @@
 package fr.linkit.api.gnom.reference
 
 trait NetworkObjectReference extends Serializable {
+
+    def hashCode(): Int
+
+    def toString: String
+
+    def equals(obj: Any): Boolean
 }

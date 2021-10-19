@@ -19,4 +19,13 @@ class SharedCacheManagerReference(val family: String) extends NetworkObjectRefer
     override def toString: String = {
         s"@network/caches/$family"
     }
+
+    override def hashCode(): Int = family.hashCode
+
+    override def equals(obj: Any): Boolean = obj match {
+        case ref: SharedCacheManagerReference => ref.family == family
+        case _ => false
+    }
+
+    def / (cacheID: Int): SharedCacheReference = new SharedCacheReference(family, cacheID)
 }

@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.network.NetworkInitialisable
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
-import fr.linkit.engine.gnom.cache.sync.instantiation.SyncConstructor
+import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
@@ -34,7 +34,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this))
-                .syncObject(0, SyncConstructor[NetworkDataTrunk](this), store)
+                .syncObject(0, Constructor[NetworkDataTrunk](this), store)
     }
 
     override protected def createGlobalCache: SharedCacheManager = {

@@ -13,9 +13,19 @@
 
 package fr.linkit.api.gnom.cache
 
-class SharedCacheReference(val cacheID: Int,
-                           family: String) extends SharedCacheManagerReference(family) {
+import java.util
+
+class SharedCacheReference(family: String, val cacheID: Int) extends SharedCacheManagerReference(family) {
+
     override def toString: String = {
         s"@network/caches/$family/$cacheID"
     }
+
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID))
+
+    override def equals(obj: Any): Boolean = obj match {
+        case ref: SharedCacheReference => ref.cacheID == cacheID && ref.family == family
+        case _                         => false
+    }
+
 }

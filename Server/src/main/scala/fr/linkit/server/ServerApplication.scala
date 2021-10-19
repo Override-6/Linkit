@@ -138,7 +138,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         serverCache.get(identifier)
     }
 
-    override def getConnection(port: Int): Option[ServerConnection] = {
+    override def findConnection(port: Int): Option[ServerConnection] = {
         serverCache.get(port)
     }
 

@@ -15,8 +15,17 @@ package fr.linkit.api.gnom.persistence.obj
 
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 
+import java.util
+
 class TrafficNetworkPresenceReference(val trafficPath: Array[Int]) extends NetworkObjectReference {
     override def toString: String = {
         s"@traffic/${trafficPath.mkString("/")}"
+    }
+
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(trafficPath))
+
+    override def equals(obj: Any): Boolean = obj match {
+        case ref: TrafficNetworkPresenceReference => ref.trafficPath sameElements trafficPath
+        case _ => false
     }
 }

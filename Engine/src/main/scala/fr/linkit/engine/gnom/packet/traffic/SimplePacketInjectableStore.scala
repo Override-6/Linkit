@@ -25,6 +25,7 @@ import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class SimplePacketInjectableStore(traffic: PacketTraffic,
+                                  tnol: TrafficNetworkObjectLinker,
                                   override val defaultPersistenceConfig: PersistenceConfig,
                                   override val trafficPath: Array[Int])
         extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence[TrafficNetworkPresenceReference] {
@@ -53,6 +54,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     @inline
     private def completeCreation[C <: PacketInjectable](id: Int, config: PersistenceConfig, scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
         val injectable = factory.createNew(this, scope)
+        tnol.registerReference(injectable.reference)
         presences.put(id, (injectable, config))
         injectable
     }
@@ -124,7 +126,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = {
         if (presences.contains(id))
             throw new ConflictException(s"PacketInjectableStore already created at ${trafficPath.mkString("/")}/$id")
-        val store = new SimplePacketInjectableStore(traffic, persistenceConfig, trafficPath :+ id)
+        val store = new SimplePacketInjectableStore(traffic, tnol, persistenceConfig, trafficPath :+ id)
         presences.put(id, (store, persistenceConfig))
         store
     }

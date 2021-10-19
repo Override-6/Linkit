@@ -34,9 +34,11 @@ object ClientLauncher {
     val HomeProperty   : String            = "LinkitHome"
     val DefaultHomePath: String            = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
 
-    def main(args: Array[String]): Unit = {
+    def main(args: Array[String]): Unit = launch(args)
+
+    def launch(args: Array[String]): ClientApplication = {
         AppLogger.info(s"Running client with arguments '${args.mkString(" ")}'")
-        val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
+        val userDefinedPluginFolder = getOrElse(args, "--plugin-path")("/Plugins")
 
         val scanner     = new Scanner(System.in)
         /*println("Say 'y' to connect to localhost")
@@ -44,16 +46,20 @@ object ClientLauncher {
         val isLocalhost = scanner.nextLine().startsWith("y")*/
         val address     = Localhost
 
-        println("Choose an identifier")
-        print("> ")
-        val identifier = scanner.nextLine()
+        val identifier = getOrElse(args, "--identifier") {
+            println("Choose an identifier")
+            print("> ")
+            scanner.nextLine()
+        }
 
-        println(s"Choose how much client will connect to $address")
-        print("Nothing = 1 > ")
-        val numberEntry = scanner.nextLine()
+        val numberEntry = getOrElse(args, "--raid-count"){
+            println(s"Choose how much client will connect to $address")
+            print("Nothing = 1 > ")
+            scanner.nextLine()
+        }
         val raidCount   = if (numberEntry.isEmpty) 1 else Try(numberEntry.toInt).getOrElse(0)
 
-        val resourcesFolder = getOrElse(args, "--home-path", getDefaultLinkitHome)
+        val resourcesFolder = getOrElse(args, "--home-path")(getDefaultLinkitHome)
 
         launch(userDefinedPluginFolder, address, identifier, resourcesFolder, raidCount)
     }
@@ -98,7 +104,7 @@ object ClientLauncher {
                 .waitFor()
     }
 
-    private def getOrElse(args: Array[String], key: String, defaultValue: String): String = {
+    private def getOrElse(args: Array[String], key: String)(defaultValue: => String): String = {
         val index = args.indexOf(key)
         if (index < 0 || index + 1 > args.length - 1) {
             defaultValue
@@ -112,7 +118,7 @@ object ClientLauncher {
                address: InetSocketAddress,
                identifier0: String,
                @NotNull resourcesFolder0: String,
-               raidCount: Int): Unit = {
+               raidCount: Int): ClientApplication = {
 
         if (resourcesFolder0 == null) {
             throw new NullPointerException("Resources folder is null !")
@@ -131,15 +137,16 @@ object ClientLauncher {
                 }
             }
         }
-        val client = ClientApplication.launch(config, getClass)
-        AppLogger.trace(s"Build completed: $client")
-        client.runLaterControl {
-            val pluginManager = client.pluginManager
+        val clientApp = ClientApplication.launch(config, getClass)
+        AppLogger.trace(s"Build completed: $clientApp")
+        clientApp.runLaterControl {
+            val pluginManager = clientApp.pluginManager
             pluginManager.loadAllClass(Array(
                 classOf[ControllerExtension]: Class[_ <: Plugin],
                 classOf[DebugPlugin]: Class[_ <: Plugin],
             ))
         }.throwNextThrowable()
         AppLogger.info("Client Application launched.")
+        clientApp
     }
 }

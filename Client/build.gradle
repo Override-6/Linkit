@@ -47,6 +47,10 @@ task fatJar(type: Jar) {
     with jar
 }
 
+test {
+    useJUnitPlatform()
+}
+
 dependencies {
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0-M1'
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0-M1'

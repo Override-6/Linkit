@@ -13,6 +13,8 @@
 
 package fr.linkit.api.gnom.packet
 
+import fr.linkit.api.gnom.network.ExecutorEngine
+
 case class BroadcastPacketCoordinates(override val path: Array[Int],
                                       override val senderID: String,
                                       discardTargets: Boolean,
@@ -25,6 +27,15 @@ case class BroadcastPacketCoordinates(override val path: Array[Int],
         // Broadcasting becomes hard to maintain as a serialized packet result can vary between engines,
         // So, either remove packet broadcasting (which can lead to performance issues) or add constraints to serialisation
         if (discardTargets) {
+            val network = ExecutorEngine.currentEngine.network
+            val allConnections = network.listEngines
+            for (engine <- allConnections) {
+                val engineId = engine.identifier
+                if (!targetIDs.contains(engineId)) {
+                    if (!action(engineId))
+                        return false
+                }
+            }
             return true
         }
         targetIDs.forall(action)

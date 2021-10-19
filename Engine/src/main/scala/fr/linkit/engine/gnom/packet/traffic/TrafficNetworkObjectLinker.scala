@@ -46,4 +46,8 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
                 handleBundle(bundle)
         }
     }
+
+    override def registerReference(ref: TrafficNetworkPresenceReference): Unit = super.registerReference(ref)
+
+    override def unregisterReference(ref: TrafficNetworkPresenceReference): Unit = super.unregisterReference(ref)
 }

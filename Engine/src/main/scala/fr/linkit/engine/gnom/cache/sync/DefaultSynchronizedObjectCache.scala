@@ -49,7 +49,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                                                                 override val network: Network)
     extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
-    override val reference        : SharedCacheReference       = new SharedCacheReference(cacheID, family)
+    override val reference        : SharedCacheReference       = new SharedCacheReference(family, cacheID)
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val treeCenter       : DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
@@ -228,6 +228,8 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 object DefaultSynchronizedObjectCache {
 
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
+
+    implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = apply()
 
     def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         val treeView = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)

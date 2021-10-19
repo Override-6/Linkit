@@ -17,11 +17,11 @@ import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.local.{Chip, LocalMethodInvocation}
-import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.{ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
-import fr.linkit.engine.gnom.cache.sync.invokation.{AbstractMethodInvocation, ExecutorEngine}
+import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.lang.reflect.Modifier

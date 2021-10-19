@@ -96,6 +96,7 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: InternalSynchronizedObjectCac
             throw new SynchronizedObjectException(s"A tree of id '$id' already exists.")
         if (tree.dataFactory ne center)
             throw new SynchronizedObjectException("Attempted to attach a tree that comes from an unknown cache.")
+        registerReference(tree.rootNode.reference)
         trees.put(id, tree)
     }
 

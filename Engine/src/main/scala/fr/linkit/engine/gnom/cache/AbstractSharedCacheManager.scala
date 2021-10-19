@@ -157,7 +157,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
                     .asInstanceOf[Option[A]]
             val requestedClass = classTag[A].runtimeClass
             opt match {
-                case Some(c: SharedCache) if c.getClass != requestedClass => throw new CacheNotAcceptedException(s"Attempted to open a cache of type '$cacheID' while a cache with the same id is already registered, but does not have the same type. (${c.getClass} vs $requestedClass)")
+                case Some(c: SharedCache) if !requestedClass.isAssignableFrom(c.getClass) => throw new CacheNotAcceptedException(s"Attempted to open a cache of type '$cacheID' while a cache with the same id is already registered, but does not have the same type. (${c.getClass} vs $requestedClass)")
                 case other                                                => other
             }
         }

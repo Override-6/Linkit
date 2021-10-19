@@ -31,13 +31,15 @@ object ServerLauncher {
     val HomeProperty   : String = "LinkitHome"
     val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
 
-    def main(args: Array[String]): Unit = {
+    def main(args: Array[String]): Unit = launch(args: _*)
+
+    def launch(args: String*): ServerApplication = {
         AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
 
         //val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
-        val resourcesFolder         = getOrElse(args, "--home-path", getDefaultLinkitHome)
+        val resourcesFolder = getOrElse(Array(args:_*), "--home-path", getDefaultLinkitHome)
 
-        val config           = new ServerApplicationConfigBuilder {
+        val config    = new ServerApplicationConfigBuilder {
             override val resourceFolder: String = resourcesFolder
             pluginFolder = None //userDefinedPluginFolder
             mainPoolThreadCount = 2
@@ -45,24 +47,24 @@ object ServerLauncher {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = DefaultServerID
                     override val port      : Int    = 48484
-                    nWorkerThreadFunction = c => c + 1//one thread per connections.
+                    nWorkerThreadFunction = c => c + 1 //one thread per connections.
 
                     configName = "config1"
                 }
             }
         }
-        val serverAppContext = ServerApplication.launch(config, getClass)
-        AppLogger.trace(s"Build complete: $serverAppContext")
+        val serverApp = ServerApplication.launch(config, getClass)
+        AppLogger.trace(s"Build complete: $serverApp")
 
-        serverAppContext.runLaterControl {
-            val pluginManager = serverAppContext.pluginManager
+        serverApp.runLaterControl {
+            val pluginManager = serverApp.pluginManager
             pluginManager.loadAllClass(Array(
                 classOf[ControllerExtension]: Class[_ <: Plugin],
                 classOf[DebugPlugin]: Class[_ <: Plugin],
             ))
         }.throwNextThrowable()
         AppLogger.info("Server Application launched.")
-
+        serverApp
     }
 
     private def getDefaultLinkitHome: String = {
