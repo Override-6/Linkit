@@ -16,8 +16,8 @@ package fr.linkit.engine.gnom.persistence.serializor
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
-import fr.linkit.engine.gnom.persistence.serializor.read.PacketReader
-import fr.linkit.engine.gnom.persistence.serializor.write.{PacketWriter, SerializerObjectPool}
+import fr.linkit.engine.gnom.persistence.serializor.read.ObjectReader
+import fr.linkit.engine.gnom.persistence.serializor.write.{ObjectWriter, SerializerObjectPool}
 import java.nio.ByteBuffer
 
 class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistence {
@@ -34,14 +34,14 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = {
         val buffer = bundle.buff
         buffer.put(signature.toArray)
-        val writer = new PacketWriter(bundle)
+        val writer = new ObjectWriter(bundle)
         writer.addObjects(objects)
         writer.writePool()
         val pool = writer.getPool
         writeEntries(objects, writer, pool)
     }
 
-    private def writeEntries(objects: Array[AnyRef], writer: PacketWriter,
+    private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,
                              pool: SerializerObjectPool): Unit = {
         //Write the size
         writer.putRef(objects.length)
@@ -57,7 +57,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         val buff = bundle.buff
         checkSignature(buff)
 
-        val reader = new PacketReader(bundle, center)
+        val reader = new ObjectReader(bundle, center)
         reader.initPool()
         val contentSize = buff.getChar
         val pool        = reader.getPool

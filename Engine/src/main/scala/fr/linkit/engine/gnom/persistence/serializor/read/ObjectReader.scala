@@ -29,7 +29,7 @@ import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
-class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
+class ObjectReader(bundle: PersistenceBundle, center: SyncClassCenter) {
 
     val buff: ByteBuffer = bundle.buff
     private val selector                           = new ObjectSelector(bundle)

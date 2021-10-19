@@ -147,7 +147,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             objPool.add(new PacketObject(ref, decomposed, profile))
             addAll(decomposed)
         } else {
-            val pool = getChunkFromFlag[ReferencedNetworkObject](RNO)
+            val chunk = getChunkFromFlag[ReferencedNetworkObject](RNO)
             val nrl  = nrlOpt.get
             val pos  = chunks(Object).size
             addObj(nrl)
@@ -158,7 +158,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
 
                 override def value: AnyRef = ref
             }
-            pool.add(rno)
+            chunk.add(rno)
         }
     }
 
