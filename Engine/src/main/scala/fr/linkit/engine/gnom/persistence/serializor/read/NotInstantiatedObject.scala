@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.context.TypeProfile
-import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject}
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject, RegistrablePoolObject}
+import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject}
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 
@@ -24,10 +24,31 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
                                          clazz: Class[_],
                                          content: Array[Int],
                                          selector: ObjectSelector,
-                                         pool: DeserializerObjectPool) extends InstanceObject[T] {
+                                         pool: DeserializerObjectPool) extends InstanceObject[T] with RegistrablePoolObject[T] {
 
-    private var isInit: Boolean = false
-    private val obj   : T       = ScalaUtils.allocate[T](clazz)
+    private var isInit      : Boolean = false
+    private var isRegistered: Boolean = false
+    private val obj         : T       = ScalaUtils.allocate[T](clazz)
+    private val contentObjects        = new Array[RegistrablePoolObject[AnyRef]](content.length)
+
+
+    override def register(): Unit = {
+        if (isRegistered)
+            return
+        isRegistered = true
+        obj match {
+            case o: NetworkObject[SharedCacheManagerReference] =>
+                selector.initObject(o)
+            case _                                             =>
+        }
+        var i = 0
+        while (i < contentObjects.length) {
+            val obj = contentObjects(i)
+            if (obj != null)
+                obj.register()
+            i += 1
+        }
+    }
 
     override def value: T = {
         if (!isInit)
@@ -45,18 +66,17 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         var i       = 0
         val pool    = this.pool
         while (i < length) {
-            args(i) = pool.getAny(content(i)) match {
-                case o: PoolObject[AnyRef] => o.value
-                case o                     => o
+            val poolObj = pool.getAny(content(i))
+            args(i) = poolObj match {
+                case o: RegistrablePoolObject[AnyRef] =>
+                    contentObjects(i) = o
+                    o.value
+                case o: PoolObject[AnyRef]            => o.value
+                case o                                => o
             }
             i += 1
         }
         profile.getPersistence(args).initInstance(obj, args)
-        obj match {
-            case syncObj: NetworkObject[SharedCacheManagerReference]  =>
-                selector.initObject(syncObj)
-            case _ =>
-        }
     }
 
 }

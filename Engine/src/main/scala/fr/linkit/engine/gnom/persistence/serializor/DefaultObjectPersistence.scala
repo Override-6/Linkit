@@ -14,11 +14,10 @@
 package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.persistence.obj.PoolObject
+import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
 import fr.linkit.engine.gnom.persistence.serializor.read.PacketReader
 import fr.linkit.engine.gnom.persistence.serializor.write.{PacketWriter, SerializerObjectPool}
-
 import java.nio.ByteBuffer
 
 class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistence {
@@ -63,7 +62,12 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         val contentSize = buff.getChar
         val pool        = reader.getPool
         for (_ <- 0 until contentSize) {
-            val obj = pool.getAny(reader.readNextRef) match {
+            val pos = reader.readNextRef
+            val obj = pool.getAny(pos) match {
+                case o: RegistrablePoolObject[AnyRef] =>
+                    val value = o.value
+                    o.register()
+                    value
                 case o: PoolObject[AnyRef]            => o.value
                 case o: AnyRef                        => o
             }

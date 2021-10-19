@@ -18,16 +18,16 @@ import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCach
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{InitialisableNetworkObjectLinker, NetworkObject}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.CacheRepoContent
+import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[SyncObjectReference](omc)
-                with InitialisableNetworkObjectLinker[SyncObjectReference] with SynchronizedObjectTreeStore[A] {
+class DefaultObjectTreeCenter[A <: AnyRef](center: InternalSynchronizedObjectCache[A], omc: ObjectManagementChannel)
+    extends AbstractNetworkPresenceHandler[SyncObjectReference](omc)
+        with InitialisableNetworkObjectLinker[SyncObjectReference] with SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 
@@ -55,26 +55,30 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], o
             return None
         val path = location.nodePath
         trees.get(path.head)
-                .flatMap(_.findNode(path)
-                        .map((_: SyncNode[_]).synchronizedObject))
+            .flatMap(_.findNode(path)
+                .map((_: SyncNode[_]).synchronizedObject))
     }
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
 
     override def initializeObject(obj: NetworkObject[_ <: SyncObjectReference]): Unit = {
         obj match {
-            case syncObj: SynchronizedObject[_] => initializeSyncObject(syncObj)
+            case syncObj: SynchronizedObject[A] => initializeSyncObject(syncObj)
             case _                              => throwUnknownObject(obj)
         }
     }
 
-    private def initializeSyncObject(syncObj: SynchronizedObject[_]): Unit = {
+    private def initializeSyncObject(syncObj: SynchronizedObject[A]): Unit = {
         val reference = syncObj.reference
         val path      = reference.nodePath
-        val treeOpt   = findTreeInternal(path.head)
+        var treeOpt   = findTreeInternal(path.head)
         if (treeOpt.isEmpty) {
-            AppLogger.warn(s"No Object Tree found of id ${path.head}.")
-            return
+            if (path.length == 1) {
+                center.makeTree(syncObj)
+                treeOpt = findTreeInternal(path.head)
+            } else {
+                throw new NoSuchObjectTreeException(s"No Object Tree found of id ${path.head} for object at $reference.")
+            }
         }
         val tree    = treeOpt.get
         val nodeOpt = tree.findNode(path)
@@ -87,7 +91,7 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], o
         }
     }
 
-    def addTree(id: Int, tree: DefaultSynchronizedObjectTree[A]): Unit = {
+    private[sync] def addTree(id: Int, tree: DefaultSynchronizedObjectTree[A]): Unit = {
         if (trees.contains(id))
             throw new SynchronizedObjectException(s"A tree of id '$id' already exists.")
         if (tree.dataFactory ne center)
@@ -95,7 +99,7 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], o
         trees.put(id, tree)
     }
 
-    def findTreeInternal(id: Int): Option[DefaultSynchronizedObjectTree[A]] = {
+    private[sync] def findTreeInternal(id: Int): Option[DefaultSynchronizedObjectTree[A]] = {
         trees.get(id)
     }
 }
