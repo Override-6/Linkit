@@ -13,11 +13,12 @@
 
 package fr.linkit.api.gnom.persistence.obj
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 
 import java.util
 
-class TrafficNetworkPresenceReference(val trafficPath: Array[Int]) extends NetworkObjectReference {
+class TrafficPresenceReference(val trafficPath: Array[Int]) extends TrafficReference {
+
     override def toString: String = {
         s"@traffic/${trafficPath.mkString("/")}"
     }
@@ -25,7 +26,13 @@ class TrafficNetworkPresenceReference(val trafficPath: Array[Int]) extends Netwo
     override def hashCode(): Int = util.Arrays.deepHashCode(Array(trafficPath))
 
     override def equals(obj: Any): Boolean = obj match {
-        case ref: TrafficNetworkPresenceReference => ref.trafficPath sameElements trafficPath
-        case _ => false
+        case ref: TrafficPresenceReference => ref.trafficPath sameElements trafficPath
+        case _                             => false
     }
+
+    def /(id: Int): TrafficPresenceReference = new TrafficPresenceReference(trafficPath :+ id)
+
+    def /(path: Array[Int]): TrafficPresenceReference = new TrafficPresenceReference(trafficPath ++ path)
+
+    def /~(id: Int): TrafficPresenceReference = new ContextualObjectReference(trafficPath, id)
 }

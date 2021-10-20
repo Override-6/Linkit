@@ -14,13 +14,13 @@
 package fr.linkit.api.gnom.packet.traffic
 
 import fr.linkit.api.gnom.packet.{PacketAttributesPresence, PacketBundle}
-import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.reference.DynamicNetworkObject
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.JustifiedCloseable
 
-trait PacketInjectable extends TrafficPresence[TrafficNetworkPresenceReference]
-        with DynamicNetworkObject[TrafficNetworkPresenceReference]
+trait PacketInjectable extends TrafficPresence[TrafficReference]
+        with DynamicNetworkObject[TrafficReference]
         with JustifiedCloseable
         with PacketAttributesPresence {
 

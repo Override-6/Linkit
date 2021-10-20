@@ -44,7 +44,6 @@ abstract class AbstractSharedCacheManager(override val family: String,
     protected val broadcastScope   : ChannelScope                = prepareScope(ChannelScopes.broadcast)
     protected val currentIdentifier: String                      = network.connection.currentIdentifier
     override  val reference        : SharedCacheManagerReference = new SharedCacheManagerReference(family)
-    override  val trafficPath      : Array[Int]                  = store.trafficPath
 
     postInit()
 

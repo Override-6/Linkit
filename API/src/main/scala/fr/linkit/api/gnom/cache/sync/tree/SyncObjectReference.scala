@@ -29,13 +29,17 @@ class SyncObjectReference(family: String,
                           val owner: String,
                           val nodePath: Array[Int]) extends SharedCacheReference(family, cacheID) {
     override def toString: String = {
-        s"@network/caches/$family/$cacheID:${nodePath.mkString("/")}"
+        s"@network/caches/$family/$cacheID/~${nodePath.mkString("/")}"
     }
 
     override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, owner, nodePath))
 
     override def equals(obj: Any): Boolean = obj match {
-        case ref: SyncObjectReference => ref.family == family && ref.cacheID == cacheID && ref.owner == owner && (ref.nodePath sameElements nodePath)
+        case ref: SyncObjectReference => ref.family == family &&
+                ref.cacheID == cacheID &&
+                ref.owner == owner &&
+                (ref.nodePath sameElements nodePath)
         case _ => false
     }
+
 }

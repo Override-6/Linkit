@@ -19,8 +19,9 @@ import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
-import fr.linkit.api.gnom.reference.NetworkObjectLinker
+import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
+import fr.linkit.api.gnom.reference.{NetworkObjectLinker, SystemNetworkObjectPresence}
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
@@ -42,12 +43,12 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
         new SimplePersistenceConfig(context, new ClassMap(), linker, false, true, false)
     }
-
+    override val reference: TrafficReference = TrafficReference
     private val objectChannel = {
         val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
         new DefaultObjectManagementChannel(null, scope)
     }
-
+    override val presence: NetworkObjectPresence = SystemNetworkObjectPresence
     override val defaultPersistenceConfig: PersistenceConfig = {
         defaultPersistenceConfigUrl
                 .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
@@ -62,7 +63,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     private   val linker                  = new TrafficNetworkObjectLinker(objectChannel, this)
     protected val rootStore               = new SimplePacketInjectableStore(this, linker, defaultPersistenceConfig, trafficPath)
 
-    override def getTrafficObjectLinker: NetworkObjectLinker[TrafficNetworkPresenceReference] with TrafficInterestedNPH = {
+    override def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH = {
         linker
     }
 
@@ -106,7 +107,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     def getObjectManagementChannel: ObjectManagementChannel = objectChannel
 
-    def findPresence(reference: TrafficNetworkPresenceReference): Option[TrafficPresence[TrafficNetworkPresenceReference]] = {
+    def findPresence(reference: TrafficPresenceReference): Option[TrafficPresence[TrafficReference]] = {
         rootStore.findPresence(reference.trafficPath)
     }
 

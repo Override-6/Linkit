@@ -11,10 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.network
+package fr.linkit.api.application.connection
 
-class EngineReference(val engineID: String) extends NetworkReference() {
-    override def toString: String = {
-        s"@network/engines/$engineID"
-    }
+import fr.linkit.api.gnom.network.NetworkReference
+
+class NetworkConnectionReference extends NetworkReference {
+
+    override def toString: String = "@network/connection"
+
+    override def hashCode(): Int = 32
+
+    override def equals(obj: Any): Boolean = obj.isInstanceOf[NetworkConnectionReference]
 }
+
+object NetworkConnectionReference extends NetworkConnectionReference

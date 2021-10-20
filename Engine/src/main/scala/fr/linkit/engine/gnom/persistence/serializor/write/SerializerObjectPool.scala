@@ -149,6 +149,8 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         } else {
             val chunk = getChunkFromFlag[ReferencedNetworkObject](RNO)
             val nrl  = nrlOpt.get
+            if (chunks(Object).indexOf(nrl) >= 0)
+                return
             val pos  = chunks(Object).size
             addObj(nrl)
             val rno = new ReferencedNetworkObject {

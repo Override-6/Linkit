@@ -38,7 +38,11 @@ abstract class SimpleSynchronizedObjectsTest {
     protected def app: ApplicationContext
 
     protected val connection: ConnectionContext                           = app.findConnection(48484).get
-    private   val testChannel                                             = connection.getInjectable[SyncPacketChannel](500, ChannelScopes.discardCurrent)
+    private   val testChannel                                             = {
+        connection.traffic
+                .getInjectable[SyncPacketChannel](500, ChannelScopes.discardCurrent)
+    }
+
     private val tree = new ObjectBehaviorStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
         behaviors += new ObjectBehaviorBuilder[ListBuffer[Player]]() {
             annotateAllMethods("+=") and "addOne" by new MethodControl(BasicInvocationRule.BROADCAST) {

@@ -36,6 +36,7 @@ class SocketPacketTraffic(socket: DynamicSocket,
 
     override def connection: ConnectionContext = connection0
 
+
     def setConnection(connection: ConnectionContext): Unit = {
         if (connection0 != null)
             throw new IllegalStateException("Connection already set !")

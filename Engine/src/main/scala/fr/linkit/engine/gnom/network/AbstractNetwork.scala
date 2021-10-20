@@ -40,7 +40,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override       val reference              : NetworkReference           = new NetworkReference()
     override       val connection             : ConnectionContext          = traffic.connection
     override       val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
-    protected      val networkStore           : PacketInjectableStore      = connection.createStore(0)
+    protected      val networkStore           : PacketInjectableStore      = traffic.createStore(0)
     private        val currentIdentifier      : String                     = connection.currentIdentifier
     private        val tnol                                                = traffic.getTrafficObjectLinker
     private lazy   val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
@@ -79,17 +79,17 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         if (trunk.findCache(family).isDefined)
             throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
 
-        val manager = newCacheManager(family)
-        trunk.addCacheManager(manager)
+        val (manager, storePath) = newCacheManager(family)
+        trunk.addCacheManager(manager, storePath)
         manager
     }
 
-    private[network] def newCacheManager(family: String): SharedCacheManager = {
+    private[network] def newCacheManager(family: String): (SharedCacheManager, Array[Int]) = {
         AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
         val store   = networkStore.createStore(family.hashCode)
         val manager = new SharedCacheOriginManager(family, this, store)
         scnol.registerReference(manager.reference)
-        manager
+        (manager, store.trafficPath)
     }
 
     protected def retrieveDataTrunk(behaviors: ObjectBehaviorStore): NetworkDataTrunk
