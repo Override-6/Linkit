@@ -11,20 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.network
+package fr.linkit.api.application
 
 import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
 
-class NetworkReference() extends NetworkObjectReference {
+case class ApplicationReference() extends NetworkObjectReference
 
-    override def toString: String = {
-        s"@network"
-    }
-
-    override def hashCode(): Int = 33
-
-    override def equals(obj: Any): Boolean = obj.isInstanceOf[NetworkReference]
-
-}
-
-object NetworkReference extends NetworkReference with SystemObjectReference
+object ApplicationReference extends ApplicationReference with SystemObjectReference

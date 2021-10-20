@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.persistence.obj
 
-import fr.linkit.api.gnom.reference.{NetworkObjectReference, NetworkSystemObjectReference}
+import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
 
 class TrafficReference extends NetworkObjectReference {
 
@@ -25,7 +25,7 @@ class TrafficReference extends NetworkObjectReference {
 
 }
 
-object TrafficReference extends TrafficReference with NetworkSystemObjectReference {
+object TrafficReference extends TrafficReference with SystemObjectReference {
 
     def /(id: Int): TrafficPresenceReference = new TrafficPresenceReference(Array(id))
 

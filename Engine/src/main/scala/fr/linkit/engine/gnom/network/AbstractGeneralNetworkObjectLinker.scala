@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.network
 
+import fr.linkit.api.application.ApplicationReference
 import fr.linkit.api.application.connection.NetworkConnectionReference
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.network.{Network, NetworkReference}
@@ -34,19 +35,22 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                                              with TrafficInterestedNPH)
         extends GeneralNetworkObjectLinker {
 
+    private val connection  = network.connection
+    private val application = connection.getApp
+
     startObjectManagement()
 
     override def isPresentOnEngine(engineID: String, reference: NetworkObjectReference): Boolean = reference match {
         case ref: SharedCacheManagerReference => cacheNOL.isPresentOnEngine(engineID, ref)
         case ref: TrafficReference            => trafficNOL.isPresentOnEngine(engineID, ref)
-        case _: NetworkSystemObjectReference  => true //System references, are guaranteed to be present on every remote engines
+        case _: SystemObjectReference         => true //System references, are guaranteed to be present on every remote engines
         case _                                => throwUnknownRef(reference)
     }
 
     override def findPresence(reference: NetworkObjectReference): Option[NetworkObjectPresence] = reference match {
         case ref: SharedCacheManagerReference => cacheNOL.findPresence(ref)
         case ref: TrafficReference            => trafficNOL.findPresence(ref)
-        case _: NetworkSystemObjectReference  =>
+        case _: SystemObjectReference         =>
             /* As other NetworkReferences are guaranteed to be
             * to be present on every engines as long as they come from the framework's system,
             * The result of their presence on any engine will be always present if they are legit objects.
@@ -64,8 +68,9 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = reference match {
         case ref: SharedCacheManagerReference                 => cacheNOL.findObject(ref)
         case ref: TrafficReference                            => trafficNOL.findObject(ref)
-        case _: NetworkConnectionReference                    => Some(network.connection)
+        case _: NetworkConnectionReference                    => Some(connection)
         case ref: NetworkReference if ref == NetworkReference => Some(network)
+        case _: ApplicationReference                          => Some(application)
         case _                                                => throwUnknownRef(reference)
     }
 
@@ -77,10 +82,10 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
             override val linkerReference: NetworkObjectReference = ref
         }
         ref match {
-            case _: SharedCacheManagerReference  => cacheNOL.injectRequest(omcBundle)
-            case _: TrafficReference             => trafficNOL.injectRequest(omcBundle)
-            case _: NetworkSystemObjectReference => throw UnexpectedPacketException("Could not handle Object Manager Request for System objects")
-            case _                               => throwUnknownRef(ref)
+            case _: SharedCacheManagerReference => cacheNOL.injectRequest(omcBundle)
+            case _: TrafficReference            => trafficNOL.injectRequest(omcBundle)
+            case _: SystemObjectReference       => throw UnexpectedPacketException("Could not handle Object Manager Request for System objects")
+            case _                              => throwUnknownRef(ref)
         }
     }
 

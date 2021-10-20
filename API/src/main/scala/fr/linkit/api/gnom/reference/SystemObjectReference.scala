@@ -13,4 +13,4 @@
 
 package fr.linkit.api.gnom.reference
 
-trait NetworkSystemObjectReference extends NetworkObjectReference
+trait SystemObjectReference extends NetworkObjectReference
