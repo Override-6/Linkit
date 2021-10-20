@@ -35,7 +35,11 @@ class ExternalNetworkObjectPresence[L <: NetworkObjectReference](handler: Abstra
         })
     }
 
-    def onObjectSet(engineId: String): Unit = presences(engineId) = PRESENT
+    def onObjectSet(engineId: String): Unit = {
+        presences(engineId) = PRESENT
+    }
 
-    def onObjectRemoved(engineId: String): Unit = presences(engineId) = NOT_PRESENT
+    def onObjectRemoved(engineId: String): Unit = {
+        presences(engineId) = NOT_PRESENT
+    }
 }

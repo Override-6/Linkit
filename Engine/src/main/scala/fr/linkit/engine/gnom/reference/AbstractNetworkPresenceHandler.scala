@@ -30,6 +30,7 @@ import scala.collection.mutable
 abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](channel: ObjectManagementChannel)
     extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
+    private val currentIdentifier = channel.traffic.currentIdentifier
     //What other engines thinks about current engine references states
     private val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
     //What current engine thinks about other engines references states
@@ -77,13 +78,17 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
     }
 
     protected def registerReference(ref: R): Unit = {
+        var presence: InternalNetworkObjectPresence[R] = null
         if (!internalPresences.contains(ref)) {
-            val presence = new InternalNetworkObjectPresence[R](this, ref)
-            presence.setPresent()
+            presence = new InternalNetworkObjectPresence[R](this, ref)
             internalPresences(ref) = presence
         } else {
-            internalPresences(ref).setPresent()
+            presence = internalPresences(ref)
         }
+        presence.setPresent()
+        val opt = externalPresences.get(ref)
+        if (opt.isDefined)
+            opt.get.onObjectSet(currentIdentifier)
     }
 
     protected def unregisterReference(ref: R): Unit = {
@@ -92,6 +97,9 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
             opt.get.setNotPresent()
             internalPresences -= ref
         }
+        val otp2 = externalPresences.get(ref)
+        if (otp2.isDefined)
+            otp2.get.onObjectRemoved(currentIdentifier)
     }
 
     protected def handleBundle(bundle: LinkerRequestBundle): Unit = {

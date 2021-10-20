@@ -28,7 +28,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   tnol: TrafficNetworkObjectLinker,
                                   override val defaultPersistenceConfig: PersistenceConfig,
                                   override val trafficPath: Array[Int])
-        extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence[TrafficNetworkPresenceReference] {
+    extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence[TrafficNetworkPresenceReference] {
 
     private val presences       = mutable.HashMap.empty[Int, (TrafficPresence[TrafficNetworkPresenceReference], PersistenceConfig)]
     private var closed: Boolean = false
@@ -78,10 +78,13 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     override def findPresence(path: Array[Int], pos: Int): Option[TrafficPresence[TrafficNetworkPresenceReference]] = {
         val len = path.length
         if (pos >= len) {
-            return failPresence(classOf[TrafficPresence[TrafficNetworkPresenceReference]], path)
+            failPresence(classOf[TrafficPresence[TrafficNetworkPresenceReference]], path)
         }
         presences.get(path(pos)).map {
-            case (injectable: PacketInjectable, _)         => injectable
+            case (injectable: PacketInjectable, _)         =>
+                if (pos == len - 1)
+                    injectable
+                else throw new IllegalArgumentException(s"Found injectable at @traffic/${path.take(pos).mkString("/")} but requested location is ${path.mkString("/")}.")
             case (store: InternalPacketInjectableStore, _) =>
                 if (pos - len == 1) this //no more sub item in path: the targeted presence is this store.
                 else store.findPresence(path, pos + 1).orNull //else, path iteration is not complete, continue.
