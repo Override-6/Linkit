@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal
 
-import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.{ApplicationContext, ApplicationReference}
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.application.plugin.PluginManager
@@ -42,6 +42,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
     override val compilerCenter  : CompilerCenter = new DefaultCompilerCenter
     @volatile protected var alive: Boolean        = false
     protected val appPool: BusyWorkerPool
+    override def reference: ApplicationReference = ApplicationReference
 
     setInstance(this)
 
@@ -118,7 +119,7 @@ object LinkitApplication {
     @volatile private var isPrepared: Boolean           = false
 
     //TODO Private this, public for tests purposes
-    def setInstance(instance: LinkitApplication): Unit = this.synchronized {
+    private def setInstance(instance: LinkitApplication): Unit = this.synchronized {
         if (this.instance != null)
             throw new IllegalAccessException("Only one LinkitApplication per JVM process is permitted.")
         if (!isPrepared)
