@@ -27,7 +27,7 @@ case class BroadcastPacketCoordinates(override val path: Array[Int],
         // Broadcasting becomes hard to maintain as a serialized packet result can vary between engines,
         // So, either remove packet broadcasting (which can lead to performance issues) or add constraints to serialisation
         if (discardTargets) {
-            val network = ExecutorEngine.currentEngine.network
+            val network        = ExecutorEngine.currentEngine.network //FIXME causes Thread context problems
             val allConnections = network.listEngines
             for (engine <- allConnections) {
                 val engineId = engine.identifier
@@ -39,6 +39,20 @@ case class BroadcastPacketCoordinates(override val path: Array[Int],
             return true
         }
         targetIDs.forall(action)
+    }
+
+    override def foreachConcernedTargets(action: String => Unit): Unit = {
+        if (discardTargets) {
+            val network        = ExecutorEngine.currentEngine.network //FIXME causes Thread context problems
+            val allConnections = network.listEngines
+            for (engine <- allConnections) {
+                val engineId = engine.identifier
+                if (!targetIDs.contains(engineId)) {
+                    action(engineId)
+                }
+            }
+        }
+        targetIDs.foreach(action)
     }
 
     override def toString: String = s"BroadcastPacketCoordinates(${path.mkString("/")}, $senderID, $discardTargets, $targetIDs)"

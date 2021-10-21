@@ -30,8 +30,11 @@ class ObjectSelector(bundle: PersistenceBundle) {
     def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
         obj match {
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
-                if (obj.presence.isPresentOn(coords)) Some(obj.reference)
-                else None
+                if (obj.presence.isPresentOn(coords))
+                    Some(obj.reference)
+                else {
+                    None
+                }
             case obj: NetworkObject[NetworkObjectReference]        =>
                 Some(obj.reference)
             case _                                                 =>

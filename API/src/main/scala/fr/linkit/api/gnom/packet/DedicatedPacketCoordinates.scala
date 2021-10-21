@@ -24,4 +24,6 @@ case class DedicatedPacketCoordinates(override val path: Array[Int],
     override def forallConcernedTargets(action: String => Boolean): Boolean = {
         action(targetID)
     }
+
+    override def foreachConcernedTargets(action: String => Unit): Unit = action(targetID)
 }

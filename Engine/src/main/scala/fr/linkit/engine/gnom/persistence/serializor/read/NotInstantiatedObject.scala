@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject, RegistrablePoolObject}
-import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject}
+import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 
