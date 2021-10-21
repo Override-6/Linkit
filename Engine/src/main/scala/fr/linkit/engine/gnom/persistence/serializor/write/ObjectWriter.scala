@@ -18,14 +18,15 @@ import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
-import fr.linkit.engine.gnom.persistence.serializor.write.PacketWriter.{Sizes2B, Sizes4B}
+import fr.linkit.engine.gnom.persistence.serializor.write.ObjectWriter.{Sizes2B, Sizes4B}
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.nio.ByteBuffer
 import scala.annotation.switch
 
-class PacketWriter(bundle: PersistenceBundle) extends Freezable {
+class
+ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     val buff: ByteBuffer = bundle.buff
     private val config     = bundle.config
@@ -71,9 +72,6 @@ class PacketWriter(bundle: PersistenceBundle) extends Freezable {
         var i        : Byte = 0
         val chunks          = pool.getChunks
         val len             = chunks.length.toByte
-        //just here to check if the total pool size is not larger than Char.MaxValue if (widePacket == false)
-        //or if the total size is not larger than Int.MaxValue (if widePacket == true)
-        //else throw PacketPoolTooLongException.
         var totalSize: Long = 0
 
         while (i < len) {
@@ -88,6 +86,9 @@ class PacketWriter(bundle: PersistenceBundle) extends Freezable {
             }
             i = (i + 1).toByte
         }
+        //just here to check if the total pool size is not larger than Char.MaxValue if (widePacket == false)
+        //or if the total size is not larger than Int.MaxValue (if widePacket == true)
+        //else throw PacketPoolTooLongException.
         if ((totalSize > scala.Char.MaxValue && !widePacket) || totalSize > scala.Int.MaxValue)
             throw new PacketPoolTooLongException(s"Packet total items size exceeded available size (total size: $totalSize, widePacket: $widePacket)")
     }
@@ -178,7 +179,7 @@ class PacketWriter(bundle: PersistenceBundle) extends Freezable {
 
 }
 
-object PacketWriter {
+object ObjectWriter {
 
     private val Sizes2B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Char.MaxValue)
     private val Sizes4B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Int.MaxValue)

@@ -44,8 +44,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override val network                 : Network           = session.network
     override val port                    : Int               = server.port
     override val boundIdentifier         : String            = session.boundIdentifier
-    override val defaultPersistenceConfig: PersistenceConfig = server.defaultPersistenceConfig
-    override val trafficPath             : Array[Int]        = server.trafficPath
     @volatile private var alive                              = false
 
     override def shutdown(): Unit = {
@@ -63,14 +61,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     override def isAlive: Boolean = alive
-
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
-        traffic.getInjectable(injectableID, config, factory, scopeFactory)
-    }
-
-    override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
-
-    override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
     override def getState: ExternalConnectionState = session.getSocketState
 

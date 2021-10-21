@@ -15,10 +15,11 @@ import builder._
 
 val connection = traffic.connection
 putContextReference(1, EmptyPacket)
-putContextReference(2, None)
-putContextReference(3, app)
-putContextReference(4, traffic)
-putContextReference(5, connection)
+putContextReference(2, Nil)
+putContextReference(3, None)
+putContextReference(4, app)
+putContextReference(5, traffic)
+putContextReference(6, connection)
 setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.fromData)
 //setTConverter[File, String](_.getAbsolutePath)(new File(_))
 //setTConverter[Date, Long](_.getTime)(new Date(_))

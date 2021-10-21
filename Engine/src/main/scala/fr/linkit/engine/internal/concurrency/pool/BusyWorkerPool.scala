@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
+import fr.linkit.api.gnom.network.ExecutorEngine
 import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.invokation.ExecutorEngine
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
 
 import java.util.concurrent._

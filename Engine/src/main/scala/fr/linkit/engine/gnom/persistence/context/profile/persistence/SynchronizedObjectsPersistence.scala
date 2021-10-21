@@ -13,54 +13,29 @@
 
 package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
-import fr.linkit.api.gnom.cache.NoSuchCacheException
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
-import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence.context.TypePersistence
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.persistence.context.structure.SyncObjectStructure
+import fr.linkit.engine.internal.utils.ScalaUtils
 
-class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T], network: Network) extends TypePersistence[T] {
+class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T]) extends TypePersistence[T] {
 
     override val structure: ObjectStructure = new SyncObjectStructure(objectPersistence.structure)
 
     override def initInstance(syncObj: T, args: Array[Any]): Unit = {
+        setReference(syncObj, args.last.asInstanceOf[SyncObjectReference])
         objectPersistence.initInstance(syncObj, args)
-        val info = args.last.asInstanceOf[SyncObjectReference]
-        val path = info.nodePath
-        val center  = findCache(info)
-                .getOrElse {
-                    throwNoSuchCacheException(info, Some(syncObj.getSuperClass))
-                }
-        val treeOpt = center.treeCenter.findTreeInternal(path.head)
-        if (treeOpt.isEmpty) {
-            AppLogger.error(s"No Object Tree found of id ${path.head}")
-            return
-        }
-        val tree    = treeOpt.get
-        val nodeOpt = tree.findNode(path)
-        if (nodeOpt.isEmpty) {
-            tree.registerSynchronizedObject(path.dropRight(1), path.last, syncObj, info.owner).synchronizedObject
-        } else if (nodeOpt.get.synchronizedObject ne syncObj) {
-            AppLogger.error(s"Synchronized object already exists at path ${path.mkString("/")}")
-        }
+    }
+
+    private def setReference(syncObj: SynchronizedObject[T], reference: SyncObjectReference): Unit = {
+        val field = syncObj.getClass.getDeclaredField("location")
+        ScalaUtils.setValue(syncObj, field, reference)
     }
 
     override def toArray(t: T): Array[Any] = {
         (objectPersistence.toArray(t): Array[Any]) :+ (t.reference: Any)
     }
 
-    private def findCache(info: SyncObjectReference): Option[DefaultSynchronizedObjectCache[AnyRef]] = {
-        val family = info.family
-        network.findCacheManager(family)
-                .map(_.getCacheInStore[DefaultSynchronizedObjectCache[AnyRef]](info.cacheID))
-    }
-
-    private def throwNoSuchCacheException(info: SyncObjectReference, wrappedClass: Option[Class[_]]): Nothing = {
-        throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.family} " +
-                s": could not properly deserialize and synchronize Wrapper object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
-    }
 }

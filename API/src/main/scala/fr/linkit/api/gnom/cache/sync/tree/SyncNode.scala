@@ -78,15 +78,4 @@ trait SyncNode[A <: AnyRef] {
      * This node's parent (null if this node is a root node)
      */
     @Nullable val parent: SyncNode[_]
-
-    /**
-     *
-     * @param engineID the engine's identifier to test
-     * @return true if this node (and thus the synchronized object) is also present on the tested engine.
-     */
-    def isPresentOnEngine(engineID: String): Boolean
-
-    //TODO Put this for internal use
-    def putPresence(engineID: String): Unit
-
 }

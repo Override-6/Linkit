@@ -15,13 +15,14 @@ package fr.linkit.engine.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
-import fr.linkit.engine.gnom.cache.sync.instantiation.SyncConstructor.getAssignableConstructor
+import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor.getAssignableConstructor
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 
-import java.lang.reflect.{Constructor, Modifier}
+import java.lang.reflect.Modifier
+import java.lang.reflect.{Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}
 
-class SyncConstructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends SyncInstanceCreator[T] {
+class Constructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends SyncInstanceCreator[T] {
 
     override val tpeClass: Class[_] = clazz
 
@@ -31,15 +32,15 @@ class SyncConstructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) exten
     }
 }
 
-object SyncConstructor {
+object Constructor {
 
-    def apply[T <: AnyRef : ClassTag](params: Any*): SyncConstructor[T] = {
+    def apply[T <: AnyRef : ClassTag](params: Any*): Constructor[T] = {
         val clazz        = classTag[T].runtimeClass
         val objectsArray = params.toArray
-        new SyncConstructor[T](clazz, objectsArray)
+        new Constructor[T](clazz, objectsArray)
     }
 
-    def getAssignableConstructor[T](clazz: Class[T], objectsArray: Array[Any]): Constructor[T] = {
+    def getAssignableConstructor[T](clazz: Class[T], objectsArray: Array[Any]): JConstructor[T] = {
         for (constructor <- clazz.getDeclaredConstructors) {
             val params               = constructor.getParameterTypes
             val constructorStructure = ArrayObjectStructure(params)
@@ -47,7 +48,7 @@ object SyncConstructor {
                 val mods = constructor.getModifiers
                 if (Modifier.isPrivate(mods) || Modifier.isProtected(mods))
                     throw new IllegalArgumentException("Provided method objects structure matches a non public constructor")
-                return constructor.asInstanceOf[Constructor[T]]
+                return constructor.asInstanceOf[JConstructor[T]]
             }
         }
         throw new NoSuchElementException(s"Could not find a constructor matching arguments ${objectsArray.mkString("Array(", ", ", ")")}")

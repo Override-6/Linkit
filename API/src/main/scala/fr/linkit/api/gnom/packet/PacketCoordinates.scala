@@ -20,4 +20,5 @@ trait PacketCoordinates extends Serializable {
 
     def forallConcernedTargets(action: String => Boolean): Boolean
 
+    def foreachConcernedTargets(action: String => Unit): Unit
 }

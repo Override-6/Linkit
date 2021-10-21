@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.obj
 
+import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference}
@@ -21,15 +22,19 @@ import fr.linkit.engine.gnom.reference.ContextObject
 class ObjectSelector(bundle: PersistenceBundle) {
 
     private val gnol        = bundle.gnol
-    private val col         = bundle.config.contextualObjectLinker //IT'S HERE WHY BECAUSE IT BUGZZZZ (Object Channel etc)
+    private val col         = bundle.config.contextualObjectLinker
     private val coords      = bundle.coordinates
     private val channelPath = coords.path
+    private val cnol        = gnol.cacheNOL
 
     def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
         obj match {
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
-                if (obj.presence.isPresentOn(coords)) Some(obj.reference)
-                else None
+                if (obj.presence.isPresentOn(coords))
+                    Some(obj.reference)
+                else {
+                    None
+                }
             case obj: NetworkObject[NetworkObjectReference]        =>
                 Some(obj.reference)
             case _                                                 =>
@@ -44,6 +49,10 @@ class ObjectSelector(bundle: PersistenceBundle) {
             case Some(value: ContextObject) => Some(value.obj)
             case o                          => o
         }
+    }
+
+    def initObject(obj: NetworkObject[SharedCacheManagerReference]): Unit = {
+        cnol.initializeObject(obj)
     }
 
 }

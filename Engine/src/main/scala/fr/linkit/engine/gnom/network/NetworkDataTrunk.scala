@@ -17,10 +17,9 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule._
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.{MethodControl, Synchronized}
-import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
-import fr.linkit.engine.gnom.cache.sync.invokation.ExecutorEngine
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
 
 import java.sql.Timestamp
@@ -29,8 +28,9 @@ import scala.collection.mutable
 //FIXME OriginManagers and DistantManagers
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
+    private val traffic = network.connection.traffic
     private val engines = mutable.HashMap.empty[String, Engine]
-    private val caches  = mutable.HashMap.empty[String, SharedCacheManager]
+    private val caches  = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
 
     def this(network: AbstractNetwork) {
         this(network, new Timestamp(System.currentTimeMillis()))
@@ -40,8 +40,9 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         NetworkDataBundle(engines.keys.toArray, caches.map(p => toCacheData(p._2)).toArray, startUpDate, network)
     }
 
-    private def toCacheData(manager: SharedCacheManager): CacheManagerInfo = {
-        CacheManagerInfo(manager.family, manager.ownerID, manager.trafficPath)
+    private def toCacheData(pair: (SharedCacheManager, Array[Int])): CacheManagerInfo = {
+        val (manager: SharedCacheManager, storePath: Array[Int]) = pair
+        CacheManagerInfo(manager.family, manager.ownerID, storePath)
     }
 
     @MethodControl(value = BROADCAST, innerInvocations = true)
@@ -51,7 +52,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         val current      = ExecutorEngine.currentEngine
         val cacheManager = {
             if (network.connectionEngine ne current) getDistantCache(engineIdentifier)
-            else network.newCacheManager(engineIdentifier)
+            else network.newCacheManager(engineIdentifier)._1
         }
         val engine       = new DefaultEngine(engineIdentifier, cacheManager)
         addEngine(engine)
@@ -60,13 +61,13 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     @MethodControl(value = BROADCAST_IF_ROOT_OWNER)
     def removeEngine(engine: Engine): Unit = engines -= engine.identifier
 
-    def findCache(family: String): Option[SharedCacheManager] = caches.get(family)
+    def findCache(family: String): Option[SharedCacheManager] = caches.get(family).map(_._1)
 
     @MethodControl(value = BROADCAST)
-    def addCacheManager(manager: SharedCacheManager): Unit = {
+    def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
         if (caches.contains(manager.family))
             throw new Exception("Cache Manager already exists")
-        caches.put(manager.family, manager)
+        caches.put(manager.family, (manager, storePath))
     }
 
     def findEngine(identifier: String): Option[Engine] = engines.get(identifier)
@@ -82,9 +83,9 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
 
     private def getDistantCache(engineIdentifier: String): SharedCacheManager = caches.getOrElseUpdate(engineIdentifier, {
         val code  = engineIdentifier.hashCode
-        val store = network.connection.createStore(code)
-        new SharedCacheDistantManager(engineIdentifier, engineIdentifier, network, store)
-    })
+        val store = traffic.createStore(code)
+        (new SharedCacheDistantManager(engineIdentifier, engineIdentifier, network, store), store.trafficPath)
+    })._1
 
 }
 
@@ -103,14 +104,14 @@ object NetworkDataTrunk {
             trunk.findCache(family).getOrElse {
                 val store = getStore(network.connection, storePath)
                 val cache = new SharedCacheDistantManager(family, owner, network, store)
-                trunk.addCacheManager(cache)
+                trunk.addCacheManager(cache, storePath)
             }
         })
         trunk
     }
 
     private def getStore(connection: ConnectionContext, path: Array[Int]): PacketInjectableStore = {
-        var store: PacketInjectableStore = connection
+        var store: PacketInjectableStore = connection.traffic
         var i                            = 0
         while (i < path.length) {
             val id = path(i)

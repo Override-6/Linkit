@@ -16,9 +16,7 @@ package fr.linkit.server.connection
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.CentralConnection
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.packet.channel.ChannelScope
-import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
@@ -38,7 +36,6 @@ import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
 
 import java.net.{ServerSocket, SocketException}
-import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class ServerConnection(applicationContext: ServerApplication,
@@ -52,11 +49,9 @@ class ServerConnection(applicationContext: ServerApplication,
     private  val connectionsManager      : ExternalConnectionsManager = new ExternalConnectionsManager(this)
     private  val serverTraffic           : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
     override val traffic                 : PacketTraffic              = serverTraffic
-    override val defaultPersistenceConfig: PersistenceConfig          = traffic.defaultPersistenceConfig
     override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(serverTraffic)
     override val network                 : Network                    = sideNetwork
-    override val trafficPath             : Array[Int]                 = traffic.trafficPath
     @volatile private var alive          : Boolean                    = false
 
     override def getApp: ApplicationContext = applicationContext
@@ -96,14 +91,6 @@ class ServerConnection(applicationContext: ServerApplication,
     }
 
     override def isAlive: Boolean = alive
-
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
-        traffic.getInjectable(injectableID, config, factory, scopeFactory)
-    }
-
-    override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
-
-    override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
     override def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 

@@ -11,22 +11,24 @@
  * questions.
  */
 
-package fr.linkit.engine.test.objects
+package fr.linkit.engine.test
 
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule.BROADCAST
-import fr.linkit.api.gnom.cache.sync.behavior.annotation.MethodControl
+import fr.linkit.api.gnom.cache.sync.behavior.annotation.{MethodControl => MC}
 
-import scala.annotation.meta._
+import scala.annotation.meta.setter
 
-case class PlayerObject(@(MethodControl @setter)(BROADCAST) id: Int,
-                        @(MethodControl @setter)(BROADCAST) owner: String,
-                        @(MethodControl @setter)(BROADCAST) var name: String,
-                        @(MethodControl @setter)(BROADCAST) var x: Long,
-                        @(MethodControl @setter)(BROADCAST) var y: Long) extends Serializable {
+case class Player(@(MC@setter)(BROADCAST) id: Int,
+                  @(MC@setter)(BROADCAST) owner: String,
+                  @(MC@setter)(BROADCAST) var name: String,
+                  @(MC@setter)(BROADCAST) var x: Int,
+                  @(MC@setter)(BROADCAST) var y: Int) extends Serializable {
 
-    def this(other: PlayerObject) = {
+    private val own = this
+    private val test = "on m'appelle l'auvni"
+
+    def this(other: Player) = {
         this(other.id, other.owner, other.name, other.x, other.y)
     }
 
-    override def toString: String = s"PlayerObject($id, $owner, $name, $x, $y)"
 }

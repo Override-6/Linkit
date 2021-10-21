@@ -13,17 +13,15 @@
 
 package fr.linkit.engine.gnom.persistence.context
 
-import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.network.{Network, NetworkInitialisable}
-import fr.linkit.api.gnom.persistence.context.{Deconstructor, PersistenceContext}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.persistence.context.{Deconstructor, PersistenceContext}
 import fr.linkit.engine.internal.utils.ClassMap
 
 import java.lang.reflect.Constructor
 
 class ImmutablePersistenceContext private(override val traffic: PacketTraffic,
                                           constructors: ClassMap[Constructor[_]],
-                                          deconstructor: ClassMap[Deconstructor[_]]) extends PersistenceContext with NetworkInitialisable {
+                                          deconstructor: ClassMap[Deconstructor[_]]) extends PersistenceContext {
 
 
     override def findConstructor[T](clazz: Class[_]): Option[java.lang.reflect.Constructor[T]] = {
@@ -36,15 +34,6 @@ class ImmutablePersistenceContext private(override val traffic: PacketTraffic,
                 .asInstanceOf[Option[Deconstructor[T]]]
     }
 
-    private var network: Network = _
-
-    override def initNetwork(network: Network): Unit = {
-        if (this.network != null)
-            throw new IllegalStateException("Network already initialized !")
-        this.network = network
-    }
-
-    override def getNetwork: Network = network
 }
 
 object ImmutablePersistenceContext {

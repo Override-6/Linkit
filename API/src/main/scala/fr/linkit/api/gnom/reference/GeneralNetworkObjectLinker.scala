@@ -11,10 +11,15 @@
  * questions.
  */
 
-package fr.linkit.engine.test.objects
+package fr.linkit.api.gnom.reference
 
-import java.util
+import fr.linkit.api.gnom.cache.SharedCacheManagerReference
+import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
+import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 
-class HandwrittenPuppetArrayList[E] extends util.ArrayList[E] {
+trait GeneralNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectReference] {
+
+    val cacheNOL  : InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH
+    val trafficNOL: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH
 
 }

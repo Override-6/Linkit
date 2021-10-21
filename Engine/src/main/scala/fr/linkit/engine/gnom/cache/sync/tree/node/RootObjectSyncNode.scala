@@ -13,14 +13,4 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-class RootObjectSyncNode[A <: AnyRef](data: ObjectNodeData[A]) extends ObjectSyncNode[A](null, data) {
-
-    private var isPresentOnNetwork = false
-
-    override def isPresentOnEngine(engineID: String): Boolean = isPresentOnNetwork //Root nodes are always synchronised between engines if they are present on the network.
-
-    def setPresentOnNetwork(): Unit = {
-        isPresentOnNetwork = true
-    }
-
-}
+class RootObjectSyncNode[A <: AnyRef](data: ObjectNodeData[A]) extends ObjectSyncNode[A](null, data)

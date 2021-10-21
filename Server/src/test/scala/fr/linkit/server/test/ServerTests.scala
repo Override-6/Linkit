@@ -29,7 +29,6 @@ import fr.linkit.api.application.plugin.Plugin
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.test.HierarchyRaiserOrderer
 import fr.linkit.api.test.TestUtils._
-import fr.linkit.engine.test.EngineTests
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugPlugin
 import fr.linkit.server.ServerApplication
@@ -40,14 +39,13 @@ import org.junit.jupiter.api._
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[HierarchyRaiserOrderer])
-object ServerTests extends EngineTests {
+object ServerTests {
 
     private val DefaultServerID = "TestServer1"
     var application: ServerApplication = _
 
     @Test
     def launchApplication(): Unit = {
-        println(s"classOf[EngineTests] = ${classOf[EngineTests]}")
         //AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
 
         //val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
@@ -75,7 +73,6 @@ object ServerTests extends EngineTests {
         Assertions.assertAll("App launch conclusion",
             Assertions.assertNotNull(application)
         )
-        EngineTests.application = application
     }
 
     @Test

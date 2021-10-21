@@ -11,12 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.obj
+package fr.linkit.api.application.connection
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.network.NetworkReference
 
-class TrafficNetworkPresenceReference(val trafficPath: Array[Int]) extends NetworkObjectReference {
-    override def toString: String = {
-        s"@traffic/${trafficPath.mkString("/")}"
-    }
+class NetworkConnectionReference extends NetworkReference {
+
+    override def toString: String = "@network/connection"
+
+    override def hashCode(): Int = 32
+
+    override def equals(obj: Any): Boolean = obj.isInstanceOf[NetworkConnectionReference]
 }
+
+object NetworkConnectionReference extends NetworkConnectionReference

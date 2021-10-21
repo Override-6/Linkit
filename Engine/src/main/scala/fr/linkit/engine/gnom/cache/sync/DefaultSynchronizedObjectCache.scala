@@ -47,9 +47,8 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                                                                 generator: SyncClassCenter,
                                                                 override val defaultTreeViewBehavior: ObjectBehaviorStore,
                                                                 override val network: Network)
-        extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] with SyncNodeDataFactory {
+    extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
-    override val reference        : SharedCacheReference       = new SharedCacheReference(cacheID, family)
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val treeCenter       : DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
@@ -61,12 +60,11 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     override def syncObject(id: Int, creator: SyncInstanceCreator[A], store: ObjectBehaviorStore): A with SynchronizedObject[A] = {
         val tree = createNewTree(id, currentIdentifier, creator, store)
         channel.makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(ObjectPacket(ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier)))
-                .putAllAttributes(this)
-                .submit()
+            .addPacket(ObjectPacket(ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier)))
+            .putAllAttributes(this)
+            .submit()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
-        wrapperNode.setPresentOnNetwork()
         wrapperNode.synchronizedObject
     }
 
@@ -84,6 +82,16 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val tree         = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, treeCenter, id, DefaultInstantiator, this, behaviorTree)(rootNode)
         treeCenter.addTree(id, tree)
         tree
+    }
+
+
+    override def makeTree(root: SynchronizedObject[A]): Unit = {
+        val reference = root.reference
+        val path = reference.nodePath
+        if (path.length != 1)
+            throw new IllegalArgumentException("Can only make tree from a root synchronised object.")
+        val wrapper = new InstanceWrapper[A](root.asInstanceOf[A with SynchronizedObject[A]])
+        createNewTree(path.head, reference.owner, wrapper)
     }
 
     override def newData[B <: AnyRef](parent: ObjectSyncNode[_],
@@ -125,19 +133,18 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
         treeCenter
-                .findTree(path.head)
-                .flatMap(tree => {
-                    if (path.length == 1)
-                        Some(tree.rootNode)
-                    else
-                        tree.findNode[A](path)
-                })
+            .findTree(path.head)
+            .flatMap(tree => {
+                if (path.length == 1)
+                    Some(tree.rootNode)
+                else
+                    tree.findNode[A](path)
+            })
     }
 
     private def handleRootObjectPacket(treeID: Int, rootObject: AnyRef with SynchronizedObject[AnyRef], owner: String): Unit = {
         if (!isRegistered(treeID)) {
-            val tree = createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), defaultTreeViewBehavior)
-            tree.getRoot.setPresentOnNetwork()
+            createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), defaultTreeViewBehavior)
         }
     }
 
@@ -164,8 +171,8 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                     handleInvocationPacket(ip, bundle)
                 case ObjectPacket(location: SyncObjectReference) =>
                     bundle.responseSubmitter
-                            .addPacket(BooleanPacket(isObjectPresent(location)))
-                            .submit()
+                        .addPacket(BooleanPacket(isObjectPresent(location)))
+                        .submit()
 
                 case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner)) =>
                     handleRootObjectPacket(treeID, rootObject, owner)
@@ -190,8 +197,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                 }
                 //it's an object that must be remotely controlled because it is chipped by another objects cache.
                 else {
-                    val tree = createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), defaultTreeViewBehavior)
-                    tree.getRoot.setPresentOnNetwork()
+                    createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), defaultTreeViewBehavior)
                 }
             })
         }
@@ -221,6 +227,8 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 object DefaultSynchronizedObjectCache {
 
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
+
+    implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = apply()
 
     def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         val treeView = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)

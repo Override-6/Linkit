@@ -18,7 +18,7 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.GeneralNetworkObjectLinker
 import fr.linkit.engine.gnom.persistence.PacketSerializationChoreographer
 
 import java.net.URL
@@ -30,11 +30,12 @@ class SocketPacketTraffic(socket: DynamicSocket,
                           override val currentIdentifier: String,
                           override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, defaultPersistenceConfigScript) {
 
-    private lazy val choreographer                                       = new PacketSerializationChoreographer(translator)
-    private var connection0: ConnectionContext                           = _
-    private var gnol       : NetworkObjectLinker[NetworkObjectReference] = _
+    private lazy val choreographer                      = new PacketSerializationChoreographer(translator)
+    private var connection0: ConnectionContext          = _
+    private var gnol       : GeneralNetworkObjectLinker = _
 
     override def connection: ConnectionContext = connection0
+
 
     def setConnection(connection: ConnectionContext): Unit = {
         if (connection0 != null)
@@ -42,7 +43,7 @@ class SocketPacketTraffic(socket: DynamicSocket,
         this.connection0 = connection
     }
 
-    def setGnol(gnol: NetworkObjectLinker[NetworkObjectReference]): Unit = {
+    def setGnol(gnol: GeneralNetworkObjectLinker): Unit = {
         if (this.gnol != null)
             throw new IllegalStateException("gnol already set !")
         this.gnol = gnol

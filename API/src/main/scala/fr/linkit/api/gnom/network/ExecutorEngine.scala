@@ -11,23 +11,38 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.invokation
+package fr.linkit.api.gnom.network
 
-import fr.linkit.api.gnom.network.Engine
-
+//FIXME would cause a problem if the application uses multiple connections
 object ExecutorEngine {
 
     private val local = new ThreadLocal[Engine]()
 
-    private var networkStarted = false
+    private var networkStarted        = false
+    private var defaultEngine: Engine = _
 
-    def currentEngine: Engine = local.get()
+    def currentEngine: Engine = {
+        val engine = local.get()
+        if (engine == null) {
+            local.set(defaultEngine)
+            return defaultEngine
+        }
+        engine
+    }
 
     private[linkit] def setCurrentEngine(engine: Engine): Unit = {
         /*if (engine == null && networkStarted)
             throw new NullPointerException*/
-        networkStarted = engine != null
         local.set(engine)
+    }
+
+    private[linkit] def initDefaultEngine(engine: Engine): Unit = {
+        if (engine == null)
+            throw new NullPointerException
+        if (networkStarted)
+            throw new IllegalStateException("Default engine already set.")
+        networkStarted = true
+        defaultEngine = engine
     }
 
 }

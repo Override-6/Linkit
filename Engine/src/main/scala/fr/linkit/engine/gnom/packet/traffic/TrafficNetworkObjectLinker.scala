@@ -14,23 +14,25 @@
 package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: AbstractPacketTraffic) extends
-        AbstractNetworkPresenceHandler[TrafficNetworkPresenceReference](omc) with NetworkObjectLinker[TrafficNetworkPresenceReference] {
+        AbstractNetworkPresenceHandler[TrafficReference](omc) with NetworkObjectLinker[TrafficReference] {
 
-    override def findObject(reference: TrafficNetworkPresenceReference): Option[NetworkObject[_ <: TrafficNetworkPresenceReference]] = {
+    override def findObject(reference: TrafficReference): Option[NetworkObject[_ <: TrafficReference]] = {
         reference match {
-            case reference: ContextualObjectReference   =>
+            case reference: ContextualObjectReference                                     =>
                 traffic.getPersistenceConfig(reference.trafficPath)
                         .contextualObjectLinker
                         .findObject(reference)
-            case _ if reference.trafficPath.length == 0 =>
+            case reference: TrafficPresenceReference if reference.trafficPath.length == 0 =>
+                Some(traffic.getObjectManagementChannel)
+            case ref if ref == TrafficReference                                           =>
                 Some(traffic)
-            case _                                      =>
+            case reference: TrafficPresenceReference                                      =>
                 traffic.findPresence(reference)
         }
     }
@@ -42,8 +44,12 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
                 traffic.getPersistenceConfig(reference.trafficPath)
                         .contextualObjectLinker
                         .injectRequest(bundle)
-            case _ =>
+            case _                                    =>
                 handleBundle(bundle)
         }
     }
+
+    override def registerReference(ref: TrafficReference): Unit = super.registerReference(ref)
+
+    override def unregisterReference(ref: TrafficReference): Unit = super.unregisterReference(ref)
 }

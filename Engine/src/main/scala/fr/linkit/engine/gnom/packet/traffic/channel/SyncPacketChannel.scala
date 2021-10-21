@@ -27,14 +27,14 @@ import scala.reflect.ClassTag
 
 //TODO doc
 class SyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope,
-                                  providable: Boolean) extends AbstractPacketChannel(store, scope)
+                                  useBusyLocks: Boolean) extends AbstractPacketChannel(store, scope)
     with PacketSender with PacketSyncReceiver {
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
     private val queue: BlockingQueue[Packet] = {
-        if (!providable)
+        if (!useBusyLocks)
             new LinkedBlockingQueue[Packet]()
         else {
             WorkerPools
@@ -84,6 +84,6 @@ object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {
         new SyncPacketChannel(store, scope, false)
     }
 
-    def providable: PacketInjectableFactory[SyncPacketChannel] = new SyncPacketChannel(_, _, true)
+    implicit def useBusyLocks: PacketInjectableFactory[SyncPacketChannel] = new SyncPacketChannel(_, _, true)
 
 }

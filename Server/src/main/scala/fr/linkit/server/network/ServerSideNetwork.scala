@@ -15,26 +15,23 @@ package fr.linkit.server.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
-import fr.linkit.api.gnom.network.NetworkInitialisable
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
-import fr.linkit.engine.gnom.cache.sync.instantiation.SyncConstructor
+import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
-import fr.linkit.server.connection.ServerConnection
 
 class ServerSideNetwork(traffic: AbstractPacketTraffic)
         extends AbstractNetwork(traffic) {
 
-    trunk.addCacheManager(globalCache)
+    trunk.addCacheManager(globalCache, networkStore.trafficPath :+ globalCache.family.hashCode)
 
     override def serverIdentifier: String = traffic.currentIdentifier
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this))
-                .syncObject(0, SyncConstructor[NetworkDataTrunk](this), store)
+                .syncObject(0, Constructor[NetworkDataTrunk](this), store)
     }
 
     override protected def createGlobalCache: SharedCacheManager = {

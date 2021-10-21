@@ -29,12 +29,17 @@ class ExternalNetworkObjectPresence[L <: NetworkObjectReference](handler: Abstra
 
     override def getPresenceFor(engineId: String): ObjectPresenceType = {
         presences.getOrElseUpdate(engineId, {
-            if (handler.askIfPresent(engineId, location)) PRESENT
+            val present = handler.askIfPresent(engineId, location)
+            if (present) PRESENT
             else NOT_PRESENT
         })
     }
 
-    def onObjectSet(engineId: String): Unit = presences(engineId) = PRESENT
+    def onObjectSet(engineId: String): Unit = {
+        presences(engineId) = PRESENT
+    }
 
-    def onObjectRemoved(engineId: String): Unit = presences(engineId) = NOT_PRESENT
+    def onObjectRemoved(engineId: String): Unit = {
+        presences(engineId) = NOT_PRESENT
+    }
 }

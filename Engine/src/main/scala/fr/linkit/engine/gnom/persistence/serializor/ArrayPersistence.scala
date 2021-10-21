@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.persistence.obj.PoolObject
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
-import fr.linkit.engine.gnom.persistence.serializor.read.{NotInstantiatedArray, PacketReader}
-import fr.linkit.engine.gnom.persistence.serializor.write.PacketWriter
+import fr.linkit.engine.gnom.persistence.serializor.read.{NotInstantiatedArray, ObjectReader}
+import fr.linkit.engine.gnom.persistence.serializor.write.ObjectWriter
 import java.lang
 import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer
@@ -25,7 +25,7 @@ import scala.annotation.switch
 
 object ArrayPersistence {
 
-    def writeArrayContent(writer: PacketWriter, array: Array[Any]): Unit = {
+    def writeArrayContent(writer: ObjectWriter, array: Array[Any]): Unit = {
         val buff = writer.buff
         buff.putInt(array.length)
         for (n <- array) {
@@ -33,7 +33,7 @@ object ArrayPersistence {
         }
     }
 
-    def writePrimitiveArrayContent(writer: PacketWriter, array: AnyRef, tpe: Byte, from: Int, to: Int): Unit = {
+    def writePrimitiveArrayContent(writer: ObjectWriter, array: AnyRef, tpe: Byte, from: Int, to: Int): Unit = {
         val buff = writer.buff
 
         @inline
@@ -61,7 +61,7 @@ object ArrayPersistence {
         buff.position(pos + (to - from) * itemSize)
     }
 
-    def writeArray(writer: PacketWriter, array: AnyRef): Unit = {
+    def writeArray(writer: ObjectWriter, array: AnyRef): Unit = {
         val buff = writer.buff
         val comp = array.getClass.componentType()
         if (comp.isPrimitive) {
@@ -75,7 +75,7 @@ object ArrayPersistence {
     }
 
     @inline
-    private def writeObjectArray(array: Array[Any], comp: Class[_], writer: PacketWriter): Unit = {
+    private def writeObjectArray(array: Array[Any], comp: Class[_], writer: ObjectWriter): Unit = {
         val buff = writer.buff
         if (comp eq classOf[String]) {
             buff.put(String)
@@ -88,7 +88,7 @@ object ArrayPersistence {
         writeArrayContent(writer, array)
     }
 
-    private def readObjectArray(reader: PacketReader): PoolObject[Array[AnyRef]] = {
+    private def readObjectArray(reader: ObjectReader): PoolObject[Array[AnyRef]] = {
         val buff    = reader.buff
         val depth   = buff.get() + lang.Byte.MAX_VALUE
         val compRef = reader.readNextRef
@@ -100,7 +100,7 @@ object ArrayPersistence {
         new NotInstantiatedArray[AnyRef](pool, content, array)
     }
 
-    def readArray(reader: PacketReader): PoolObject[_ <: AnyRef] = {
+    def readArray(reader: ObjectReader): PoolObject[_ <: AnyRef] = {
         val buff = reader.buff
         val kind = buff.get()
         kind match {
@@ -117,7 +117,7 @@ object ArrayPersistence {
         }
     }
 
-    def readPrimitiveArray(length: Int, kind: Int, reader: PacketReader): AnyRef = {
+    def readPrimitiveArray(length: Int, kind: Int, reader: ObjectReader): AnyRef = {
         val buff              = reader.buff
         val pos               = buff.position()
         val (array, itemSize) = (kind: @switch) match {
@@ -162,7 +162,7 @@ object ArrayPersistence {
         array
     }
 
-    def readPrimitiveArray(kind: Int, reader: PacketReader): AnyRef = {
+    def readPrimitiveArray(kind: Int, reader: ObjectReader): AnyRef = {
         readPrimitiveArray(reader.buff.getInt(), kind, reader)
     }
 
@@ -174,7 +174,7 @@ object ArrayPersistence {
         array
     }*/
 
-    def readArrayContent(reader: PacketReader, len: Int): Array[Int] = {
+    def readArrayContent(reader: ObjectReader, len: Int): Array[Int] = {
         var n       = 0
         val content = new Array[Int](len)
         while (n < len) {

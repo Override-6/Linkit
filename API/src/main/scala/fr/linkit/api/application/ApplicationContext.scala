@@ -13,18 +13,19 @@
 
 package fr.linkit.api.application
 
+import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.application.connection.ConnectionContext
-import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.application.plugin.PluginManager
 import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
+import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.Versions
-import fr.linkit.api.application.config.ApplicationConfiguration
 
 //TODO Recap :
 // Rewrite/write Doc and README of API
 // Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
-trait ApplicationContext extends ProcrastinatorControl {
+trait ApplicationContext extends NetworkObject[ApplicationReference] with ProcrastinatorControl {
 
     val configuration: ApplicationConfiguration
 
@@ -47,6 +48,6 @@ trait ApplicationContext extends ProcrastinatorControl {
 
     def getConnection(identifier: String): Option[ConnectionContext]
 
-    def getConnection(port: Int): Option[ConnectionContext]
+    def findConnection(port: Int): Option[ConnectionContext]
 
 }

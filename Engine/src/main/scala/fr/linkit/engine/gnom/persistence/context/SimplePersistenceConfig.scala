@@ -49,8 +49,7 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     }
 
     private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: TypeProfile[T]): DefaultTypeProfile[T] = {
-        val network                                 = context.getNetwork
-        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
+        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](persist))
         new DefaultTypeProfile[T](clazz, this, persistences)
     }
 

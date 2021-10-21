@@ -17,5 +17,11 @@ import fr.linkit.api.gnom.cache.CacheContent
 
 case class CacheArrayContent[A <: Any](array: Array[A]) extends CacheContent {
 
-    override def toString: String = getClass.getSimpleName + s"(${array.mkString("Array(", ", ", ")")})"
+    override def toString: String = {
+        try {
+            getClass.getSimpleName + s"(${array.mkString("Array(", ", ", ")")})"
+        } catch {
+            case e: NoSuchElementException => super.toString
+        }
+    }
 }

@@ -29,7 +29,7 @@ import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
-class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
+class ObjectReader(bundle: PersistenceBundle, center: SyncClassCenter) {
 
     val buff: ByteBuffer = bundle.buff
     private val selector                           = new ObjectSelector(bundle)
@@ -146,7 +146,7 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
         val profile     = config.getProfile[AnyRef](clazz)
         val contentSize = buff.getInt
         val content     = readObjectContent(contentSize)
-        new NotInstantiatedObject[AnyRef](profile, content, pool)
+        new NotInstantiatedObject[AnyRef](profile, clazz, content, selector, pool)
     }
 
     private def readObjectContent(length: Int): Array[Int] = {

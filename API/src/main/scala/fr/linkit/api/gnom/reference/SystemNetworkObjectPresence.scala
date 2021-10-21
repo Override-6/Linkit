@@ -15,6 +15,6 @@ package fr.linkit.api.gnom.reference
 
 import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
 
-class SystemNetworkObjectPresence extends NetworkObjectPresence {
+object SystemNetworkObjectPresence extends NetworkObjectPresence {
     override def getPresenceFor(engineId: String): ObjectPresenceType = ObjectPresenceType.PRESENT
 }

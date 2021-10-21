@@ -17,11 +17,8 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
-import fr.linkit.api.gnom.packet.channel.ChannelScope
-import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.ObjectTranslator
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.internal.system.event.EventNotifier
@@ -34,7 +31,6 @@ import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
 
-import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends ExternalConnection {
@@ -43,26 +39,16 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     initTraffic()
 
-    override val currentIdentifier       : String            = configuration.identifier
-    override val port                    : Int               = configuration.remoteAddress.getPort
-    override val translator              : ObjectTranslator  = session.translator
-    override val eventNotifier           : EventNotifier     = session.eventNotifier
-    override val traffic                 : PacketTraffic     = session.traffic
-    override val boundIdentifier         : String            = serverIdentifier
-    override val defaultPersistenceConfig: PersistenceConfig = traffic.defaultPersistenceConfig
-    private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(session.traffic)
-    override val network                 : Network           = sideNetwork
-    override val trafficPath             : Array[Int]        = traffic.trafficPath
-    @volatile private var alive                              = true
+    override val currentIdentifier: String            = configuration.identifier
+    override val port             : Int               = configuration.remoteAddress.getPort
+    override val translator       : ObjectTranslator  = session.translator
+    override val eventNotifier    : EventNotifier     = session.eventNotifier
+    override val traffic          : PacketTraffic     = session.traffic
+    override val boundIdentifier  : String            = serverIdentifier
+    private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(session.traffic)
+    override val network          : Network           = sideNetwork
+    @volatile private var alive                       = true
     sideNetwork.initialize()
-
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
-        traffic.getInjectable(injectableID, config, factory, scopeFactory)
-    }
-
-    override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
-
-    override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
     override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
 
@@ -157,7 +143,7 @@ object ClientConnection {
         val translator = configuration.translatorFactory(context)
 
         //WelcomePacket informational fields
-        val identifier      = configuration.identifier
+        val identifier = configuration.identifier
         //val hasherSignature = configuration.hasher.signature
 
         //Aliases

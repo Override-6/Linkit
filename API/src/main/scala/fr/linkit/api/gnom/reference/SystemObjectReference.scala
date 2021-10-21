@@ -11,24 +11,6 @@
  * questions.
  */
 
-package fr.linkit.engine.test
+package fr.linkit.api.gnom.reference
 
-import fr.linkit.engine.internal.utils.ScalaUtils
-import org.junit.jupiter.api.Test
-
-import scala.collection.mutable.ListBuffer
-import scala.reflect.runtime.universe
-
-class ScalaReflectionTest {
-
-    @Test
-    def makeTests(): Unit = {
-        val v = ScalaUtils.allocate[ListBuffer[_]](classOf[ListBuffer[_]])
-        println("OK")
-        println(s"v = ${v}")
-
-    }
-
-    private def getTypeFlag[T: universe.TypeTag]: universe.TypeTag[T] = universe.typeTag[T]
-
-}
+trait SystemObjectReference extends NetworkObjectReference

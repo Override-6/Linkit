@@ -26,12 +26,12 @@ object NOLUtils {
 
     @inline
     def throwUnknownRef(ref: NetworkObjectReference): Nothing = {
-        throw new IllegalArgumentException(s"Unknown object reference '$ref' for the General Network Object Linker")
+        throw new UnsupportedOperationException(s"Unknown object reference '$ref'.")
     }
 
     @inline
     def throwUnknownObject(ref: AnyRef): Nothing = {
-        throw new IllegalArgumentException(s"Unknown object '$ref' for the General Network Object Linker")
+        throw new UnsupportedOperationException(s"Unknown object '$ref'.")
     }
 
 

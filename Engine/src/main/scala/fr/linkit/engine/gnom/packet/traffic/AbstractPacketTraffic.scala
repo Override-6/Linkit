@@ -19,8 +19,10 @@ import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
+import fr.linkit.api.gnom.reference.{NetworkObjectLinker, SystemNetworkObjectPresence}
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.reference.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
@@ -37,16 +39,16 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     val context: ImmutablePersistenceContext = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
     private val minimalConfigBuilder = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
-    private val objectChannelConfig = {
+    private val objectChannelConfig  = {
         val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
         new SimplePersistenceConfig(context, new ClassMap(), linker, false, true, false)
     }
-
+    override val reference: TrafficReference = TrafficReference
     private val objectChannel = {
         val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
         new DefaultObjectManagementChannel(null, scope)
     }
-
+    override val presence: NetworkObjectPresence = SystemNetworkObjectPresence
     override val defaultPersistenceConfig: PersistenceConfig = {
         defaultPersistenceConfigUrl
                 .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
@@ -57,11 +59,13 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     @volatile private var closed = false
 
     override  val trafficPath: Array[Int] = Array.empty
-    protected val rootStore               = new SimplePacketInjectableStore(this, defaultPersistenceConfig, trafficPath)
     private   val injectionContainer      = new ParallelInjectionContainer()
     private   val linker                  = new TrafficNetworkObjectLinker(objectChannel, this)
+    protected val rootStore               = new SimplePacketInjectableStore(this, linker, defaultPersistenceConfig, trafficPath)
 
-    override def getTrafficObjectLinker: TrafficNetworkObjectLinker = linker
+    override def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH = {
+        linker
+    }
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)
@@ -97,11 +101,13 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     override def findStore(id: Int): Option[PacketInjectableStore] = rootStore.findStore(id)
 
+    override def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C] = rootStore.findInjectable(id)
+
     override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = rootStore.createStore(id, persistenceConfig)
 
     def getObjectManagementChannel: ObjectManagementChannel = objectChannel
 
-    def findPresence(reference: TrafficNetworkPresenceReference): Option[TrafficPresence[TrafficNetworkPresenceReference]] = {
+    def findPresence(reference: TrafficPresenceReference): Option[TrafficPresence[TrafficReference]] = {
         rootStore.findPresence(reference.trafficPath)
     }
 

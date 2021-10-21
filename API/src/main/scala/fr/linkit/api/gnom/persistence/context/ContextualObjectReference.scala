@@ -13,10 +13,19 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.gnom.persistence.obj.TrafficNetworkPresenceReference
+import fr.linkit.api.gnom.persistence.obj.TrafficPresenceReference
 
-class ContextualObjectReference(channelPath: Array[Int], val objectID: Int) extends TrafficNetworkPresenceReference(channelPath) {
+import java.util
+
+class ContextualObjectReference(private val trafficPath0: Array[Int], val objectID: Int) extends TrafficPresenceReference(trafficPath0) {
     override def toString: String = {
-        s"@traffic/${channelPath.mkString("/")}:$objectID"
+        s"@traffic/${trafficPath0.mkString("/")}/~$objectID"
+    }
+
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(trafficPath0, objectID))
+
+    override def equals(obj: Any): Boolean = obj match {
+        case ref: ContextualObjectReference => ref.objectID == objectID && (ref.trafficPath0 sameElements trafficPath0)
+        case _ => false
     }
 }

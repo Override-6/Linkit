@@ -15,14 +15,17 @@ package fr.linkit.api.application.connection
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectableStore, PacketTraffic}
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.ObjectTranslator
+import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.internal.system.event.EventNotifier
 
-trait ConnectionContext extends PacketInjectableStore with ProcrastinatorControl {
+trait ConnectionContext extends NetworkObject[NetworkConnectionReference] with ProcrastinatorControl {
 
     val currentIdentifier: String
+
+    override val reference: NetworkConnectionReference = NetworkConnectionReference
 
     def port: Int
 

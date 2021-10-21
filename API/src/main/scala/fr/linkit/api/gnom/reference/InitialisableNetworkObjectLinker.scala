@@ -11,8 +11,9 @@
  * questions.
  */
 
-package fr.linkit.engine.test.performance
+package fr.linkit.api.gnom.reference
 
-class PacketInjectionPerformanceTest {
+trait InitialisableNetworkObjectLinker[R <: NetworkObjectReference] extends NetworkObjectLinker[R] {
 
+    def initializeObject(obj: NetworkObject[_ <: R]): Unit
 }

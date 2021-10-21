@@ -11,20 +11,24 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.network
+package fr.linkit.api.gnom.persistence.obj
 
 import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
 
-class NetworkReference() extends NetworkObjectReference {
+class TrafficReference extends NetworkObjectReference {
 
-    override def toString: String = {
-        s"@network"
-    }
+    override def toString: String = s"@traffic"
 
-    override def hashCode(): Int = 33
+    override def hashCode(): Int = 31
 
-    override def equals(obj: Any): Boolean = obj.isInstanceOf[NetworkReference]
+    override def equals(obj: Any): Boolean = obj.isInstanceOf[TrafficReference]
 
 }
 
-object NetworkReference extends NetworkReference with SystemObjectReference
+object TrafficReference extends TrafficReference with SystemObjectReference {
+
+    def /(id: Int): TrafficPresenceReference = new TrafficPresenceReference(Array(id))
+
+    def /(path: Array[Int]): TrafficPresenceReference = new TrafficPresenceReference(path)
+
+}

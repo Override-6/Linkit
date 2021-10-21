@@ -11,12 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.test
+package fr.linkit.api.application
 
-import scala.language.experimental.macros
+import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
 
-class StaticAccessor {
+case class ApplicationReference() extends NetworkObjectReference
 
-    def compute(clazz: Class[_]): Any = macro MacroTestsMacros.macroCompute
-
-}
+object ApplicationReference extends ApplicationReference with SystemObjectReference
