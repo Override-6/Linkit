@@ -49,7 +49,6 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                                                                 override val network: Network)
     extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
-    override val reference        : SharedCacheReference       = new SharedCacheReference(family, cacheID)
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val treeCenter       : DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)

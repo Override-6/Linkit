@@ -14,13 +14,13 @@
 package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.network.Updatable
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject}
 
 /**
  * The shared cache trait that depicts the information a cache must contain
  * In order to be correctly managed by its [[SharedCacheManager]]
  */
-trait SharedCache extends NetworkObject[SharedCacheReference] with Updatable {
+trait SharedCache extends DynamicNetworkObject[SharedCacheReference] with Updatable {
 
     /**
      * The [[SharedCacheManager]] family that manages this cache.

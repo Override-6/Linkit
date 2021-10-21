@@ -25,7 +25,8 @@ import fr.linkit.engine.internal.mapping.ClassMappings
 import java.nio.ByteBuffer
 import scala.annotation.switch
 
-class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
+class
+ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     val buff: ByteBuffer = bundle.buff
     private val config     = bundle.config
