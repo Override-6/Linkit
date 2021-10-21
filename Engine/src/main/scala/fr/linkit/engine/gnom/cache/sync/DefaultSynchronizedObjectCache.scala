@@ -53,12 +53,12 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     override val treeCenter       : DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
 
-    override def syncObject(id: Int, creator: SyncInstanceCreator[A]): A with SynchronizedObject[A] = {
+    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = {
         syncObject(id, creator, defaultTreeViewBehavior)
     }
 
-    override def syncObject(id: Int, creator: SyncInstanceCreator[A], store: ObjectBehaviorStore): A with SynchronizedObject[A] = {
-        val tree = createNewTree(id, currentIdentifier, creator, store)
+    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], store: ObjectBehaviorStore): A with SynchronizedObject[A] = {
+        val tree = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], store)
         channel.makeRequest(ChannelScopes.discardCurrent)
             .addPacket(ObjectPacket(ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier)))
             .putAllAttributes(this)

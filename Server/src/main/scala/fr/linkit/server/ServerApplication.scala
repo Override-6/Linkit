@@ -134,7 +134,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         serverCache.remove(identifier)
     }
 
-    override def getConnection(identifier: String): Option[ServerConnection] = {
+    override def findConnection(identifier: String): Option[ServerConnection] = {
         serverCache.get(identifier)
     }
 

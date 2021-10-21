@@ -138,7 +138,10 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             }
             if (bhv.isActivated) {
                 val id = ThreadLocalRandom.current().nextInt()
-                finalField = genSynchronizedObject(parent, id, finalField)(ownerID).synchronizedObject
+                finalField match {
+                    case sync: SynchronizedObject[_] => sync
+                    case _                           => genSynchronizedObject(parent, id, finalField)(ownerID).synchronizedObject
+                }
             }
             ScalaUtils.setValue(syncObject, field, finalField)
         }

@@ -103,7 +103,11 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], syncClassName: St
                 val desc   = getMethodDescriptor(params, methodReturnType)
                 desc == methodDesc
             }
-            .get
+            .getOrElse {
+
+                throw new NoSuchElementException(s"Could not find anonymous function '$anonFunPrefix'")
+
+            }
         method
     }
 

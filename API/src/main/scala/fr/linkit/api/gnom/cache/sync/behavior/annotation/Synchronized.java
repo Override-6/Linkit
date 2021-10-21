@@ -18,14 +18,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * This annotation takes only effect if the object (or static context) on which the method is called is also synchronized.<br>
- * Mark a method parameter as synchronized.<br>
- * The value of a synchronized parameter will be converted to a {@link SynchronizedObject} and then registered in the
- * same [[{@link fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree}]] of the object (or static context) on which
- * the method is called.
- */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.PARAMETER)
+@Target({ElementType.PARAMETER, ElementType.FIELD})
 public @interface Synchronized {
 }

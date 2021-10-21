@@ -59,7 +59,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     override def listConnections: Iterable[ConnectionContext] = connectionCache.values.toSet
 
-    override def getConnection(identifier: String): Option[ExternalConnection] = {
+    override def findConnection(identifier: String): Option[ExternalConnection] = {
         connectionCache.get(identifier).orElse(connectionCache.find(_._2.boundIdentifier == identifier).map(_._2))
     }
 

@@ -46,7 +46,7 @@ trait ApplicationContext extends NetworkObject[ApplicationReference] with Procra
 
     def listConnections: Iterable[ConnectionContext]
 
-    def getConnection(identifier: String): Option[ConnectionContext]
+    def findConnection(identifier: String): Option[ConnectionContext]
 
     def findConnection(port: Int): Option[ConnectionContext]
 
