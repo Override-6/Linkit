@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
@@ -27,19 +28,11 @@ import scala.collection.mutable.ListBuffer
  */
 trait SyncNode[A <: AnyRef] {
 
-    lazy val treePath: Array[Int] = {
-        var parent: SyncNode[_] = this
-        val buff                = ListBuffer.empty[Int]
-        while (parent != null) {
-            buff += parent.id
-            parent = parent.parent
-        }
-        buff.toArray.reverse
-    }
-
     val objectPresence: NetworkObjectPresence
 
     val reference: SyncObjectReference
+
+    val behavior: ObjectBehavior[A]
 
     /**
      * The tree in which this node is stored.
@@ -78,4 +71,14 @@ trait SyncNode[A <: AnyRef] {
      * This node's parent (null if this node is a root node)
      */
     @Nullable val parent: SyncNode[_]
+
+    lazy val treePath: Array[Int] = {
+        var parent: SyncNode[_] = this
+        val buff                = ListBuffer.empty[Int]
+        while (parent != null) {
+            buff += parent.id
+            parent = parent.parent
+        }
+        buff.toArray.reverse
+    }
 }

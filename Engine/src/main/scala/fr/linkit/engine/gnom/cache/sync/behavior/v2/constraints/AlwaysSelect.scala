@@ -11,17 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
+package fr.linkit.engine.gnom.cache.sync.behavior.v2.constraints
 
-trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
+import fr.linkit.api.gnom.cache.sync.behavior.build.BehaviorSelectionConstraint
 
-    override val methodBehavior: InternalMethodBehavior
-
-    /**
-     * Calls the local method of the object.
-     * @return the method's call result.
-     * */
-    def callSuper(): R
+object AlwaysSelect extends BehaviorSelectionConstraint {
 
 }

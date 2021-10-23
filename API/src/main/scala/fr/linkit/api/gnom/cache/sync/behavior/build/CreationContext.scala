@@ -11,17 +11,22 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
+package fr.linkit.api.gnom.cache.sync.behavior.build
 
-trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectType
+import fr.linkit.api.gnom.cache.sync.tree.SyncNode
 
-    override val methodBehavior: InternalMethodBehavior
+/**
+ * The context that contains all information of how the object is currently being
+ * created
+ * */
+trait CreationContext {
 
     /**
-     * Calls the local method of the object.
-     * @return the method's call result.
+     * The parent's node of the new object we are currently defining
      * */
-    def callSuper(): R
+    def getParentNode: SyncNode[_]
+
+    def getType: SynchronizedObjectType
 
 }

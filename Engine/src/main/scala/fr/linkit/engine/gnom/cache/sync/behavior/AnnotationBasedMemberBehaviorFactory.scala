@@ -33,16 +33,16 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         params
     }
 
-    private def genParameterBehavior(param: Parameter): ParameterBehavior[AnyRef] = {
+    def genParameterBehavior(param: Parameter): ParameterBehavior[AnyRef] = {
         val isSynchronized = param.isAnnotationPresent(classOf[Synchronized])
         new MethodParameterBehavior[AnyRef](param, isSynchronized, null)
     }
 
     override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): SyncMethodBehavior = {
-        val javaMethod         = desc.method
+        val javaMethod         = desc.javaMethod
         val controlOpt         = Option(javaMethod.getAnnotation(classOf[MethodControl]))
         val control            = controlOpt.getOrElse(DefaultMethodControl)
-        val synchronizedParams = getSynchronizedParams(desc.method)
+        val synchronizedParams = getSynchronizedParams(desc.javaMethod)
         val rules              = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
         val innerInvocations   = control.innerInvocations()

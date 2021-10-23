@@ -21,7 +21,7 @@ import scala.collection.mutable.ListBuffer
 
 class ExplicitMethodDescriptionResultBuilder(method: MethodDescription, classBuilder: ClassDescriptionResultBuilder, scanner: Scanner) extends AbstractMethodDescriptionResultBuilder(scanner, classBuilder) {
 
-    private val javaMethod         = method.method
+    private val javaMethod         = method.javaMethod
     private val methodName         = javaMethod.getName
     private val className          = methodName.getClass.getName
     private val synchronizedParams = new Array[Boolean](javaMethod.getParameterCount)

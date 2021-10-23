@@ -65,7 +65,7 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], syncClassName: St
         val methodNames      = ListBuffer.empty[String]
 
         def fixMethod(desc: MethodDescription): Unit = {
-            val javaMethod   = desc.method
+            val javaMethod   = desc.javaMethod
             val name         = javaMethod.getName
             val superfunName = s"super$$$name$$"
             val superfunInfo = new MethodInfo(ctClass.getClassFile.getConstPool, superfunName, getMethodDescriptor(javaMethod))
@@ -90,7 +90,7 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], syncClassName: St
     }
 
     private def getAnonFun(desc: MethodDescription): CtMethod = {
-        val javaMethod       = desc.method
+        val javaMethod       = desc.javaMethod
         val methodReturnType = javaMethod.getReturnType
         val methodDesc       = getMethodDescriptor(javaMethod)
         val anonFunPrefix    = s"$$anonfun$$${javaMethod.getName}$$"
@@ -104,9 +104,7 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], syncClassName: St
                 desc == methodDesc
             }
             .getOrElse {
-
                 throw new NoSuchElementException(s"Could not find anonymous function '$anonFunPrefix'")
-
             }
         method
     }
@@ -191,19 +189,21 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], syncClassName: St
     }
 
     private def typeStringCtClass(clazz: CtClass): String = {
-        val name = clazz.getName
-        StringToPrimitiveID.getOrElse(name, {
-            var cl = clazz
-            val sb = new StringBuilder
-            while (cl.isArray) {
-                sb.append("[")
-                cl = clazz.getComponentType
-            }
-            sb.append("L")
+        var cl = clazz
+        val finalSB = new StringBuilder
+        while (cl.isArray) {
+            finalSB.append("[")
+            cl = clazz.getComponentType
+        }
+        val jvmTpe = StringToPrimitiveID.getOrElse(cl.getName, {
+            val objSB = new StringBuilder()
+            objSB.append("L")
                 .append(cl.getName.replace(".", "/"))
                 .append(";")
-            sb.toString()
+            objSB.toString()
         })
+        finalSB.append(jvmTpe)
+        finalSB.toString()
     }
 
     private def typeStringClass(clazz: Class[_]): String = {

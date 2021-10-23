@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference, SynchronizedObjectTree, SynchronizedObjectTreeStore}
+import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference, SynchronizedObjectTree, SynchronizedObjectForest}
 import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{InitialisableNetworkObjectLinker, NetworkObject}
@@ -25,9 +25,9 @@ import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A <: AnyRef](center: InternalSynchronizedObjectCache[A], omc: ObjectManagementChannel)
+class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCache[A], omc: ObjectManagementChannel)
     extends AbstractNetworkPresenceHandler[SyncObjectReference](omc)
-        with InitialisableNetworkObjectLinker[SyncObjectReference] with SynchronizedObjectTreeStore[A] {
+        with InitialisableNetworkObjectLinker[SyncObjectReference] with SynchronizedObjectForest[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 

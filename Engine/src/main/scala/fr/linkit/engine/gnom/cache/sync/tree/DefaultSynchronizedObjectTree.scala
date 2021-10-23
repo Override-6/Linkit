@@ -27,7 +27,7 @@ import scala.util.Try
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
                                                                network: Network,
-                                                               center: DefaultObjectTreeCenter[A],
+                                                               center: DefaultSyncObjectForest[A],
                                                                val instantiator: SyncInstanceInstantiator,
                                                                val dataFactory: SyncNodeDataFactory,
                                                                override val id: Int,
@@ -37,7 +37,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     def this(currentIdentifier: String,
              network: Network,
-             center: DefaultObjectTreeCenter[A],
+             center: DefaultSyncObjectForest[A],
              id: Int,
              instantiator: SyncInstanceInstantiator,
              dataFactory: SyncNodeDataFactory,

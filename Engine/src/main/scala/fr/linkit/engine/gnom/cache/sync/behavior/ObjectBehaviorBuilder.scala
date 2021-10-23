@@ -53,7 +53,7 @@ abstract class ObjectBehaviorBuilder[T <: AnyRef] private(val classDesc: SyncObj
     final def annotateAllMethods(name: String): MethodModification = {
         new MethodModification(
             classDesc.listMethods()
-                    .filter(_.method.getName == name)
+                    .filter(_.javaMethod.getName == name)
         )
     }
 
@@ -99,7 +99,7 @@ abstract class ObjectBehaviorBuilder[T <: AnyRef] private(val classDesc: SyncObj
     }
 
     private def extractParams(control: MethodControl, desc: MethodDescription): Array[ParameterBehavior[AnyRef]] = {
-        val javaMethod = desc.method
+        val javaMethod = desc.javaMethod
         val defaults   = AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(javaMethod)
         control.paramNameMap.foreachEntry((argName, argControl) => {
             val i = defaults.indexWhere(_.getName == argName)
@@ -121,7 +121,7 @@ abstract class ObjectBehaviorBuilder[T <: AnyRef] private(val classDesc: SyncObj
 
         def and(otherName: String): MethodModification = {
             new MethodModification(descs ++ classDesc.listMethods()
-                    .filter(_.method.getName == otherName))
+                    .filter(_.javaMethod.getName == otherName))
         }
     }
 

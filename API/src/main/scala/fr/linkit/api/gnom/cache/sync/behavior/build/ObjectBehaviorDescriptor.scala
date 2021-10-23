@@ -11,17 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
+package fr.linkit.api.gnom.cache.sync.behavior.build
 
-trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
+import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
 
-    override val methodBehavior: InternalMethodBehavior
+trait ObjectBehaviorDescriptor[T <: AnyRef] {
 
-    /**
-     * Calls the local method of the object.
-     * @return the method's call result.
-     * */
-    def callSuper(): R
+    val targetClass: Class[T]
 
+    val usingHierarchy: Array[ObjectBehaviorDescriptor[_ >: T]]
+    val withMethods   : Array[MethodBehavior]
+    val withFields    : Array[FieldBehavior[_]]
+    val constraint    : BehaviorSelectionConstraint
 }

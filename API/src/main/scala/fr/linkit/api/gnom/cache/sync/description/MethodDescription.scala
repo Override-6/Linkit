@@ -17,16 +17,16 @@ import fr.linkit.api.gnom.cache.sync.description.MethodDescription.NumberTypes
 
 import java.lang.reflect.Method
 
-case class MethodDescription(method: Method,
+case class MethodDescription(javaMethod: Method,
                              classDesc: SyncObjectSuperclassDescription[_]) {
 
     val methodId: Int = {
-        val parameters: Array[Class[_]] = method.getParameterTypes
-        method.getName.hashCode + hashCode(parameters)
+        val parameters: Array[Class[_]] = javaMethod.getParameterTypes
+        javaMethod.getName.hashCode + hashCode(parameters)
     }
 
     def getDefaultTypeReturnValue: String = {
-        val nme = method.getReturnType.getName
+        val nme = javaMethod.getReturnType.getName
 
         if (nme == fullNameOf[Boolean]) "false"
         else if (NumberTypes.contains(fullNameOf)) "-1"

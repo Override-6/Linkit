@@ -11,17 +11,23 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
+package fr.linkit.engine.gnom.cache.sync.behavior.v2.build
 
-trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
+import scala.collection.mutable.ListBuffer
 
-    override val methodBehavior: InternalMethodBehavior
+class AbstractBehaviorBuilder[C <: AnyRef] {
 
-    /**
-     * Calls the local method of the object.
-     * @return the method's call result.
-     * */
-    def callSuper(): R
+    protected var context: C  = _
+    private val methodCalls = ListBuffer.empty[(=> Unit)]
+
+
+    protected def callOnceContextSet(action: (=> Unit)): Unit = {
+        methodCalls += action
+    }
+
+    def setContext(context: C): Unit = {
+        this.context = context
+        methodCalls.foreach(() => _)
+    }
 
 }

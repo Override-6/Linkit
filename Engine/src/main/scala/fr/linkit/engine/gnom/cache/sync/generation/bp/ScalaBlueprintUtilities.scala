@@ -31,7 +31,7 @@ object ScalaBlueprintUtilities {
     }
 
     def getReturnType(desc: MethodDescription): String = {
-        toScalaString(desc.method.getReturnType)
+        toScalaString(desc.javaMethod.getReturnType)
     }
 
     private def toScalaString(clazz: Class[_]): String = {
@@ -57,7 +57,7 @@ object ScalaBlueprintUtilities {
 
 
     def getParameters(desc: MethodDescription, withTypes: Boolean): String = {
-        desc.method.getParameterTypes
+        desc.javaMethod.getParameterTypes
                 .zipWithIndex
                 .map(pair => s"arg${
                     pair._2 + 1

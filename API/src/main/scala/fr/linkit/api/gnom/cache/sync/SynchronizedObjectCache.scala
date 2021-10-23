@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.cache.sync
 import fr.linkit.api.gnom.cache.SharedCache
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
-import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTreeStore
+import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.PacketAttributesPresence
 
@@ -59,7 +59,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * @see [[fr.linkit.api.gnom.cache.sync.tree.SyncNode]]
      * @see [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]]
      * */
-    val treeCenter: SynchronizedObjectTreeStore[A]
+    val treeCenter: SynchronizedObjectForest[A]
 
     /**
      * The default behavior tree for an [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]].

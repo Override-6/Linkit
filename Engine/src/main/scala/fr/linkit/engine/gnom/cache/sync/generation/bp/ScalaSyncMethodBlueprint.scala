@@ -22,7 +22,7 @@ object ScalaSyncMethodBlueprint {
     class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, pos, blueprint) {
 
         bindValue("ReturnType" ~> getReturnType)
-        bindValue("MethodName" ~> (_.method.getName))
+        bindValue("MethodName" ~> (_.javaMethod.getName))
         bindValue("MethodID" ~> (m => m.methodId.toString))
         bindValue("ParamsIn" ~> (getParameters(_, true)))
         bindValue("ParamsOut" ~> (getParameters(_, false)))
@@ -32,13 +32,13 @@ object ScalaSyncMethodBlueprint {
     }
 
     private def getParamsOutLambda(desc: MethodDescription): String = {
-        val result = (1 to desc.method.getParameterCount)
+        val result = (1 to desc.javaMethod.getParameterCount)
                 .map(i => s"arg$i").mkString(", ")
         if (result.isEmpty) result else ", " + result
     }
 
     private def chooseOverride(desc: MethodDescription): String = {
-        val method = desc.method
+        val method = desc.javaMethod
         val params = method.getParameterTypes
         method.getName match {
             case "toString" | "clone" | "hashCode" | "reference" if params.isEmpty => "override"

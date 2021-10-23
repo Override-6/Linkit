@@ -7,7 +7,7 @@ import fr.overrride.game.shooter.session.character.ShooterCharacter
 //Scala imports
 scala import fr.example.ExampleObject
 
-//Disabling a class mean that all of its fields and methods are not synchronized
+//Disabling a class means that all of its fields and methods are not synchronized
 disable class GraphicComponent
 disable class Collidable
 // We describe the class's Behavior. the class names after ':' are used to inherit the method behaviors of the classes
@@ -36,7 +36,7 @@ describe class ShooterCharacter : GraphicComponent, Collidable {
                                                    .ifCurrentIsNotOwner(_.discardAll)
                                                    .setDesiredCurrentEngineReturn()}} {
          // We describe the arguments
-         args {
+         params {
             enable arg1 { //Enabling the argument, (it will be synchronized too)
                 modifier for local -> ${arg => new ModifiedArgument(arg.value + 1)}  //modifier applied if the method invocation comes from a RMI request
                 modifier for remote -> ${(arg, engineID) => if (engineID != "DumbEngine") localModifier(arg) else null} //Modifier applied in order to modify the arguments of the RMI request of any engineID
@@ -57,7 +57,7 @@ describe class ShooterCharacter : GraphicComponent, Collidable {
     }
 
     //the method won't even be called by any RMI.
-    hide getPassword.
+    hide getPassword
 }
 
 //Behavior for fields of type 'ShooterCharacter' (excepted excluded classes, only for included classes)

@@ -16,8 +16,6 @@ package fr.linkit.api.gnom.cache.sync.description
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.internal.generation.compilation.CompilationContext
 
-import scala.reflect.runtime.universe.Type
-
 /**
  * The description of the super class of a generated [[fr.linkit.api.gnom.cache.sync.SynchronizedObject]] class.
  * @see [[fr.linkit.api.gnom.cache.sync.SynchronizedObject]]
@@ -43,14 +41,19 @@ trait SyncObjectSuperclassDescription[A] extends CompilationContext {
      * */
     def findMethodDescription(methodID: Int): Option[MethodDescription]
 
+    def findMethodDescription(methodName: String): Option[MethodDescription]
+
     /**
      * @return A list of [[FieldDescription]]
      * @see [[FieldDescription]]
      */
     def listFields(): Seq[FieldDescription]
+
     /**
      * @param fieldID the field identifier to search.
      * @return Some(FieldDescription) if a field of the given identifier was found, None instead.
      * */
-    def getFieldDescription(fieldID: Int): Option[FieldDescription]
+    def findFieldDescription(fieldID: Int): Option[FieldDescription]
+
+    def findFieldDescription(fieldName: String): Option[FieldDescription]
 }

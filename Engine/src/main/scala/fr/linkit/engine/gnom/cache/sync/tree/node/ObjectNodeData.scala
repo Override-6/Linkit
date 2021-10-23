@@ -19,12 +19,12 @@ import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncObjectReference, SynchronizedObjectTree}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 
-class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocation
-                                  val chip: Chip[A], //Reflective invocation
-                                  val tree: SynchronizedObjectTree[_],
-                                  val reference: SyncObjectReference,
-                                  val presence: NetworkObjectPresence,
-                                  val synchronizedObject: A with SynchronizedObject[A],
-                                  val currentIdentifier: String) {
+class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocations
+                                  val chip: Chip[A], //Reflective invocations
+                                  val tree: SynchronizedObjectTree[_], //The node's tree
+                                  val reference: SyncObjectReference, //The sync object reference
+                                  val presence: NetworkObjectPresence, //the sync object presence
+                                  val synchronizedObject: A with SynchronizedObject[A], //the sync object
+                                  val currentIdentifier: String) { //identifier of the current engine.
 
 }

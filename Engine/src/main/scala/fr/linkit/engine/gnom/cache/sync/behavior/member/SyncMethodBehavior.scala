@@ -15,7 +15,8 @@ package fr.linkit.engine.gnom.cache.sync.behavior.member
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterBehavior
-import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder, RemoteInvocationRule, ObjectBehaviorStore}
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue.ReturnValueBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehaviorStore, RMIRulesAgreement, RMIRulesAgreementBuilder, RemoteInvocationRule}
 import fr.linkit.api.gnom.cache.sync.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.{MethodInvocationHandler, Puppeteer}
@@ -25,14 +26,14 @@ import org.jetbrains.annotations.Nullable
 
 case class SyncMethodBehavior(override val desc: MethodDescription,
                               override val parameterBehaviors: Array[ParameterBehavior[AnyRef]],
-                              override val syncReturnValue: Boolean,
+                              @Nullable override val returnValueBehavior: ReturnValueBehavior[AnyRef],
                               override val isHidden: Boolean,
                               override val innerInvocations: Boolean,
                               private val rules: Array[RemoteInvocationRule],
                               @Nullable override val procrastinator: Procrastinator,
                               @Nullable override val handler: MethodInvocationHandler) extends InternalMethodBehavior {
 
-    override def getName: String = desc.method.getName
+    override def getName: String = desc.javaMethod.getName
 
     /**
      * @return true if the method can perform an RMI
@@ -50,7 +51,7 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
      * [[https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html the default primitives value]].
      * */
     override lazy val defaultReturnValue: Any = {
-        val clazz = desc.method.getReturnType
+        val clazz = desc.javaMethod.getReturnType
         if (clazz.isPrimitive) {
             import java.{lang => l}
             clazz match {
@@ -90,5 +91,12 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
             buff
         })
     }
-
+}
+object SyncMethodBehavior {
+    def copy(desc: MethodDescription, other: SyncMethodBehavior): SyncMethodBehavior = {
+        SyncMethodBehavior(
+            desc, other.parameterBehaviors, other.returnValueBehavior,
+            other.isHidden, other.innerInvocations, other.rules,
+            other.procrastinator, other.handler)
+    }
 }

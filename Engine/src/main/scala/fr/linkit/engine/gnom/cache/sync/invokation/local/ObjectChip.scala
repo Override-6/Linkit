@@ -40,11 +40,11 @@ class ObjectChip[S <: AnyRef] private(behavior: ObjectBehavior[S],
         val methodBehaviorOpt = behavior.getMethodBehavior(methodID)
         if (methodBehaviorOpt.forall(_.isHidden)) {
             throw new SyncObjectException(s"Attempted to invoke ${methodBehaviorOpt.fold("unknown")(_ => "hidden")} method '${
-                methodBehaviorOpt.map(_.desc.method.getName).getOrElse(s"(unknown method id '$methodID')")
+                methodBehaviorOpt.map(_.desc.javaMethod.getName).getOrElse(s"(unknown method id '$methodID')")
             }(${params.mkString(", ")}) in ${methodBehaviorOpt.map(_.desc.classDesc.clazz).getOrElse("Unknown class")}'")
         }
         val methodBehavior = methodBehaviorOpt.get
-        val name           = methodBehavior.desc.method.getName
+        val name           = methodBehavior.desc.javaMethod.getName
         val procrastinator = methodBehavior.procrastinator
         AppLogger.debug(s"RMI - Calling method $methodID $name(${params.mkString(", ")})")
         if (procrastinator != null) {
@@ -70,7 +70,7 @@ class ObjectChip[S <: AnyRef] private(behavior: ObjectBehavior[S],
                 params(i) = store.modifyParameterForLocalComingFromRemote(invocation, engine, params(i).asInstanceOf[AnyRef], bhv)
             }
             ExecutorEngine.setCurrentEngine(engine)
-            behavior.desc.method.invoke(syncObject, params: _*)
+            behavior.desc.javaMethod.invoke(syncObject, params: _*)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
         }
     }

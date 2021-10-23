@@ -11,9 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.behavior.member.method
+package fr.linkit.api.gnom.cache.sync.behavior;
 
-trait MethodGuardian {
+public enum SynchronizedObjectType {
 
-    //TODO Add method that get some statistics about the guarded method and some methods that helps to define if we use the modifier, sync the value etc...
+    FIELD, PARAMETER, RETURN_VALUE;
+
 }

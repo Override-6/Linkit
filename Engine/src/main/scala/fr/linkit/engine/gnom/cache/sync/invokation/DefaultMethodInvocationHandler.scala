@@ -27,7 +27,7 @@ object DefaultMethodInvocationHandler extends MethodInvocationHandler {
         val puppeteer         = syncObject.getPuppeteer
         val currentIdentifier = puppeteer.currentIdentifier
         val args              = localInvocation.methodArguments
-        val name              = desc.method.getName
+        val name              = desc.javaMethod.getName
         val methodID          = localInvocation.methodID
         val network           = puppeteer.network
 

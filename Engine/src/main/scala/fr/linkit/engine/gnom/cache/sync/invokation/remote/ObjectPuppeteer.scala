@@ -51,7 +51,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         val bhv      = invocation.methodBehavior
         val methodId = bhv.desc.methodId
-        AppLogger.debug(s"Remotely invoking method ${bhv.desc.method.getName}")
+        AppLogger.debug(s"Remotely invoking method ${bhv.desc.javaMethod.getName}")
         val scope            = new AgreementScope(writer, network, agreement)
         var requestResult: R = JavaUtils.nl()
         var isResultSet      = false

@@ -101,7 +101,7 @@ class ClassDescriptionResultBuilder(scanner: Scanner, classDesc: SimpleSyncObjec
     }
 
     private def parseMethod(methodName: String): MethodBehaviorDescriptionResult = {
-        val methodDesc = if (methodName == null) null else methodDescs.find(_.method.getName == methodName).getOrElse {
+        val methodDesc = if (methodName == null) null else methodDescs.find(_.javaMethod.getName == methodName).getOrElse {
             throw new MethodBehaviorDescriptionException(s"Unknown method $methodName in class $className")
         }
         new MethodDescriptor(methodDesc, this).describe(scanner)

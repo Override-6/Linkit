@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.CacheContent
  * Used by [[fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache]] to store its trees
  * @tparam A the type of the tree's root object (it's the same type for SynchronizedObjectCenter[A])
  */
-trait SynchronizedObjectTreeStore[A <: AnyRef] {
+trait SynchronizedObjectForest[A <: AnyRef] {
 
     /**
      * Finds a tree from its id. A tree identifier is the identifier of the root object.

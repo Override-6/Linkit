@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.description.{FieldDescription, MethodDescri
 import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription.SyntheticMod
 import fr.linkit.engine.gnom.cache.sync.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
 
-import java.lang.reflect.{Executable, Field, Method, Modifier}
+import java.lang.reflect._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -47,7 +47,7 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
         fieldDescriptions.values.toSeq
     }
 
-    override def getFieldDescription(fieldID: Int): Option[FieldDescription] = {
+    override def findFieldDescription(fieldID: Int): Option[FieldDescription] = {
         fieldDescriptions.get(fieldID)
     }
 
@@ -70,6 +70,7 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
                 // as SynchronizedObject trait also extends NetworkObject[B],
                 // a collision may occur as the generated method would be
                 // syncClass#reference: A, which overrides SynchronizedObject#reference: B (there is an incompatible type definition)
+                // Maybe making the GNOLinkage able to support multiple references to an object would help
                 .filterNot(m => m.getName == "reference" && m.getParameterTypes.isEmpty)
     }
 
@@ -106,13 +107,22 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
         var clazz: Class[_] = this.clazz
         while (clazz != null) {
             fields ++= clazz.getDeclaredFields
-                    .tapEach(_.setAccessible(true))
                     .filterNot(f => Modifier.isStatic(f.getModifiers))
+                    .filter(setAccessible)
             clazz = clazz.getSuperclass
         }
         fields.map(FieldDescription(_, this))
                 .map(desc => (desc.fieldId, desc))
                 .toMap
+    }
+
+    private def setAccessible(f: Field): Boolean = {
+        try {
+            f.setAccessible(true)
+            true
+        } catch {
+            case _: InaccessibleObjectException => false
+        }
     }
 
 }
