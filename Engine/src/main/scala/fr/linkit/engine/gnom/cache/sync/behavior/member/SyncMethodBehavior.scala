@@ -38,11 +38,7 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
     /**
      * @return true if the method can perform an RMI
      * */
-    val isRMIEnabled: Boolean = {
-        handler != null
-    }
-
-    override val isActivated: Boolean = isRMIEnabled
+    override val isActivated: Boolean = handler != null
 
     private val usesRemoteParametersModifier: Boolean = parameterBehaviors.exists(_ != null)
 
@@ -92,11 +88,17 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
         })
     }
 }
+
 object SyncMethodBehavior {
+
     def copy(desc: MethodDescription, other: SyncMethodBehavior): SyncMethodBehavior = {
         SyncMethodBehavior(
             desc, other.parameterBehaviors, other.returnValueBehavior,
             other.isHidden, other.innerInvocations, other.rules,
             other.procrastinator, other.handler)
+    }
+
+    def disabled(desc: MethodDescription): SyncMethodBehavior = {
+        SyncMethodBehavior(desc, Array.empty, null, false, false, Array.empty, null, null)
     }
 }

@@ -17,12 +17,14 @@ import scala.collection.mutable.ListBuffer
 
 class AbstractBehaviorBuilder[C <: AnyRef] {
 
-    protected var context: C  = _
-    private val methodCalls = ListBuffer.empty[(=> Unit)]
-
+    protected var context: C = _
+    private val methodCalls  = ListBuffer.empty[(=> Unit)]
 
     protected def callOnceContextSet(action: (=> Unit)): Unit = {
-        methodCalls += action
+        if (context != null)
+            action
+        else
+            methodCalls += action
     }
 
     def setContext(context: C): Unit = {

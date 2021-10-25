@@ -11,16 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue
+package fr.linkit.api.gnom.cache.sync.behavior.member.method
 
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
 
-trait ReturnValueModifier[R] {
-    def forLocalComingFromLocal(localParam: R, invocation: LocalMethodInvocation[_]): R
+trait MethodCompModifier[T] {
 
-    def forLocalComingFromRemote(receivedParam: R, invocation: LocalMethodInvocation[_], remote: Engine): R
+    def forLocalComingFromLocal(localParam: T, invocation: LocalMethodInvocation[_]): T = localParam
 
-    def forRemote(localParam: R, invocation: LocalMethodInvocation[_], remote: Engine): R
+    def forLocalComingFromRemote(receivedParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = receivedParam
+
+    def forRemote(localParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = localParam
 
 }

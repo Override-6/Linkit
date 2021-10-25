@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.test.HierarchyRaiserOrderer
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
-import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder, ObjectBehaviorStoreBuilder}
+import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder}
 import fr.linkit.engine.gnom.cache.sync.behavior.ObjectBehaviorBuilder.{MethodControl, ParameterControl}
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes

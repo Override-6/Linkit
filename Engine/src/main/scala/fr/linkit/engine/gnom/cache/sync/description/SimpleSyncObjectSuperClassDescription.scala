@@ -21,6 +21,7 @@ import fr.linkit.engine.gnom.cache.sync.generation.SyncObjectClassResource.{Wrap
 import java.lang.reflect._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.reflect.{ClassTag, classTag}
 
 class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class[A],
                                                        val loader: ClassLoader) extends SyncObjectSuperclassDescription[A] {
@@ -41,6 +42,14 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
 
     override def findMethodDescription(methodID: Int): Option[MethodDescription] = {
         methodDescriptions.get(methodID)
+    }
+
+    override def findMethodDescription(methodName: String): Option[MethodDescription] = {
+        methodDescriptions.values.find(_.javaMethod.getName == methodName)
+    }
+
+    override def findFieldDescription(fieldName: String): Option[FieldDescription] = {
+        fieldDescriptions.values.find(_.javaField.getName == fieldName)
     }
 
     override def listFields(): Seq[FieldDescription] = {
@@ -133,11 +142,14 @@ object SimpleSyncObjectSuperClassDescription {
 
     private val cache = mutable.HashMap.empty[Class[_], SimpleSyncObjectSuperClassDescription[_]]
 
+    implicit def fromTag[A: ClassTag[A]]: SimpleSyncObjectSuperClassDescription[A] = apply[A](classTag[A].runtimeClass)
+
     def apply[A](clazz: Class[_]): SimpleSyncObjectSuperClassDescription[A] = cache.getOrElse(clazz, {
         if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
         val AClass = clazz.asInstanceOf[Class[A]]
         new SimpleSyncObjectSuperClassDescription[A](AClass, clazz.getClassLoader)
     }).asInstanceOf[SimpleSyncObjectSuperClassDescription[A]]
+
 
 }

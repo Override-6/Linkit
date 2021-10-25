@@ -15,6 +15,4 @@ package fr.linkit.engine.gnom.cache.sync.behavior.v2.constraints
 
 import fr.linkit.api.gnom.cache.sync.behavior.build.BehaviorSelectionConstraint
 
-object AlwaysSelect extends BehaviorSelectionConstraint {
-
-}
+object AlwaysSelect extends BehaviorSelectionConstraint

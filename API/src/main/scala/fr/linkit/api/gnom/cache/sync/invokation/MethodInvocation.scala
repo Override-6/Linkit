@@ -15,6 +15,7 @@ package fr.linkit.api.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.description.MethodDescription
 
 /**
  * The invocation information for a synchronized object's method.
@@ -37,6 +38,8 @@ trait MethodInvocation[R] {
      * The method's behavior
      */
     val methodBehavior: MethodBehavior
+
+    val methodDescription: MethodDescription
 
     val debug: Boolean = true
 

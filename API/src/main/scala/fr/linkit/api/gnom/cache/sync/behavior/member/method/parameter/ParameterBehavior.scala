@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.MemberBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodCompModifier
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.Parameter
@@ -21,6 +22,6 @@ import java.lang.reflect.Parameter
 trait ParameterBehavior[A] extends MemberBehavior {
 
     val param: Parameter
-    @Nullable val modifier: ParameterModifier[A]
+    @Nullable val modifier: MethodCompModifier[A]
 
 }

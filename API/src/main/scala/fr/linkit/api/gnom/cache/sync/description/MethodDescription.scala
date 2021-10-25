@@ -25,6 +25,8 @@ case class MethodDescription(javaMethod: Method,
         javaMethod.getName.hashCode + hashCode(parameters)
     }
 
+    def getName: String = javaMethod.getName
+
     def getDefaultTypeReturnValue: String = {
         val nme = javaMethod.getReturnType.getName
 

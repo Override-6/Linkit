@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.cache.sync.behavior
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.MemberBehaviorFactory
 import fr.linkit.api.gnom.cache.sync.behavior.member.field.{FieldBehavior, FieldModifier}
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.{ParameterBehavior, ParameterModifier}
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue.{ReturnValueBehavior, ReturnValueModifier}
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue.ReturnValueBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
 import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehavior, ObjectBehaviorStore}
 import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription

@@ -25,6 +25,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * Blocks every engines from remote invocation.
      * The invocation will only be performed on the local object.
      * This behavior is the same as calling any normal java method.
+     * This is the default behavior rules for activated methods with non specified rule
      */
     ONLY_CURRENT((agreement) -> {
         agreement.discardAll()

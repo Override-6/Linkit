@@ -14,14 +14,16 @@
 package fr.linkit.engine.gnom.cache.sync.behavior.member
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodCompModifier
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue.ReturnValueBehavior
 import org.jetbrains.annotations.Nullable
 
-import java.lang.reflect.Parameter
+import scala.reflect.ClassTag
 
-case class MethodParameterBehavior[A](override val param: Parameter,
-                                      override val isActivated: Boolean,
-                                      @Nullable override val modifier: MethodCompModifier[A]) extends ParameterBehavior[A] {
-    override def getName: String = param.getName
+class MethodReturnValueBehavior[A](@Nullable override val modifier: MethodCompModifier[A],
+                                   override val isActivated: Boolean)(implicit tag: ClassTag[A]) extends ReturnValueBehavior[A] {
+
+    override val tpe: Class[_] = tag.runtimeClass
+
+    override def getName: String = "<undefined>"
 
 }
