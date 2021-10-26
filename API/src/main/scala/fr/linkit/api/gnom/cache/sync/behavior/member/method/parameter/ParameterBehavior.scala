@@ -19,9 +19,9 @@ import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.Parameter
 
-trait ParameterBehavior[A] extends MemberBehavior {
+trait ParameterBehavior[A <: AnyRef] extends MemberBehavior {
 
-    val param: Parameter
+              val param   : Parameter
     @Nullable val modifier: MethodCompModifier[A]
 
 }

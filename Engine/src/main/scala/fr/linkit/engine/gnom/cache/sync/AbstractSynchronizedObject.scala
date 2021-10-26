@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorFactory}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.local.CallableLocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
@@ -25,16 +25,16 @@ import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    final protected            var location         : SyncObjectReference     = _
-    @transient final protected var puppeteer        : Puppeteer[A]                  = _
-    @transient final protected var behavior         : SynchronizedObjectBehavior[A] = _
-    @transient final protected var choreographer    : InvocationChoreographer       = _
-    @transient final protected var store            : ObjectBehaviorStore     = _
-    @transient private         var presenceOnNetwork: NetworkObjectPresence   = _
-    @transient private         var node             : SyncNode[A]             = _
+    final protected            var location         : SyncObjectReference               = _
+    @transient final protected var puppeteer        : Puppeteer[A]                      = _
+    @transient final protected var behavior         : SynchronizedObjectBehavior[A]     = _
+    @transient final protected var choreographer    : InvocationChoreographer           = _
+    @transient final protected var factory          : SynchronizedObjectBehaviorFactory = _
+    @transient private         var presenceOnNetwork: NetworkObjectPresence             = _
+    @transient private         var node             : SyncNode[A]                       = _
     //cache for handleCall
-    @transient private         var currentIdentifier: String                  = _
-    @transient private         var ownerID          : String                  = _
+    @transient private         var currentIdentifier: String                            = _
+    @transient private         var ownerID          : String                            = _
 
     def wrappedClass: Class[_]
 
@@ -45,7 +45,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
         this.location = node.reference
         val puppeteer = node.puppeteer
-        this.store = node.tree.behaviorFactory
+        this.factory = node.tree.behaviorFactory
         this.puppeteer = node.puppeteer
         this.behavior = puppeteer.objectBehavior
         this.presenceOnNetwork = node.objectPresence
@@ -64,8 +64,6 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
 
     override def getChoreographer: InvocationChoreographer = choreographer
-
-    override def getBehaviorStore: ObjectBehaviorStore = store
 
     override def getPuppeteer: Puppeteer[A] = puppeteer
 
@@ -90,8 +88,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             override val methodBehavior : InternalMethodBehavior = methodBhv
 
             override def callSuper(): R = {
-                val params = modifiedParamsForLocal(methodBhv, synchronizedArgs)
-                performSuperCall[R](!methodBhv.innerInvocations, superCall(params))
+                performSuperCall[R](!methodBhv.innerInvocations, superCall(synchronizedArgs))
             }
         }
 
@@ -113,16 +110,6 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
                 case other                                  => other
             }
         })
-    }
-
-    private def modifiedParamsForLocal(bhv: MethodBehavior, args: Array[Any]): Array[Any] = {
-        var i              = -1
-        val paramBehaviors = bhv.parameterBehaviors
-        args.map {
-            case ref: AnyRef => //will never crash (primitives are wrapped by objects)
-                i += 1
-                store.modifyParameterForLocalComingFromLocal(args, ref, paramBehaviors(i))
-        }
     }
 
     @inline private def performSuperCall[R](forceLocal: Boolean, @inline superCall: => Any): R = {

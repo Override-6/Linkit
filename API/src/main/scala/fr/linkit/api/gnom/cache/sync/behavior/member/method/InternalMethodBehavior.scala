@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.behavior.member.method
 
-import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder}
+import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder, SynchronizedObjectBehaviorFactory}
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.network.Network
@@ -28,7 +28,7 @@ trait InternalMethodBehavior extends MethodBehavior {
      *
      * @param dispatcher the dispatcher to use
      */
-    def dispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher, network: Network, store: ObjectBehaviorStore, invocation: LocalMethodInvocation[_]): Unit
+    def dispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher, network: Network, factory: SynchronizedObjectBehaviorFactory, invocation: LocalMethodInvocation[_]): Unit
 }
 
 

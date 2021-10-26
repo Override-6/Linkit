@@ -21,11 +21,12 @@ import fr.linkit.api.gnom.cache.sync.behavior.modification.ValueMultiModifier
 import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
 import fr.linkit.engine.gnom.cache.sync.behavior.{AbstractSynchronizedObjectBehavior, AnnotationBasedMemberBehaviorFactory}
 import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 
 class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescriptor[A],
-                                          val superClass: BehaviorDescriptorNode[_ >: A],
+                                          @Nullable val superClass: BehaviorDescriptorNode[_ >: A],
                                           val interfaces: Array[BehaviorDescriptorNode[_ >: A]]) {
 
     def foreachNodes(f: BehaviorDescriptorNode[_ >: A] => Unit): Unit = {
@@ -42,7 +43,8 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
             if (!map.contains(id))
                 map.put(id, method)
         }
-        superClass.putMethods(map)
+        if (superClass != null)
+            superClass.putMethods(map)
         interfaces.foreach(_.putMethods(map))
     }
 
@@ -52,7 +54,8 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
             if (!map.contains(id))
                 map.put(id, field)
         }
-        superClass.putFields(map)
+        if (superClass != null)
+            superClass.putFields(map)
         interfaces.foreach(_.putFields(map))
     }
 
@@ -62,7 +65,7 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
         desc.listMethods().foreach(method => {
             val id = method.methodId
             if (!methodMap.contains(id)) { //TODO maybe add a default procrastinator in this node's descriptor.
-                val bhv = AnnotationBasedMemberBehaviorFactory.genMethodBehavior(null, method)
+                val bhv = AnnotationBasedMemberBehaviorFactory.genMethodBehavior(None, method)
                 methodMap.put(id, bhv)
             }
         })

@@ -13,13 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.rectifier
 
+import java.lang.reflect.{Method, Modifier}
+
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.engine.gnom.cache.sync.generation.rectifier.ClassRectifier.{StringToPrimitiveID, SuperMethodModifiers}
 import javassist.bytecode.MethodInfo
-import javassist.{ClassPool, CtClass, CtConstructor, CtMethod, LoaderClassPath}
-import java.lang.reflect.{Method, Modifier}
+import javassist._
 
 import scala.collection.mutable.ListBuffer
 

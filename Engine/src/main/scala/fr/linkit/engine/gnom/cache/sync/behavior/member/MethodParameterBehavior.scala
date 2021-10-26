@@ -19,9 +19,9 @@ import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.Parameter
 
-case class MethodParameterBehavior[A](override val param: Parameter,
-                                      override val isActivated: Boolean,
-                                      @Nullable override val modifier: MethodCompModifier[A]) extends ParameterBehavior[A] {
+case class MethodParameterBehavior[A <: AnyRef](override val param: Parameter,
+                                                override val isActivated: Boolean,
+                                                @Nullable override val modifier: MethodCompModifier[A]) extends ParameterBehavior[A] {
     override def getName: String = param.getName
 
 }

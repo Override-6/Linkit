@@ -23,14 +23,15 @@ import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 import fr.linkit.engine.internal.utils.ScalaUtils
-
 import java.lang.reflect.Modifier
+
+import fr.linkit.api.gnom.cache.sync.behavior.modification.MethodCompModifierKind
 
 class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
                                       syncObject: SynchronizedObject[S],
                                       network: Network) extends Chip[S] {
 
-    private lazy val store = syncObject.getBehaviorStore
+    private lazy val factory = syncObject.getBehaviorFactory
 
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(syncObject, obj)
@@ -66,14 +67,28 @@ class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
             val engine          = network.findEngine(origin).orNull
             val paramsBehaviors = behavior.parameterBehaviors
             for (i <- params.indices) {
-                val bhv = paramsBehaviors(i)
-                params(i) = store.modifyParameterForLocalComingFromRemote(invocation, engine, params(i).asInstanceOf[AnyRef], bhv)
+                val bhv      = paramsBehaviors(i)
+                val paramTpe = bhv.param.getType
+                params(i) match {
+                    case ref: AnyRef =>
+                        val modifier = bhv.modifier
+                        var result   = modifier.fromRemote(ref, invocation, engine)
+                        modifier.fromRemoteEvent(result, invocation, engine)
+                        result = result match {
+                            case sync: SynchronizedObject[AnyRef] =>
+                                sync.getBehavior.multiModifier.modifyForParameter(sync, cast(paramTpe))(invocation, engine, MethodCompModifierKind.FROM_REMOTE)
+                            case x                                => x
+                        }
+                        params(i) = result
+                }
             }
             ExecutorEngine.setCurrentEngine(engine)
             behavior.desc.javaMethod.invoke(syncObject, params: _*)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
         }
     }
+
+    private def cast[X](y: Any): X = y.asInstanceOf[X]
 
     @inline private def callMethodProcrastinator(behavior: MethodBehavior, params: Array[Any], origin: String): Any = {
         @volatile var result: Any = NoResult

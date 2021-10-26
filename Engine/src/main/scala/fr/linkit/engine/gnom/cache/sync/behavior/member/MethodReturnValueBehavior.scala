@@ -19,8 +19,8 @@ import org.jetbrains.annotations.Nullable
 
 import scala.reflect.ClassTag
 
-class MethodReturnValueBehavior[A](@Nullable override val modifier: MethodCompModifier[A],
-                                   override val isActivated: Boolean)(implicit tag: ClassTag[A]) extends ReturnValueBehavior[A] {
+class MethodReturnValueBehavior[A <: AnyRef](@Nullable override val modifier: MethodCompModifier[A],
+                                             override val isActivated: Boolean)(implicit tag: ClassTag[A]) extends ReturnValueBehavior[A] {
 
     override val tpe: Class[_] = tag.runtimeClass
 

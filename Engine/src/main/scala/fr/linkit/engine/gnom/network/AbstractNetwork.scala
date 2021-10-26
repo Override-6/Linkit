@@ -13,10 +13,10 @@
 
 package fr.linkit.engine.gnom.network
 
+import java.sql.Timestamp
+
 import fr.linkit.api.application.connection.ConnectionContext
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldModifier
-import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
@@ -24,12 +24,11 @@ import fr.linkit.api.gnom.reference.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder}
+import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.SynchronizedObjectBehaviorFactoryBuilder
+import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.helper.{LambdaFieldModifier, LambdaMethodCompModifier}
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
-
-import java.sql.Timestamp
 
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
@@ -90,7 +89,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         (manager, store.trafficPath)
     }
 
-    protected def retrieveDataTrunk(behaviors: ObjectBehaviorStore): NetworkDataTrunk
+    protected def retrieveDataTrunk(factory: SynchronizedObjectBehaviorFactory): NetworkDataTrunk
 
     protected def createGlobalCache: SharedCacheManager
 
@@ -111,27 +110,26 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
     }
 
-    private def getEngineStoreBehaviors: ObjectBehaviorStore = {
-        new ObjectBehaviorStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
-            behaviors += new ObjectBehaviorBuilder[SharedCacheManager]() {
-                asParameter = new ParameterModifier[SharedCacheManager] {
-                    override def forLocalComingFromRemote(receivedParam: SharedCacheManager, invocation: LocalMethodInvocation[_], remote: Engine): SharedCacheManager = {
-                        receivedParam match {
-                            case origin: SharedCacheOriginManager => transformToDistant(origin)
-                            case _                                => receivedParam
-                        }
+    private def getEngineStoreBehaviors: SynchronizedObjectBehaviorFactory = {
+        import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription.fromTag
+        new SynchronizedObjectBehaviorFactoryBuilder {
+            describe(new ClassDescriptor[SharedCacheManager]() {
+                whenParameter = new LambdaMethodCompModifier[SharedCacheManager]() {
+                    currentToRemote = (param, _, _) => param match {
+                        case origin: SharedCacheOriginManager => transformToDistant(origin)
+                        case _                                => param
                     }
                 }
-            }
-            behaviors += new ObjectBehaviorBuilder[DefaultEngine]() {
-                asField = new FieldModifier[DefaultEngine] {
-                    override def receivedFromRemote(receivedField: DefaultEngine, containingObject: SynchronizedObject[_], remote: Engine): DefaultEngine = {
-                        val identifier = receivedField.identifier
+            })
+            describe(new ClassDescriptor[DefaultEngine]() {
+                whenField = new LambdaFieldModifier[DefaultEngine] {
+                    fromRemote = (field, _, _) => {
+                        val identifier = field.identifier
                         new DefaultEngine(identifier, findCacheManager(identifier).get)
                     }
                 }
-            }
-        }.build
+            })
+        }.build()
     }
 }
 

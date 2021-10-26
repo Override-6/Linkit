@@ -43,8 +43,19 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
     }
 
     def build(): SynchronizedObjectBehaviorFactory = {
-        val descriptions = builders.values.map(_.getResult)
-        new SyncObjectBehaviorFactory(descriptions.toArray)
+        var descriptions = builders.values.map(_.getResult).toArray
+        if (!descriptions.exists(_.targetClass eq classOf[Object])) {
+            descriptions :+= new ObjectBehaviorDescriptor[Object] {
+                override val targetClass          : Class[Object]                                = classOf[Object]
+                override val usingHierarchy       : Array[ObjectBehaviorDescriptor[_ >: Object]] = Array.empty
+                override val withMethods          : Array[InternalMethodBehavior]                = Array.empty
+                override val withFields           : Array[FieldBehavior[AnyRef]]                 = Array.empty
+                override val whenField            : Option[FieldModifier[Object]]                = None
+                override val whenParameter        : Option[MethodCompModifier[Object]]           = None
+                override val whenMethodReturnValue: Option[MethodCompModifier[Object]]           = None
+            }
+        }
+        new SyncObjectBehaviorFactory(descriptions)
     }
 
     private def nextDescriptorDefaultID: Int = {
@@ -96,7 +107,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
                 private var concluded = false
 
                 def and(methodName: String): MethodBehaviorDescriptorBuilderIntroduction = {
-                    new MethodBehaviorDescriptorBuilderIntroduction(descs ++ getMethod(methodName))
+                    new MethodBehaviorDescriptorBuilderIntroduction(descs :+ getMethod(methodName))
                 }
 
                 def as(methodName: String): Unit = conclude {
@@ -122,7 +133,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
                     })
                 }
 
-                private def conclude(conclusion: (=> Array[SyncMethodBehavior])): Unit = {
+                private def conclude(conclusion: => Array[SyncMethodBehavior]): Unit = {
                     if (concluded)
                         throw new IllegalStateException("This method was already described.")
                     val methodBhvs = conclusion
@@ -167,7 +178,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
                 return result
             val hierarchy = inheritedBehaviorsTags.map(tag => builders.getOrElse(tag, {
                 throw new NoSuchElementException(s"Could not find behavior descriptor with tag '$tag'.")
-            }).getResult).toArray[ObjectBehaviorDescriptor[_ >: T]]
+            }).getResult).toArray.asInstanceOf[Array[ObjectBehaviorDescriptor[_ >: T]]]
 
             val builder = this
             result = new ObjectBehaviorDescriptor[T] {
@@ -183,6 +194,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
             result
         }
     }
+
 }
 
 object SynchronizedObjectBehaviorFactoryBuilder {
@@ -194,7 +206,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
 
     abstract class MethodBehaviorBuilder(rule: RemoteInvocationRule = BasicInvocationRule.ONLY_CURRENT) extends AbstractBehaviorBuilder[MethodDescription] {
 
-        private val paramBehaviors             = mutable.HashMap.empty[Parameter, ParameterBehavior[_]]
+        private val paramBehaviors             = mutable.HashMap.empty[Parameter, ParameterBehavior[AnyRef]]
         private var usedParams: Option[params] = None
 
         private var innerInvocations: Boolean        = false
@@ -213,7 +225,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
             var enabled = true
             private[MethodBehaviorBuilder] var modifier: MethodCompModifier[_] = _
 
-            def withModifier[R](modifier: MethodCompModifier[R]): Unit = {
+            def withModifier[R <: AnyRef](modifier: MethodCompModifier[R]): Unit = {
                 if (this.modifier != null)
                     throw new IllegalStateException("Return Value modifier already set !")
                 this.modifier = modifier
@@ -230,7 +242,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
 
             class As(override val tag: Option[Any]) extends Recognizable {
 
-                private[params] var assignedBehavior: ParameterBehavior[_] = _
+                private[params] var assignedBehavior: ParameterBehavior[AnyRef] = _
 
                 def as(paramName: String): Unit = {
                     assignedBehavior = getParamBehavior(paramName)(s"Parameter '$paramName' not described. Its behavior must be described before.")
@@ -241,16 +253,16 @@ object SynchronizedObjectBehaviorFactoryBuilder {
                 }
             }
 
-            def enable[P](paramName: String)(modifier: MethodCompModifier[P]): Unit = callOnceContextSet {
+            def enable[P <: AnyRef](paramName: String)(modifier: MethodCompModifier[P]): Unit = callOnceContextSet {
                 val param = getParam(paramName)
                 val bhv   = new MethodParameterBehavior[P](param, true, modifier)
-                paramBehaviors.put(param, bhv)
+                paramBehaviors.put(param, bhv.asInstanceOf[ParameterBehavior[AnyRef]])
             }
 
-            def enable[P](idx: Int)(modifier: MethodCompModifier[P]): Unit = callOnceContextSet {
+            def enable[P <: AnyRef](idx: Int, modifier: MethodCompModifier[P]): Unit = callOnceContextSet {
                 val param = getParam(idx)
                 val bhv   = new MethodParameterBehavior[P](param, true, modifier)
-                paramBehaviors.put(param, bhv)
+                paramBehaviors.put(param, bhv.asInstanceOf[ParameterBehavior[AnyRef]])
             }
 
             def enable(paramName: String): As = {
@@ -272,7 +284,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
                         case Some(name: String) => getParam(name)
                     }
                     val bhv   = as.assignedBehavior
-                    paramBehaviors.put(param, MethodParameterBehavior(param, bhv.isActivated, bhv.modifier))
+                    paramBehaviors.put(param, MethodParameterBehavior[AnyRef](param, bhv.isActivated, bhv.modifier))
                 }
             }
         }
@@ -288,7 +300,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
 
         private def getOrDefaultBehavior(parameter: Parameter): ParameterBehavior[AnyRef] = {
             paramBehaviors.getOrElse(parameter, AnnotationBasedMemberBehaviorFactory.genParameterBehavior(parameter))
-                    .asInstanceOf[ParameterBehavior[AnyRef]]
+                .asInstanceOf[ParameterBehavior[AnyRef]]
         }
 
         private def getParam(paramName: String): Parameter = {
@@ -303,14 +315,20 @@ object SynchronizedObjectBehaviorFactoryBuilder {
             context.javaMethod.getParameters()(idx)
         }
 
-        private def getParamBehavior(name: String)(noSuchMsg: String): ParameterBehavior[_] = {
-            paramBehaviors.getOrElse(getParam(name), {
+        private def getParamBehavior(name: String)(noSuchMsg: String): ParameterBehavior[AnyRef] = {
+            val param = getParam(name)
+            if (param.getType.isPrimitive)
+                throw new UnsupportedOperationException("can't synchronize or apply modifiers on primitive values.")
+            paramBehaviors.getOrElse(param, {
                 throw new NoSuchElementException(noSuchMsg)
             })
         }
 
-        private def getParamBehavior(idx: Int)(noSuchMsg: String): ParameterBehavior[_] = {
-            paramBehaviors.getOrElse(getParam(idx), {
+        private def getParamBehavior(idx: Int)(noSuchMsg: String): ParameterBehavior[AnyRef] = {
+            val param = getParam(idx)
+            if (param.getType.isPrimitive)
+                throw new UnsupportedOperationException("can't synchronize or apply modifiers on primitive values.")
+            paramBehaviors.getOrElse(param, {
                 throw new NoSuchElementException(noSuchMsg)
             })
         }

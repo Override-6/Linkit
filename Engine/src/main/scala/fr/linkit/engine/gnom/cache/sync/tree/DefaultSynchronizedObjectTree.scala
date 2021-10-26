@@ -121,32 +121,36 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         parent.addChild(node)
 
         scanSyncObjectFields(parent, ownerID, syncObject)
-
         node
     }
 
     @inline
-    private def scanSyncObjectFields(parent: ObjectSyncNode[_], ownerID: String, syncObject: SynchronizedObject[_]): Unit = {
+    private def scanSyncObjectFields[B <: AnyRef](parent: ObjectSyncNode[_], ownerID: String, syncObject: B with SynchronizedObject[B]): Unit = {
         val isCurrentOwner = ownerID == currentIdentifier
         val engine         = if (!isCurrentOwner) Try(network.findEngine(ownerID).get).getOrElse(null) else null
         val behavior       = syncObject.getBehavior
         for (bhv <- behavior.listField()) {
             val field      = bhv.desc.javaField
-            val fieldValue = field.get(syncObject)
-            var finalField = {
-                if (isCurrentOwner) behaviorFactory.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
-                else behaviorFactory.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
+            var fieldValue = field.get(syncObject)
+            val modifier   = bhv.modifier
+            if (modifier != null) {
+                fieldValue = modifier.receivedFromRemote(fieldValue, syncObject, engine)
             }
             if (bhv.isActivated) {
                 val id = ThreadLocalRandom.current().nextInt()
-                finalField = finalField match {
-                    case sync: SynchronizedObject[_] => sync
-                    case _                           => genSynchronizedObject(parent, id, finalField)(ownerID).synchronizedObject
+                fieldValue = fieldValue match {
+                    case sync: SynchronizedObject[AnyRef] =>
+                        val modifier = sync.getBehavior.multiModifier
+                        modifier.modifyForField(sync, cast(field.getType))(syncObject, engine)
+                    case _                                =>
+                        genSynchronizedObject(parent, id, fieldValue)(ownerID).synchronizedObject
                 }
             }
-            ScalaUtils.setValue(syncObject, field, finalField)
+            ScalaUtils.setValue(syncObject, field, fieldValue)
         }
     }
+
+    private def cast[X](y: Any): X = y.asInstanceOf[X]
 
     def registerSynchronizedObject[B <: AnyRef](parent: SyncNode[AnyRef], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
         registerSynchronizedObject(parent.treePath, id, syncObject, ownerID)

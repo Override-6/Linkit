@@ -23,7 +23,7 @@ import fr.linkit.api.gnom.network.Engine
 
 class DefaultValueMultiModifier[A <: AnyRef](node: BehaviorDescriptorNode[A]) extends ValueMultiModifier[A] {
 
-    override def modifyForField(obj: A, abstractionLimit: Class[_ >: A])(containingObject: SynchronizedObject[AnyRef], causeEngine: Engine): A = {
+    override def modifyForField(obj: A, abstractionLimit: Class[_ >: A])(containingObject: SynchronizedObject[_], causeEngine: Engine): A = {
         handleModify[FieldModifier[_ >: A]](obj, abstractionLimit)(
             _.whenField,
             _.receivedFromRemote(obj, containingObject, causeEngine),

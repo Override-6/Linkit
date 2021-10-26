@@ -75,7 +75,6 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * is the owner of the root object.
      * The return value of the invocation will come from the current machine.
      */
-    //TODO Build the agreement
     BROADCAST_IF_ROOT_OWNER((agreement ->
             agreement.ifCurrentIsOwner(RMIRulesAgreementBuilder::acceptAll)
                     .setDesiredCurrentEngineReturn())),

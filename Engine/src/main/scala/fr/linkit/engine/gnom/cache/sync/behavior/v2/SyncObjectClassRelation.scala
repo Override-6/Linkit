@@ -28,7 +28,8 @@ class SyncObjectClassRelation[A <: AnyRef](descriptor: ObjectBehaviorDescriptor[
     }
 
     def toNode: BehaviorDescriptorNode[A] = {
-        new BehaviorDescriptorNode[A](descriptor, nextSuperRelation.toNode, interfaceRelation.map(_.toNode).toArray)
+        val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.toNode
+        new BehaviorDescriptorNode[A](descriptor, nextSuperNode, interfaceRelation.map(_.toNode).toArray)
     }
 
 }

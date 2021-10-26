@@ -13,10 +13,12 @@
 
 package fr.linkit.engine.gnom.cache.sync.behavior.member
 
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue.ReturnValueBehavior
-import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder, RemoteInvocationRule}
+import fr.linkit.api.gnom.cache.sync.behavior.modification.MethodCompModifierKind
+import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder, RemoteInvocationRule, SynchronizedObjectBehaviorFactory}
 import fr.linkit.api.gnom.cache.sync.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.{MethodInvocationHandler, Puppeteer}
@@ -70,7 +72,7 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
      *
      * @param dispatcher the dispatcher to use
      */
-    override def dispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher, network: Network, store: ObjectBehaviorStore, invocation: LocalMethodInvocation[_]): Unit = {
+    override def dispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher, network: Network, factory: SynchronizedObjectBehaviorFactory, invocation: LocalMethodInvocation[_]): Unit = {
         val args = invocation.methodArguments
         if (!usesRemoteParametersModifier) {
             dispatcher.broadcast(args)
@@ -81,8 +83,23 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
             val engine = network.findEngine(engineID).get
             for (i <- args.indices) {
                 val paramBehavior = parameterBehaviors(i)
-                val modifier      = paramBehavior.modifier
-                buff(i) = store.modifyParameterForRemote(invocation, engine, buff(i).asInstanceOf[AnyRef], paramBehavior)
+                val paramTpe      = paramBehavior.param.getType.asInstanceOf[Class[_ >: AnyRef]]
+                val modifier = paramBehavior.modifier
+                args(i) match {
+                    case ref: AnyRef =>
+                        var finalRef = modifier.toRemote(ref, invocation, engine)
+                        modifier.toRemoteEvent(finalRef, invocation, engine)
+                        finalRef = finalRef match {
+                            case sync: SynchronizedObject[AnyRef] =>
+                                sync.getBehavior.multiModifier.modifyForParameter(sync, paramTpe)(invocation, engine, MethodCompModifierKind.TO_REMOTE)
+                            case x                                => x
+                        }
+                        buff(i) = finalRef
+                    //impossible due to boxing, but keep it logical:
+                    // it's impossible to synchronize / convert primitive values,
+                    // so the sync object system can't apply on primitives
+                    case _ =>
+                }
             }
             buff
         })

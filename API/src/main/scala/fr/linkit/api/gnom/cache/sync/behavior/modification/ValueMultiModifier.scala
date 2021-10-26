@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.network.Engine
 
 trait ValueMultiModifier[A] {
 
-    def modifyForField(obj: A, abstractionLimit: Class[_ >: A])(containingObject: SynchronizedObject[AnyRef], causeEngine: Engine): A
+    def modifyForField(obj: A, abstractionLimit: Class[_ >: A])(containingObject: SynchronizedObject[_], causeEngine: Engine): A
 
     def modifyForParameter(obj: A, abstractionLimit: Class[_ >: A])(invocation: LocalMethodInvocation[_], targetEngine: Engine, kind: MethodCompModifierKind): A
 

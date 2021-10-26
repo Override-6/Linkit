@@ -14,9 +14,10 @@
 package fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.MemberBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodCompModifier
 import org.jetbrains.annotations.Nullable
 
 trait ReturnValueBehavior[R] extends MemberBehavior {
     val tpe     : Class[_]
-    @Nullable val modifier: ReturnValueModifier[R]
+    @Nullable val modifier: MethodCompModifier[R]
 }

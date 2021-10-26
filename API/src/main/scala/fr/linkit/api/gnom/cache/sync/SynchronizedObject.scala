@@ -13,12 +13,11 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorFactory}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.reference.DynamicNetworkObject
-
 import java.io.Serializable
 
 /**
@@ -49,6 +48,8 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
      * @see ObjectBehavior
      */
     def getBehavior: SynchronizedObjectBehavior[T]
+
+    def getBehaviorFactory: SynchronizedObjectBehaviorFactory
 
     /**
      * @return the invocation choreographer of this object

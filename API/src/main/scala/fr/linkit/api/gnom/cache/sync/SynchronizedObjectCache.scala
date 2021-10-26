@@ -96,7 +96,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      */
     def findObject(id: Int): Option[A with SynchronizedObject[A]]
 
-    def getOrSynchronize(id: Int)(or: => SyncInstanceCreator[_ <: A]): A = findObject(id).getOrElse(syncObject(id, or))
+    def getOrSynchronize(id: Int)(or: => SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = findObject(id).getOrElse(syncObject(id, or))
 
     /**
      * @param id the object's identifier.

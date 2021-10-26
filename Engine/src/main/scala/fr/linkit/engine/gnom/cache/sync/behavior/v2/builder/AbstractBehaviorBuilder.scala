@@ -16,15 +16,14 @@ package fr.linkit.engine.gnom.cache.sync.behavior.v2.builder
 import scala.collection.mutable.ListBuffer
 
 class AbstractBehaviorBuilder[C <: AnyRef] {
-
     protected var context: C = _
-    private val methodCalls  = ListBuffer.empty[(=> Unit)]
+    private val methodCalls  = ListBuffer.empty[() => Unit]
 
-    protected def callOnceContextSet(action: (=> Unit)): Unit = {
+    protected def callOnceContextSet(action: => Unit): Unit = {
         if (context != null)
             action
         else
-            methodCalls += action
+            methodCalls += (() => action)
     }
 
     def setContext(context: C): Unit = {
