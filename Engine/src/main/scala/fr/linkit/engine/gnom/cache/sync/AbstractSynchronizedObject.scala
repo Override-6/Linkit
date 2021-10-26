@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
-import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehavior, ObjectBehaviorStore}
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.local.CallableLocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
@@ -26,13 +26,13 @@ import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     final protected            var location         : SyncObjectReference     = _
-    @transient final protected var puppeteer        : Puppeteer[A]            = _
-    @transient final protected var behavior         : ObjectBehavior[A]       = _
-    @transient final protected var choreographer    : InvocationChoreographer = _
+    @transient final protected var puppeteer        : Puppeteer[A]                  = _
+    @transient final protected var behavior         : SynchronizedObjectBehavior[A] = _
+    @transient final protected var choreographer    : InvocationChoreographer       = _
     @transient final protected var store            : ObjectBehaviorStore     = _
     @transient private         var presenceOnNetwork: NetworkObjectPresence   = _
     @transient private         var node             : SyncNode[A]             = _
-    //fast cache for handleCall
+    //cache for handleCall
     @transient private         var currentIdentifier: String                  = _
     @transient private         var ownerID          : String                  = _
 
@@ -69,7 +69,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getPuppeteer: Puppeteer[A] = puppeteer
 
-    override def getBehavior: ObjectBehavior[A] = behavior
+    override def getBehavior: SynchronizedObjectBehavior[A] = behavior
 
     //private def asAutoSync: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
@@ -81,7 +81,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         val methodBhv        = behavior.getMethodBehavior(id).get
         val synchronizedArgs = synchronizedParams(methodBhv, args)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
-        if (choreographer.isMethodExecutionForcedToLocal || !methodBhv.isActivated) {
+        if (!methodBhv.isActivated || choreographer.isMethodExecutionForcedToLocal) {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
 

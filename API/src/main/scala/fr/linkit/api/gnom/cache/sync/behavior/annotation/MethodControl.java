@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 /**
  * Contains basic information for a {@link MethodBehavior}
  *
- * @see fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
+ * @see fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
  * @see MethodBehavior
  */
 @Target(ElementType.METHOD)

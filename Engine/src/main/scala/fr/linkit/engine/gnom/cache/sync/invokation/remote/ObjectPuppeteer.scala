@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val cache: SynchronizedObjectCache[_],
                                    override val nodeLocation: SyncObjectReference,
-                                   val objectBehavior: ObjectBehavior[S]) extends Puppeteer[S] {
+                                   val objectBehavior: SynchronizedObjectBehavior[S]) extends Puppeteer[S] {
 
     private lazy val tree                       = cache.treeCenter.findTree(nodeLocation.nodePath.head).get
     override     val network          : Network = cache.network
@@ -60,7 +60,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                 holder
                         .nextResponse
                         .nextPacket[RefPacket[R]].value match {
-                    case RMIExceptionString(exceptionString) => throw new RemoteInvocationFailedException(s"Remote Invocation for method $methodId for engine id '$desiredEngineReturn' failed : $exceptionString")
+                    case RMIExceptionString(exceptionString) => throw new RemoteInvocationFailedException(s"Remote Invocation for method $methodId in engine of id '$desiredEngineReturn' failed : $exceptionString")
                     case result                              =>
                         requestResult = result
                         isResultSet = true
@@ -109,7 +109,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         override def foreachEngines(action: String => Array[Any]): Unit = {
             scope.foreachAcceptedEngines(engineID => {
-                if (engineID != returnEngine && engineID != currentIdentifier) //return engine is processed at last, don't send a request to the curernt engine
+                //return engine is processed at last, don't send a request to the current engine
+                if (engineID != returnEngine && engineID != currentIdentifier)
                     makeRequest(ChannelScopes.include(engineID)(writer), action(engineID))
             })
             if (returnEngine != null && returnEngine != currentIdentifier)

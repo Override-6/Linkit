@@ -11,10 +11,14 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.behavior;
+package fr.linkit.engine.gnom.cache.sync.behavior.v2
 
-public enum SynchronizedObjectType {
+import fr.linkit.api.gnom.cache.sync.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorFactory}
+import fr.linkit.api.gnom.cache.sync.behavior.build.{CreationContext, ObjectBehaviorDescriptor}
 
-    FIELD, PARAMETER, RETURN_VALUE;
+class SyncObjectBehaviorFactory(descriptions: Array[ObjectBehaviorDescriptor[_]]) extends SynchronizedObjectBehaviorFactory {
 
+    override def getObjectBehavior[A <: AnyRef](context: CreationContext): SynchronizedObjectBehavior[A] = {
+        
+    }
 }

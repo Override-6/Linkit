@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.local
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.local.{Chip, LocalMethodInvocation}
 import fr.linkit.api.gnom.network.{ExecutorEngine, Network}
@@ -26,7 +26,7 @@ import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.lang.reflect.Modifier
 
-class ObjectChip[S <: AnyRef] private(behavior: ObjectBehavior[S],
+class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
                                       syncObject: SynchronizedObject[S],
                                       network: Network) extends Chip[S] {
 
@@ -92,7 +92,7 @@ class ObjectChip[S <: AnyRef] private(behavior: ObjectBehavior[S],
 
 object ObjectChip {
 
-    def apply[S <: AnyRef](behavior: ObjectBehavior[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
+    def apply[S <: AnyRef](behavior: SynchronizedObjectBehavior[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
             throw new NullPointerException("puppet is null !")
         val clazz = wrapper.getClass

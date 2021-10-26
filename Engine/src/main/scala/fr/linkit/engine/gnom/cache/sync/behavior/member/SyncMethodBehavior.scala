@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.behavior.member
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue.ReturnValueBehavior
-import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehaviorStore, RMIRulesAgreement, RMIRulesAgreementBuilder, RemoteInvocationRule}
+import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder, RemoteInvocationRule}
 import fr.linkit.api.gnom.cache.sync.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.{MethodInvocationHandler, Puppeteer}

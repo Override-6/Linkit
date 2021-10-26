@@ -14,7 +14,6 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCache
-import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network
@@ -27,7 +26,7 @@ import fr.linkit.api.gnom.packet.PacketAttributesPresence
  * Once the object is posted in the cache, it's cloned then transformed to an object of type `A with SynchronizedObject[A]`.<br>
  * Then, The object is broadcasted to all engines that are attached to this cache. <bt>
  * All method invocations performed on the transformed object will be synchronized,
- * This means that an RMI may occur following the [[fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior]] of the synchronized object.<br>
+ * This means that an RMI may occur following the [[fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior]] of the synchronized object.<br>
  * Notes: - A Synchronized object of type `A with SynchronizedObject[A]` can also hold inner synchronized objects of [[AnyRef]] type.
  * These inner objects can be fields, or method parameters or return values.
  *        - An object posted on the cache is called a "Root object", they must be of type [A] but, as said before, they can contains
@@ -63,7 +62,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
 
     /**
      * The default behavior tree for an [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]].
-     * "the behavior of a tree" is simply a set of [[fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior]]
+     * "the behavior of a tree" is simply a set of [[fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior]]
      * that will set the behavior of each objects of a tree.
      * */
     val defaultTreeViewBehavior: ObjectBehaviorStore

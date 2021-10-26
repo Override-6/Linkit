@@ -18,8 +18,8 @@ import fr.linkit.api.gnom.network.Engine
 
 trait FieldModifier[F] {
 
-    def forLocalComingFromLocal(localField: F, containingObject: SynchronizedObject[_]): F = localField
+    def receivedFromRemote(receivedField: F, containingObject: SynchronizedObject[_], remote: Engine): F = receivedField
 
-    def forLocalComingFromRemote(receivedField: F, containingObject: SynchronizedObject[_], remote: Engine): F = receivedField
+    def receivedFromRemoteEvent(receivedField: F, containingObject: SynchronizedObject[_], remote: Engine): Unit = ()
 
 }

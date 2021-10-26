@@ -11,8 +11,14 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.behavior.build
+package fr.linkit.api.gnom.cache.sync.behavior.modification
 
-trait BehaviorSelectionConstraint {
+trait ValueMultiModifier[A] {
+
+    def modifyForField(obj: A, abstractionLimit: Class[_ >: A]): A
+
+    def modifyForParameter(obj: A, abstractionLimit: Class[_ >: A]): A
+
+    def modifyForMethodReturnValue(obj: A, abstractionLimit: Class[_ >: A]): A
 
 }

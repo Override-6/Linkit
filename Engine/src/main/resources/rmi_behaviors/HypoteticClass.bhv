@@ -45,15 +45,15 @@ describe class ShooterCharacter : GraphicComponent, Collidable {
             disable arg2 as arg1 {
                 modifier for remote -> ${arg, engineID => if (engineID != "DumbEngine") localModifier(arg) else ExampleObject.modified(arg)}
             }
-         }         
-         returnvalue -> disable //we don't want the returnvalue of this method to be synchronized
+        }
+        returnvalue -> disable //we don't want the returnvalue of this method to be synchronized
     }
 
     //Let's say that the exampleMethod returns an integer.
     enable exampleMethod2 as @complexBehavior("Hello") { //We can take a behavior from the tree context, giving the factory argument if defined
-             returnvalue -> disable { //we don't want the returnvalue of this method to be synchronized (we can't synchronize primitives)
-                modifier from remote -> ${x => x * 2} //however we modify it if the invocation comes from a distant engine
-             }
+        returnvalue -> disable { //we don't want the returnvalue of this method to be synchronized (we can't synchronize primitives)
+           modifier from remote -> ${x => x * 2} //however we modify it if the invocation comes from a distant engine
+        }
     }
 
     //the method won't even be called by any RMI.

@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
-import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 
@@ -42,7 +42,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The behavior of the synchronized object.
      * */
-    val objectBehavior: ObjectBehavior[S]
+    val objectBehavior: SynchronizedObjectBehavior[S]
 
     /**
      * The identifier of the current engine.
@@ -62,7 +62,7 @@ trait Puppeteer[S <: AnyRef] {
      * @tparam R the return type of the RMI result value.
      * @return the RMI result value
      */
-    def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R //TODO add a timeout. (here or in the MethodBehavior)
+    def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R //TODO add a timeout.
 
     /**
      * Send an RMI Invocation based on the given agreement and invocation without waiting for any result.

@@ -14,12 +14,13 @@
 package fr.linkit.api.gnom.cache.sync.behavior
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldModifier
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodCompModifier
 
 trait ValueBehavior[A] {
 
     def whenField: Option[FieldModifier[A]]
 
-    def whenParameter: Option[ParameterModifier[A]]
+    def whenParameter: Option[MethodCompModifier[A]]
 
-    def whenMethodReturnValue: Option[ReturnValueModifier[A]]
+    def whenMethodReturnValue: Option[MethodCompModifier[A]]
 }

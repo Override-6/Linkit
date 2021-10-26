@@ -33,9 +33,9 @@ object DefaultMethodInvocationHandler extends MethodInvocationHandler {
 
         val enableDebug = localInvocation.debug
 
-        lazy val argsString = args.mkString("(", ", ", ")")
-        lazy val className  = desc.classDesc.clazz
         if (enableDebug) {
+            val argsString = args.mkString("(", ", ", ")")
+            val className  = desc.classDesc.clazz
             AppLogger.debug(s"$name: Performing rmi call for ${className.getSimpleName}.$name$argsString (id: $methodID)")
             AppLogger.debug(s"MethodBehavior = $behavior")
         }

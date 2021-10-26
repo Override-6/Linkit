@@ -13,7 +13,6 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
@@ -127,7 +126,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     @inline
     private def scanSyncObjectFields(parent: ObjectSyncNode[_], ownerID: String, syncObject: SynchronizedObject[_]): Unit = {
         val isCurrentOwner = ownerID == currentIdentifier
-        val engine         = if (!isCurrentOwner) Try(network.findEngine(ownerID).get).getOrElse(null) else null //should not be used if isCurrentOwner = false
+        val engine         = if (!isCurrentOwner) Try(network.findEngine(ownerID).get).getOrElse(null) else null
         val behavior       = syncObject.getBehavior
         for (bhv <- behavior.listField()) {
             val field      = bhv.desc.javaField
@@ -138,7 +137,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             }
             if (bhv.isActivated) {
                 val id = ThreadLocalRandom.current().nextInt()
-                finalField match {
+                finalField = finalField match {
                     case sync: SynchronizedObject[_] => sync
                     case _                           => genSynchronizedObject(parent, id, finalField)(ownerID).synchronizedObject
                 }

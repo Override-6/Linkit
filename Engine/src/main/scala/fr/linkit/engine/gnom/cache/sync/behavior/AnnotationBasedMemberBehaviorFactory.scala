@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterBehavior
 import fr.linkit.api.gnom.cache.sync.description._
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.behavior.member.{MethodParameterBehavior, SyncFieldBehavior, SyncMethodBehavior}
+import fr.linkit.engine.gnom.cache.sync.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior, SyncMethodBehavior}
 import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
 
 import java.lang.reflect.{Method, Parameter}
@@ -46,13 +46,13 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         val rules              = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
         val innerInvocations   = control.innerInvocations()
-        val syncReturnValue    = control.synchronizeReturnValue
+        val returnValueBhv     = new MethodReturnValueBehavior[AnyRef](null, control.synchronizeReturnValue())
         val handler            = controlOpt match {
             case None    => null
             case Some(_) => DefaultMethodInvocationHandler
         }
         SyncMethodBehavior(
-            desc, synchronizedParams, syncReturnValue, isHidden,
+            desc, synchronizedParams, returnValueBhv, isHidden,
             innerInvocations, rules, procrastinator.orNull, handler
         )
     }

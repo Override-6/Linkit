@@ -39,6 +39,9 @@ trait MethodInvocation[R] {
      */
     val methodBehavior: MethodBehavior
 
+    /**
+     * The method's description
+     * */
     val methodDescription: MethodDescription
 
     val debug: Boolean = true

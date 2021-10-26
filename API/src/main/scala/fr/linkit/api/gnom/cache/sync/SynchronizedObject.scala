@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehavior, ObjectBehaviorStore}
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference}
@@ -48,7 +48,7 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
      * @return the behavior of this object
      * @see ObjectBehavior
      */
-    def getBehavior: ObjectBehavior[T]
+    def getBehavior: SynchronizedObjectBehavior[T]
 
     /**
      * @return the invocation choreographer of this object

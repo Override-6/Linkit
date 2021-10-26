@@ -13,20 +13,10 @@
 
 package fr.linkit.api.gnom.cache.sync.behavior
 
-import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
-import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
+import fr.linkit.api.gnom.cache.sync.behavior.build.CreationContext
 
-trait ObjectBehavior[A <: AnyRef] extends ValueBehavior[A] {
+trait SynchronizedObjectBehaviorFactory {
 
-    val classDesc: SyncObjectSuperclassDescription[A]
-
-    def listMethods(): Iterable[MethodBehavior]
-
-    def getMethodBehavior(id: Int): Option[InternalMethodBehavior]
-
-    def listField(): Iterable[FieldBehavior[AnyRef]]
-
-    def getFieldBehavior(id: Int): Option[FieldBehavior[AnyRef]]
+    def getObjectBehavior[A <: AnyRef](context: CreationContext): SynchronizedObjectBehavior[A]
 
 }

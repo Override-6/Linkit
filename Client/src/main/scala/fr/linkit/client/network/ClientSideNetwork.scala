@@ -13,7 +13,6 @@
 
 package fr.linkit.client.network
 
-import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.{CacheSearchBehavior, SharedCacheManager}
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache

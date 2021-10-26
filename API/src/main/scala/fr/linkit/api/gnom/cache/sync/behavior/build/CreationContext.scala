@@ -29,4 +29,6 @@ trait CreationContext {
 
     def getType: SynchronizedObjectType
 
+    def obj: AnyRef
+
 }

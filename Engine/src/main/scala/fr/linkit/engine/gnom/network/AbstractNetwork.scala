@@ -15,7 +15,6 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldModifier
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
@@ -126,7 +125,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
             }
             behaviors += new ObjectBehaviorBuilder[DefaultEngine]() {
                 asField = new FieldModifier[DefaultEngine] {
-                    override def forLocalComingFromRemote(receivedField: DefaultEngine, containingObject: SynchronizedObject[_], remote: Engine): DefaultEngine = {
+                    override def receivedFromRemote(receivedField: DefaultEngine, containingObject: SynchronizedObject[_], remote: Engine): DefaultEngine = {
                         val identifier = receivedField.identifier
                         new DefaultEngine(identifier, findCacheManager(identifier).get)
                     }

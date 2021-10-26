@@ -13,7 +13,6 @@
 
 package fr.linkit.api.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.gnom.cache.sync.CanNotSynchronizeException
 

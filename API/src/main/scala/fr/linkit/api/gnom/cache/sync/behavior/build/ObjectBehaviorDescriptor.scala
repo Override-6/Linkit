@@ -13,15 +13,15 @@
 
 package fr.linkit.api.gnom.cache.sync.behavior.build
 
+import fr.linkit.api.gnom.cache.sync.behavior.ValueBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
 
-trait ObjectBehaviorDescriptor[T <: AnyRef] {
+trait ObjectBehaviorDescriptor[T <: AnyRef] extends ValueBehavior[T] {
 
     val targetClass: Class[T]
 
     val usingHierarchy: Array[ObjectBehaviorDescriptor[_ >: T]]
-    val withMethods   : Array[MethodBehavior]
-    val withFields    : Array[FieldBehavior[_]]
-    val constraint    : BehaviorSelectionConstraint
+    val withMethods   : Array[InternalMethodBehavior]
+    val withFields    : Array[FieldBehavior[AnyRef]]
 }
