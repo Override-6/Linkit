@@ -39,13 +39,13 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     def wrappedClass: Class[_]
 
     override def initialize(node: SyncNode[A]): Unit = {
-        if (this.puppeteer != null)
+        if (this.node != null)
             throw new SyncObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
         //if (location != null && location != node.reference)
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
         this.location = node.reference
         val puppeteer = node.puppeteer
-        this.store = node.tree.behaviorStore
+        this.store = node.tree.behaviorFactory
         this.puppeteer = node.puppeteer
         this.behavior = puppeteer.objectBehavior
         this.presenceOnNetwork = node.objectPresence

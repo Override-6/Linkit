@@ -19,16 +19,22 @@ import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.modification.ValueMultiModifier
 import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
-import fr.linkit.api.gnom.cache.sync.tree.SyncNode
 import fr.linkit.engine.gnom.cache.sync.behavior.{AbstractSynchronizedObjectBehavior, AnnotationBasedMemberBehaviorFactory}
 import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription
-import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
 
 class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescriptor[A],
                                           val superClass: BehaviorDescriptorNode[_ >: A],
                                           val interfaces: Array[BehaviorDescriptorNode[_ >: A]]) {
+
+    def foreachNodes(f: BehaviorDescriptorNode[_ >: A] => Unit): Unit = {
+        if (superClass != null) {
+            f(superClass)
+            superClass.foreachNodes(f)
+        }
+        interfaces.foreach(f)
+    }
 
     private def putMethods(map: mutable.HashMap[Int, InternalMethodBehavior]): Unit = {
         for (method <- descriptor.withMethods) {
@@ -69,8 +75,8 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
         })
     }
 
-    def getBehavior(@NotNull theObject: AnyRef, nodeParent: SyncNode[_]): SynchronizedObjectBehavior[A] = {
-        val classDesc = SimpleSyncObjectSuperClassDescription[A](theObject.getClass)
+    def getBehavior(clazz: Class[_]): SynchronizedObjectBehavior[A] = {
+        val classDesc = SimpleSyncObjectSuperClassDescription[A](clazz)
         val methodMap = mutable.HashMap.empty[Int, InternalMethodBehavior]
         val fieldMap  = mutable.HashMap.empty[Int, FieldBehavior[AnyRef]]
 

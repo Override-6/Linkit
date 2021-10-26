@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCache
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network
@@ -65,27 +66,27 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * "the behavior of a tree" is simply a set of [[fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior]]
      * that will set the behavior of each objects of a tree.
      * */
-    val defaultTreeViewBehavior: ObjectBehaviorStore
+    val defaultBehaviorFactory: SynchronizedObjectBehaviorFactory
 
     /**
      * posts an object in the cache.
-     * The behavior of the object and sub objects will depends on the [[defaultTreeViewBehavior]]
+     * The behavior of the object and sub objects will depends on the [[defaultBehaviorFactory]]
      *
      * @throws CanNotSynchronizeException If the given object is a synchronized object.
      *                                    (No matters if the object is handled by this cache or not)
      * @param id  the identifier of the root object
-     * @param obj the object to synchronize.
+     * @param creator         the creator that will create the synchronized object.
      * @return the synchronized object.
      * */
     def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A]
 
     /**
-     * @param id       the identifier of the root object
-     * @param obj      the object to synchronize.
-     * @param behavior the behavior tree of the object and its inner objects
+     * @param id              the identifier of the root object
+     * @param creator         the creator that will create the synchronized object.
+     * @param behaviorFactory the behavior factory for the object
      * @return the synchronized object.
      * */
-    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], behavior: ObjectBehaviorStore): A with SynchronizedObject[A]
+    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], behaviorFactory: SynchronizedObjectBehaviorFactory): A with SynchronizedObject[A]
 
     /**
      * Finds a synchronized object in the cache.

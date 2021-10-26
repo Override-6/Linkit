@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.behavior.v2.build.helper
+package fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.helper
 
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodCompModifier
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
@@ -28,12 +28,12 @@ class LambdaModifierEvent[A] extends MethodCompModifier[A] {
         localParam
     }
 
-    override def forLocalComingFromRemote(receivedParam: A, invocation: LocalMethodInvocation[_], remote: Engine): A = {
+    override def fromRemote(receivedParam: A, invocation: LocalMethodInvocation[_], remote: Engine): A = {
         remoteToCurrent(receivedParam, invocation, remote)
         receivedParam
     }
 
-    override def forRemote(localParam: A, invocation: LocalMethodInvocation[_], remote: Engine): A = {
+    override def toRemote(localParam: A, invocation: LocalMethodInvocation[_], remote: Engine): A = {
         toRemote(localParam, invocation, remote)
         localParam
     }

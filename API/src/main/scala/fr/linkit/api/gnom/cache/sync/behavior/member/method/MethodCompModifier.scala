@@ -18,10 +18,12 @@ import fr.linkit.api.gnom.network.Engine
 
 trait MethodCompModifier[T] {
 
-    def forLocalComingFromLocal(localParam: T, invocation: LocalMethodInvocation[_]): T = localParam
+    def fromRemote(receivedParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = receivedParam
 
-    def forLocalComingFromRemote(receivedParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = receivedParam
+    def fromRemoteEvent(receivedParam: T, invocation: LocalMethodInvocation[_], remote: Engine): Unit = ()
 
-    def forRemote(localParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = localParam
+    def toRemote(localParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = localParam
+
+    def toRemoteEvent(localParam: T, invocation: LocalMethodInvocation[_], remote: Engine): Unit = ()
 
 }

@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.behavior.v2.build
+package fr.linkit.engine.gnom.cache.sync.behavior.v2.builder
 
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule
 import fr.linkit.api.gnom.cache.sync.behavior.build.ObjectBehaviorDescriptor
@@ -24,7 +24,7 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.behavior.AnnotationBasedMemberBehaviorFactory
 import fr.linkit.engine.gnom.cache.sync.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior, SyncMethodBehavior}
 import fr.linkit.engine.gnom.cache.sync.behavior.v2.SyncObjectBehaviorFactory
-import fr.linkit.engine.gnom.cache.sync.behavior.v2.build.SynchronizedObjectBehaviorFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
+import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.SynchronizedObjectBehaviorFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
 import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
 
 import java.lang.reflect.{Field, Method, Parameter}

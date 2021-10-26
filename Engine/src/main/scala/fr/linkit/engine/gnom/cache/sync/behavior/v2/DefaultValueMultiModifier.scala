@@ -14,34 +14,74 @@
 package fr.linkit.engine.gnom.cache.sync.behavior.v2
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.behavior.modification.ValueMultiModifier
+import fr.linkit.api.gnom.cache.sync.behavior.build.ObjectBehaviorDescriptor
+import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldModifier
+import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodCompModifier
+import fr.linkit.api.gnom.cache.sync.behavior.modification.{MethodCompModifierKind, ValueMultiModifier}
+import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
 
 class DefaultValueMultiModifier[A <: AnyRef](node: BehaviorDescriptorNode[A]) extends ValueMultiModifier[A] {
 
     override def modifyForField(obj: A, abstractionLimit: Class[_ >: A])(containingObject: SynchronizedObject[AnyRef], causeEngine: Engine): A = {
+        handleModify[FieldModifier[_ >: A]](obj, abstractionLimit)(
+            _.whenField,
+            _.receivedFromRemote(obj, containingObject, causeEngine),
+            _.receivedFromRemoteEvent(obj, containingObject, causeEngine))
+    }
+
+    override def modifyForParameter(obj: A, abstractionLimit: Class[_ >: A])(invocation: LocalMethodInvocation[_], targetEngine: Engine, kind: MethodCompModifierKind): A = {
+        handleMethodCompModify(obj, abstractionLimit)(
+            _.whenParameter,
+            kind
+        )(invocation, targetEngine)
+    }
+
+    override def modifyForMethodReturnValue(obj: A, abstractionLimit: Class[_ >: A])(invocation: LocalMethodInvocation[_], targetEngine: Engine, kind: MethodCompModifierKind): A = {
+        handleMethodCompModify(obj, abstractionLimit)(
+            _.whenMethodReturnValue,
+            kind
+        )(invocation, targetEngine)
+    }
+
+    private def handleMethodCompModify(@inline obj: A, @inline abstractionLimit: Class[_ >: A])
+                                      (@inline getModifier: ObjectBehaviorDescriptor[_ >: A] => Option[MethodCompModifier[_ >: A]],
+                                       @inline kind: MethodCompModifierKind)
+                                      (@inline invocation: LocalMethodInvocation[_],
+                                       @inline targetEngine: Engine): A = {
+        type M = MethodCompModifier[_ >: A] => Any
+        type E = MethodCompModifier[_ >: A] => Unit
+        val (modify: M, event: E) = kind match {
+            case MethodCompModifierKind.TO_REMOTE   =>
+                Tuple2[M, E](_.toRemote(obj, invocation, targetEngine), _.toRemoteEvent(obj, invocation, targetEngine))
+            case MethodCompModifierKind.FROM_REMOTE =>
+                Tuple2[M, E](_.fromRemote(obj, invocation, targetEngine), _.fromRemoteEvent(obj, invocation, targetEngine))
+        }
+        handleModify[MethodCompModifier[_ >: A]](obj, abstractionLimit)(
+            getModifier,
+            modify,
+            event)
+    }
+
+    @inline
+    private def handleModify[M](@inline obj: A, @inline abstractionLimit: Class[_ >: A])
+                               (@inline getModifier: ObjectBehaviorDescriptor[_ >: A] => Option[M],
+                                @inline modify: M => Any,
+                                @inline event: M => Unit): A = {
         val clazz                                         = obj.getClass.asInstanceOf[Class[A]]
         var superNode    : BehaviorDescriptorNode[_ >: A] = node
         var modifierClass: Class[_ >: A]                  = clazz
         var result       : A                              = obj
-        while (clazz != abstractionLimit) {
-            val modifier = superNode.descriptor.whenField
+        while (modifierClass != abstractionLimit) {
+            val modifier = getModifier(superNode.descriptor)
             if (modifier.isDefined) {
-                result = modifier.get.receivedFromRemote(result, containingObject, causeEngine) match {
-                    case r: A => r
-                }
+                result = modify(modifier.get).asInstanceOf[A]
             }
             superNode = superNode.superClass
             modifierClass = modifierClass.getSuperclass
         }
+        node.foreachNodes(n => getModifier(n.descriptor).fold()(event))
+        superNode = node
         result
-    }
-
-    override def modifyForParameter(obj: A, abstractionLimit: Class[_ >: A]): A = {
-        val clazz = obj.getClass
-    }
-
-    override def modifyForMethodReturnValue(obj: A, abstractionLimit: Class[_ >: A]): A = {
-        val clazz = obj.getClass
     }
 }

@@ -17,18 +17,18 @@ import fr.linkit.api.gnom.cache.sync.behavior.build.ObjectBehaviorDescriptor
 
 import scala.collection.mutable.ListBuffer
 
-class SyncObjectClassRelation[A <: AnyRef](descriptor: ObjectBehaviorDescriptor[A]) {
+class SyncObjectClassRelation[A <: AnyRef](descriptor: ObjectBehaviorDescriptor[A], nextSuperRelation: SyncObjectClassRelation[_ >: A]) {
 
-    private val relations = ListBuffer.empty[SyncObjectClassRelation[_ >: A]]
+    val targetClass: Class[A] = descriptor.targetClass
+    private val interfaceRelation = ListBuffer.empty[SyncObjectClassRelation[_ >: A]]
 
-    def addRelation[S >: A](relation: SyncObjectClassRelation[S]): Unit = {
-        relations += relation
+    def addInterface(interface: SyncObjectClassRelation[_ >: A]): Unit = {
+        if (interface.targetClass != classOf[Object] && !interfaceRelation.contains(interface))
+            interfaceRelation += interface
     }
 
-    def countRelations: Int = relations.size
-
     def toNode: BehaviorDescriptorNode[A] = {
-        new BehaviorDescriptorNode[A](descriptor, relations.map(_.toNode).toArray)
+        new BehaviorDescriptorNode[A](descriptor, nextSuperRelation.toNode, interfaceRelation.map(_.toNode).toArray)
     }
 
 }

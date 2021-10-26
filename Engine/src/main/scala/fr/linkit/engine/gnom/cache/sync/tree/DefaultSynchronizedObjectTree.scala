@@ -20,8 +20,10 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.engine.gnom.cache.sync.instantiation.ContentSwitcher
 import fr.linkit.engine.gnom.cache.sync.tree.node.{IllegalWrapperNodeException, ObjectSyncNode, RootObjectSyncNode, SyncNodeDataFactory}
 import fr.linkit.engine.internal.utils.ScalaUtils
-
 import java.util.concurrent.ThreadLocalRandom
+
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
+
 import scala.util.Try
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
@@ -30,7 +32,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                                                                val instantiator: SyncInstanceInstantiator,
                                                                val dataFactory: SyncNodeDataFactory,
                                                                override val id: Int,
-                                                               override val behaviorStore: ObjectBehaviorStore) extends SynchronizedObjectTree[A] {
+                                                               override val behaviorFactory: SynchronizedObjectBehaviorFactory) extends SynchronizedObjectTree[A] {
 
     private var root: RootObjectSyncNode[A] = _
 
@@ -40,7 +42,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
              id: Int,
              instantiator: SyncInstanceInstantiator,
              dataFactory: SyncNodeDataFactory,
-             behaviorTree: ObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNode[A]) = {
+             behaviorTree: SynchronizedObjectBehaviorFactory)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNode[A]) = {
         this(currentIdentifier, network, center, instantiator, dataFactory, id, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)
@@ -132,8 +134,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             val field      = bhv.desc.javaField
             val fieldValue = field.get(syncObject)
             var finalField = {
-                if (isCurrentOwner) behaviorStore.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
-                else behaviorStore.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
+                if (isCurrentOwner) behaviorFactory.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
+                else behaviorFactory.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
             }
             if (bhv.isActivated) {
                 val id = ThreadLocalRandom.current().nextInt()

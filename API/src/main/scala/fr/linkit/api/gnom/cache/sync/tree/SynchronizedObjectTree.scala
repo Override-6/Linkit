@@ -15,6 +15,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.gnom.cache.sync.CanNotSynchronizeException
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
 
 
 trait SynchronizedObjectTree[A <: AnyRef] {
@@ -27,7 +28,7 @@ trait SynchronizedObjectTree[A <: AnyRef] {
     /**
      * The behavior store of this object's tree
      */
-    val behaviorStore: ObjectBehaviorStore
+    val behaviorFactory: SynchronizedObjectBehaviorFactory
 
     /**
      *

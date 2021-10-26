@@ -13,10 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.behavior
 
-import fr.linkit.api.gnom.cache.sync.behavior.build.CreationContext
-
 trait SynchronizedObjectBehaviorFactory {
 
-    def getObjectBehavior[A <: AnyRef](context: CreationContext): SynchronizedObjectBehavior[A]
+    def getObjectBehavior[A <: AnyRef](clazz: Class[_]): SynchronizedObjectBehavior[A]
 
 }
