@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.member.MemberBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodCompModifier
 import org.jetbrains.annotations.Nullable
 
-trait ReturnValueBehavior[R<:AnyRef] extends MemberBehavior {
-    val tpe     : Class[_]
+trait ReturnValueBehavior[R <: AnyRef] extends MemberBehavior {
+              val tpe     : Class[_]
     @Nullable val modifier: MethodCompModifier[R]
 }

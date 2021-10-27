@@ -72,7 +72,7 @@ class DefaultValueMultiModifier[A <: AnyRef](node: BehaviorDescriptorNode[A]) ex
         var superNode    : BehaviorDescriptorNode[_ >: A] = node
         var modifierClass: Class[_ >: A]                  = clazz
         var result       : A                              = obj
-        while (modifierClass != abstractionLimit) {
+        while (modifierClass != abstractionLimit && superNode != null) {
             val modifier = getModifier(superNode.descriptor)
             if (modifier.isDefined) {
                 result = modify(modifier.get).asInstanceOf[A]

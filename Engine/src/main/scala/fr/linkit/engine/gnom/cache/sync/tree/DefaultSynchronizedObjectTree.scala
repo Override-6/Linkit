@@ -47,9 +47,9 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val root = rootSupplier(this)
         if (root.tree ne this)
             throw new IllegalWrapperNodeException("Root node's tree != this")
-
         if (root.id != id)
             throw new IllegalWrapperNodeException("Root's identifier is not equals to this tree's identifier.")
+        scanSyncObjectFields(root, currentIdentifier, root.synchronizedObject)
         this.root = root
     }
 
