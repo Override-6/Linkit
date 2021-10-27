@@ -18,10 +18,10 @@ import fr.linkit.api.internal.system.AppException
 import fr.linkit.api.internal.system.fsa.FileAdapter
 import fr.linkit.engine.internal.mapping.ClassMappings
 import fr.linkit.engine.application.plugin.PluginClassLoader.{MainClassField, PropertiesFileName}
-
 import java.net.URLClassLoader
 import java.util.Properties
 import java.util.zip.ZipFile
+
 import scala.collection.mutable
 
 class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bridge: PluginClassLoaderBridge)

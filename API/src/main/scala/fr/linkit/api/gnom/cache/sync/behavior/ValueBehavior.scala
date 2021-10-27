@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.cache.sync.behavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldModifier
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodCompModifier
 
-trait ValueBehavior[A] {
+trait ValueBehavior[A <: AnyRef] {
 
     def whenField: Option[FieldModifier[A]]
 

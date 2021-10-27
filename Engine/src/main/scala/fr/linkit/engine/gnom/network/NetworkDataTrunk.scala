@@ -21,8 +21,8 @@ import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
-
 import java.sql.Timestamp
+
 import scala.collection.mutable
 
 //FIXME OriginManagers and DistantManagers

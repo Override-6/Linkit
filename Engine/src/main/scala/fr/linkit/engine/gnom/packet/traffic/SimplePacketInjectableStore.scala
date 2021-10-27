@@ -20,8 +20,8 @@ import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
-
 import java.io.Closeable
+
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 

@@ -21,8 +21,8 @@ import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
-
 import java.util.concurrent.BlockingQueue
+
 import scala.collection.mutable.ListBuffer
 
 sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends SimplePacketAttributes with Submitter[P] {

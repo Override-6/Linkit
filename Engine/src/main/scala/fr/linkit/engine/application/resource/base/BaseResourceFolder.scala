@@ -14,16 +14,16 @@
 package fr.linkit.engine.application.resource.base
 
 import fr.linkit.api.application.resource.exception.{IllegalResourceException, IncompatibleResourceTypeException, NoSuchResourceException, ResourceAlreadyPresentException}
-import fr.linkit.api.application.resource.external.{Resource, ResourceFactory, ResourceEntry, ResourceFolder}
+import fr.linkit.api.application.resource.external.{Resource, ResourceEntry, ResourceFactory, ResourceFolder}
 import fr.linkit.api.application.resource.{ResourceListener, ResourcesMaintainer}
 import fr.linkit.api.internal.system.fsa.{FileAdapter, FileSystemAdapter}
 import fr.linkit.engine.application.resource.ResourceFolderMaintainer
 import fr.linkit.engine.application.resource.external.DefaultResourceEntry
 import fr.linkit.engine.application.resource.external.LocalResourceFolder.ForbiddenChars
 import org.jetbrains.annotations.NotNull
-
 import java.io.File
 import java.nio.file.{Files, Path}
+
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 

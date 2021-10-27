@@ -17,8 +17,8 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.description.{FieldDescription, MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription.SyntheticMod
 import fr.linkit.engine.gnom.cache.sync.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
-
 import java.lang.reflect._
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}

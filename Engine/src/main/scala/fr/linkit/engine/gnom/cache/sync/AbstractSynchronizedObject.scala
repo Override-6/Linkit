@@ -29,7 +29,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient final protected var puppeteer        : Puppeteer[A]                      = _
     @transient final protected var behavior         : SynchronizedObjectBehavior[A]     = _
     @transient final protected var choreographer    : InvocationChoreographer           = _
-    @transient final protected var factory          : SynchronizedObjectBehaviorFactory = _
+    @transient final protected var behaviorFactory  : SynchronizedObjectBehaviorFactory = _
     @transient private         var presenceOnNetwork: NetworkObjectPresence             = _
     @transient private         var node             : SyncNode[A]                       = _
     //cache for handleCall
@@ -45,7 +45,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
         this.location = node.reference
         val puppeteer = node.puppeteer
-        this.factory = node.tree.behaviorFactory
+        this.behaviorFactory = node.tree.behaviorFactory
         this.puppeteer = node.puppeteer
         this.behavior = puppeteer.objectBehavior
         this.presenceOnNetwork = node.objectPresence
@@ -56,6 +56,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     }
 
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
+
+    override def getBehaviorFactory: SynchronizedObjectBehaviorFactory = behaviorFactory
 
     override final def reference: SyncObjectReference = location
 

@@ -19,8 +19,8 @@ import fr.linkit.engine.internal.language.bhv.descriptor.FieldBehaviorDescriptio
 import fr.linkit.engine.internal.language.bhv.descriptor.method.{MethodBehaviorDescriptionException, MethodBehaviorDescriptionResult, MethodDescriptor}
 import fr.linkit.engine.internal.language.bhv.descriptor.method.MethodBehaviorDescriptionResult
 import fr.linkit.engine.internal.language.bhv.BehaviorFileException
-
 import java.util.Scanner
+
 import scala.collection.mutable
 
 class ClassDescriptionResultBuilder(scanner: Scanner, classDesc: SimpleSyncObjectSuperClassDescription[_]) {

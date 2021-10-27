@@ -19,7 +19,8 @@ import scala.collection.mutable.ListBuffer
 
 class PluginClassLoaderBridge {
 
-    private val loaders = ListBuffer.empty[PluginClassLoader]
+    private val loaders =
+        ListBuffer.empty[PluginClassLoader]
 
     def newClassLoader(urls: Array[FileAdapter]): PluginClassLoader = {
         val loader = new PluginClassLoader(urls, this)

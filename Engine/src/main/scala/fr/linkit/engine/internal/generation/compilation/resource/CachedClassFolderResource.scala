@@ -19,9 +19,9 @@ import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.resource.ClassFolderResource
 import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.mapping.ClassMappings
-
 import java.io.File
 import java.nio.file.{Files, Path}
+
 import scala.collection.mutable
 
 class CachedClassFolderResource[C](override val resource: ResourceFolder) extends ClassFolderResource[C] {

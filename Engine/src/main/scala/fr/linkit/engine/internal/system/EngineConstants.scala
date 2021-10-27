@@ -16,8 +16,8 @@ package fr.linkit.engine.internal.system
 import com.google.gson._
 import fr.linkit.api.internal.system
 import fr.linkit.api.internal.system.{Version, Versions}
-
 import java.lang.reflect.{ParameterizedType, Type}
+
 import scala.collection.mutable.ArrayBuffer
 
 object EngineConstants {

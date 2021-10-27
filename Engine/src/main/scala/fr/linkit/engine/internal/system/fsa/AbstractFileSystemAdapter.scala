@@ -14,9 +14,9 @@
 package fr.linkit.engine.internal.system.fsa
 
 import fr.linkit.api.internal.system.fsa.{FileAdapter, FileSystemAdapter}
-
 import java.io.File
 import java.net.URI
+
 import scala.collection.mutable
 
 abstract class AbstractFileSystemAdapter extends FileSystemAdapter with Serializable {

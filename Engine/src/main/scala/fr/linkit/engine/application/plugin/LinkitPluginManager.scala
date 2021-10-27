@@ -21,8 +21,8 @@ import fr.linkit.api.internal.system.fsa.FileSystemAdapter
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.internal.mapping.ClassMapEngine
 import fr.linkit.engine.application.plugin.fragment.SimpleFragmentManager
-
 import java.nio.file.{NoSuchFileException, NotDirectoryException}
+
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 

@@ -72,8 +72,11 @@ class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
                 params(i) match {
                     case ref: AnyRef =>
                         val modifier = bhv.modifier
-                        var result   = modifier.fromRemote(ref, invocation, engine)
-                        modifier.fromRemoteEvent(result, invocation, engine)
+                        var result   = ref
+                        if (modifier != null) {
+                            result = modifier.fromRemote(result, invocation, engine)
+                            modifier.fromRemoteEvent(result, invocation, engine)
+                        }
                         result = result match {
                             case sync: SynchronizedObject[AnyRef] =>
                                 sync.getBehavior.multiModifier.modifyForParameter(sync, cast(paramTpe))(invocation, engine, MethodCompModifierKind.FROM_REMOTE)

@@ -14,8 +14,8 @@
 package fr.linkit.engine.gnom.persistence.context.structure
 
 import fr.linkit.engine.internal.utils.ScalaUtils
-
 import java.lang.reflect.{Field, Modifier}
+
 import scala.collection.mutable
 
 class ClassObjectStructure private(objectClass: Class[_]) extends ArrayObjectStructure {

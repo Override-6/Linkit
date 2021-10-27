@@ -21,8 +21,8 @@ import fr.linkit.api.gnom.reference.GeneralNetworkObjectLinker
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
-
 import java.nio.ByteBuffer
+
 import scala.collection.mutable.ArrayBuffer
 
 case class SimpleTransferInfo(override val coords: PacketCoordinates,

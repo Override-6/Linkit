@@ -16,8 +16,8 @@ package fr.linkit.engine.gnom.packet
 import fr.linkit.api.gnom.packet.PacketAttributes
 import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.engine.gnom.persistence.context.Persist
-
 import java.io.Serializable
+
 import scala.collection.mutable
 
 class SimplePacketAttributes extends PacketAttributes /*with Deconstructible */{

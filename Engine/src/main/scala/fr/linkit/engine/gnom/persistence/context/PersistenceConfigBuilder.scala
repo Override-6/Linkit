@@ -25,9 +25,9 @@ import fr.linkit.engine.gnom.reference.WeakContextObjectLinker
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 import org.jetbrains.annotations.Nullable
-
 import java.lang.reflect.Modifier
 import java.net.URL
+
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 

@@ -17,7 +17,6 @@ import fr.linkit.api.gnom.cache.sync.description.MethodDescription
 import fr.linkit.engine.internal.language.bhv.descriptor.clazz.ClassDescriptionResultBuilder
 
 import java.util.Scanner
-import scala.collection.mutable.ListBuffer
 
 class ExplicitMethodDescriptionResultBuilder(method: MethodDescription, classBuilder: ClassDescriptionResultBuilder, scanner: Scanner) extends AbstractMethodDescriptionResultBuilder(scanner, classBuilder) {
 

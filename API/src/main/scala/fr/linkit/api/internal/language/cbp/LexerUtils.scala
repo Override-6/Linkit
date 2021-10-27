@@ -14,6 +14,7 @@
 package fr.linkit.api.internal.language.cbp
 
 import java.util.regex.Pattern
+
 import scala.collection.mutable.ListBuffer
 
 object LexerUtils {

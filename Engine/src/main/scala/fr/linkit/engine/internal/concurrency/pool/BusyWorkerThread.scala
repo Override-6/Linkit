@@ -17,8 +17,8 @@ import fr.linkit.api.internal.concurrency.WorkerPools.workerThreadGroup
 import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerThread.TaskProfile
-
 import java.util.concurrent.locks.LockSupport
+
 import scala.collection.mutable
 
 /**

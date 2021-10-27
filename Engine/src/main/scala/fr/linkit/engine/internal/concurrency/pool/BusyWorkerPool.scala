@@ -17,9 +17,9 @@ import fr.linkit.api.gnom.network.ExecutorEngine
 import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
-
 import java.util.concurrent._
 import java.util.concurrent.locks.LockSupport
+
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import scala.util.control.NonFatal

@@ -87,8 +87,11 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
                 val modifier = paramBehavior.modifier
                 args(i) match {
                     case ref: AnyRef =>
-                        var finalRef = modifier.toRemote(ref, invocation, engine)
-                        modifier.toRemoteEvent(finalRef, invocation, engine)
+                        var finalRef = ref
+                        if (modifier != null) {
+                            finalRef = modifier.toRemote(finalRef, invocation, engine)
+                            modifier.toRemoteEvent(finalRef, invocation, engine)
+                        }
                         finalRef = finalRef match {
                             case sync: SynchronizedObject[AnyRef] =>
                                 sync.getBehavior.multiModifier.modifyForParameter(sync, paramTpe)(invocation, engine, MethodCompModifierKind.TO_REMOTE)

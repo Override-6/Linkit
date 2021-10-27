@@ -15,8 +15,8 @@ package fr.linkit.engine.internal.mapping
 
 import fr.linkit.engine.internal.utils.NumberSerializer
 import org.nustaq.serialization.FSTConfiguration
-
 import java.security.CodeSource
+
 import scala.collection.mutable
 
 object ClassMappings {

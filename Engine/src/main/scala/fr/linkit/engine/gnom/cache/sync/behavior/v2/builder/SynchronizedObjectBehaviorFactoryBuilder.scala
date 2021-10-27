@@ -26,9 +26,9 @@ import fr.linkit.engine.gnom.cache.sync.behavior.member.{MethodParameterBehavior
 import fr.linkit.engine.gnom.cache.sync.behavior.v2.SyncObjectBehaviorFactory
 import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.SynchronizedObjectBehaviorFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
 import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
-
 import java.lang.reflect.{Field, Method, Parameter}
 import java.util.NoSuchElementException
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -150,8 +150,9 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
             }
 
             private def getMethod(name: String): MethodDescription = {
+                val names = desc.listMethods().map(_.javaMethod.getName).toArray[String].sorted
                 desc.findMethodDescription(name).getOrElse {
-                    throw new NoSuchElementException(s"Can not find declared or inherited method '$name' in $clazz")
+                    throw new NoSuchElementException(s"Can not find declared or inherited method '$name' in $clazz, is this method final or private ?")
                 }
             }
 
@@ -160,6 +161,8 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
                     throw new NoSuchElementException(s"Can not find declared or inherited field '$name' in $clazz")
                 }
             }
+
+            ListBuffer
 
             def method(name: String): MethodBehaviorDescriptorBuilderIntroduction = {
                 val mDesc = getMethod(name)
@@ -234,8 +237,8 @@ object SynchronizedObjectBehaviorFactoryBuilder {
 
         abstract class params {
 
-            if (usedParams.isEmpty)
-                throw new IllegalStateException(s"'params' descriptor of method '${context.javaMethod}' is already set.")
+            if (usedParams.isDefined)
+                throw new IllegalStateException(s"'params' descriptor is already set.")
             usedParams = Some(this)
 
             private val assignements = ListBuffer.empty[As]

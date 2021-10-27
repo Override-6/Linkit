@@ -28,7 +28,7 @@ class AbstractBehaviorBuilder[C <: AnyRef] {
 
     def setContext(context: C): Unit = {
         this.context = context
-        methodCalls.foreach(() => _)
+        methodCalls.foreach(_.apply())
     }
 
 }
