@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
@@ -20,10 +21,8 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.engine.gnom.cache.sync.instantiation.ContentSwitcher
 import fr.linkit.engine.gnom.cache.sync.tree.node.{IllegalWrapperNodeException, ObjectSyncNode, RootObjectSyncNode, SyncNodeDataFactory}
 import fr.linkit.engine.internal.utils.ScalaUtils
+
 import java.util.concurrent.ThreadLocalRandom
-
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
-
 import scala.util.Try
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
@@ -60,6 +59,14 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     override def findNode[B <: AnyRef](path: Array[Int]): Option[SyncNode[B]] = {
         checkPath(path)
         findGrandChild[B](path)
+    }
+
+    def findMatchingSyncNode(nonSyncObject: AnyRef): Option[SyncNode[_ <: AnyRef]] = {
+        nonSyncObject match {
+            case sync: SynchronizedObject[_] => findNode(sync.reference.nodePath)
+            case nonSync                     =>
+                Option(root.getMatchingSyncNode(nonSync))
+        }
     }
 
     private def checkPath(path: Array[Int]): Unit = {
@@ -107,15 +114,17 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new CanNotSynchronizeException("This object is already wrapped.")
 
         val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](source))
-        val node       = initSynchronizedObject[B](parent, id, syncObject, ownerID)
+        val node       = initSynchronizedObject[B](parent, id, syncObject, source, ownerID)
         node
     }
 
-    private def initSynchronizedObject[B <: AnyRef](parent: ObjectSyncNode[_], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): ObjectSyncNode[B] = {
+    private def initSynchronizedObject[B <: AnyRef](parent: ObjectSyncNode[_], id: Int,
+                                                    syncObject: B with SynchronizedObject[B], origin: AnyRef,
+                                                    ownerID: String): ObjectSyncNode[B] = {
         if (syncObject.isInitialized)
             throw new IllegalSyncObjectRegistration(s"Could not register syncObject '${syncObject.getClass.getName}' : Object already initialized.")
 
-        val data = dataFactory.newData(parent, id, syncObject, ownerID)
+        val data = dataFactory.newData(parent, id, syncObject, Some(origin), ownerID)
         val node = new ObjectSyncNode[B](parent, data)
         center.registerReference(node.reference)
         parent.addChild(node)
@@ -143,7 +152,10 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                         val modifier = sync.getBehavior.multiModifier
                         modifier.modifyForField(sync, cast(field.getType))(syncObject, engine)
                     case _                                =>
-                        genSynchronizedObject(parent, id, fieldValue)(ownerID).synchronizedObject
+                        findMatchingSyncNode(fieldValue) match {
+                            case Some(node: SyncNode[AnyRef]) => node.synchronizedObject
+                            case None                         => genSynchronizedObject(parent, id, fieldValue)(ownerID).synchronizedObject
+                        }
                 }
             }
             ScalaUtils.setValue(syncObject, field, fieldValue)
@@ -152,15 +164,13 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]
 
-    def registerSynchronizedObject[B <: AnyRef](parent: SyncNode[AnyRef], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
-        registerSynchronizedObject(parent.treePath, id, syncObject, ownerID)
-    }
-
-    def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
+    def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int,
+                                                syncObject: B with SynchronizedObject[B], ownerID: String,
+                                                origin: Option[AnyRef]): SyncNode[B] = {
         val wrapperNode = findGrandChild[B](parentPath).getOrElse {
             throw new NoSuchSyncNodeException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
-        initSynchronizedObject[B](wrapperNode, id, syncObject, ownerID)
+        initSynchronizedObject[B](wrapperNode, id, syncObject, origin, ownerID)
     }
 
 }

@@ -24,4 +24,6 @@ class InstanceWrapper[T <: AnyRef](obj: T with SynchronizedObject[T]) extends Sy
             throw new IllegalArgumentException(s"Required sync object type is not equals to stored sync object (${obj.getClass} / $syncClass")
         obj
     }
+
+    override def getOrigin: Option[AnyRef] = Some(obj)
 }

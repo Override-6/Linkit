@@ -17,6 +17,8 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 
 trait SyncNodeDataFactory {
 
-    def newData[B <: AnyRef](parent: ObjectSyncNode[_], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): ObjectNodeData[B]
+    def newData[B <: AnyRef](parent: ObjectSyncNode[_], id: Int,
+                             syncObject: B with SynchronizedObject[B], origin: Option[AnyRef],
+                             ownerID: String): ObjectNodeData[B]
 
 }

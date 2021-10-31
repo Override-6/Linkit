@@ -31,6 +31,15 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 
+    def findNode(nonSyncNode: AnyRef): Option[SyncNode[_]] = {
+        for (tree <- trees.values) {
+            val opt = tree.findMatchingSyncNode(nonSyncNode)
+            if (opt.isDefined)
+                return opt
+        }
+        None
+    }
+
     override def findTree(id: Int): Option[SynchronizedObjectTree[A]] = {
         trees.get(id)
     }
@@ -85,7 +94,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         if (nodeOpt.isEmpty) {
             def castedSyncObject[X <: AnyRef](): X with SynchronizedObject[X] = syncObj.asInstanceOf[X with SynchronizedObject[X]]
 
-            tree.registerSynchronizedObject(path.dropRight(1), path.last, castedSyncObject(), reference.owner).synchronizedObject
+            tree.registerSynchronizedObject(path.dropRight(1), path.last, castedSyncObject(), reference.owner, None).synchronizedObject
         } else if (nodeOpt.get.synchronizedObject ne syncObj) {
             throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
         }

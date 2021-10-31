@@ -144,7 +144,7 @@ object SimpleSyncObjectSuperClassDescription {
 
     implicit def fromTag[A: ClassTag]: SimpleSyncObjectSuperClassDescription[A] = apply[A](classTag[A].runtimeClass)
 
-    def apply[A](clazz: Class[_]): SimpleSyncObjectSuperClassDescription[A] = cache.getOrElse(clazz, {
+    def apply[A](clazz: Class[_]): SimpleSyncObjectSuperClassDescription[A] = cache.getOrElseUpdate(clazz, {
         if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
         val AClass = clazz.asInstanceOf[Class[A]]

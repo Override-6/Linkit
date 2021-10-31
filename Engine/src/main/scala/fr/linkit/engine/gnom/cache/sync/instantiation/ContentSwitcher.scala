@@ -26,4 +26,6 @@ class ContentSwitcher[T <: AnyRef](source: T) extends SyncInstanceCreator[T] {
         ScalaUtils.pasteAllFields(instance, source)
         instance
     }
+
+    override def getOrigin: Option[AnyRef] = Some(source)
 }

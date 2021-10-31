@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorFactory}
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator}
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncObjectReference}
@@ -29,7 +29,6 @@ import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
-import fr.linkit.engine.gnom.cache.sync.behavior.AnnotationBasedMemberBehaviorFactory
 import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.SynchronizedObjectBehaviorFactoryBuilder
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
@@ -48,7 +47,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                                                                 generator: SyncClassCenter,
                                                                 override val defaultBehaviorFactory: SynchronizedObjectBehaviorFactory,
                                                                 override val network: Network)
-    extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
+        extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val treeCenter       : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, network.objectManagementChannel)
@@ -61,9 +60,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], bhvFactory: SynchronizedObjectBehaviorFactory): A with SynchronizedObject[A] = {
         val tree = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], bhvFactory)
         channel.makeRequest(ChannelScopes.discardCurrent)
-            .addPacket(ObjectPacket(ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier)))
-            .putAllAttributes(this)
-            .submit()
+                .addPacket(ObjectPacket(ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier)))
+                .putAllAttributes(this)
+                .submit()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
         wrapperNode.synchronizedObject
@@ -76,8 +75,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val chip         = ObjectChip[A](rootBehavior, network, root)
         val puppeteer    = new ObjectPuppeteer[A](channel, this, nodeLocation, rootBehavior)
         val presence     = treeCenter.getPresence(nodeLocation)
+        val origin       = creator.getOrigin.orNull
         val rootNode     = (tree: DefaultSynchronizedObjectTree[A]) => {
-            val data = new ObjectNodeData[A](puppeteer, chip, tree, nodeLocation, presence, root, currentIdentifier)
+            val data = new ObjectNodeData[A](puppeteer, chip, tree, nodeLocation, presence, root, currentIdentifier, origin)
             new RootObjectSyncNode[A](data)
         }
         val tree         = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, treeCenter, id, DefaultInstantiator, this, behaviorFactory)(rootNode)
@@ -85,10 +85,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         tree
     }
 
-
     override def makeTree(root: SynchronizedObject[A]): Unit = {
         val reference = root.reference
-        val path = reference.nodePath
+        val path      = reference.nodePath
         if (path.length != 1)
             throw new IllegalArgumentException("Can only make tree from a root synchronised object.")
         val wrapper = new InstanceWrapper[A](root.asInstanceOf[A with SynchronizedObject[A]])
@@ -98,6 +97,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     override def newData[B <: AnyRef](parent: ObjectSyncNode[_],
                                       id: Int,
                                       syncObject: B with SynchronizedObject[B],
+                                      origin: Option[AnyRef],
                                       ownerID: String): ObjectNodeData[B] = {
         val tree          = parent.tree
         val path          = parent.treePath :+ id
@@ -107,7 +107,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val reference     = new SyncObjectReference(family, cacheID, ownerID, path)
         val puppeteer     = new ObjectPuppeteer[B](channel, this, reference, behavior)
         val presence      = treeCenter.getPresence(reference)
-        new ObjectNodeData[B](puppeteer, chip, tree, reference, presence, syncObject, currentIdentifier)
+        new ObjectNodeData[B](puppeteer, chip, tree, reference, presence, syncObject, currentIdentifier, origin.orNull)
     }
 
     override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
@@ -134,13 +134,13 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
         treeCenter
-            .findTree(path.head)
-            .flatMap(tree => {
-                if (path.length == 1)
-                    Some(tree.rootNode)
-                else
-                    tree.findNode[A](path)
-            })
+                .findTree(path.head)
+                .flatMap(tree => {
+                    if (path.length == 1)
+                        Some(tree.rootNode)
+                    else
+                        tree.findNode[A](path)
+                })
     }
 
     private def handleRootObjectPacket(treeID: Int, rootObject: AnyRef with SynchronizedObject[AnyRef], owner: String): Unit = {
@@ -172,8 +172,8 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                     handleInvocationPacket(ip, bundle)
                 case ObjectPacket(location: SyncObjectReference) =>
                     bundle.responseSubmitter
-                        .addPacket(BooleanPacket(isObjectPresent(location)))
-                        .submit()
+                            .addPacket(BooleanPacket(isObjectPresent(location)))
+                            .submit()
 
                 case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner)) =>
                     handleRootObjectPacket(treeID, rootObject, owner)

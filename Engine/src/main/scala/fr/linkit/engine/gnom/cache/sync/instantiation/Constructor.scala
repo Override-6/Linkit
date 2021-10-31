@@ -30,6 +30,8 @@ class Constructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends S
         val constructor = getAssignableConstructor(syncClass, arguments)
         constructor.newInstance(arguments: _*)
     }
+
+    override def getOrigin: Option[AnyRef] = None
 }
 
 object Constructor {

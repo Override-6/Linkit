@@ -25,6 +25,7 @@ class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocati
                                   val reference: SyncObjectReference, //The sync object reference
                                   val presence: NetworkObjectPresence, //the sync object presence
                                   val synchronizedObject: A with SynchronizedObject[A], //the sync object
-                                  val currentIdentifier: String) { //identifier of the current engine.
+                                  val currentIdentifier: String, //identifier of the current engine.//identifier of the current engine.
+                                  val origin: AnyRef) { //The synchronized object's origin (the same object before it was converted to its synchronized version).
 
 }
