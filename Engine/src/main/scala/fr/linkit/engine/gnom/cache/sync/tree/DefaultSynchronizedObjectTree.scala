@@ -129,12 +129,12 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         center.registerReference(node.reference)
         parent.addChild(node)
 
-        scanSyncObjectFields(parent, ownerID, syncObject)
+        scanSyncObjectFields(node, ownerID, syncObject)
         node
     }
 
     @inline
-    private def scanSyncObjectFields[B <: AnyRef](parent: ObjectSyncNode[_], ownerID: String, syncObject: B with SynchronizedObject[B]): Unit = {
+    private def scanSyncObjectFields[B <: AnyRef](node: ObjectSyncNode[_], ownerID: String, syncObject: B with SynchronizedObject[B]): Unit = {
         val isCurrentOwner = ownerID == currentIdentifier
         val engine         = if (!isCurrentOwner) Try(network.findEngine(ownerID).get).getOrElse(null) else null
         val behavior       = syncObject.getBehavior
@@ -154,7 +154,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                     case _                                =>
                         findMatchingSyncNode(fieldValue) match {
                             case Some(node: SyncNode[AnyRef]) => node.synchronizedObject
-                            case None                         => genSynchronizedObject(parent, id, fieldValue)(ownerID).synchronizedObject
+                            case None                         => genSynchronizedObject(node, id, fieldValue)(ownerID).synchronizedObject
                         }
                 }
             }
