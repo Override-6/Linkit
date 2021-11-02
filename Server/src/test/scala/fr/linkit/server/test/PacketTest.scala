@@ -35,13 +35,14 @@ import org.junit.jupiter.api.{Test, TestInstance}
 import org.mockito.Mockito
 
 import java.util
+import scala.collection.mutable
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {
 
     @Test
     def serialAndDeserialList(): Unit = {
-        val tested = new util.HashMap[String, Int](){
+        val tested = new mutable.HashMap[String, Int](){
             Map("Strings" -> 1, "To" -> 0, "Consider" -> -1, "Cool" -> -2)
                     .foreachEntry(put)
         }

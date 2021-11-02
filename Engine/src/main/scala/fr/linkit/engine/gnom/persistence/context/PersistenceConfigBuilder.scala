@@ -25,9 +25,9 @@ import fr.linkit.engine.gnom.reference.WeakContextObjectLinker
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 import org.jetbrains.annotations.Nullable
+
 import java.lang.reflect.Modifier
 import java.net.URL
-
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -47,7 +47,7 @@ class PersistenceConfigBuilder {
 
     object profiles {
 
-        private[PersistenceConfigBuilder] val customProfiles = new ClassMap[TypeProfileBuilder[_ <: AnyRef]]()
+        private[PersistenceConfigBuilder] val customProfiles = new mutable.HashMap[Class[_], TypeProfileBuilder[_ <: AnyRef]]()
 
         def +=[T <: AnyRef : ClassTag](builder: TypeProfileBuilder[T]): this.type = {
             val clazz = classTag[T].runtimeClass
@@ -101,7 +101,7 @@ class PersistenceConfigBuilder {
         referenceStore put(id, ref)
     }
 
-    def addPersistence[T <: AnyRef : ClassTag](persistence: TypePersistence[T]): this.type = {
+    def putPersistence[T <: AnyRef : ClassTag](persistence: TypePersistence[T]): this.type = {
         val clazz = classTag[T].runtimeClass
         if (persistence eq null) {
             persistors.remove(clazz)
