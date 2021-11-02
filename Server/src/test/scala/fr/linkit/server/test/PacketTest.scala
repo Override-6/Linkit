@@ -21,8 +21,8 @@ import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.engine.gnom.packet.traffic.{ChannelScopes, DynamicSocket, SocketPacketWriter, WriterInfo}
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
+import fr.linkit.engine.gnom.packet.traffic.{ChannelScopes, DynamicSocket, SocketPacketWriter, WriterInfo}
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
 import fr.linkit.engine.gnom.persistence.{DefaultObjectTranslator, PacketSerializationChoreographer, SimpleTransferInfo}
 import fr.linkit.engine.gnom.reference.WeakContextObjectLinker
@@ -34,13 +34,18 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Test, TestInstance}
 import org.mockito.Mockito
 
-import scala.collection.mutable
+import java.util
+
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {
 
     @Test
     def serialAndDeserialList(): Unit = {
-        serialAndDeserial(mutable.HashMap[String, Int]("Strings" -> 1, "To" -> 0, "Consider" -> -1, "Cool" -> -2))
+        val tested = new util.HashMap[String, Int](){
+            Map("Strings" -> 1, "To" -> 0, "Consider" -> -1, "Cool" -> -2)
+                    .foreachEntry(put)
+        }
+        serialAndDeserial(tested)
     }
 
 }

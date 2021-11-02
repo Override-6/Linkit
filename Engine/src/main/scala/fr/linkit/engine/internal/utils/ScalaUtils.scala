@@ -102,8 +102,8 @@ object ScalaUtils {
         import UnWrapper.unwrap
 
         if (value == null) {
-            if (!Modifier.isFinal(field.getModifiers))
-                field.set(instance, null)
+            //if (!Modifier.isFinal(field.getModifiers))
+            //    field.set(instance, null)
             return
         }
 

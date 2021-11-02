@@ -20,7 +20,8 @@ class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                                       private[context] val persists: Array[TypePersistence[T]]) extends TypeProfile[T] {
 
     private lazy val declaredParent: TypeProfile[_ >: T] = {
-        if (typeClass eq classOf[Object]) null else store.getProfile[T](typeClass.getSuperclass)
+        val superClass = typeClass.getSuperclass
+        if (superClass == null) null else store.getProfile[T](superClass)
     }
 
     override def getPersistences: Array[TypePersistence[T]] = persists
