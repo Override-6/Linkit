@@ -18,8 +18,7 @@ import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor.getAssignableConstructor
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 
-import java.lang.reflect.Modifier
-import java.lang.reflect.{Constructor => JConstructor}
+import java.lang.reflect.{Modifier, Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}
 
 class Constructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends SyncInstanceCreator[T] {
@@ -45,7 +44,7 @@ object Constructor {
     def getAssignableConstructor[T](clazz: Class[T], objectsArray: Array[Any]): JConstructor[T] = {
         for (constructor <- clazz.getDeclaredConstructors) {
             val params               = constructor.getParameterTypes
-            val constructorStructure = ArrayObjectStructure(params)
+            val constructorStructure = ArrayObjectStructure(params: _*)
             if (constructorStructure.isAssignable(objectsArray)) {
                 val mods = constructor.getModifiers
                 if (Modifier.isPrivate(mods) || Modifier.isProtected(mods))

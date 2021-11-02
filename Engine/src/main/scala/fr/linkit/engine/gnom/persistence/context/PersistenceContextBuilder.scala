@@ -14,7 +14,6 @@
 package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.persistence.context.{Deconstructor, PersistenceContext}
-import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.internal.utils.ClassMap
 
 import java.lang.reflect.Constructor
@@ -31,6 +30,6 @@ abstract class PersistenceContextBuilder {
         deconstructorMap.put(clazz, deconstructor)
     }
 
-    def build(traffic: PacketTraffic): PersistenceContext = ImmutablePersistenceContext(traffic, constructorMap, deconstructorMap)
+    def build(): PersistenceContext = ImmutablePersistenceContext(constructorMap, deconstructorMap)
 
 }

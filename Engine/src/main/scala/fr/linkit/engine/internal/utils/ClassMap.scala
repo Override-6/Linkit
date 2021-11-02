@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.utils
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 class ClassMap[V] extends mutable.HashMap[Class[_], V]() {
 
@@ -37,12 +37,20 @@ class ClassMap[V] extends mutable.HashMap[Class[_], V]() {
     private def getFirstSuper(key: Class[_]): Option[V] = {
         if (key == null)
             return None
-        for (interface <- key.getInterfaces) {
+
+        val interfaces = key.getInterfaces
+        for (interface <- interfaces) {
+            val opt = super.get(interface)
+            if (opt.isDefined)
+                return opt
+        }
+        for (interface <- interfaces) {
             val opt = get(interface)
             if (opt.isDefined)
                 return opt
         }
         get(key.getSuperclass)
     }
+
 
 }

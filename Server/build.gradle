@@ -51,6 +51,7 @@ dependencies {
     testImplementation group: 'org.junit.platform', name: 'junit-platform-runner', version: '1.8.0-M1'
     testImplementation project(':API').sourceSets.test.output
     testImplementation project(':Engine').sourceSets.test.output
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.22.0'
 
     implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.6'
     implementation group: 'org.scala-lang', name: 'scala-reflect', version: '2.13.6'

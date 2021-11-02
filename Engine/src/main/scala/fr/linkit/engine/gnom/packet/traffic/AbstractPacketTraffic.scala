@@ -37,7 +37,7 @@ import scala.reflect.ClassTag
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                                      defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
 
-    val context: ImmutablePersistenceContext = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
+    val context: ImmutablePersistenceContext = ImmutablePersistenceContext(new ClassMap(), new ClassMap())
     private val minimalConfigBuilder = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
     private val objectChannelConfig  = {
         val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)

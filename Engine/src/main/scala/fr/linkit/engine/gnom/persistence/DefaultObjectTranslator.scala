@@ -25,6 +25,7 @@ import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
 import fr.linkit.engine.internal.LinkitApplication
 
 import java.nio.ByteBuffer
+import scala.annotation.switch
 
 class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator {
 
@@ -61,7 +62,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
     }
 
     private def readCoordinates(buff: ByteBuffer): PacketCoordinates = {
-        buff.get() match {
+        (buff.get(): @switch) match {
             case BroadcastedFlag =>
                 val path = new Array[Int](buff.getInt) //init path array
                 for (i <- path.indices) path(i) = buff.getInt() //fill path content

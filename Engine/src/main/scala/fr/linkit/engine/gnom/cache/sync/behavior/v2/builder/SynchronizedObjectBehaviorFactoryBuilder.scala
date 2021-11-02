@@ -150,7 +150,6 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
             }
 
             private def getMethod(name: String): MethodDescription = {
-                val names = desc.listMethods().map(_.javaMethod.getName).toArray[String].sorted
                 desc.findMethodDescription(name).getOrElse {
                     throw new NoSuchElementException(s"Can not find declared or inherited method '$name' in $clazz, is this method final or private ?")
                 }
@@ -161,8 +160,6 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
                     throw new NoSuchElementException(s"Can not find declared or inherited field '$name' in $clazz")
                 }
             }
-
-            ListBuffer
 
             def method(name: String): MethodBehaviorDescriptorBuilderIntroduction = {
                 val mDesc = getMethod(name)

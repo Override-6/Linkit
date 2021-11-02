@@ -13,15 +13,10 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-
 import java.lang.reflect.Constructor
 
 trait PersistenceContext {
 
-    val traffic: PacketTraffic
 
     def findConstructor[T](clazz: Class[_]): Option[Constructor[T]]
 

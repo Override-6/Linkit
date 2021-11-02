@@ -65,9 +65,9 @@ object ArrayObjectStructure {
 
     def apply: ObjectStructureBuilder = new ObjectStructureBuilder()
 
-    def apply(typess: Array[Class[_]]): ArrayObjectStructure = {
+    def apply(typess: Class[_]*): ArrayObjectStructure = {
         new ArrayObjectStructure {
-            override val types: Array[Class[_]] = typess
+            override val types: Array[Class[_]] = typess.toArray
         }
     }
 }

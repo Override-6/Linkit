@@ -55,7 +55,7 @@ object RefPacket {
     /**
      * Represents a packet that contains a serializable value
      * */
-    case class ObjectPacket(override val value: Serializable) extends RefPacket[Serializable]
+    case class ObjectPacket(override val value: AnyRef) extends RefPacket[AnyRef]
 
     /**
      * Represents a packet that contains an array of serialized values of a specified type.

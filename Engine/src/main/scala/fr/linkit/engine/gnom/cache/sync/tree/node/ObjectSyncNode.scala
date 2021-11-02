@@ -56,6 +56,7 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
      * This set stores every engine where this object is synchronized.
      * */
     override  val objectPresence    : NetworkObjectPresence         = data.presence
+    private val origin = data.origin
 
     synchronizedObject.initialize(this)
 
@@ -77,7 +78,7 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
 
     @Nullable
     def getMatchingSyncNode(nonSyncObject: AnyRef): SyncNode[_ <: AnyRef] = InvocationChoreographer.forceLocalInvocation {
-        if (nonSyncObject == synchronizedObject)
+        if (origin != null && nonSyncObject == origin)
             return this
 
         for (child <- childs.values) {

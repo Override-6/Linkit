@@ -19,8 +19,7 @@ import fr.linkit.engine.internal.utils.ClassMap
 
 import java.lang.reflect.Constructor
 
-class ImmutablePersistenceContext private(override val traffic: PacketTraffic,
-                                          constructors: ClassMap[Constructor[_]],
+class ImmutablePersistenceContext private(constructors: ClassMap[Constructor[_]],
                                           deconstructor: ClassMap[Deconstructor[_]]) extends PersistenceContext {
 
 
@@ -38,7 +37,7 @@ class ImmutablePersistenceContext private(override val traffic: PacketTraffic,
 
 object ImmutablePersistenceContext {
 
-    def apply(traffic: PacketTraffic, constructors: ClassMap[Constructor[_]], deconstructor: ClassMap[Deconstructor[_]]): ImmutablePersistenceContext = {
-        new ImmutablePersistenceContext(traffic, new ClassMap(constructors), new ClassMap(deconstructor))
+    def apply(constructors: ClassMap[Constructor[_]], deconstructor: ClassMap[Deconstructor[_]]): ImmutablePersistenceContext = {
+        new ImmutablePersistenceContext(new ClassMap(constructors), new ClassMap(deconstructor))
     }
 }
