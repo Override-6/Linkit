@@ -107,7 +107,8 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         val channelPath = result.coords.path
         channelPath.length == 0 || {
             val reference = new TrafficPresenceReference(channelPath)
-            tnol.isPresentOnEngine(boundIdentifier, reference)
+            val present = tnol.isPresentOnEngine(boundIdentifier, reference)
+            present
         }
     }
 

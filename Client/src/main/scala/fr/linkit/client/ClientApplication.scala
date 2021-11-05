@@ -109,8 +109,8 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
         connectionCache.remove(currentIdentifier)
         connectionCount -= 1
-        val newThreadCount = Math.max(configuration.nWorkerThreadFunction(connectionCount), 1)
-        appPool.setThreadCount(newThreadCount)
+        //val newThreadCount = Math.max(configuration.nWorkerThreadFunction(connectionCount), 1)
+        //appPool.setThreadCount(newThreadCount)
 
         AppLogger.info(s"Connection '$currentIdentifier' bound to $boundIdentifier was detached from application.")
     }
