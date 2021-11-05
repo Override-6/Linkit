@@ -147,6 +147,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                 fieldValue = modifier.receivedFromRemote(fieldValue, syncObject, engine)
             }
             if (bhv.isActivated) {
+                val id = ThreadLocalRandom.current().nextInt()
                 fieldValue = fieldValue match {
                     case sync: SynchronizedObject[AnyRef] =>
                         if (!sync.isInitialized)
@@ -154,7 +155,6 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                         val modifier = sync.getBehavior.multiModifier
                         modifier.modifyForField(sync, cast(field.getType))(syncObject, engine)
                     case _                                =>
-                        val id = ThreadLocalRandom.current().nextInt()
                         genSynchronizedObject(node, id, fieldValue)(ownerID).synchronizedObject
                 }
             }
