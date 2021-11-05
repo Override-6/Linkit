@@ -16,12 +16,10 @@ package fr.linkit.server.connection
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
-import fr.linkit.api.gnom.packet.channel.ChannelScope
-import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.{ObjectSerializationResult, ObjectTranslator}
+import fr.linkit.api.gnom.persistence.obj.TrafficPresenceReference
+import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketTransferResult}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.internal.system.event.EventNotifier
@@ -31,20 +29,20 @@ import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
 import java.nio.ByteBuffer
-import scala.reflect.ClassTag
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
 
     import session._
 
-    override val currentIdentifier       : String            = server.currentIdentifier
-    override val traffic                 : PacketTraffic     = server.traffic
-    override val translator              : ObjectTranslator  = server.translator
-    override val eventNotifier           : EventNotifier     = server.eventNotifier
-    override val network                 : Network           = session.network
-    override val port                    : Int               = server.port
-    override val boundIdentifier         : String            = session.boundIdentifier
-    @volatile private var alive                              = false
+    override val currentIdentifier: String           = server.currentIdentifier
+    override val traffic          : PacketTraffic    = server.traffic
+    override val translator       : ObjectTranslator = server.translator
+    override val eventNotifier    : EventNotifier    = server.eventNotifier
+    override val network          : Network          = session.network
+    override val port             : Int              = server.port
+    override val boundIdentifier  : String           = session.boundIdentifier
+    @volatile private var alive                      = false
+    private  val tnol                                = network.gnol.trafficNOL
 
     override def shutdown(): Unit = {
         WorkerPools.ensureCurrentIsWorker()
@@ -88,12 +86,13 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
-        runLater {
+        /*runLater*/
+        {
             val coords       = DedicatedPacketCoordinates(path, boundIdentifier, server.currentIdentifier)
             val config       = traffic.getPersistenceConfig(coords.path)
             val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network.gnol)
             val result       = translator.translate(transferInfo)
-            session.send(result)
+            send(result)
         }
     }
 
@@ -104,8 +103,21 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         session.updateSocket(socket)
     }
 
-    def send(result: ObjectSerializationResult): Unit = {
-        session.send(result)
+    def canHandlePacketInjection(result: PacketTransferResult): Boolean = {
+        val channelPath = result.coords.path
+        channelPath.length == 0 || {
+            val reference = new TrafficPresenceReference(channelPath)
+            tnol.isPresentOnEngine(boundIdentifier, reference)
+        }
+    }
+
+    def send(result: PacketTransferResult): Unit = {
+        if (!canHandlePacketInjection(result)) {
+            val channelPath = result.coords.path
+            val reference   = new TrafficPresenceReference(channelPath)
+            throw new PacketNotInjectableException(this, s"Engine '$boundIdentifier' does not contains any traffic packet injectable presence at $reference.")
+        }
+        session.send(result.buff)
     }
 
     private[connection] def send(buff: ByteBuffer): Unit = {

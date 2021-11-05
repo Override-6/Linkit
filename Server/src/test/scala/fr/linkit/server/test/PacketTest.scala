@@ -42,9 +42,9 @@ class PacketTest {
 
     @Test
     def serialAndDeserialList(): Unit = {
-        val tested = new mutable.HashMap[String, Int](){
-            Map("Strings" -> 1, "To" -> 0, "Consider" -> -1, "Cool" -> -2)
-                    .foreachEntry(put)
+        val tested = new util.HashSet[(String, Int)]() {
+            Seq("Strings" -> 1, "To" -> 0, "Consider" -> -1, "Cool" -> -2)
+                    .foreach(add)
         }
         serialAndDeserial(tested)
     }

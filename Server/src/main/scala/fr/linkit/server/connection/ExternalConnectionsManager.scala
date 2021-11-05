@@ -121,7 +121,8 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
             if (!attributesCache.contains(serializer))
                 attributesCache.put(serializer, translator.translateAttributes(attributes, connectionID))
             */
-            connection.send(result.buff)
+            if (connection.canHandlePacketInjection(result))
+                connection.send(result.buff)
         })
     }
 
@@ -181,6 +182,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         val connection = getConnection(target)
         if (connection == null)
             throw NoSuchConnectionException(s"unknown ID '$target' to deflect packet")
-        connection.send(result.buff)
+        if (connection.canHandlePacketInjection(result))
+            connection.send(result.buff)
     }
 }
