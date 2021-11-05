@@ -113,8 +113,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
 
     override def close(cause: Reason): Unit = {
         children.values.foreach {
-            case (closeable: JustifiedCloseable, _) => closeable.close(return)
-            case (closeable: Closeable, _)          => closeable
+            case (closeable: Closeable, _)          => closeable.close()
             case _                                  => //not closeable ? don't close.
         }
         closed = true

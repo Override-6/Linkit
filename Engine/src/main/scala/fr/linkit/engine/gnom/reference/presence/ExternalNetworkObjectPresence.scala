@@ -28,6 +28,8 @@ class ExternalNetworkObjectPresence[L <: NetworkObjectReference](handler: Abstra
     handler.bindListener(location, this)
 
     override def getPresenceFor(engineId: String): ObjectPresenceType = {
+        if (engineId == null)
+            throw new NullPointerException("engineId is null.")
         presences.getOrElseUpdate(engineId, {
             val present = handler.askIfPresent(engineId, location)
             if (present) PRESENT

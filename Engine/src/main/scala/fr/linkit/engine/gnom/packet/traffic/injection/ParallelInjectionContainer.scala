@@ -16,15 +16,11 @@ package fr.linkit.engine.gnom.packet.traffic.injection
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.InjectionContainer
 import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
-
-import scala.collection.mutable
 
 class ParallelInjectionContainer extends InjectionContainer {
 
-    private val processingInjections = new mutable.LinkedHashMap[Array[Int], ParallelInjection]
+    private val processingInjections = new java.util.LinkedHashMap[Array[Int], ParallelInjection]()
 
     override def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionControl = {
         makeInjection(SimplePacketBundle(packet, attributes, coordinates))
@@ -35,18 +31,16 @@ class ParallelInjectionContainer extends InjectionContainer {
         val number      = packet.number
         val coordinates = bundle.coords
         //AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR BUNDLE $bundle")
-        val path = coordinates.path
+        val path        = coordinates.path
 
         val injection = this.synchronized {
-            processingInjections.get(path) match {
-                case Some(value) if value.canAcceptMoreInjection =>
-                    //AppLogger.error(s"${currentTasksId} <> $number -> INJECTION IS AVAILABLE, ADDING PACKET.")
-                    value
-                case _                                           =>
-                    //AppLogger.error(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
-                    val injection = new ParallelInjection(path)
-                    processingInjections.put(path, injection)
-                    injection
+            val value = processingInjections.get(path)
+            if (value != null && value.canAcceptMoreInjection)
+                value
+            else {
+                val value = new ParallelInjection(path)
+                processingInjections.put(path, value)
+                value
             }
         }
 
