@@ -48,8 +48,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new IllegalWrapperNodeException("Root node's tree != this")
         if (root.id != id)
             throw new IllegalWrapperNodeException("Root's identifier is not equals to this tree's identifier.")
-        scanSyncObjectFields(root, currentIdentifier, root.synchronizedObject)
         this.root = root
+        scanSyncObjectFields(root, currentIdentifier, root.synchronizedObject)
     }
 
     def getRoot: RootObjectSyncNode[A] = root
@@ -141,21 +141,21 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         for (bhv <- behavior.listField()) {
             val field      = bhv.desc.javaField
             var fieldValue = field.get(syncObject)
-            val modifier   = bhv.modifier
+            fieldValue = findMatchingSyncNode(fieldValue).map(_.synchronizedObject).getOrElse(fieldValue)
+            val modifier = bhv.modifier
             if (modifier != null) {
                 fieldValue = modifier.receivedFromRemote(fieldValue, syncObject, engine)
             }
             if (bhv.isActivated) {
-                val id = ThreadLocalRandom.current().nextInt()
                 fieldValue = fieldValue match {
                     case sync: SynchronizedObject[AnyRef] =>
+                        if (!sync.isInitialized)
+                            initSynchronizedObject(node, id, sync, sync, ownerID)
                         val modifier = sync.getBehavior.multiModifier
                         modifier.modifyForField(sync, cast(field.getType))(syncObject, engine)
                     case _                                =>
-                        findMatchingSyncNode(fieldValue) match {
-                            case Some(node: SyncNode[AnyRef]) => node.synchronizedObject
-                            case None                         => genSynchronizedObject(node, id, fieldValue)(ownerID).synchronizedObject
-                        }
+                        val id = ThreadLocalRandom.current().nextInt()
+                        genSynchronizedObject(node, id, fieldValue)(ownerID).synchronizedObject
                 }
             }
             ScalaUtils.setValue(syncObject, field, fieldValue)

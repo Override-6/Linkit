@@ -62,9 +62,9 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
 
     def addChild(node: ObjectSyncNode[_]): Unit = {
         if (node.parent ne this)
-            throw new CanNotSynchronizeException("Attempted to add a child to this node with a different parent of this node.")
+            throw new CanNotSynchronizeException("Attempted to add a child to this node that does not define this node as its parent.")
         if (childs.contains(node.id))
-            throw new IllegalStateException(s"Puppet already exists at ${puppeteer.nodeLocation.nodePath.mkString("/") + s"/$id"}")
+            throw new IllegalStateException(s"A Synchronized Object Node already exists at ${puppeteer.nodeLocation.nodePath.mkString("/") + s"/$id"}")
         childs.put(node.id, node)
     }
 
