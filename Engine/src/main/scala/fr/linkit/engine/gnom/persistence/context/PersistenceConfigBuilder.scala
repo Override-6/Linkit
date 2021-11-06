@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
@@ -68,26 +69,35 @@ class PersistenceConfigBuilder {
         this
     }
 
-    def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A): this.type = {
-        val clazz     = classTag[B].runtimeClass
+    def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A, procrastinator: Procrastinator = null): this.type = {
+        val fromClass = classTag[A].runtimeClass
+        val toClass   = classTag[B].runtimeClass
         val persistor = new TypePersistence[A] {
-            private  val fields                     = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
+            private  val fields                     = ScalaUtils.retrieveAllFields(fromClass).filterNot(f => Modifier.isTransient(f.getModifiers))
             override val structure: ObjectStructure = new ArrayObjectStructure {
-                override val types: Array[Class[_]] = Array(clazz)
+                override val types: Array[Class[_]] = Array(toClass)
             }
 
             override def initInstance(allocatedObject: A, args: Array[Any]): Unit = {
-                args.head match {
-                    case t: B =>
-                        val from = fFrom(t)
-                        fields.foreach(f => {
-                            val value = ScalaUtils.getValue(from, f)
-                            ScalaUtils.setValue(allocatedObject, f, value)
-                        })
-                }
+                if (procrastinator eq null)
+                    initInstance0(allocatedObject, args)
+                else
+                    procrastinator.runLater(initInstance0(allocatedObject, args))
             }
 
-            override def toArray(t: A): Array[Any] = Array(fTo(t))
+            private def initInstance0(allocatedObject: A, args: Array[Any]): Unit = {
+                val t: B = args.head.asInstanceOf[B]
+                val from = fFrom(t)
+                fields.foreach(f => {
+                    val value = ScalaUtils.getValue(from, f)
+                    ScalaUtils.setValue(allocatedObject, f, value)
+                })
+            }
+
+            override def toArray(t: A): Array[Any] = {
+                val to = fTo(t)
+                Array(to)
+            }
         }
         persistors put(classTag[A].runtimeClass, persistor)
         this

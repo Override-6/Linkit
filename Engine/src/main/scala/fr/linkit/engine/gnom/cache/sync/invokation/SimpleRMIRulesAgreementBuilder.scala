@@ -17,13 +17,39 @@ import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreem
 
 import scala.collection.mutable.ListBuffer
 
-class SimpleRMIRulesAgreementBuilder(ownerID: String, currentID: String) extends RMIRulesAgreementBuilder {
+class SimpleRMIRulesAgreementBuilder(ownerID: String, currentID: String, rootOwnerID: String) extends RMIRulesAgreementBuilder {
 
     private val currentIsOwner               = ownerID == currentID
+    private val currentIsRootOwner           = rootOwnerID == currentID
     private val discarded                    = ListBuffer.empty[String]
     private val accepted                     = ListBuffer.empty[String]
     private var acceptAllTargets   : Boolean = true
     private var desiredEngineReturn: String  = currentID
+
+    override def acceptRootOwner(): this.type = accept(rootOwnerID)
+
+    override def discardRootOwner(): this.type = discard(rootOwnerID)
+
+    override def desireCurrentEngineToReturn(): this.type = {
+        desiredEngineReturn = currentID
+        this
+    }
+
+    override def desireRootOwnerEngineToReturn(): this.type = {
+        desiredEngineReturn = rootOwnerID
+        this
+    }
+
+    override def ifCurrentIsRootOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type = {
+        if (currentIsRootOwner) action(this)
+        this
+    }
+
+    override def ifCurrentIsNotRootOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type = {
+        if (!currentIsRootOwner) action(this)
+        this
+    }
+
 
     override def discard(target: String): this.type = {
         accepted -= target
@@ -64,12 +90,8 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, currentID: String) extends
         this
     }
 
-    override def setDesiredOwnerEngineReturn(): this.type = {
+    override def desireOwnerEngineToReturn(): this.type = {
         setDesiredEngineReturn(ownerID)
-    }
-
-    override def setDesiredCurrentEngineReturn(): this.type = {
-        setDesiredEngineReturn(currentID)
     }
 
     override def ifCurrentIsOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type = {

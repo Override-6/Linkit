@@ -15,11 +15,16 @@ package fr.linkit.api.gnom.cache.sync.description
 
 import fr.linkit.api.gnom.cache.sync.description.MethodDescription.NumberTypes
 
-import java.lang.reflect.Method
+import java.lang.reflect.{InaccessibleObjectException, Method}
 
 case class MethodDescription(javaMethod: Method,
                              classDesc: SyncObjectSuperclassDescription[_]) {
-
+    //TODO native method that cals any method reflectively; this is a fast fix.
+    try {
+        javaMethod.setAccessible(true)
+    } catch {
+        case e: InaccessibleObjectException => //do nothing
+    }
     val methodId: Int = {
         val parameters: Array[Class[_]] = javaMethod.getParameterTypes
         javaMethod.getName.hashCode + hashCode(parameters)

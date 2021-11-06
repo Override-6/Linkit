@@ -26,9 +26,9 @@ import fr.linkit.engine.gnom.cache.sync.behavior.member.{MethodParameterBehavior
 import fr.linkit.engine.gnom.cache.sync.behavior.v2.SyncObjectBehaviorFactory
 import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.SynchronizedObjectBehaviorFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
 import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
+
 import java.lang.reflect.{Field, Method, Parameter}
 import java.util.NoSuchElementException
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -292,15 +292,22 @@ object SynchronizedObjectBehaviorFactoryBuilder {
         private[SynchronizedObjectBehaviorFactoryBuilder] def build(): SyncMethodBehavior = {
             usedParams.foreach(_.concludeAllAssignements()) //will modify the paramBehaviors map
             val jMethod             = context.javaMethod
-            val parameterBehaviors  = jMethod.getParameters.map(getOrDefaultBehavior)
+            val parameterBehaviors  = getParamBehaviors(jMethod)
             val returnValueBehavior = new MethodReturnValueBehavior[AnyRef](returnvalue.modifier.asInstanceOf[MethodCompModifier[AnyRef]], returnvalue.enabled)
             SyncMethodBehavior(context, parameterBehaviors, returnValueBehavior,
                 false, innerInvocations, Array(rule), procrastinator, DefaultMethodInvocationHandler)
         }
 
+        private def getParamBehaviors(jMethod: Method): Array[ParameterBehavior[AnyRef]] = {
+            val base = jMethod.getParameters.map(getOrDefaultBehavior)
+            if (base.exists(pb => pb.modifier != null || pb.isActivated))
+                base
+            else Array.empty
+        }
+
         private def getOrDefaultBehavior(parameter: Parameter): ParameterBehavior[AnyRef] = {
             paramBehaviors.getOrElse(parameter, AnnotationBasedMemberBehaviorFactory.genParameterBehavior(parameter))
-                .asInstanceOf[ParameterBehavior[AnyRef]]
+                    .asInstanceOf[ParameterBehavior[AnyRef]]
         }
 
         private def getParam(paramName: String): Parameter = {

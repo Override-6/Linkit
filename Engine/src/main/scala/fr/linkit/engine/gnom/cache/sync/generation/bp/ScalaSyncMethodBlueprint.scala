@@ -41,7 +41,7 @@ object ScalaSyncMethodBlueprint {
         val method = desc.javaMethod
         val params = method.getParameterTypes
         method.getName match {
-            case "toString" | "clone" | "hashCode" | "reference" if params.isEmpty => "override"
+            case "toString" | "clone" | "hashCode" | "reference" | "finalize" if params.isEmpty => "override"
             case "equals" if params.length == 1 && (params(0) eq classOf[Object])  => "override"
             case _                                                                 => ""
         }

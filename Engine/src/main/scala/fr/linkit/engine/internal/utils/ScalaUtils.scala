@@ -13,14 +13,13 @@
 
 package fr.linkit.engine.internal.utils
 
-import java.io.File
-import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
-import java.nio.ByteBuffer
-
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import sun.misc.Unsafe
 
+import java.io.File
+import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
+import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
@@ -73,7 +72,7 @@ object ScalaUtils {
     }
 
     def getValue(instance: Any, field: Field): Any = {
-        val clazz = field.getType
+        val clazz  = field.getType
         val offset = TheUnsafe.objectFieldOffset(field)
         if (clazz.isPrimitive) {
             (clazz.getName: @switch) match {
@@ -96,10 +95,16 @@ object ScalaUtils {
     }
 
     def setValue(instance: Any, field: Field, value: Any): Unit = {
-        val fieldOffset = TheUnsafe.objectFieldOffset(field)
-        import java.lang
-
+        val fieldOffset = {
+            if (instance == null)
+                TheUnsafe.staticFieldOffset(field)
+            else
+                TheUnsafe.objectFieldOffset(field)
+        }
+        val cookie = if (instance == null) TheUnsafe.staticFieldBase(field) else instance
         import UnWrapper.unwrap
+
+        import java.lang
 
         if (value == null) {
             //if (!Modifier.isFinal(field.getModifiers))
@@ -129,7 +134,7 @@ object ScalaUtils {
             case c if c eq classOf[Character]    => TheUnsafe.putObject(_, _, unwrap(value, _.charValue))
             case _                               => TheUnsafe.putObject(_, _, value)
         }
-        action(instance, fieldOffset)
+        action(cookie, fieldOffset)
     }
 
     implicit def toPresentableString(bytes: Array[Byte]): String = {

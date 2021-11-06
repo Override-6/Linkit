@@ -25,13 +25,15 @@ import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilati
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.io.File
-import java.nio.file.Files
+import java.nio.file.{Files, NoSuchFileException}
 
 class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[SyncObjectSuperclassDescription[_], SynchronizedObject[_]](DefaultClassBlueprint) {
 
     override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]], context: SyncObjectSuperclassDescription[_], className: String, loader: GeneratedClassLoader): Class[_] = {
-        val (byteCode, wrapperClass) = new ClassRectifier(context, className, loader, context.clazz).rectifiedClass
         val wrapperClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
+        if (Files.notExists(wrapperClassFile))
+            throw new NoSuchFileException(s"class file for class $className at ${req.classDir} not found.")
+        val (byteCode, wrapperClass) = new ClassRectifier(context, className, loader, context.clazz).rectifiedClass
         Files.write(wrapperClassFile, byteCode)
         RuntimeClassOperations.prepareClass(wrapperClass)
         ClassMappings.putClass(wrapperClass)

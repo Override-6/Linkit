@@ -61,14 +61,24 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
     }
 
     private def collectMethods(): Map[Int, MethodDescription] = {
-        getFiltered(clazz)
+        getFiltered
                 .map(MethodDescription(_, this))
                 .map(desc => (desc.methodId, desc))
                 .toMap
     }
 
-    private def getFiltered(clazz: Class[_]): Iterable[Method] = {
-        clazz.getMethods
+    private def getAllMethods: ListBuffer[Method] = {
+        val buff = ListBuffer.empty[Method]
+        var cl: Class[_] = clazz
+        while (cl != null) {
+            buff ++= cl.getDeclaredMethods
+            cl = cl.getSuperclass
+        }
+        buff
+    }
+
+    private def getFiltered: Iterable[Method] = {
+        getAllMethods
                 .distinctBy(m => (m.getName, m.getParameterTypes))
                 .filterNot(isNotOverridable)
 

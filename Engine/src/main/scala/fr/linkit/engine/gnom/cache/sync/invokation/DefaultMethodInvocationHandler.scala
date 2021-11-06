@@ -21,15 +21,18 @@ import fr.linkit.api.internal.system.AppLogger
 object DefaultMethodInvocationHandler extends MethodInvocationHandler {
 
     override def handleRMI[R](localInvocation: CallableLocalMethodInvocation[R]): R = {
-        val syncObject        = localInvocation.synchronizedObject
-        val behavior          = localInvocation.methodBehavior
-        val desc              = behavior.desc
-        val puppeteer         = syncObject.getPuppeteer
-        val currentIdentifier = puppeteer.currentIdentifier
-        val args              = localInvocation.methodArguments
-        val name              = desc.javaMethod.getName
-        val methodID          = localInvocation.methodID
-        val network           = puppeteer.network
+        val syncNode   = localInvocation.objectNode
+        val syncObject = syncNode.synchronizedObject
+        val behavior   = localInvocation.methodBehavior
+        val desc       = behavior.desc
+        val puppeteer  = syncObject.getPuppeteer
+        val args       = localInvocation.methodArguments
+        val name       = desc.javaMethod.getName
+        val methodID   = localInvocation.methodID
+        val network    = puppeteer.network
+
+        val currentIdentifier   = puppeteer.currentIdentifier
+        val rootOwnerIdentifier = syncNode.tree.rootNode.ownerID
 
         val enableDebug = localInvocation.debug
 
@@ -43,7 +46,7 @@ object DefaultMethodInvocationHandler extends MethodInvocationHandler {
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
         var result     : Any = behavior.defaultReturnValue
         var localResult: Any = result
-        val methodAgreement  = behavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(puppeteer.ownerID, currentIdentifier))
+        val methodAgreement  = behavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(puppeteer.ownerID, currentIdentifier, rootOwnerIdentifier))
         val mayPerformRMI    = methodAgreement.mayPerformRemoteInvocation
         if (methodAgreement.mayCallSuper) {
             localResult = localInvocation.callSuper()

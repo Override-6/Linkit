@@ -27,10 +27,14 @@ import java.lang.reflect.{Method, Parameter}
 
 object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
-    def getSynchronizedParams(method: Method): Array[ParameterBehavior[AnyRef]] = {
+    def getParamBehaviors(method: Method): Array[ParameterBehavior[AnyRef]] = {
         val params = method.getParameters
                 .map(genParameterBehavior)
-        params
+        if (params.exists(_.isActivated))
+            params
+        //no behavior specified with annotation,
+        //the invocation part of the system makes some optimisations for methods behaviors with empty parameter behaviors.
+        else Array.empty
     }
 
     def genParameterBehavior(param: Parameter): ParameterBehavior[AnyRef] = {
@@ -39,20 +43,20 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
     }
 
     override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): SyncMethodBehavior = {
-        val javaMethod         = desc.javaMethod
-        val controlOpt         = Option(javaMethod.getAnnotation(classOf[MethodControl]))
-        val control            = controlOpt.getOrElse(DefaultMethodControl)
-        val synchronizedParams = getSynchronizedParams(desc.javaMethod)
-        val rules              = Array[RemoteInvocationRule](control.value())
-        val isHidden           = control.hide
-        val innerInvocations   = control.innerInvocations()
-        val returnValueBhv     = new MethodReturnValueBehavior[AnyRef](null, control.synchronizeReturnValue())
-        val handler            = controlOpt match {
+        val javaMethod       = desc.javaMethod
+        val controlOpt       = Option(javaMethod.getAnnotation(classOf[MethodControl]))
+        val control          = controlOpt.getOrElse(DefaultMethodControl)
+        val paramBehaviors   = getParamBehaviors(desc.javaMethod)
+        val rules            = Array[RemoteInvocationRule](control.value())
+        val isHidden         = control.hide
+        val innerInvocations = control.innerInvocations()
+        val returnValueBhv   = new MethodReturnValueBehavior[AnyRef](null, control.synchronizeReturnValue())
+        val handler          = controlOpt match {
             case None    => null
             case Some(_) => DefaultMethodInvocationHandler
         }
         SyncMethodBehavior(
-            desc, synchronizedParams, returnValueBhv, isHidden,
+            desc, paramBehaviors, returnValueBhv, isHidden,
             innerInvocations, rules, procrastinator.orNull, handler
         )
     }

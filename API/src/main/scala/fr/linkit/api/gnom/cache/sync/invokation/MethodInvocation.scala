@@ -13,9 +13,9 @@
 
 package fr.linkit.api.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
 import fr.linkit.api.gnom.cache.sync.description.MethodDescription
+import fr.linkit.api.gnom.cache.sync.tree.SyncNode
 
 /**
  * The invocation information for a synchronized object's method.
@@ -27,7 +27,7 @@ trait MethodInvocation[R] {
     /**
      * The synchronized object on which the method is called.
      * */
-    val synchronizedObject: SynchronizedObject[_]
+    val objectNode: SyncNode[_]
 
     /**
      * The method's identifier.

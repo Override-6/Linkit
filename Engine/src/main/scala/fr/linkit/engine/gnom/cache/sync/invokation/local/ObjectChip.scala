@@ -16,22 +16,20 @@ package fr.linkit.engine.gnom.cache.sync.invokation.local
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.modification.MethodCompModifierKind
 import fr.linkit.api.gnom.cache.sync.invokation.local.{Chip, LocalMethodInvocation}
-import fr.linkit.api.gnom.network.{ExecutorEngine, Network}
+import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
+import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.internal.utils.ScalaUtils
-import java.lang.reflect.Modifier
 
-import fr.linkit.api.gnom.cache.sync.behavior.modification.MethodCompModifierKind
+import java.lang.reflect.Modifier
 
 class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
                                       syncObject: SynchronizedObject[S],
                                       network: Network) extends Chip[S] {
-
-    private lazy val factory = syncObject.getBehaviorFactory
 
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(syncObject, obj)
@@ -57,37 +55,43 @@ class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
 
     @inline private def callMethod(behavior: MethodBehavior, params: Array[Any], origin: String): Any = {
         syncObject.getChoreographer.forceLocalInvocation {
-            //TODO cache action in the behavior
-            lazy val invocation = new AbstractMethodInvocation[Any](behavior, syncObject) with LocalMethodInvocation[Any] {
-                /**
-                 * The final argument array for the method invocation.
-                 * */
-                override val methodArguments: Array[Any] = params
-            }
-            val engine          = network.findEngine(origin).orNull
-            val paramsBehaviors = behavior.parameterBehaviors
-            for (i <- params.indices) {
-                val bhv      = paramsBehaviors(i)
-                val paramTpe = bhv.param.getType
-                params(i) match {
-                    case ref: AnyRef =>
-                        val modifier = bhv.modifier
-                        var result   = ref
-                        if (modifier != null) {
-                            result = modifier.fromRemote(result, invocation, engine)
-                            modifier.fromRemoteEvent(result, invocation, engine)
-                        }
-                        result = result match {
-                            case sync: SynchronizedObject[AnyRef] =>
-                                sync.getBehavior.multiModifier.modifyForParameter(sync, cast(paramTpe))(invocation, engine, MethodCompModifierKind.FROM_REMOTE)
-                            case x                                => x
-                        }
-                        params(i) = result
-                }
-            }
+            val engine = network.findEngine(origin).orNull
+            modifyParameters(behavior, engine, params)
             ExecutorEngine.setCurrentEngine(engine)
             behavior.desc.javaMethod.invoke(syncObject, params: _*)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
+        }
+    }
+
+    @inline
+    private def modifyParameters(behavior: MethodBehavior, engine: Engine, params: Array[Any]): Unit = {
+        val paramsBehaviors = behavior.parameterBehaviors
+        if (paramsBehaviors.isEmpty)
+            return
+        val invocation = new AbstractMethodInvocation[Any](behavior, syncObject.getNode) with LocalMethodInvocation[Any] {
+            /**
+             * The final argument array for the method invocation.
+             * */
+            override val methodArguments: Array[Any] = params
+        }
+        for (i <- params.indices) {
+            val bhv      = paramsBehaviors(i)
+            val paramTpe = bhv.param.getType
+            params(i) match {
+                case ref: AnyRef =>
+                    val modifier = bhv.modifier
+                    var result   = ref
+                    if (modifier != null) {
+                        result = modifier.fromRemote(result, invocation, engine)
+                        modifier.fromRemoteEvent(result, invocation, engine)
+                    }
+                    result = result match {
+                        case sync: SynchronizedObject[AnyRef] =>
+                            sync.getBehavior.multiModifier.modifyForParameter(sync, cast(paramTpe))(invocation, engine, MethodCompModifierKind.FROM_REMOTE)
+                        case x                                => x
+                    }
+                    params(i) = result
+            }
         }
     }
 

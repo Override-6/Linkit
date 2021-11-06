@@ -37,7 +37,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
     ONLY_OWNER((agreement) -> {
         agreement.discardAll()
                 .acceptOwner()
-                .setDesiredOwnerEngineReturn();
+                .desireOwnerEngineToReturn();
     }),
     /**
      * The invocation will be performed on every remote machines, excluding the current machine.
@@ -47,7 +47,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     NOT_CURRENT(((agreement) -> {
         agreement.discardCurrent()
-                .setDesiredOwnerEngineReturn();
+                .desireOwnerEngineToReturn();
     })),
     /**
      * The invocation will be performed on the current machine <b>and</b> on every remote machines.
@@ -55,7 +55,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST(((agreement) -> {
         agreement.acceptAll()
-                .setDesiredCurrentEngineReturn();
+                .desireCurrentEngineToReturn();
     })),
 
     /**
@@ -66,7 +66,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
     BROADCAST_IF_OWNER((agreement) -> {
         agreement
                 .ifCurrentIsNotOwner(RMIRulesAgreementBuilder::discardAll)
-                .setDesiredCurrentEngineReturn();
+                .desireCurrentEngineToReturn();
     }),
 
 
@@ -76,8 +76,8 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * The return value of the invocation will come from the current machine.
      */
     BROADCAST_IF_ROOT_OWNER((agreement ->
-            agreement.ifCurrentIsOwner(RMIRulesAgreementBuilder::acceptAll)
-                    .setDesiredCurrentEngineReturn())),
+            agreement.ifCurrentIsRootOwner(RMIRulesAgreementBuilder::acceptAll)
+                    .desireCurrentEngineToReturn())),
     /**
      * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.
      * If the current machine owns the wrapper object, the execution will be called only once.
@@ -87,7 +87,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
         agreement.discardAll()
                 .acceptCurrent()
                 .acceptOwner()
-                .setDesiredOwnerEngineReturn();
+                .desireOwnerEngineToReturn();
     }));
 
     private final RemoteInvocationRule rule;

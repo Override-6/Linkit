@@ -34,6 +34,7 @@ class SyncObjectBehaviorFactory(descriptions: Array[ObjectBehaviorDescriptor[_]]
         val objectDescriptor = descriptors.head
         if (objectDescriptor.targetClass != classOf[Object])
             throw new IllegalArgumentException("Descriptions must contain the java.lang.Object type behavior description.")
+
         val objectRelation = new SyncObjectClassRelation[AnyRef](cast(objectDescriptor), null)
         relations.put(objectDescriptor.targetClass, objectRelation)
         for (descriptor <- descriptors) {

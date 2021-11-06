@@ -69,6 +69,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getPuppeteer: Puppeteer[A] = puppeteer
 
+    override def getNode: SyncNode[_] = node
+
     override def getBehavior: SynchronizedObjectBehavior[A] = behavior
 
     //private def asAutoSync: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
@@ -85,7 +87,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
 
-        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](methodBhv, this) with CallableLocalMethodInvocation[R] {
+        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](methodBhv, node) with CallableLocalMethodInvocation[R] {
             override val methodArguments: Array[Any]             = synchronizedArgs
             override val methodBehavior : InternalMethodBehavior = methodBhv
 
@@ -102,6 +104,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
         var i              = -1
         val paramBehaviors = bhv.parameterBehaviors
+        if (paramBehaviors.isEmpty)
+            return objects
         val pup            = puppeteer
         objects.map(param => {
             i += 1

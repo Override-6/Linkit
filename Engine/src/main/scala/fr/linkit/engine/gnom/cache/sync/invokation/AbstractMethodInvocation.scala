@@ -13,20 +13,19 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
 import fr.linkit.api.gnom.cache.sync.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invokation.MethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
-import fr.linkit.engine.gnom.cache.sync.behavior.member.SyncMethodBehavior
+import fr.linkit.api.gnom.cache.sync.tree.SyncNode
 
 abstract class AbstractMethodInvocation[R](override val methodBehavior: MethodBehavior,
-                                           override val synchronizedObject: SynchronizedObject[_]) extends MethodInvocation[R] {
+                                           override val objectNode: SyncNode[_]) extends MethodInvocation[R] {
 
     override val methodDescription: MethodDescription = methodBehavior.desc
 
     def this(local: LocalMethodInvocation[R]) = {
-        this(local.methodBehavior, local.synchronizedObject)
+        this(local.methodBehavior, local.objectNode)
     }
 
     override val methodID: Int = methodBehavior.desc.methodId
