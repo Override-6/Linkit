@@ -27,7 +27,7 @@ class JavaArrayListTypePersistence extends TypePersistence[util.ArrayList[AnyRef
     override def initInstance(allocatedObject: util.ArrayList[AnyRef], args: Array[Any]): Unit = {
         val clazz = allocatedObject.getClass
         val data = clazz.getConstructor().newInstance()
-        args.foreach(x => data.add(x.asInstanceOf[AnyRef]))
+        args.head.asInstanceOf[Array[AnyRef]].foreach(data.add)
         ScalaUtils.pasteAllFields(allocatedObject, data)
     }
 

@@ -140,7 +140,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val behavior       = syncObject.getBehavior
         for (bhv <- behavior.listField()) {
             val field      = bhv.desc.javaField
-            var fieldValue = field.get(syncObject)
+            var fieldValue = ScalaUtils.getValueAnyRef(syncObject, field)
             fieldValue = findMatchingSyncNode(fieldValue).map(_.synchronizedObject).getOrElse(fieldValue)
             val modifier = bhv.modifier
             if (modifier != null) {

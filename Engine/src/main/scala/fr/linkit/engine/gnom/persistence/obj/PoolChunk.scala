@@ -23,10 +23,10 @@ class PoolChunk[@specialized() T](val tag: Byte,
                                   freezable: Freezable,
                                   maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
-    private var buff = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
-    private var pos  = 0
+    private final var buff = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
+    private final var pos  = 0
 
-    private var frozen = false
+    private final var frozen = false
 
     @inline
     override def isFrozen: Boolean = frozen || freezable.isFrozen

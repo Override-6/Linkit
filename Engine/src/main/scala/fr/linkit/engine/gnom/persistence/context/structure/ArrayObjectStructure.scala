@@ -40,7 +40,7 @@ abstract class ArrayObjectStructure() extends ObjectStructure {
         var i = from
         if (to > len)
             throw new ArrayIndexOutOfBoundsException(s"to > array length. ($to > ${len})")
-        if (to > types.length)
+        if (to > types.length || to - from < types.length)
             return false
         while (i < to) {
             val value = fieldsValues(i)

@@ -26,7 +26,7 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
 
     override def initInstance(syncObj: T, args: Array[Any]): Unit = {
         setReference(syncObj, args.last.asInstanceOf[SyncObjectReference])
-        objectPersistence.initInstance(syncObj, args)
+        objectPersistence.initInstance(syncObj, args.dropRight(1))
     }
 
     private def setReference(syncObj: SynchronizedObject[T], reference: SyncObjectReference): Unit = {

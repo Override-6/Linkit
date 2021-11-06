@@ -17,8 +17,8 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.description.{FieldDescription, MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription.SyntheticMod
 import fr.linkit.engine.gnom.cache.sync.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
-import java.lang.reflect._
 
+import java.lang.reflect._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
@@ -68,10 +68,10 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
     }
 
     private def getAllMethods: ListBuffer[Method] = {
-        val buff = ListBuffer.empty[Method]
+        val buff         = ListBuffer.from[Method](clazz.getMethods)
         var cl: Class[_] = clazz
         while (cl != null) {
-            buff ++= cl.getDeclaredMethods
+            buff ++= cl.getDeclaredMethods.filter(m => Modifier.isProtected(m.getModifiers))
             cl = cl.getSuperclass
         }
         buff
@@ -98,28 +98,6 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
         import Modifier._
         isPrivate(mods) || isStatic(mods) || isFinal(mods) || isNative(mods) || (mods & SyntheticMod) != 0
     }
-
-    /*def asJavaMethod(method: u.MethodSymbol): (Method, Int) = {
-        val symbolParams = method.paramLists
-                .flatten
-                .map(t => {
-                    val argClass = t.typeSignature.erasure.typeSymbol
-                    val name     = argClass.fullName
-                    PrimitivesNameMap.getOrElse(name, name)
-                }
-                )
-        var ordinal      = 0
-        val filtered     = filteredJavaMethods.filter(_.getName == method.name.encodedName.toString)
-        val javaMethod   = filtered
-                .find(x => {
-                    val v = x.getParameterTypes
-                            .map(t => if (t.isArray) "array" else t.getTypeName)
-                    ordinal += 1
-                    v sameElements symbolParams
-                })
-                .get
-        (javaMethod, ordinal)
-    }*/
 
     private def collectFields(): Map[Int, FieldDescription] = {
         val fields          = ListBuffer.empty[Field]
@@ -160,6 +138,5 @@ object SimpleSyncObjectSuperClassDescription {
         val AClass = clazz.asInstanceOf[Class[A]]
         new SimpleSyncObjectSuperClassDescription[A](AClass, clazz.getClassLoader)
     }).asInstanceOf[SimpleSyncObjectSuperClassDescription[A]]
-
 
 }

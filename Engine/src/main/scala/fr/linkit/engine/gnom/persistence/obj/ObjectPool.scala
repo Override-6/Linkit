@@ -21,7 +21,7 @@ class ObjectPool(sizes: Array[Int]) extends Freezable {
 
     private var frozen = false
 
-    protected val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
+    protected final val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects types
         new PoolChunk[Class[_]](Class, this, sizes(Class)),
         new PoolChunk[Class[_]](SyncClass, this, sizes(SyncClass)),
