@@ -16,7 +16,8 @@ package fr.linkit.engine.gnom.packet.traffic
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: AbstractPacketTraffic) extends
@@ -52,4 +53,6 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
     override def registerReference(ref: TrafficReference): Unit = super.registerReference(ref)
 
     override def unregisterReference(ref: TrafficReference): Unit = super.unregisterReference(ref)
+
+    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[TrafficReference]
 }

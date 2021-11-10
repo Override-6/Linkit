@@ -11,19 +11,6 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.context
+package fr.linkit.api.gnom.reference
 
-import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
-import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
-
-trait PersistenceConfig extends TypeProfileStore {
-
-    def contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH
-
-    def widePacket: Boolean
-
-    def useUnsafe: Boolean
-
-    def autoContextObjects: Boolean
-
-}
+trait StaticNetworkObject[R <: NetworkObjectReference] extends NetworkObject[R]

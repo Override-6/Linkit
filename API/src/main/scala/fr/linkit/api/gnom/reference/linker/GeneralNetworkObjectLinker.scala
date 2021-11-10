@@ -11,15 +11,18 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference
+package fr.linkit.api.gnom.reference.linker
 
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
-import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
+import fr.linkit.api.gnom.persistence.obj.TrafficReference
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 
 trait GeneralNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectReference] {
 
     val cacheNOL  : InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH
     val trafficNOL: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH
+
+    def addLinker(linker: NetworkObjectLinker[NetworkObjectReference]): Unit
 
 }

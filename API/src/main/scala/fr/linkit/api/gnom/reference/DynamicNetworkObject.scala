@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 trait DynamicNetworkObject[R <: NetworkObjectReference] extends NetworkObject[R] {
 
     def presence: NetworkObjectPresence
-/*
+    /*
     /**
      * Called when this Dynamic Network Object is about to be sent to an engine.
      * Note: The method is called by the serializer only if its attached [[NetworkObjectPresence]]

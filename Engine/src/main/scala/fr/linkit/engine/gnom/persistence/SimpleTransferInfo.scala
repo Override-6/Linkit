@@ -17,12 +17,12 @@ import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle, TransferInfo}
-import fr.linkit.api.gnom.reference.GeneralNetworkObjectLinker
+import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
-import java.nio.ByteBuffer
 
+import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
 case class SimpleTransferInfo(override val coords: PacketCoordinates,

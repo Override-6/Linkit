@@ -24,7 +24,7 @@ import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheFactory, SharedCacheRef
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
-import fr.linkit.api.gnom.reference.NetworkObjectLinker
+import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.AbstractSharedCache

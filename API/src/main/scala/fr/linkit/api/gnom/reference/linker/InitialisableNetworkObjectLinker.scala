@@ -11,7 +11,9 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference
+package fr.linkit.api.gnom.reference.linker
+
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 
 trait InitialisableNetworkObjectLinker[R <: NetworkObjectReference] extends NetworkObjectLinker[R] {
 

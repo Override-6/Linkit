@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.GeneralNetworkObjectLinker
+import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence

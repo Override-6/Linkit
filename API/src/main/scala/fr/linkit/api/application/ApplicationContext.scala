@@ -17,7 +17,7 @@ import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.application.plugin.PluginManager
 import fr.linkit.api.application.resource.external.ResourceFolder
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.reference.{NetworkObject, StaticNetworkObject}
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.Versions
@@ -25,7 +25,7 @@ import fr.linkit.api.internal.system.Versions
 //TODO Recap :
 // Rewrite/write Doc and README of API
 // Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
-trait ApplicationContext extends NetworkObject[ApplicationReference] with ProcrastinatorControl {
+trait ApplicationContext extends StaticNetworkObject[ApplicationReference] with ProcrastinatorControl {
 
     val configuration: ApplicationConfiguration
 

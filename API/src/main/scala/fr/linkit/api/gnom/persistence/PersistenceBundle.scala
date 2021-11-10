@@ -15,7 +15,8 @@ package fr.linkit.api.gnom.persistence
 
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.{ContextObjectLinker, GeneralNetworkObjectLinker, NetworkObjectLinker, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 
 import java.nio.ByteBuffer
 

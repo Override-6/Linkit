@@ -18,7 +18,7 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.GeneralNetworkObjectLinker
+import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.engine.gnom.persistence.PacketSerializationChoreographer
 
 import java.net.URL

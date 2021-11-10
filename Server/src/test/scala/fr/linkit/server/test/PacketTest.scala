@@ -16,7 +16,7 @@ package fr.linkit.server.test
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-import fr.linkit.api.gnom.reference.GeneralNetworkObjectLinker
+import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChann
 import fr.linkit.engine.gnom.packet.traffic.{ChannelScopes, DynamicSocket, SocketPacketWriter, WriterInfo}
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
 import fr.linkit.engine.gnom.persistence.{DefaultObjectTranslator, PacketSerializationChoreographer, SimpleTransferInfo}
-import fr.linkit.engine.gnom.reference.WeakContextObjectLinker
+import fr.linkit.engine.gnom.reference.linker.WeakContextObjectLinker
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 import fr.linkit.server.connection.ServerConnection
 import fr.linkit.server.connection.packet.ServerPacketTraffic

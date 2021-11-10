@@ -11,9 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference
+package fr.linkit.api.gnom.reference.linker
 
 import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 
 /**
  * Depicts any class that is responsible for object linkage between all engines for the [[fr.linkit.api.gnom.network.Network]]. <br>
@@ -24,7 +25,8 @@ import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
  * */
 trait NetworkObjectLinker[R <: NetworkObjectReference] extends NetworkPresenceHandler[R] {
 
-    def findObject(reference: R): Option[NetworkObject[_ <: R]]
+    def isAssignable(reference: NetworkObjectReference): Boolean
 
+    def findObject(reference: R): Option[NetworkObject[_ <: R]]
 
 }

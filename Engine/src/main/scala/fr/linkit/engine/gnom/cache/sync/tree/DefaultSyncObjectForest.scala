@@ -16,7 +16,8 @@ package fr.linkit.engine.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference, SynchronizedObjectForest, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
-import fr.linkit.api.gnom.reference.{InitialisableNetworkObjectLinker, NetworkObject}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
@@ -30,6 +31,8 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         with InitialisableNetworkObjectLinker[SyncObjectReference] with SynchronizedObjectForest[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
+
+    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SyncObjectReference]
 
     def findNode(nonSyncNode: AnyRef): Option[SyncNode[_]] = {
         for (tree <- trees.values) {

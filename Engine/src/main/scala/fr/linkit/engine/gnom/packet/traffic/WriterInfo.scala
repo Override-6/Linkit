@@ -15,7 +15,8 @@ package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.{GeneralNetworkObjectLinker, NetworkObjectLinker, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 
 case class WriterInfo(traffic: PacketTraffic,
                       persistenceConfig: PersistenceConfig,

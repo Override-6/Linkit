@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject, RegistrablePoolObject}
-import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 
@@ -31,14 +31,14 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
     private val obj         : T       = ScalaUtils.allocate[T](clazz)
     private val contentObjects        = new Array[RegistrablePoolObject[AnyRef]](content.length)
 
-
     override def register(): Unit = {
         if (isRegistered)
             return
         isRegistered = true
         obj match {
             case o: NetworkObject[SharedCacheManagerReference] =>
-                selector.initObject(o)
+                if (o.reference.isInstanceOf[SharedCacheManagerReference])
+                    selector.initObject(o)
             case _                                             =>
         }
         var i = 0

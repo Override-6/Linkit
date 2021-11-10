@@ -17,13 +17,16 @@ import fr.linkit.api.gnom.cache.{NoSuchCacheManagerException, SharedCacheManager
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
-import fr.linkit.api.gnom.reference.{InitialisableNetworkObjectLinker, NetworkObject}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils._
 
 class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
         extends AbstractNetworkPresenceHandler[SharedCacheManagerReference](omc)
                 with InitialisableNetworkObjectLinker[SharedCacheManagerReference] {
+
+    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SharedCacheManagerReference]
 
     override def isPresentOnEngine(engineId: String, ref: SharedCacheManagerReference): Boolean = {
         val manager = network.findCacheManager(ref.family)

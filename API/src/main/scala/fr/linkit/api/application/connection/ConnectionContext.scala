@@ -17,11 +17,11 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.ObjectTranslator
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.reference.{NetworkObject, StaticNetworkObject}
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.internal.system.event.EventNotifier
 
-trait ConnectionContext extends NetworkObject[NetworkConnectionReference] with ProcrastinatorControl {
+trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference] with ProcrastinatorControl {
 
     val currentIdentifier: String
 

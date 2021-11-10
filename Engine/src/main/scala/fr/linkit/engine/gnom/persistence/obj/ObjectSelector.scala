@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.obj
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject}
 import fr.linkit.engine.gnom.reference.ContextObject
 
 class ObjectSelector(bundle: PersistenceBundle) {
@@ -32,11 +32,15 @@ class ObjectSelector(bundle: PersistenceBundle) {
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
                 if (obj.presence.isPresentOn(coords))
                     Some(obj.reference)
-                else {
+                else
                     None
-                }
-            case obj: NetworkObject[NetworkObjectReference]        =>
+            case obj: StaticNetworkObject[NetworkObjectReference]  =>
                 Some(obj.reference)
+            case obj: NetworkObject[NetworkObjectReference]        =>
+                val reference = obj.reference
+                if (gnol.findPresence(reference).exists(_.isPresentOn(coords)))
+                    Some(reference)
+                else None
             case _                                                 =>
                 col
                         .findPersistableReference(obj, coords)

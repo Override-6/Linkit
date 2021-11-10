@@ -21,9 +21,10 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.reference.linker.{InitialisableNetworkObjectLinker, NetworkObjectLinker}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, TrafficInterestedNPH}
-import fr.linkit.api.gnom.reference.{InitialisableNetworkObjectLinker, NetworkObject, NetworkObjectLinker}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.traffic.DefaultCachePacketChannel
@@ -157,7 +158,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
             val requestedClass = classTag[A].runtimeClass
             opt match {
                 case Some(c: SharedCache) if !requestedClass.isAssignableFrom(c.getClass) => throw new CacheNotAcceptedException(s"Attempted to open a cache of type '$cacheID' while a cache with the same id is already registered, but does not have the same type. (${c.getClass} vs $requestedClass)")
-                case other                                                => other
+                case other                                                                => other
             }
         }
 
@@ -232,6 +233,8 @@ abstract class AbstractSharedCacheManager(override val family: String,
                 case _                                                         => throw new UnsupportedOperationException(s"Could not initialize cache item located at $ref: current shared cache can't handle object initialization.")
             }
         }
+
+        override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SharedCacheReference]
     }
 
     protected def println(msg: => String): Unit = {

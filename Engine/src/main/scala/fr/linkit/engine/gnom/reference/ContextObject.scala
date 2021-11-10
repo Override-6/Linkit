@@ -14,8 +14,8 @@
 package fr.linkit.engine.gnom.reference
 
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.reference.{NetworkObject, StaticNetworkObject}
 
-class ContextObject(val obj: AnyRef, override val reference: ContextualObjectReference) extends NetworkObject[ContextualObjectReference] {
+class ContextObject(val obj: AnyRef, override val reference: ContextualObjectReference) extends StaticNetworkObject[ContextualObjectReference] {
 
 }

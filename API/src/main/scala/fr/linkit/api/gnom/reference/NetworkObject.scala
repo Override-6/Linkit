@@ -13,6 +13,8 @@
 
 package fr.linkit.api.gnom.reference
 
+import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
+
 /**
  * <p>
  *      Network Objects are an essential part of the GNOM System.

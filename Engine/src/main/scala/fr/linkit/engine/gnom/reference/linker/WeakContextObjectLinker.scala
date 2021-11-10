@@ -11,13 +11,15 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.reference
+package fr.linkit.engine.gnom.reference.linker
 
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
-import fr.linkit.api.gnom.reference.{ContextObjectLinker, NetworkObject}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.packet.traffic.injection.EndOfInjectionChainException
+import fr.linkit.engine.gnom.reference.{AbstractNetworkPresenceHandler, ContextObject, ObjectAlreadyReferencedException}
 import org.jetbrains.annotations.Nullable
 
 import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
@@ -30,6 +32,8 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     private val codeToRef = new util.HashMap[Int, WeakReference[AnyRef]]()
     private val refToCode = new util.WeakHashMap[AnyRef, Int]()
+
+    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ContextualObjectReference]
 
     override def findReferenceID(obj: AnyRef): Option[Int] = {
         val result = refToCode.get(obj)

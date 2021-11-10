@@ -11,19 +11,21 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.reference
+package fr.linkit.engine.gnom.reference.linker
 
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
 import fr.linkit.api.gnom.reference.traffic.LinkerRequestBundle
-import fr.linkit.api.gnom.reference.{ContextObjectLinker, NetworkObject}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
+import fr.linkit.engine.gnom.reference.{ContextObject, ObjectAlreadyReferencedException}
 
 import scala.collection.mutable
 
 /**
- * Special [[fr.linkit.api.gnom.reference.ContextObjectLinker]] for the
+ * Special [[ContextObjectLinker]] for the
  * [[fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel]]
  * */
 class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extends ContextObjectLinker {
@@ -31,6 +33,8 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
     private val codeToRef = mutable.HashMap.empty[Int, AnyRef]
     private val refToCode = mutable.HashMap.empty[AnyRef, Int]
     builder.forEachRefs((id, ref) => +=(id, ref))
+
+    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ContextualObjectReference]
 
     override def findReferenceID(obj: AnyRef): Option[Int] = refToCode.get(obj)
 

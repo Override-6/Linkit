@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.reference.DynamicNetworkObject
+
 import java.io.Serializable
 
 /**
