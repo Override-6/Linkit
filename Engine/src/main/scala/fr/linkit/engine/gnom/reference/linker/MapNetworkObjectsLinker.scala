@@ -13,18 +13,18 @@
 
 package fr.linkit.engine.gnom.reference.linker
 
-import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
+import fr.linkit.api.gnom.reference.linker.{NetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
-private[gnom] class RemainingNetworkObjectsLinker(omc: ObjectManagementChannel) extends AbstractNetworkPresenceHandler[NetworkObjectReference](omc) with NetworkObjectLinker[NetworkObjectReference] {
+private[gnom] class MapNetworkObjectsLinker(omc: ObjectManagementChannel) extends AbstractNetworkPresenceHandler[NetworkObjectReference](omc) with NetworkObjectLinker[NetworkObjectReference] {
 
     private val map = mutable.HashMap.empty[NetworkObjectReference, NetworkObject[NetworkObjectReference]]
 
-    override def isAssignable(reference: NetworkObjectReference): Boolean = true //all remaining network objects are allowed
+    override def isAssignable(reference: NetworkObjectReference): Boolean = true //all kind of remaining network objects are allowed
 
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = {
         map.get(reference)
@@ -32,10 +32,14 @@ private[gnom] class RemainingNetworkObjectsLinker(omc: ObjectManagementChannel) 
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = super.handleBundle(bundle)
 
-    def addObject(no: NetworkObject[NetworkObjectReference]): Unit = {
+    def save(no: NetworkObject[NetworkObjectReference]): Unit = {
         val reference = no.reference
         map.put(reference, no)
         registerReference(reference)
+    }
+
+    def unsave(ref: NetworkObjectReference): Unit = {
+        map.remove(ref)
     }
 
 }

@@ -22,6 +22,7 @@ import fr.linkit.engine.gnom.reference.ContextObject
 class ObjectSelector(bundle: PersistenceBundle) {
 
     private val gnol        = bundle.gnol
+    private val rnol        = gnol.remainingNOL
     private val col         = bundle.config.contextualObjectLinker
     private val coords      = bundle.coordinates
     private val channelPath = coords.path
@@ -30,21 +31,29 @@ class ObjectSelector(bundle: PersistenceBundle) {
     def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
         obj match {
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
+                val reference = obj.reference
                 if (obj.presence.isPresentOn(coords))
-                    Some(obj.reference)
-                else
+                    Some(reference)
+                else {
+                    if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
+                        rnol.get.save(obj)
                     None
+                }
             case obj: StaticNetworkObject[NetworkObjectReference]  =>
                 Some(obj.reference)
             case obj: NetworkObject[NetworkObjectReference]        =>
                 val reference = obj.reference
                 if (gnol.findPresence(reference).exists(_.isPresentOn(coords)))
                     Some(reference)
-                else None
+                else {
+                    if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
+                        rnol.get.save(obj)
+                    None
+                }
             case _                                                 =>
                 col
-                        .findPersistableReference(obj, coords)
-                        .map(new ContextualObjectReference(channelPath, _))
+                    .findPersistableReference(obj, coords)
+                    .map(new ContextualObjectReference(channelPath, _))
         }
     }
 
@@ -55,8 +64,12 @@ class ObjectSelector(bundle: PersistenceBundle) {
         }
     }
 
-    def initObject(obj: NetworkObject[SharedCacheManagerReference]): Unit = {
-        cnol.initializeObject(obj)
+    def handleObject(obj: NetworkObject[NetworkObjectReference]): Unit = {
+        val reference = obj.reference
+        if (reference.isInstanceOf[SharedCacheManagerReference])
+            cnol.initializeObject(obj.asInstanceOf[NetworkObject[SharedCacheManagerReference]])
+        if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
+            rnol.get.save(obj)
     }
 
 }

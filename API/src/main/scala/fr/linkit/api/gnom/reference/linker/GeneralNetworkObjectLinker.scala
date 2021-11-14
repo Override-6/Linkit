@@ -21,8 +21,16 @@ import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 trait GeneralNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectReference] {
 
     val cacheNOL  : InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH
-    val trafficNOL: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH
+    val trafficNOL  : NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH
+    val remainingNOL: Option[RemainingNetworkObjectsLinker]
 
-    def addLinker(linker: NetworkObjectLinker[NetworkObjectReference]): Unit
+    def addRootLinker(linker: NetworkObjectLinker[NetworkObjectReference]): Unit
+
+    /**
+     *
+     * @param reference the reference to test
+     * @return true if a [[NetworkObjectLinker]] (excepted remainingNOL) is able to handle the given reference.
+     */
+    def touchesAnyLinker(reference: NetworkObjectReference): Boolean
 
 }

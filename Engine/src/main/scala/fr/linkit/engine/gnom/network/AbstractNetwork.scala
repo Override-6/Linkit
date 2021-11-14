@@ -14,12 +14,13 @@
 package fr.linkit.engine.gnom.network
 
 import java.sql.Timestamp
+
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
-import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
+import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
@@ -28,6 +29,7 @@ import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.helper.{LambdaFieldM
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
+import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
 
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
@@ -39,8 +41,9 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     protected      val networkStore           : PacketInjectableStore      = traffic.createStore(0)
     private        val currentIdentifier      : String                     = connection.currentIdentifier
     private        val tnol                                                = traffic.getTrafficObjectLinker
+    private        val rnol                                                = new MapNetworkObjectsLinker(objectManagementChannel) with RemainingNetworkObjectsLinker
     private lazy   val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
-    override lazy  val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol)
+    override lazy  val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, Some(rnol))
     override lazy  val globalCache            : SharedCacheManager         = createGlobalCache
     protected lazy val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)
     private var engine0                       : Engine                     = _
