@@ -1,4 +1,5 @@
 package fr.linkit.api.gnom.network.statics
+import scala.language.dynamics
 
 trait ClassStaticAccessor[A <: AnyRef] extends Dynamic {
 

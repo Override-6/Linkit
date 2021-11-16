@@ -4,6 +4,6 @@ import scala.reflect.ClassTag
 
 trait StaticAccess {
 
-    def apply[T: ClassTag]: ClassStaticAccessor[T]
+    def apply[T <: AnyRef: ClassTag]: ClassStaticAccessor[T]
 
 }

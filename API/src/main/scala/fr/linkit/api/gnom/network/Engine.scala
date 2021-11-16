@@ -14,11 +14,10 @@
 package fr.linkit.api.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.internal.system.Versions
-import java.sql.Timestamp
 
-import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor}
+import java.sql.Timestamp
 
 trait Engine extends /*NetworkObject[EngineReference] with*/ Updatable {
 

@@ -7,8 +7,6 @@ import scala.reflect.{ClassTag, classTag}
 
 class SimpleStaticAccess(cache: SynchronizedObjectCache[ClassStaticAccessor[AnyRef]]) extends StaticAccess {
     override def apply[T <: AnyRef : ClassTag]: ClassStaticAccessor[T] = {
-        val clazz     = classTag[T].runtimeClass
-        val classCode = clazz.getName.hashCode
-        cache.getOrSynchronize(classCode)(new SimpleClassStaticAccessor[T]())
+        ???
     }
 }
