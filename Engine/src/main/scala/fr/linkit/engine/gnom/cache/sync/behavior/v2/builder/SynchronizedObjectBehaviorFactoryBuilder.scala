@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.member.field.{FieldBehavior, Field
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.{InternalMethodBehavior, MethodCompModifier}
 import fr.linkit.api.gnom.cache.sync.behavior.{RemoteInvocationRule, SynchronizedObjectBehaviorFactory}
-import fr.linkit.api.gnom.cache.sync.description.{FieldDescription, MethodDescription, SyncObjectSuperclassDescription}
+import fr.linkit.api.gnom.cache.sync.description.{FieldDescription, MethodDescription, SyncStructureDescription}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.behavior.AnnotationBasedMemberBehaviorFactory
 import fr.linkit.engine.gnom.cache.sync.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior, SyncMethodBehavior}
@@ -63,9 +63,9 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
         defaultID
     }
 
-    abstract class ClassDescriptor[T <: AnyRef](override val tag: Option[Any])(implicit desc: SyncObjectSuperclassDescription[T]) extends Recognizable {
+    abstract class ClassDescriptor[T <: AnyRef](override val tag: Option[Any])(implicit desc: SyncStructureDescription[T]) extends Recognizable {
 
-        def this()(implicit desc: SyncObjectSuperclassDescription[T]) {
+        def this()(implicit desc: SyncStructureDescription[T]) {
             this(None)(desc)
         }
 

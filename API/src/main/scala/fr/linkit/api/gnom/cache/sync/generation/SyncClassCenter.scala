@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
+import fr.linkit.api.gnom.cache.sync.description.SyncStructureDescription
 
 import scala.reflect.runtime.universe
 import scala.reflect.{ClassTag, classTag}
@@ -26,11 +26,11 @@ trait SyncClassCenter {
 
     def getSyncClass[S <: AnyRef](clazz: Class[_]): Class[S with SynchronizedObject[S]]
 
-    def getSyncClassFromDesc[S<: AnyRef](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]]
+    def getSyncClassFromDesc[S<: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]]
 
     def getSyncClassFromTpe[S<: AnyRef: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
-    def preGenerateClasses(descriptions: List[SyncObjectSuperclassDescription[_]]): Unit
+    def preGenerateClasses(descriptions: List[SyncStructureDescription[_]]): Unit
 
     def preGenerateClasses(classes: Seq[Class[_]]): Unit
 

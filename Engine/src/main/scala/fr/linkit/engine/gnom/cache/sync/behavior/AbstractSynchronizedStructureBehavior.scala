@@ -13,12 +13,12 @@
 
 package fr.linkit.engine.gnom.cache.sync.behavior
 
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedStructureBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
-import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
+import fr.linkit.api.gnom.cache.sync.description.SyncStructureDescription
 
-abstract class AbstractSynchronizedObjectBehavior[A <: AnyRef] protected(override val classDesc: SyncObjectSuperclassDescription[A]) extends SynchronizedObjectBehavior[A] {
+abstract class AbstractSynchronizedStructureBehavior[A <: AnyRef] protected(override val classDesc: SyncStructureDescription[A]) extends SynchronizedStructureBehavior[A] {
 
     protected val methods: Map[Int, InternalMethodBehavior]
 

@@ -13,18 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.description
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.description.{FieldDescription, MethodDescription, SyncObjectSuperclassDescription}
-import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription.SyntheticMod
+import java.lang.reflect._
+
+import fr.linkit.api.gnom.cache.sync.description.{FieldDescription, MethodDescription, SyncStructureDescription}
 import fr.linkit.engine.gnom.cache.sync.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
 
-import java.lang.reflect._
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.reflect.{ClassTag, classTag}
 
-class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class[A],
-                                                       val loader: ClassLoader) extends SyncObjectSuperclassDescription[A] {
+abstract class AbstractSyncStructureDescription[A](override val clazz: Class[A]) extends SyncStructureDescription[A] {
 
     private val methodDescriptions: Map[Int, MethodDescription] = collectMethods()
     private val fieldDescriptions : Map[Int, FieldDescription]  = collectFields()
@@ -62,9 +58,9 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
 
     private def collectMethods(): Map[Int, MethodDescription] = {
         getFiltered
-                .map(MethodDescription(_, this))
-                .map(desc => (desc.methodId, desc))
-                .toMap
+            .map(MethodDescription(_, this))
+            .map(desc => (desc.methodId, desc))
+            .toMap
     }
 
     private def getAllMethods: ListBuffer[Method] = {
@@ -77,26 +73,12 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
         buff
     }
 
+    protected def applyNotFilter(e: Executable): Boolean
+
     private def getFiltered: Iterable[Method] = {
         getAllMethods
-                .distinctBy(m => (m.getName, m.getParameterTypes))
-                .filterNot(isNotOverridable)
-
-                //FIXME Weird bug due to scala's Any and AnyRef stuff...
-                .filterNot(m => m.getName == "equals" && m.getParameterTypes.length == 1)
-
-                //FIXME Bug occurred for objects that extends NetworkObject[A].
-                // as SynchronizedObject trait also extends NetworkObject[B],
-                // a collision may occur as the generated method would be
-                // syncClass#reference: A, which overrides SynchronizedObject#reference: B (there is an incompatible type definition)
-                // Maybe making the GNOLinkage able to support multiple references to an object would help
-                .filterNot(m => m.getName == "reference" && m.getParameterTypes.isEmpty)
-    }
-
-    private def isNotOverridable(e: Executable): Boolean = {
-        val mods = e.getModifiers
-        import Modifier._
-        isPrivate(mods) || isStatic(mods) || isFinal(mods) || isNative(mods) || (mods & SyntheticMod) != 0
+            .distinctBy(m => (m.getName, m.getParameterTypes))
+            .filterNot(applyNotFilter)
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
@@ -104,13 +86,13 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
         var clazz: Class[_] = this.clazz
         while (clazz != null) {
             fields ++= clazz.getDeclaredFields
-                    .filterNot(f => Modifier.isStatic(f.getModifiers))
-                    .filter(setAccessible)
+                .filterNot(f => Modifier.isStatic(f.getModifiers))
+                .filter(setAccessible)
             clazz = clazz.getSuperclass
         }
         fields.map(FieldDescription(_, this))
-                .map(desc => (desc.fieldId, desc))
-                .toMap
+            .map(desc => (desc.fieldId, desc))
+            .toMap
     }
 
     private def setAccessible(f: Field): Boolean = {
@@ -124,19 +106,3 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
 
 }
 
-object SimpleSyncObjectSuperClassDescription {
-
-    private val SyntheticMod = 0x00001000
-
-    private val cache = mutable.HashMap.empty[Class[_], SimpleSyncObjectSuperClassDescription[_]]
-
-    implicit def fromTag[A: ClassTag]: SimpleSyncObjectSuperClassDescription[A] = apply[A](classTag[A].runtimeClass)
-
-    def apply[A](clazz: Class[_]): SimpleSyncObjectSuperClassDescription[A] = cache.getOrElseUpdate(clazz, {
-        if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
-            throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
-        val AClass = clazz.asInstanceOf[Class[A]]
-        new SimpleSyncObjectSuperClassDescription[A](AClass, clazz.getClassLoader)
-    }).asInstanceOf[SimpleSyncObjectSuperClassDescription[A]]
-
-}

@@ -13,14 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.bp
 
-import fr.linkit.api.gnom.cache.sync.description.{MethodDescription, SyncObjectSuperclassDescription}
+import fr.linkit.api.gnom.cache.sync.description.{MethodDescription, SyncStructureDescription}
 
 import java.lang.reflect.TypeVariable
 import scala.language.existentials
 
 object ScalaBlueprintUtilities {
 
-    def getGenericParams(desc: SyncObjectSuperclassDescription[_], transform: TypeVariable[_] => Any): String = {
+    def getGenericParams(desc: SyncStructureDescription[_], transform: TypeVariable[_] => Any): String = {
         val result = desc
                 .clazz
                 .getTypeParameters

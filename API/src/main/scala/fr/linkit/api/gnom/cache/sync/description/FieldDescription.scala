@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync.description
 
 import java.lang.reflect.Field
 
-case class FieldDescription(javaField: Field, classDesc: SyncObjectSuperclassDescription[_]) {
+case class FieldDescription(javaField: Field, classDesc: SyncStructureDescription[_]) {
     val fieldId: Int = {
         javaField.getName.hashCode + javaField.getDeclaringClass.getName.hashCode
     }

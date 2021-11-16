@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedStructureBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
@@ -37,9 +37,9 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
 
     override  val reference         : SyncObjectReference           = data.reference
     override  val tree              : SynchronizedObjectTree[_]     = data.tree
-    override  val puppeteer         : Puppeteer[A]                  = data.puppeteer
-    override  val behavior          : SynchronizedObjectBehavior[A] = puppeteer.objectBehavior
-    override  val chip              : Chip[A]                       = data.chip
+    override  val puppeteer         : Puppeteer[A]                     = data.puppeteer
+    override  val behavior          : SynchronizedStructureBehavior[A] = puppeteer.objectBehavior
+    override  val chip              : Chip[A]                          = data.chip
     override  val synchronizedObject: A with SynchronizedObject[A]  = data.synchronizedObject
     override  val id                : Int                           = reference.nodePath.last
     /**

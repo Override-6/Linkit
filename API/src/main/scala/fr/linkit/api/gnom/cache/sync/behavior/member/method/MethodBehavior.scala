@@ -26,9 +26,9 @@ trait MethodBehavior extends MemberBehavior {
               val desc               : MethodDescription
               val parameterBehaviors : Array[ParameterBehavior[AnyRef]]
     @Nullable val returnValueBehavior: ReturnValueBehavior[AnyRef]
-              val isHidden           : Boolean
-              val innerInvocations   : Boolean
-              val defaultReturnValue : Any
+              val isHidden                  : Boolean
+              val forceLocalInnerInvocations: Boolean
+              val defaultReturnValue        : Any
     @Nullable val procrastinator     : Procrastinator
     @Nullable val handler            : MethodInvocationHandler
 

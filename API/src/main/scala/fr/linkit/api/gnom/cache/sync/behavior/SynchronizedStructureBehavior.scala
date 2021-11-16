@@ -16,11 +16,11 @@ package fr.linkit.api.gnom.cache.sync.behavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
 import fr.linkit.api.gnom.cache.sync.behavior.modification.ValueMultiModifier
-import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
+import fr.linkit.api.gnom.cache.sync.description.SyncStructureDescription
 
-trait SynchronizedObjectBehavior[A <: AnyRef] {
+trait SynchronizedStructureBehavior[A <: AnyRef] {
 
-    val classDesc: SyncObjectSuperclassDescription[A]
+    val classDesc: SyncStructureDescription[A]
 
     def listMethods(): Iterable[MethodBehavior]
 

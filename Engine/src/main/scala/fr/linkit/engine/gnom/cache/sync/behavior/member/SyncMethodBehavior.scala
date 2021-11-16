@@ -30,7 +30,7 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
                               override val parameterBehaviors: Array[ParameterBehavior[AnyRef]],
                               @Nullable override val returnValueBehavior: ReturnValueBehavior[AnyRef],
                               override val isHidden: Boolean,
-                              override val innerInvocations: Boolean,
+                              override val forceLocalInnerInvocations: Boolean,
                               private val rules: Array[RemoteInvocationRule],
                               @Nullable override val procrastinator: Procrastinator,
                               @Nullable override val handler: MethodInvocationHandler) extends InternalMethodBehavior {
@@ -114,7 +114,7 @@ object SyncMethodBehavior {
     def copy(desc: MethodDescription, other: SyncMethodBehavior): SyncMethodBehavior = {
         SyncMethodBehavior(
             desc, other.parameterBehaviors, other.returnValueBehavior,
-            other.isHidden, other.innerInvocations, other.rules,
+            other.isHidden, other.forceLocalInnerInvocations, other.rules,
             other.procrastinator, other.handler)
     }
 

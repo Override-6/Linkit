@@ -14,15 +14,15 @@
 package fr.linkit.engine.gnom.cache.sync.behavior.v2
 
 import fr.linkit.api.gnom.cache.sync.behavior.build.ObjectBehaviorDescriptor
-import fr.linkit.api.gnom.cache.sync.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorFactory}
+import fr.linkit.api.gnom.cache.sync.behavior.{SynchronizedStructureBehavior, SynchronizedObjectBehaviorFactory}
 import fr.linkit.engine.internal.utils.ClassMap
 
 class SyncObjectBehaviorFactory(descriptions: Array[ObjectBehaviorDescriptor[_]]) extends SynchronizedObjectBehaviorFactory {
 
     private val nodeMap = createNodes(descriptions)
 
-    override def getObjectBehavior[A <: AnyRef](clazz: Class[_]): SynchronizedObjectBehavior[A] = {
-        nodeMap.get(clazz).get.getBehavior(clazz).asInstanceOf[SynchronizedObjectBehavior[A]]
+    override def getObjectBehavior[A <: AnyRef](clazz: Class[_]): SynchronizedStructureBehavior[A] = {
+        nodeMap.get(clazz).get.getBehavior(clazz).asInstanceOf[SynchronizedStructureBehavior[A]]
     }
 
     private def createNodes(descriptors: Array[ObjectBehaviorDescriptor[_]]): ClassMap[BehaviorDescriptorNode[_]] = {

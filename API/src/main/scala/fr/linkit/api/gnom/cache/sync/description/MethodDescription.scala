@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.description.MethodDescription.NumberTypes
 import java.lang.reflect.{InaccessibleObjectException, Method}
 
 case class MethodDescription(javaMethod: Method,
-                             classDesc: SyncObjectSuperclassDescription[_]) {
+                             classDesc: SyncStructureDescription[_]) {
     //TODO native method that cals any method reflectively; this is a fast fix.
     try {
         javaMethod.setAccessible(true)

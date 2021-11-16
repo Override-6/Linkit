@@ -34,7 +34,7 @@ class ObjectReader(bundle: PersistenceBundle, center: SyncClassCenter) {
     val buff: ByteBuffer = bundle.buff
     private val selector                           = new ObjectSelector(bundle)
     private val config                             = bundle.config
-    private val (widePacket: Boolean, sizes, pool) = preReadPool()
+    private val (widePacket: Boolean, sizes, pool) = readPoolStructure()
     private var isInit                             = false
 
     def initPool(): Unit = {
@@ -129,12 +129,12 @@ class ObjectReader(bundle: PersistenceBundle, center: SyncClassCenter) {
         java.lang.Enum.valueOf[T](tpe.asInstanceOf[Class[T]], name)
     }
 
-    private def preReadPool(): (Boolean, Array[Int], DeserializerObjectPool) = {
+    private def readPoolStructure(): (Boolean, Array[Int], DeserializerObjectPool) = {
         val widePacket = buff.get() == 1
         val sizes      = new Array[Int](ChunkCount)
         var i          = 0
         while (i < ChunkCount) {
-            sizes(i) = if (widePacket) buff.getInt() else buff.getChar()
+            sizes(i) = readNextRef
             i += 1
         }
         (widePacket, sizes, new DeserializerObjectPool(sizes))

@@ -13,14 +13,14 @@
 
 package fr.linkit.engine.internal.language.bhv.descriptor.clazz
 
-import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription
+import fr.linkit.engine.gnom.cache.sync.description.SyncObjectDescription
 import fr.linkit.engine.internal.language.bhv.descriptor.{DescriptionResult, Descriptor}
 
 import java.util.Scanner
 
-class ClassDescriptor(desc: SimpleSyncObjectSuperClassDescription[_]) extends Descriptor {
+class ClassDescriptor(desc: SyncObjectDescription[_]) extends Descriptor {
 
-    def this(clazz: Class[_]) = this(SimpleSyncObjectSuperClassDescription(clazz))
+    def this(clazz: Class[_]) = this(SyncObjectDescription(clazz))
 
     private val methods = desc.listMethods()
     private val fields  = desc.listFields()

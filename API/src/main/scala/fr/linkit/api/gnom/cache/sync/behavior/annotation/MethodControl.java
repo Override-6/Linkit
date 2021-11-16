@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 /**
  * Contains basic information for a {@link MethodBehavior}
  *
- * @see fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
+ * @see fr.linkit.api.gnom.cache.sync.behavior.SynchronizedStructureBehavior
  * @see MethodBehavior
  */
 @Target(ElementType.METHOD)
@@ -53,6 +53,6 @@ public @interface MethodControl {
      * If true, the annotated method would also perform inner
      * remote method invocations for synchronized methods / objects
      */
-    boolean innerInvocations() default false;
+    boolean forceLocalInnerInvocations() default true;
 
 }

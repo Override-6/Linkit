@@ -13,12 +13,12 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation
 
-import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
+import fr.linkit.api.gnom.cache.sync.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.{InvalidPuppetDefException, SynchronizedObject}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription
+import fr.linkit.engine.gnom.cache.sync.description.SyncObjectDescription
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends SyncClassCenter {
@@ -27,10 +27,10 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     val requestFactory                  = new SyncClassCompilationRequestFactory
 
     override def getSyncClass[S <: AnyRef](clazz: Class[_]): Class[S with SynchronizedObject[S]] = {
-        getSyncClassFromDesc[S](SimpleSyncObjectSuperClassDescription[S](clazz))
+        getSyncClassFromDesc[S](SyncObjectDescription[S](clazz))
     }
 
-    override def getSyncClassFromDesc[S <: AnyRef](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
+    override def getSyncClassFromDesc[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")
@@ -39,7 +39,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         getOrGenClass[S](desc)
     }
 
-    private def getOrGenClass[S <: AnyRef](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = desc.clazz.synchronized {
+    private def getOrGenClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = desc.clazz.synchronized {
         val clazz = desc.clazz
         val opt   = resources
                 .findClass[S](clazz)
@@ -60,10 +60,10 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     }
 
     override def preGenerateClasses(classes: Seq[Class[_]]): Unit = {
-        preGenerateClasses(classes.map(SimpleSyncObjectSuperClassDescription(_)).toList)
+        preGenerateClasses(classes.map(SyncObjectDescription(_)).toList)
     }
 
-    override def preGenerateClasses(descriptions: List[SyncObjectSuperclassDescription[_]]): Unit = {
+    override def preGenerateClasses(descriptions: List[SyncStructureDescription[_]]): Unit = {
         val toCompile = descriptions.filter(desc => resources.findClass(desc.clazz).isEmpty)
         if (toCompile.isEmpty)
             return

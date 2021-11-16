@@ -18,8 +18,9 @@ import fr.linkit.api.gnom.cache.sync.behavior.annotation.{BasicInvocationRule, M
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.internal.system.Versions
 import fr.linkit.engine.internal.system.StaticVersions
-
 import java.sql.Timestamp
+
+import fr.linkit.api.gnom.network.statics.StaticAccessor
 
 class DefaultEngine(override val identifier: String,
                     override val cache: SharedCacheManager) extends Engine {

@@ -22,7 +22,7 @@ import fr.linkit.api.internal.generation.compilation.CompilationContext
  * @see [[fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter]]
  * @see [[SyncInstanceInstantiator]]
  * */
-trait SyncObjectSuperclassDescription[A] extends CompilationContext {
+trait SyncStructureDescription[A] extends CompilationContext {
 
     /**
      * The super class's type (for java reflection api)

@@ -16,8 +16,9 @@ package fr.linkit.api.gnom.network
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.internal.system.Versions
-
 import java.sql.Timestamp
+
+import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor}
 
 trait Engine extends /*NetworkObject[EngineReference] with*/ Updatable {
 
@@ -25,7 +26,7 @@ trait Engine extends /*NetworkObject[EngineReference] with*/ Updatable {
 
     val cache: SharedCacheManager
 
-    val staticAccessor: StaticAccessor
+    val staticAccess: StaticAccess
 
     val versions: Versions
 

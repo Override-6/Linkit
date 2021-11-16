@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedStructureBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
@@ -30,7 +30,7 @@ import org.jetbrains.annotations.Nullable
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val cache: SynchronizedObjectCache[_],
                                    override val nodeLocation: SyncObjectReference,
-                                   val objectBehavior: SynchronizedObjectBehavior[S]) extends Puppeteer[S] {
+                                   val objectBehavior: SynchronizedStructureBehavior[S]) extends Puppeteer[S] {
 
     private lazy val tree                       = cache.treeCenter.findTree(nodeLocation.nodePath.head).get
     override     val network          : Network = cache.network

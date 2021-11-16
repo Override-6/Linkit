@@ -47,7 +47,6 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override lazy  val globalCache            : SharedCacheManager         = createGlobalCache
     protected lazy val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)
     private var engine0                       : Engine                     = _
-
     override def connectionEngine: Engine = engine0
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
@@ -113,7 +112,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
 
     private def getEngineStoreBehaviors: SynchronizedObjectBehaviorFactory = {
-        import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription.fromTag
+        import fr.linkit.engine.gnom.cache.sync.description.SyncObjectDescription.fromTag
         new SynchronizedObjectBehaviorFactoryBuilder {
             describe(new ClassDescriptor[SharedCacheManager]() {
                 whenParameter = new LambdaMethodCompModifier[SharedCacheManager]() {

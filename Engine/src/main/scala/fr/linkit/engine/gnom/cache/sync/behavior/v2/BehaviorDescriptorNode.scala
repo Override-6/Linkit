@@ -13,14 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.behavior.v2
 
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedStructureBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.build.ObjectBehaviorDescriptor
 import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.modification.ValueMultiModifier
-import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
-import fr.linkit.engine.gnom.cache.sync.behavior.{AbstractSynchronizedObjectBehavior, AnnotationBasedMemberBehaviorFactory}
-import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription
+import fr.linkit.api.gnom.cache.sync.description.SyncStructureDescription
+import fr.linkit.engine.gnom.cache.sync.behavior.{AbstractSynchronizedStructureBehavior, AnnotationBasedMemberBehaviorFactory}
+import fr.linkit.engine.gnom.cache.sync.description.SyncObjectDescription
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -59,7 +59,7 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
         interfaces.foreach(_.putFields(map))
     }
 
-    private def fillWithDefaultBehaviors(desc: SyncObjectSuperclassDescription[A],
+    private def fillWithDefaultBehaviors(desc: SyncStructureDescription[A],
                                          methodMap: mutable.HashMap[Int, InternalMethodBehavior],
                                          fieldMap: mutable.HashMap[Int, FieldBehavior[AnyRef]]): Unit = {
         desc.listMethods().foreach(method => {
@@ -78,8 +78,8 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
         })
     }
 
-    def getBehavior(clazz: Class[_]): SynchronizedObjectBehavior[A] = {
-        val classDesc = SimpleSyncObjectSuperClassDescription[A](clazz)
+    def getBehavior(clazz: Class[_]): SynchronizedStructureBehavior[A] = {
+        val classDesc = SyncObjectDescription[A](clazz)
         val methodMap = mutable.HashMap.empty[Int, InternalMethodBehavior]
         val fieldMap  = mutable.HashMap.empty[Int, FieldBehavior[AnyRef]]
 
@@ -87,7 +87,7 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
         putFields(fieldMap)
         fillWithDefaultBehaviors(classDesc, methodMap, fieldMap)
 
-        new AbstractSynchronizedObjectBehavior[A](classDesc) {
+        new AbstractSynchronizedStructureBehavior[A](classDesc) {
             override protected val methods: Map[Int, InternalMethodBehavior] = methodMap.toMap
             override protected val fields : Map[Int, FieldBehavior[AnyRef]]  = fieldMap.toMap
 

@@ -15,6 +15,6 @@ package fr.linkit.api.gnom.cache.sync.behavior
 
 trait SynchronizedObjectBehaviorFactory {
 
-    def getObjectBehavior[A <: AnyRef](clazz: Class[_]): SynchronizedObjectBehavior[A]
+    def getObjectBehavior[A <: AnyRef](clazz: Class[_]): SynchronizedStructureBehavior[A]
 
 }

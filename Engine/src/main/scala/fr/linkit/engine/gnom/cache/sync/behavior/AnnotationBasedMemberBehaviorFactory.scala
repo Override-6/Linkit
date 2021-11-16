@@ -49,7 +49,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         val paramBehaviors   = getParamBehaviors(desc.javaMethod)
         val rules            = Array[RemoteInvocationRule](control.value())
         val isHidden         = control.hide
-        val innerInvocations = control.innerInvocations()
+        val innerInvocations = control.forceLocalInnerInvocations()
         val returnValueBhv   = new MethodReturnValueBehavior[AnyRef](null, control.synchronizeReturnValue())
         val handler          = controlOpt match {
             case None    => null
@@ -75,7 +75,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
             override def hide(): Boolean = false
 
-            override def innerInvocations(): Boolean = false
+            override def forceLocalInnerInvocations(): Boolean = false
 
             override def annotationType(): Class[_ <: java.lang.annotation.Annotation] = getClass
         }

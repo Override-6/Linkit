@@ -45,7 +45,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         CacheManagerInfo(manager.family, manager.ownerID, storePath)
     }
 
-    @MethodControl(value = BROADCAST, innerInvocations = true)
+    @MethodControl(value = BROADCAST, forceLocalInnerInvocations = false)
     def newEngine(engineIdentifier: String): Engine = {
         if (engines.contains(engineIdentifier))
             throw new IllegalArgumentException("This engine already exists !")
