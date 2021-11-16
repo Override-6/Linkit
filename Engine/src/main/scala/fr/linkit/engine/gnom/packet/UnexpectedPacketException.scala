@@ -15,6 +15,4 @@ package fr.linkit.engine.gnom.packet
 
 import fr.linkit.api.gnom.packet.PacketException
 
-case class UnexpectedPacketException(msg: String, cause: Throwable = null) extends PacketException(msg, cause) {
-
-}
+case class UnexpectedPacketException(msg: String, cause: Throwable = null) extends PacketException(msg, cause)

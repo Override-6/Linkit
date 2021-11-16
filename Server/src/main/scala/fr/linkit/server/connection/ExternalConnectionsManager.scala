@@ -89,15 +89,6 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         connection.shutdown()
     }
 
-    /* def broadcastMessage(err: Boolean, msg: String): Unit = {
-         connections.values
-                 .foreach(connection => {
-                     if (err)
-                         connection.getConsoleErr.println(msg)
-                     else connection.getConsoleOut.println(msg)
-                 })
-     }*/
-
     /**
      * Broadcast bytes sequence to every connected clients
      * */
@@ -105,24 +96,10 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         PacketReaderThread.checkNotCurrent()
         val candidates = connections.values
                 .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
-
-        //val packetCache = new mutable.HashMap[Serializer, Array[Byte]]()
-        //val attributesCache = new mutable.HashMap[Serializer, Array[Byte]]()
-
+        val buff = result.buff
         candidates.foreach(connection => {
-            //val translator = connection.translator
-            /*
-            val connectionID = connection.boundIdentifier
-            val serializer   = translator.getSerializer
-
-            if (!packetCache.contains(serializer))
-                packetCache.put(serializer, translator.translatePacket(packet, connectionID))
-
-            if (!attributesCache.contains(serializer))
-                attributesCache.put(serializer, translator.translateAttributes(attributes, connectionID))
-            */
             if (connection.canHandlePacketInjection(result))
-                connection.send(result.buff)
+                connection.send(buff)
         })
     }
 

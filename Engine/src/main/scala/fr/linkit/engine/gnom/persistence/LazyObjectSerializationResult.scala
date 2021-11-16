@@ -31,8 +31,9 @@ abstract class LazyObjectSerializationResult(info: TransferInfo,
     protected def writeCoords(buff: ByteBuffer): Unit
 
     override lazy val buff: ByteBuffer = {
-        val buff = ByteBuffer.allocate(10000)
+        val buff = ByteBuffer.allocate(500000)
         buff.position(4)
+        buff.limit(buff.capacity())
         writeCoords(buff)
         info.makeSerial(serializer, buff)
         val length = NumberSerializer.serializeInt(buff.position() - 4)
@@ -43,5 +44,6 @@ abstract class LazyObjectSerializationResult(info: TransferInfo,
 }
 
 object LazyObjectSerializationResult {
+
 
 }
