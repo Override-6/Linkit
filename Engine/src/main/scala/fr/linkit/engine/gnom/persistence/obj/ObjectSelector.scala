@@ -29,6 +29,11 @@ class ObjectSelector(bundle: PersistenceBundle) {
     private val cnol        = gnol.cacheNOL
 
     def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
+        if (!obj.isInstanceOf[NetworkObject[_]]) {
+            return col
+                    .findPersistableReference(obj, coords)
+                    .map(new ContextualObjectReference(channelPath, _))
+        }
         obj match {
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
                 val reference = obj.reference
@@ -50,10 +55,6 @@ class ObjectSelector(bundle: PersistenceBundle) {
                         rnol.get.save(obj)
                     None
                 }
-            case _                                                 =>
-                col
-                    .findPersistableReference(obj, coords)
-                    .map(new ContextualObjectReference(channelPath, _))
         }
     }
 

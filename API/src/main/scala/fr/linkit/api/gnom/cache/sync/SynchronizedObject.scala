@@ -44,7 +44,7 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
      */
     def getPuppeteer: Puppeteer[T]
 
-    def getNode: SyncNode[_]
+    def getNode: SyncNode[T]
 
     /**
      * @return the behavior of this object

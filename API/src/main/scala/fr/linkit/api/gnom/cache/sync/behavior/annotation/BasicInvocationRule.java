@@ -65,7 +65,8 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST_IF_OWNER((agreement) -> {
         agreement
-                .ifCurrentIsNotOwner(RMIRulesAgreementBuilder::discardAll)
+                .ifCurrentIsOwner(RMIRulesAgreementBuilder::acceptAll)
+                .acceptCurrent()
                 .desireCurrentEngineToReturn();
     }),
 
@@ -77,6 +78,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST_IF_ROOT_OWNER((agreement ->
             agreement.ifCurrentIsRootOwner(RMIRulesAgreementBuilder::acceptAll)
+                    .acceptCurrent()
                     .desireCurrentEngineToReturn())),
     /**
      * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.

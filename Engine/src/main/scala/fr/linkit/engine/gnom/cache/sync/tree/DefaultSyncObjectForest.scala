@@ -34,7 +34,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
 
     override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SyncObjectReference]
 
-    def findNode(nonSyncNode: AnyRef): Option[SyncNode[_]] = {
+    def findMatchingNode(nonSyncNode: AnyRef): Option[SyncNode[_]] = {
         for (tree <- trees.values) {
             val opt = tree.findMatchingSyncNode(nonSyncNode)
             if (opt.isDefined)
@@ -47,9 +47,14 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         trees.get(id)
     }
 
-    override def registerReference(ref: SyncObjectReference): Unit = super.registerReference(ref)
+    override def registerReference(ref: SyncObjectReference): Unit = {
+        AppLogger.info(s"Registering reference $ref.")
+        super.registerReference(ref)
+    }
 
-    override def unregisterReference(ref: SyncObjectReference): Unit = super.unregisterReference(ref)
+    override def unregisterReference(ref: SyncObjectReference): Unit = {
+        super.unregisterReference(ref)
+    }
 
     override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {

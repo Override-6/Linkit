@@ -69,7 +69,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getPuppeteer: Puppeteer[A] = puppeteer
 
-    override def getNode: SyncNode[_] = node
+    override def getNode: SyncNode[A] = node
 
     override def getBehavior: SynchronizedStructureBehavior[A] = behavior
 

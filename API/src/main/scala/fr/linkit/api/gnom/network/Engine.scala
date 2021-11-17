@@ -33,6 +33,8 @@ trait Engine extends /*NetworkObject[EngineReference] with*/ Updatable {
 
     val network: Network
 
+    def isServer = network.serverEngine eq this
+
     def getConnectionState: ExternalConnectionState
 
     def toString: String

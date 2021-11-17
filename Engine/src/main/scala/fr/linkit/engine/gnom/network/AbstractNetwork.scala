@@ -33,8 +33,7 @@ import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
 
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
-    //rootRefStore += (10, this)
-    //traffic.context.initNetwork(this)
+
     override       val reference              : NetworkReference           = new NetworkReference()
     override       val connection             : ConnectionContext          = traffic.connection
     override       val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel

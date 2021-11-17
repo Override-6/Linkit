@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncObjectReference, SynchronizedObjectTree}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import org.jetbrains.annotations.Nullable
 
 class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocations
                                   val chip: Chip[A], //Reflective invocations
@@ -26,6 +27,6 @@ class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocati
                                   val presence: NetworkObjectPresence, //the sync object presence
                                   val synchronizedObject: A with SynchronizedObject[A], //the sync object
                                   val currentIdentifier: String, //identifier of the current engine.//identifier of the current engine.
-                                  val origin: AnyRef) { //The synchronized object's origin (the same object before it was converted to its synchronized version).
+                                  @Nullable val origin: AnyRef) { //The synchronized object's origin (the same object before it was converted to its synchronized version).
 
 }

@@ -62,8 +62,9 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     }
 
     def findMatchingSyncNode(nonSyncObject: AnyRef): Option[SyncNode[_ <: AnyRef]] = {
+        implicit def scalaTypesAreBullShit[X](t: Any): X = t.asInstanceOf[X]
         nonSyncObject match {
-            case sync: SynchronizedObject[_] => findNode(sync.reference.nodePath)
+            case sync: SynchronizedObject[_] => Some(sync.getNode)
             case nonSync                     =>
                 Option(root.getMatchingSyncNode(nonSync))
         }
@@ -113,9 +114,14 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         if (source.isInstanceOf[SynchronizedObject[_]])
             throw new CanNotSynchronizeException("This object is already wrapped.")
 
-        val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](source))
-        val node       = initSynchronizedObject[B](parent, id, syncObject, source, ownerID)
-        node
+        center.findMatchingNode(source) match {
+            case Some(value: SyncNode[B]) =>
+                value
+            case None                     =>
+                val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](source))
+                val node       = initSynchronizedObject[B](parent, id, syncObject, source, ownerID)
+                node
+        }
     }
 
     private def initSynchronizedObject[B <: AnyRef](parent: ObjectSyncNode[_], id: Int,

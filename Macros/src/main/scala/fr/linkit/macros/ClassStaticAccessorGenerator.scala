@@ -13,13 +13,12 @@
 
 package fr.linkit.macros
 
-import java.nio.file.Files
 import scala.language.experimental.macros
 import scala.reflect.macros.whitebox
 
 object ClassStaticAccessorGenerator {
 
-    def newStaticAccessor[T <: AnyRef]: AnyRef {} = macro newStaticAccessorMacro[T]
+    def newStaticAccessor[T <: AnyRef]: Any = macro newStaticAccessorMacro[T]
 
     def newStaticAccessorMacro[T <: AnyRef : c.WeakTypeTag](c: whitebox.Context): c.Expr[Any] = {
         import c.universe._
@@ -36,7 +35,7 @@ object ClassStaticAccessorGenerator {
                         .map(member => s"def ${member.name.encodedName}${member.typeSignature} = ???")
                         .mkString("\n")
             }
-               |            }""".stripMargin
+               |}""".stripMargin
         //println(s"generatedClassCode = ${generatedClassCode}")
         val quotes             =
             q"""
