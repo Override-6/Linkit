@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
-import fr.linkit.api.gnom.cache.sync.behavior.{SynchronizedStructureBehavior, SynchronizedObjectBehaviorFactory}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{SynchronizedStructureBehavior, SynchronizedObjectBehaviorFactory}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.local.CallableLocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer

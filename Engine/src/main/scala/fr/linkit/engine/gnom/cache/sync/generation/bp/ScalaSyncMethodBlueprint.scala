@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.bp
 
-import fr.linkit.api.gnom.cache.sync.description.MethodDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaBlueprintUtilities._
 import fr.linkit.engine.internal.language.cbp.AbstractValueScope
 

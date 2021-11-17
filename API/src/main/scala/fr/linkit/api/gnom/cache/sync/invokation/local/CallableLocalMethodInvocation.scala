@@ -12,7 +12,7 @@
  */
 
 package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.InternalMethodBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.InternalMethodBehavior
 
 trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
 

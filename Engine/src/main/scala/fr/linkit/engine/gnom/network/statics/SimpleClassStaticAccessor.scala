@@ -1,7 +1,7 @@
 package fr.linkit.engine.gnom.network.statics
 
-import fr.linkit.api.gnom.cache.sync.behavior.annotation.{BasicInvocationRule, MethodControl}
-import fr.linkit.api.gnom.cache.sync.description.SyncStructureDescription
+import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{BasicInvocationRule, MethodControl}
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.network.statics.ClassStaticAccessor
 import fr.linkit.engine.internal.utils.ScalaUtils
 

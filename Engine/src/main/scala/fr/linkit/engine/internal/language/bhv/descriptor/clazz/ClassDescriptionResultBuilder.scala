@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.descriptor.clazz
 
-import fr.linkit.engine.gnom.cache.sync.description.SyncObjectDescription
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.internal.language.bhv.{BehaviorFileException, BehaviorFileSyntaxException}
 import fr.linkit.engine.internal.language.bhv.descriptor.FieldBehaviorDescriptionResult
 import fr.linkit.engine.internal.language.bhv.descriptor.method.{MethodBehaviorDescriptionException, MethodBehaviorDescriptionResult, MethodDescriptor}

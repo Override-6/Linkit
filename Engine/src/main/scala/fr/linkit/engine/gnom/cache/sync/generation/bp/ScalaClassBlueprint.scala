@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.bp
 
-import fr.linkit.api.gnom.cache.sync.description.{MethodDescription, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaBlueprintUtilities._
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerTypes

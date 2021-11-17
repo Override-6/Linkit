@@ -13,12 +13,12 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation
 
-import fr.linkit.api.gnom.cache.sync.description.SyncStructureDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.{InvalidPuppetDefException, SynchronizedObject}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.description.SyncObjectDescription
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends SyncClassCenter {

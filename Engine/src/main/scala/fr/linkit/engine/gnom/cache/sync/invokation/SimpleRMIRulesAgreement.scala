@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.behavior.RMIRulesAgreement
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 
 class SimpleRMIRulesAgreement(currentID: String, ownerID: String,
                               desiredEngineReturn: String, acceptAll: Boolean,

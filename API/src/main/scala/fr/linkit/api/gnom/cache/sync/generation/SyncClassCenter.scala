@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.description.SyncStructureDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 
 import scala.reflect.runtime.universe
 import scala.reflect.{ClassTag, classTag}

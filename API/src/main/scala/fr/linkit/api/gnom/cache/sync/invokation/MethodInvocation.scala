@@ -13,8 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
-import fr.linkit.api.gnom.cache.sync.description.MethodDescription
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.tree.SyncNode
 
 /**

@@ -14,9 +14,9 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.local
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedStructureBehavior
-import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
-import fr.linkit.api.gnom.cache.sync.behavior.modification.MethodCompModifierKind
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifierKind
 import fr.linkit.api.gnom.cache.sync.invokation.local.{Chip, LocalMethodInvocation}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools

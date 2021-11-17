@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.bp
 
-import fr.linkit.api.gnom.cache.sync.description.{MethodDescription, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 
 import java.lang.reflect.TypeVariable
 import scala.language.existentials

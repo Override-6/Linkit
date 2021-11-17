@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectBehaviorFactory
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
@@ -62,9 +62,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     }
 
     def findMatchingSyncNode(nonSyncObject: AnyRef): Option[SyncNode[_ <: AnyRef]] = {
-        implicit def scalaTypesAreBullShit[X](t: Any): X = t.asInstanceOf[X]
         nonSyncObject match {
-            case sync: SynchronizedObject[_] => Some(sync.getNode)
+            case sync: SynchronizedObject[_] => findNode(sync.reference.nodePath)
             case nonSync                     =>
                 Option(root.getMatchingSyncNode(nonSync))
         }

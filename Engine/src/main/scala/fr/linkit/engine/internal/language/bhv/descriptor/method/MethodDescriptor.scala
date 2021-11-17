@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.descriptor.method
 
-import fr.linkit.api.gnom.cache.sync.description.MethodDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.engine.internal.language.bhv.descriptor.Descriptor
 import fr.linkit.engine.internal.language.bhv.descriptor.clazz.ClassDescriptionResultBuilder
 import org.jetbrains.annotations.Nullable

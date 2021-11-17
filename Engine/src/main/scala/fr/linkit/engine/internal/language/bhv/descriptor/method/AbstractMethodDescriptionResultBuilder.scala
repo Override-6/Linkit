@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.internal.language.bhv.descriptor.method
 
-import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule
-import fr.linkit.engine.gnom.cache.sync.behavior.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
+import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
 import fr.linkit.engine.internal.language.bhv.ParserAssertions
 import fr.linkit.engine.internal.language.bhv.descriptor.clazz.ClassDescriptionResultBuilder
 
