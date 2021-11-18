@@ -46,7 +46,7 @@ object DefaultMethodInvocationHandler extends MethodInvocationHandler {
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
         var result     : Any = behavior.defaultReturnValue
         var localResult: Any = result
-        val methodAgreement  = behavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(puppeteer.ownerID, currentIdentifier, rootOwnerIdentifier))
+        val methodAgreement  = behavior.completeAgreement(new GenericRMIRulesAgreementBuilder(puppeteer.ownerID, currentIdentifier, rootOwnerIdentifier))
         val mayPerformRMI    = methodAgreement.mayPerformRemoteInvocation
         if (methodAgreement.mayCallSuper) {
             localResult = localInvocation.callSuper()

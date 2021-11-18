@@ -20,8 +20,6 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescripti
 
 trait SynchronizedStructureBehavior[A <: AnyRef] {
 
-    val classDesc: SyncStructureDescription[A]
-
     def listMethods(): Iterable[MethodBehavior]
 
     def getMethodBehavior(id: Int): Option[InternalMethodBehavior]
@@ -29,7 +27,5 @@ trait SynchronizedStructureBehavior[A <: AnyRef] {
     def listField(): Iterable[FieldBehavior[AnyRef]]
 
     def getFieldBehavior(id: Int): Option[FieldBehavior[AnyRef]]
-
-    val multiModifier: ValueMultiModifier[A]
 
 }
