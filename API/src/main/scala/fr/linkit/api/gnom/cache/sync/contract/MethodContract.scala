@@ -10,10 +10,10 @@ import org.jetbrains.annotations.Nullable
 trait MethodContract {
 
               val description        : MethodDescription
-              val behavior           : Option[MethodBehavior]
-              val parameterContracts : Array[MethodParameterContract]
+              val behavior           : MethodBehavior
+              val parameterContracts : Array[ParameterContract[Any]]
+    @Nullable val returnValueModifier: MethodCompModifier[Any]
     @Nullable val procrastinator     : Procrastinator
     @Nullable val handler            : MethodInvocationHandler
-    @Nullable val returnValueModifier: MethodCompModifier[AnyRef]
 
 }

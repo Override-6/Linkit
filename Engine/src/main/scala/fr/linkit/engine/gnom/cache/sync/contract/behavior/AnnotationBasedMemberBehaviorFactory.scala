@@ -13,21 +13,20 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.parameter.ParameterBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.ParameterBehavior
 import fr.linkit.api.gnom.cache.sync.contract.description._
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior, SyncMethodBehavior}
-import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
 
 import java.lang.reflect.{Method, Parameter}
 
 object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
-    def getParamBehaviors(method: Method): Array[ParameterBehavior[AnyRef]] = {
+    def getParamBehaviors(method: Method): Array[ParameterBehavior[Any]] = {
         val params = method.getParameters
                 .map(genParameterBehavior)
         if (params.exists(_.isActivated))
@@ -37,31 +36,31 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         else Array.empty
     }
 
-    def genParameterBehavior(param: Parameter): ParameterBehavior[AnyRef] = {
+    def genParameterBehavior(param: Parameter): ParameterBehavior[Any] = {
         val isSynchronized = param.isAnnotationPresent(classOf[Synchronized])
-        new MethodParameterBehavior[AnyRef](param, isSynchronized, null)
+        new MethodParameterBehavior[Any](isSynchronized)
     }
 
-    override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): SyncMethodBehavior = {
+    override def genMethodBehavior(procrastinator: Option[Procrastinator], agreementBuilder: RMIRulesAgreementBuilder, desc: MethodDescription): SyncMethodBehavior = {
         val javaMethod       = desc.javaMethod
         val controlOpt       = Option(javaMethod.getAnnotation(classOf[MethodControl]))
         val control          = controlOpt.getOrElse(DefaultMethodControl)
+        val isActivated      = controlOpt.isDefined
         val paramBehaviors   = getParamBehaviors(desc.javaMethod)
-        val rules            = Array[RemoteInvocationRule](control.value())
+        val rule             = control.value()
         val isHidden         = control.hide
         val innerInvocations = control.forceLocalInnerInvocations()
-        val returnValueBhv   = new MethodReturnValueBehavior[AnyRef](null, control.synchronizeReturnValue())
-        val handler          = controlOpt match {
-            case None    => null
-            case Some(_) => DefaultMethodInvocationHandler
-        }
+        val returnValueBhv   = new MethodReturnValueBehavior[Any](control.synchronizeReturnValue())
+
+        rule.apply(agreementBuilder)
+        val agreement = agreementBuilder.result
         SyncMethodBehavior(
-            desc, paramBehaviors, returnValueBhv, isHidden,
-            innerInvocations, rules, procrastinator.orNull, handler
+            isActivated, paramBehaviors, returnValueBhv, isHidden,
+            innerInvocations, agreement
         )
     }
 
-    override def genFieldBehavior(desc: FieldDescription): FieldBehavior[AnyRef] = {
+    override def genFieldBehavior(desc: FieldDescription): FieldBehavior[Any] = {
         val control        = Option(desc.javaField.getAnnotation(classOf[Synchronized]))
         val isSynchronized = control.isDefined
         SyncFieldBehavior(desc, isSynchronized, null)

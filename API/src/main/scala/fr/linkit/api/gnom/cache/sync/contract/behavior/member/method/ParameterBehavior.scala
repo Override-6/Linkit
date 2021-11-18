@@ -11,10 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior
+package fr.linkit.api.gnom.cache.sync.contract.behavior.member.method
 
-trait SynchronizedObjectBehaviorFactory {
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.MemberBehavior
 
-    def getObjectBehavior[A <: AnyRef](clazz: Class[_]): SynchronizedStructureBehavior[A]
-
+trait ParameterBehavior[A] extends MemberBehavior {
+    //For Future features
 }

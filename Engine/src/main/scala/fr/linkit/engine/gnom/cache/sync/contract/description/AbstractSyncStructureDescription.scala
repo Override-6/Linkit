@@ -20,7 +20,7 @@ import fr.linkit.engine.gnom.cache.sync.generation.SyncObjectClassResource.{Wrap
 
 import scala.collection.mutable.ListBuffer
 
-abstract class AbstractSyncStructureDescription[A](override val clazz: Class[A]) extends SyncStructureDescription[A] {
+abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz: Class[A]) extends SyncStructureDescription[A] {
 
     private val methodDescriptions: Map[Int, MethodDescription] = collectMethods()
     private val fieldDescriptions : Map[Int, FieldDescription]  = collectFields()

@@ -13,16 +13,16 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.build.ObjectBehaviorDescriptor
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{SynchronizedObjectBehaviorFactory, SynchronizedStructureBehavior}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{SynchronizedObjectContractFactory, SynchronizedStructureBehavior}
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.ObjectBehaviorDescriptor
 import fr.linkit.engine.internal.utils.ClassMap
 
-class SyncObjectBehaviorFactory(descriptions: Array[ObjectBehaviorDescriptor[_]]) extends SynchronizedObjectBehaviorFactory {
+class SyncObjectContractFactory(descriptions: Array[ObjectBehaviorDescriptor[_]]) extends SynchronizedObjectContractFactory {
 
     private val nodeMap = createNodes(descriptions)
 
-    override def getObjectBehavior[A <: AnyRef](clazz: Class[_]): SynchronizedStructureBehavior[A] = {
-        nodeMap.get(clazz).get.getBehavior(clazz).asInstanceOf[SynchronizedStructureBehavior[A]]
+    override def getObjectBehavior[A <: AnyRef](clazz: Class[_], ownerID: String, rootOwnerID: String, currentID: String): SynchronizedStructureBehavior[A] = {
+        nodeMap.get(clazz).get.getBehavior(clazz, ownerID, rootOwnerID, currentID).asInstanceOf[SynchronizedStructureBehavior[A]]
     }
 
     private def createNodes(descriptors: Array[ObjectBehaviorDescriptor[_]]): ClassMap[BehaviorDescriptorNode[_]] = {

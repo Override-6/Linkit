@@ -11,17 +11,16 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.contract.MethodContract
+package fr.linkit.api.gnom.cache.sync.contract
 
-trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
+trait SynchronizedStructure[M, F] {
 
-    //override val methodContract: MethodContract
+    def listMethods(): Iterable[M]
 
-    /**
-     * Calls the local method of the object.
-     * @return the method's call result.
-     * */
-    def callSuper(): R
+    def getMethod(id: Int): Option[M]
+
+    def getField(id: Int): Option[F]
+
+    def listField(): Iterable[F]
 
 }

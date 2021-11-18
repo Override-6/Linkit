@@ -100,8 +100,10 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 
-    //TODO write an object for this (quite big) method entry
-    def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, path: Array[Int], config: PersistenceConfig, discarded: Array[String]): Unit = {
+    //TODO write an object for this big method entry
+    def broadcastPacket(packet: Packet, attributes: PacketAttributes,
+                        sender: String, path: Array[Int],
+                        config: PersistenceConfig, discarded: Array[String]): Unit = {
         if (connectionsManager.countConnections - discarded.length < 0) {
             // There is nowhere to send this packet.
             return

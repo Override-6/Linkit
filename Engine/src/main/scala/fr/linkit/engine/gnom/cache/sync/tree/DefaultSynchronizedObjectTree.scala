@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectBehaviorFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
@@ -31,7 +31,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                                                                val instantiator: SyncInstanceInstantiator,
                                                                val dataFactory: SyncNodeDataFactory,
                                                                override val id: Int,
-                                                               override val behaviorFactory: SynchronizedObjectBehaviorFactory) extends SynchronizedObjectTree[A] {
+                                                               override val behaviorFactory: SynchronizedObjectContractFactory) extends SynchronizedObjectTree[A] {
 
     private var root: RootObjectSyncNode[A] = _
 
@@ -41,7 +41,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
              id: Int,
              instantiator: SyncInstanceInstantiator,
              dataFactory: SyncNodeDataFactory,
-             behaviorTree: SynchronizedObjectBehaviorFactory)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNode[A]) = {
+             behaviorTree: SynchronizedObjectContractFactory)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNode[A]) = {
         this(currentIdentifier, network, center, instantiator, dataFactory, id, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)
@@ -142,7 +142,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     private def scanSyncObjectFields[B <: AnyRef](node: ObjectSyncNode[_], ownerID: String, syncObject: B with SynchronizedObject[B]): Unit = {
         val isCurrentOwner = ownerID == currentIdentifier
         val engine         = if (!isCurrentOwner) Try(network.findEngine(ownerID).get).getOrElse(null) else null
-        val behavior       = syncObject.getBehavior
+        val behavior       = syncObject.getContract
         for (bhv <- behavior.listField()) {
             val field      = bhv.desc.javaField
             var fieldValue = ScalaUtils.getValueAnyRef(syncObject, field)
@@ -158,7 +158,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                             val id = sync.reference.nodePath.last
                             initSynchronizedObject(node, id, sync, sync, ownerID)
                         }
-                        val modifier = sync.getBehavior.multiModifier
+                        val modifier = sync.getContract.multiModifier
                         modifier.modifyForField(sync, cast(field.getType))(syncObject, engine)
                     case _                                =>
                         val id = ThreadLocalRandom.current().nextInt()

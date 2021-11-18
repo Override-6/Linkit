@@ -11,8 +11,14 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract.behavior.member
+package fr.linkit.engine.gnom.cache.sync.contract
 
+import fr.linkit.api.gnom.cache.sync.contract.ParameterContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.ParameterBehavior
+import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifier
 
-case class MethodParameterBehavior[A](override val isActivated: Boolean) extends ParameterBehavior[A]
+import java.lang.reflect.Parameter
+
+case class MethodParameterContract[A](override val param: Parameter,
+                                 override val behavior: Option[ParameterBehavior[A]],
+                                 override val modifier: Option[MethodCompModifier[A]]) extends ParameterContract[A]

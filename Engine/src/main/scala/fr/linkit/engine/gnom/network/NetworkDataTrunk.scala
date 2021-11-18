@@ -25,7 +25,7 @@ import java.sql.Timestamp
 
 import scala.collection.mutable
 
-//FIXME OriginManagers and DistantManagers
+//FIXME OriginManagers and DistantManagers can be bypass
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
     private val traffic = network.connection.traffic

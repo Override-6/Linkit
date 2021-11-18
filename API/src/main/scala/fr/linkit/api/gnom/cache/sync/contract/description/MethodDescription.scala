@@ -13,18 +13,18 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.description
 
-import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription.NumberTypes
-
-import java.lang.reflect.{InaccessibleObjectException, Method}
+import java.lang.reflect.{InaccessibleObjectException, Method, Parameter}
 
 case class MethodDescription(javaMethod: Method,
-                             classDesc: SyncStructureDescription[_]) {
+                             classDesc: SyncStructureDescription[_ <: AnyRef]) {
     //TODO native method that cals any method reflectively; this is a fast fix.
     try {
         javaMethod.setAccessible(true)
     } catch {
-        case e: InaccessibleObjectException => //do nothing
+        case _: InaccessibleObjectException => //do nothing
     }
+
+    val params: Array[Parameter] = javaMethod.getParameters
     val methodId: Int = {
         val parameters: Array[Class[_]] = javaMethod.getParameterTypes
         javaMethod.getName.hashCode + hashCode(parameters)
@@ -32,14 +32,6 @@ case class MethodDescription(javaMethod: Method,
 
     def getName: String = javaMethod.getName
 
-    def getDefaultTypeReturnValue: String = {
-        val nme = javaMethod.getReturnType.getName
-
-        if (nme == fullNameOf[Boolean]) "false"
-        else if (NumberTypes.contains(fullNameOf)) "-1"
-        else if (nme == fullNameOf[Char]) "'\\u0000'"
-        else "nl()" //contracted call to JavaUtils.getNull
-    }
 
     private def hashCode(a: Array[Class[_]]): Int = {
         if (a == null) return 0

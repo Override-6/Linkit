@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.{RMIRulesAgreement, RMIRu
 
 import scala.collection.mutable.ListBuffer
 
-class GenericRMIRulesAgreementBuilder extends RMIRulesAgreementBuilder {
+class SimpleRMIRulesAgreementBuilder(ownerID: String, rootOwnerID: String, currentID: String) extends RMIRulesAgreementBuilder {
 
     private val currentIsOwner               = ownerID == currentID
     private val currentIsRootOwner           = rootOwnerID == currentID
@@ -49,7 +49,6 @@ class GenericRMIRulesAgreementBuilder extends RMIRulesAgreementBuilder {
         if (!currentIsRootOwner) action(this)
         this
     }
-
 
     override def discard(target: String): this.type = {
         accepted -= target

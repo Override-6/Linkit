@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.network
 
 import java.sql.Timestamp
 import fr.linkit.api.application.connection.ConnectionContext
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectBehaviorFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
@@ -90,7 +90,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         (manager, store.trafficPath)
     }
 
-    protected def retrieveDataTrunk(factory: SynchronizedObjectBehaviorFactory): NetworkDataTrunk
+    protected def retrieveDataTrunk(factory: SynchronizedObjectContractFactory): NetworkDataTrunk
 
     protected def createGlobalCache: SharedCacheManager
 
@@ -111,7 +111,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
     }
 
-    private def getEngineStoreBehaviors: SynchronizedObjectBehaviorFactory = {
+    private def getEngineStoreBehaviors: SynchronizedObjectContractFactory = {
         import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.fromTag
         new SynchronizedObjectBehaviorFactoryBuilder {
             describe(new ClassDescriptor[SharedCacheManager]() {

@@ -14,7 +14,6 @@
 package fr.linkit.api.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 
@@ -38,11 +37,6 @@ trait Puppeteer[S <: AnyRef] {
      * The object center that stores the synchronized object.
      */
     val cache: SynchronizedObjectCache[_]
-
-    /**
-     * The behavior of the synchronized object.
-     * */
-    val objectBehavior: SynchronizedStructureBehavior[S]
 
     /**
      * The identifier of the current engine.
@@ -73,12 +67,11 @@ trait Puppeteer[S <: AnyRef] {
 
     val network: Network //Keep an access to Network
 
-    //TODO make this and "init" for internal use only
+    //TODO make this for internal use only
     def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
 
-    //def init(syncObject: S with SynchronizedObject[S]): Unit
-
     trait RMIDispatcher {
+
         def broadcast(args: Array[Any]): Unit
 
         def foreachEngines(action: String => Array[Any]): Unit

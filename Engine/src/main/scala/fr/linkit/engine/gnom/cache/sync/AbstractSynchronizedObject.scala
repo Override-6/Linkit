@@ -13,8 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{SynchronizedStructureBehavior, SynchronizedObjectBehaviorFactory}
+import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{SynchronizedObjectContractFactory, SynchronizedStructureBehavior}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.local.CallableLocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
@@ -25,16 +26,18 @@ import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    final protected            var location         : SyncObjectReference               = _
-    @transient final protected var puppeteer        : Puppeteer[A]                     = _
-    @transient final protected var behavior         : SynchronizedStructureBehavior[A] = _
-    @transient final protected var choreographer    : InvocationChoreographer          = _
-    @transient final protected var behaviorFactory  : SynchronizedObjectBehaviorFactory = _
-    @transient private         var presenceOnNetwork: NetworkObjectPresence             = _
-    @transient private         var node             : SyncNode[A]                       = _
-    //cache for handleCall
-    @transient private         var currentIdentifier: String                            = _
-    @transient private         var ownerID          : String                            = _
+    protected final          var location         : SyncObjectReference               = _
+    @transient final         var puppeteer        : Puppeteer[A]                      = _
+    @transient final         var contract         : SynchronizedStructureContract[A]  = _
+    @transient final         var choreographer    : InvocationChoreographer           = _
+    @transient final         var behaviorFactory  : SynchronizedObjectContractFactory = _
+    @transient private final var presenceOnNetwork: NetworkObjectPresence             = _
+    @transient private final var node             : SyncNode[A]                       = _
+
+    //cached for handleCall
+    @transient private final var currentIdentifier: String                           = _
+    @transient private final var ownerID          : String                           = _
+    @transient final         var behavior         : SynchronizedStructureBehavior[A] = _
 
     def wrappedClass: Class[_]
 
@@ -47,7 +50,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         val puppeteer = node.puppeteer
         this.behaviorFactory = node.tree.behaviorFactory
         this.puppeteer = node.puppeteer
-        this.behavior = puppeteer.objectBehavior
+        this.contract = node.contract
+        this.behavior = contract.behavior
         this.presenceOnNetwork = node.objectPresence
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
@@ -57,7 +61,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
-    override def getBehaviorFactory: SynchronizedObjectBehaviorFactory = behaviorFactory
+    override def getBehaviorFactory: SynchronizedObjectContractFactory = behaviorFactory
 
     override final def reference: SyncObjectReference = location
 
@@ -71,7 +75,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getNode: SyncNode[A] = node
 
-    override def getBehavior: SynchronizedStructureBehavior[A] = behavior
+    override def getContract: SynchronizedStructureContract[A] = contract
 
     //private def asAutoSync: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
@@ -80,33 +84,35 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             //throw new IllegalStateException(s"Synchronized object at '${location}' is not initialised")
             return superCall(args).asInstanceOf[R]
         }
-        val methodBhv        = behavior.getMethodBehavior(id).get
+        val methodContract   = contract.getMethodContract(id).get
+        val methodBhv        = methodContract.behavior
         val synchronizedArgs = synchronizedParams(methodBhv, args)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
         if (!methodBhv.isActivated || choreographer.isMethodExecutionForcedToLocal) {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
 
-        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](methodBhv, node) with CallableLocalMethodInvocation[R] {
-            override val methodArguments: Array[Any]             = synchronizedArgs
-            override val methodBehavior : InternalMethodBehavior = methodBhv
+        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](methodContract, node) with CallableLocalMethodInvocation[R] {
+            override val methodArguments: Array[Any] = synchronizedArgs
 
             override def callSuper(): R = {
                 performSuperCall[R](methodBhv.forceLocalInnerInvocations, superCall(synchronizedArgs))
             }
         }
 
-        methodBhv.handler.handleRMI[R](localInvocation)
+        methodContract.handler.handleRMI[R](localInvocation)
     }
 
     @inline override def isInitialized: Boolean = puppeteer != null
 
     private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
-        var i              = -1
+        if (bhv eq null)
+            return objects
         val paramBehaviors = bhv.parameterBehaviors
         if (paramBehaviors.isEmpty)
             return objects
-        val pup            = puppeteer
+        var i   = -1
+        val pup = puppeteer
         objects.map(param => {
             i += 1
             val behavior = paramBehaviors(i)

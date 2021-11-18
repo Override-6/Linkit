@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.contract.MethodContract
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.tree.SyncNode
 
@@ -37,13 +37,13 @@ trait MethodInvocation[R] {
     /**
      * The method's behavior
      */
-    val methodBehavior: MethodBehavior
+    val methodContract: MethodContract
 
     /**
      * The method's description
      * */
     val methodDescription: MethodDescription
 
-    val debug: Boolean = true
+    var debug: Boolean = true
 
 }

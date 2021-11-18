@@ -22,10 +22,10 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule;
 public enum BasicInvocationRule implements RemoteInvocationRule {
 
     /**
-     * Blocks every engines from remote invocation.
-     * The invocation will only be performed on the local object.
-     * This behavior is the same as calling any normal java method.
-     * This is the default behavior rules for activated methods with non specified rule
+     * Blocks every engines from remote invocation.<br>
+     * The invocation will only be performed on the local object.<br>
+     * This behavior is the same as calling any normal java method.<br>
+     * <u>This is the default rule applied for methods</u>
      */
     ONLY_CURRENT((agreement) -> {
         agreement.discardAll()

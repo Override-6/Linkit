@@ -13,18 +13,17 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior.builder
 
+import fr.linkit.api.gnom.cache.sync.contract.ParameterContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule
-import fr.linkit.api.gnom.cache.sync.contract.behavior.build.ObjectBehaviorDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.{FieldBehavior, FieldModifier}
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.parameter.ParameterBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.InternalMethodBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{RemoteInvocationRule, SynchronizedObjectBehaviorFactory}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{RemoteInvocationRule, SynchronizedObjectContractFactory}
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncStructureDescription}
-import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.{AnnotationBasedMemberBehaviorFactory, SyncObjectBehaviorFactory}
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior, SyncMethodBehavior}
-import SynchronizedObjectBehaviorFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
 import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifier
+import fr.linkit.api.internal.concurrency.Procrastinator
+import fr.linkit.engine.gnom.cache.sync.contract.MethodParameterContract
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.SynchronizedObjectBehaviorFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior}
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.{AnnotationBasedMemberBehaviorFactory, SyncObjectContractFactory}
 import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
 
 import java.lang.reflect.{Field, Method, Parameter}
@@ -42,20 +41,20 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
         builders.put(tag, builder)
     }
 
-    def build(): SynchronizedObjectBehaviorFactory = {
+    def build(): SynchronizedObjectContractFactory = {
         var descriptions = builders.values.map(_.getResult).toArray
         if (!descriptions.exists(_.targetClass eq classOf[Object])) {
             descriptions :+= new ObjectBehaviorDescriptor[Object] {
                 override val targetClass          : Class[Object]                                = classOf[Object]
                 override val usingHierarchy       : Array[ObjectBehaviorDescriptor[_ >: Object]] = Array.empty
-                override val withMethods          : Array[InternalMethodBehavior]                = Array.empty
-                override val withFields           : Array[FieldBehavior[AnyRef]]                 = Array.empty
+                override val withMethods          : Array[MethodContractDescriptor]              = Array.empty
+                override val withFields           : Array[FieldBehavior[Any]]                    = Array.empty
                 override val whenField            : Option[FieldModifier[Object]]                = None
                 override val whenParameter        : Option[MethodCompModifier[Object]]           = None
                 override val whenMethodReturnValue: Option[MethodCompModifier[Object]]           = None
             }
         }
-        new SyncObjectBehaviorFactory(descriptions)
+        new SyncObjectContractFactory(descriptions)
     }
 
     private def nextDescriptorDefaultID: Int = {
@@ -70,8 +69,8 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
         }
 
         private val clazz                  = desc.clazz
-        private val methodBehaviors        = mutable.HashMap.empty[Method, SyncMethodBehavior]
-        private val fieldBehaviors         = mutable.HashMap.empty[Field, SyncFieldBehavior[AnyRef]]
+        private val methodBehaviors        = mutable.HashMap.empty[Method, MethodContractDescriptor]
+        private val fieldBehaviors         = mutable.HashMap.empty[Field, SyncFieldBehavior[Any]]
         private val inheritedBehaviorsTags = ListBuffer.empty[Any]
 
         protected var whenField            : FieldModifier[T]            = _
@@ -95,8 +94,9 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
             }
 
             def method(name: String): Unit = {
-                val mDesc = desc.findMethodDescription(name).get
-                methodBehaviors.put(mDesc.javaMethod, SyncMethodBehavior.disabled(mDesc))
+                val mDesc              = desc.findMethodDescription(name).get
+                val contractDescriptor = new MethodContractDescriptor(mDesc, BasicInvocationRule.ONLY_CURRENT, false)
+                methodBehaviors.put(mDesc.javaMethod, contractDescriptor)
             }
         }
 
@@ -114,7 +114,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
                     val bhv = methodBehaviors.getOrElse(getMethod(methodName).javaMethod, {
                         throw new NoSuchElementException(s"Method '$methodName' not described. its behavior must be described before.")
                     })
-                    descs.map(SyncMethodBehavior.copy(_, bhv))
+                    descs.map(new MethodContractDescriptor(_, bhv))
                 }
 
                 def as(builder: MethodBehaviorBuilder): Unit = conclude {
@@ -126,19 +126,15 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
 
                 def withRule(rule: RemoteInvocationRule): Unit = conclude {
                     descs.map(desc => {
-                        SyncMethodBehavior(
-                            desc, Array.empty,
-                            null, false, false,
-                            Array(rule), null, DefaultMethodInvocationHandler)
+                        new MethodContractDescriptor(desc, rule, true)
                     })
                 }
 
-                private def conclude(conclusion: => Array[SyncMethodBehavior]): Unit = {
+                private def conclude(conclusion: => Array[MethodContractDescriptor]): Unit = {
                     if (concluded)
                         throw new IllegalStateException("This method was already described.")
-                    val methodBhvs = conclusion
-                    methodBhvs.foreach { methodBehavior =>
-                        methodBehaviors.put(methodBehavior.desc.javaMethod, methodBehavior)
+                    conclusion.foreach { contractDescriptor =>
+                        methodBehaviors.put(contractDescriptor.description.javaMethod, contractDescriptor)
                     }
                     concluded = true
                 }
@@ -146,7 +142,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
             }
 
             class FieldBehaviorDescriptorBuilderIntroduction(descs: Array[FieldDescription]) {
-                //TODO
+                //TODO be able to build field behaviors
             }
 
             private def getMethod(name: String): MethodDescription = {
@@ -169,7 +165,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
             def field[F <: AnyRef](name: String)(modifier: FieldModifier[F]): Unit = {
                 val fDesc = getField(name)
                 val bhv   = new SyncFieldBehavior[F](fDesc, true, modifier)
-                fieldBehaviors.put(fDesc.javaField, bhv.asInstanceOf[SyncFieldBehavior[AnyRef]])
+                fieldBehaviors.put(fDesc.javaField, bhv.asInstanceOf[SyncFieldBehavior[Any]])
             }
         }
 
@@ -184,8 +180,8 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
             result = new ObjectBehaviorDescriptor[T] {
                 override val targetClass   : Class[T]                                = desc.clazz
                 override val usingHierarchy: Array[ObjectBehaviorDescriptor[_ >: T]] = hierarchy
-                override val withMethods   : Array[InternalMethodBehavior]           = methodBehaviors.values.toArray
-                override val withFields    : Array[FieldBehavior[AnyRef]]            = fieldBehaviors.values.toArray
+                override val withMethods   : Array[MethodContractDescriptor]         = methodBehaviors.values.toArray
+                override val withFields    : Array[FieldBehavior[Any]]               = fieldBehaviors.values.toArray
 
                 override val whenField            : Option[FieldModifier[T]]      = Option(builder.whenField)
                 override val whenParameter        : Option[MethodCompModifier[T]] = Option(builder.whenParameter)
@@ -206,13 +202,13 @@ object SynchronizedObjectBehaviorFactoryBuilder {
 
     abstract class MethodBehaviorBuilder(rule: RemoteInvocationRule = BasicInvocationRule.ONLY_CURRENT) extends AbstractBehaviorBuilder[MethodDescription] {
 
-        private val paramBehaviors             = mutable.HashMap.empty[Parameter, ParameterBehavior[AnyRef]]
+        private val paramBehaviors             = mutable.HashMap.empty[Parameter, ParameterContract[Any]]
         private var usedParams: Option[params] = None
 
-        private var innerInvocations: Boolean        = false
-        private var procrastinator  : Procrastinator = _
+        private var forceLocalInvocation: Boolean        = false
+        private var procrastinator      : Procrastinator = _
 
-        def usesInnerInvocations(): Unit = innerInvocations = true
+        def mustForceLocalInvocation(): Unit = forceLocalInvocation = true
 
         def withProcrastinator(procrastinator: Procrastinator): Unit = {
             this.procrastinator = procrastinator
@@ -242,7 +238,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
 
             class As(override val tag: Option[Any]) extends Recognizable {
 
-                private[params] var assignedBehavior: ParameterBehavior[AnyRef] = _
+                private[params] var assignedBehavior: ParameterContract[Any] = _
 
                 def as(paramName: String): Unit = {
                     assignedBehavior = getParamBehavior(paramName)(s"Parameter '$paramName' not described. Its behavior must be described before.")
@@ -253,16 +249,16 @@ object SynchronizedObjectBehaviorFactoryBuilder {
                 }
             }
 
-            def enable[P <: AnyRef](paramName: String)(modifier: MethodCompModifier[P]): Unit = callOnceContextSet {
+            def enable[P <: AnyRef](paramName: String)(paramModifier: MethodCompModifier[P]): Unit = callOnceContextSet {
                 val param = getParam(paramName)
-                val bhv   = new MethodParameterBehavior[P](param, true, modifier)
-                paramBehaviors.put(param, bhv.asInstanceOf[ParameterBehavior[AnyRef]])
+                val bhv   = new MethodParameterContract[P](param, Some(MethodParameterBehavior(true)), Option(paramModifier))
+                paramBehaviors.put(param, bhv.asInstanceOf[ParameterContract[Any]])
             }
 
-            def enable[P <: AnyRef](idx: Int, modifier: MethodCompModifier[P]): Unit = callOnceContextSet {
+            def enable[P <: AnyRef](idx: Int, paramModifier: MethodCompModifier[P]): Unit = callOnceContextSet {
                 val param = getParam(idx)
-                val bhv   = new MethodParameterBehavior[P](param, true, modifier)
-                paramBehaviors.put(param, bhv.asInstanceOf[ParameterBehavior[AnyRef]])
+                val bhv   = new MethodParameterContract[P](param, Some(MethodParameterBehavior(true)), Option(paramModifier))
+                paramBehaviors.put(param, bhv.asInstanceOf[ParameterContract[Any]])
             }
 
             def enable(paramName: String): As = {
@@ -284,30 +280,33 @@ object SynchronizedObjectBehaviorFactoryBuilder {
                         case Some(name: String) => getParam(name)
                     }
                     val bhv   = as.assignedBehavior
-                    paramBehaviors.put(param, MethodParameterBehavior[AnyRef](param, bhv.isActivated, bhv.modifier))
+                    paramBehaviors.put(param, bhv)
                 }
             }
         }
 
-        private[SynchronizedObjectBehaviorFactoryBuilder] def build(): SyncMethodBehavior = {
+        private[SynchronizedObjectBehaviorFactoryBuilder] def build(): MethodContractDescriptor = {
             usedParams.foreach(_.concludeAllAssignements()) //will modify the paramBehaviors map
             val jMethod             = context.javaMethod
-            val parameterBehaviors  = getParamBehaviors(jMethod)
-            val returnValueBehavior = new MethodReturnValueBehavior[AnyRef](returnvalue.modifier.asInstanceOf[MethodCompModifier[AnyRef]], returnvalue.enabled)
-            SyncMethodBehavior(context, parameterBehaviors, returnValueBehavior,
-                false, innerInvocations, Array(rule), procrastinator, DefaultMethodInvocationHandler)
+            val parameterBehaviors  = getParamContracts(jMethod)
+            val returnValueBehavior = new MethodReturnValueBehavior[Any](returnvalue.enabled)
+            val returnValueModifier = returnvalue.modifier.asInstanceOf[MethodCompModifier[Any]]
+            MethodContractDescriptor(
+                context, rule, true, parameterBehaviors,
+                returnValueBehavior, returnValueModifier, false, forceLocalInvocation,
+                procrastinator, DefaultMethodInvocationHandler)
         }
 
-        private def getParamBehaviors(jMethod: Method): Array[ParameterBehavior[AnyRef]] = {
-            val base = jMethod.getParameters.map(getOrDefaultBehavior)
-            if (base.exists(pb => pb.modifier != null || pb.isActivated))
+        private def getParamContracts(jMethod: Method): Array[ParameterContract[Any]] = {
+            val base = jMethod.getParameters.map(getOrDefaultContract)
+            if (base.exists(pb => pb.modifier != null || pb.behavior.exists(_.isActivated)))
                 base
             else Array.empty
         }
 
-        private def getOrDefaultBehavior(parameter: Parameter): ParameterBehavior[AnyRef] = {
+        private def getOrDefaultContract(parameter: Parameter): ParameterContract[Any] = {
             paramBehaviors.getOrElse(parameter, AnnotationBasedMemberBehaviorFactory.genParameterBehavior(parameter))
-                    .asInstanceOf[ParameterBehavior[AnyRef]]
+                    .asInstanceOf[ParameterContract[Any]]
         }
 
         private def getParam(paramName: String): Parameter = {
@@ -322,7 +321,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
             context.javaMethod.getParameters()(idx)
         }
 
-        private def getParamBehavior(name: String)(noSuchMsg: String): ParameterBehavior[AnyRef] = {
+        private def getParamBehavior(name: String)(noSuchMsg: String): ParameterContract[Any] = {
             val param = getParam(name)
             if (param.getType.isPrimitive)
                 throw new UnsupportedOperationException("can't synchronize or apply modifiers on primitive values.")
@@ -331,7 +330,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
             })
         }
 
-        private def getParamBehavior(idx: Int)(noSuchMsg: String): ParameterBehavior[AnyRef] = {
+        private def getParamBehavior(idx: Int)(noSuchMsg: String): ParameterContract[Any] = {
             val param = getParam(idx)
             if (param.getType.isPrimitive)
                 throw new UnsupportedOperationException("can't synchronize or apply modifiers on primitive values.")

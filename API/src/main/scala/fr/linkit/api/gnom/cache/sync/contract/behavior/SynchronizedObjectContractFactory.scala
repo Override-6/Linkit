@@ -11,17 +11,13 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.contract.MethodContract
+package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
+import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
 
-    //override val methodContract: MethodContract
+trait SynchronizedObjectContractFactory {
 
-    /**
-     * Calls the local method of the object.
-     * @return the method's call result.
-     * */
-    def callSuper(): R
+    def getObjectBehavior[A <: AnyRef](clazz: Class[_],
+                                       ownerID: String, rootOwnerID: String, currentID: String): SynchronizedStructureContract[A]
 
 }

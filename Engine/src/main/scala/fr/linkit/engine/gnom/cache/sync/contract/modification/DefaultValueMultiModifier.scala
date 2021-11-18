@@ -14,12 +14,12 @@
 package fr.linkit.engine.gnom.cache.sync.contract.modification
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.behavior.build.ObjectBehaviorDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldModifier
 import fr.linkit.api.gnom.cache.sync.contract.modification.{MethodCompModifier, MethodCompModifierKind, ValueMultiModifier}
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.BehaviorDescriptorNode
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.ObjectBehaviorDescriptor
 
 class DefaultValueMultiModifier[A <: AnyRef](node: BehaviorDescriptorNode[A]) extends ValueMultiModifier[A] {
 

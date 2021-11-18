@@ -14,96 +14,100 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.local
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
 import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifierKind
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, SynchronizedStructureContract}
 import fr.linkit.api.gnom.cache.sync.invokation.local.{Chip, LocalMethodInvocation}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.cache.sync.BadRMIRequestException
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.lang.reflect.Modifier
 
-class ObjectChip[S <: AnyRef] private(behavior: SynchronizedStructureBehavior[S],
+class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S],
                                       syncObject: SynchronizedObject[S],
                                       network: Network) extends Chip[S] {
+
+    private val behavior = contract.behavior
 
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(syncObject, obj)
     }
 
     override def callMethod(methodID: Int, params: Array[Any], origin: String): Any = {
-        val methodBehaviorOpt = behavior.getMethodBehavior(methodID)
-        if (methodBehaviorOpt.forall(_.isHidden)) {
-            throw new SyncObjectException(s"Attempted to invoke ${methodBehaviorOpt.fold("unknown")(_ => "hidden")} method '${
-                methodBehaviorOpt.map(_.desc.javaMethod.getName).getOrElse(s"(unknown method id '$methodID')")
-            }(${params.mkString(", ")}) in ${methodBehaviorOpt.map(_.desc.classDesc.clazz).getOrElse("Unknown class")}'")
+        val methodContractOpt = contract.getMethodContract(methodID)
+        if (methodContractOpt.forall(_.behavior.isHidden)) {
+            throw new BadRMIRequestException(s"Attempted to invoke ${methodContractOpt.fold("unknown")(_ => "hidden")} method '${
+                methodContractOpt.map(_.description.javaMethod.getName).getOrElse(s"(unknown method id '$methodID')")
+            }(${params.mkString(", ")}) in ${methodContractOpt.map(_.description.classDesc.clazz).getOrElse("Unknown class")}'")
         }
-        val methodBehavior = methodBehaviorOpt.get
-        val name           = methodBehavior.desc.javaMethod.getName
-        val procrastinator = methodBehavior.procrastinator
-        AppLogger.debug(s"RMI - Calling method $methodID $name(${params.mkString(", ")})")
+        val methodContract = methodContractOpt.get
+        val procrastinator = methodContract.procrastinator
+        AppLogger.debug {
+            val name = methodContract.description.javaMethod.getName
+            s"RMI - Calling method $methodID $name(${params.mkString(", ")})"
+        }
         if (procrastinator != null) {
-            callMethodProcrastinator(methodBehavior, params, origin)
+            callMethodProcrastinator(methodContract, params, origin)
         } else {
-            callMethod(methodBehavior, params, origin)
+            callMethod(methodContract, params, origin)
         }
     }
 
-    @inline private def callMethod(behavior: MethodBehavior, params: Array[Any], origin: String): Any = {
+    @inline private def callMethod(contract: MethodContract, params: Array[Any], origin: String): Any = {
         syncObject.getChoreographer.forceLocalInvocation {
             val engine = network.findEngine(origin).orNull
-            modifyParameters(behavior, engine, params)
+            modifyParameters(contract, engine, params)
             ExecutorEngine.setCurrentEngine(engine)
-            behavior.desc.javaMethod.invoke(syncObject, params: _*)
+            contract.description.javaMethod.invoke(syncObject, params: _*)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
         }
     }
 
     @inline
-    private def modifyParameters(behavior: MethodBehavior, engine: Engine, params: Array[Any]): Unit = {
-        val paramsBehaviors = behavior.parameterBehaviors
-        if (paramsBehaviors.isEmpty)
+    private def modifyParameters(contract: MethodContract, engine: Engine, params: Array[Any]): Unit = {
+        val paramsContracts = contract.parameterContracts
+        if (paramsContracts.isEmpty)
             return
-        val invocation = new AbstractMethodInvocation[Any](behavior, syncObject.getNode) with LocalMethodInvocation[Any] {
+        val invocation = new AbstractMethodInvocation[Any](contract, syncObject.getNode) with LocalMethodInvocation[Any] {
             /**
              * The final argument array for the method invocation.
              * */
             override val methodArguments: Array[Any] = params
         }
         for (i <- params.indices) {
-            val bhv      = paramsBehaviors(i)
-            val paramTpe = bhv.param.getType
-            params(i) match {
-                case ref: AnyRef =>
-                    val modifier = bhv.modifier
-                    var result   = ref
-                    if (modifier != null) {
-                        result = modifier.fromRemote(result, invocation, engine)
-                        modifier.fromRemoteEvent(result, invocation, engine)
-                    }
-                    result = result match {
-                        case sync: SynchronizedObject[AnyRef] =>
-                            sync.getBehavior.multiModifier.modifyForParameter(sync, cast(paramTpe))(invocation, engine, MethodCompModifierKind.FROM_REMOTE)
-                        case x                                => x
-                    }
-                    params(i) = result
+            val contract = paramsContracts(i)
+            val paramTpe = contract.param.getType
+
+            val modifier = contract.modifier.orNull
+            var result   = params(i)
+            if (modifier != null) {
+                result = modifier.fromRemote(result, invocation, engine)
+                modifier.fromRemoteEvent(result, invocation, engine)
             }
+            result = result match {
+                case sync: SynchronizedObject[AnyRef] =>
+                    val modifier = sync.getContract.modifier
+                    if (modifier.isDefined)
+                        modifier.get.modifyForParameter(sync, cast(paramTpe))(invocation, engine, MethodCompModifierKind.FROM_REMOTE)
+                case x                                => x
+            }
+            params(i) = result
         }
     }
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]
 
-    @inline private def callMethodProcrastinator(behavior: MethodBehavior, params: Array[Any], origin: String): Any = {
+    @inline private def callMethodProcrastinator(contract: MethodContract, params: Array[Any], origin: String): Any = {
         @volatile var result: Any = NoResult
         val worker                = WorkerPools.currentWorker
         val task                  = WorkerPools.currentTask
         val pool                  = worker.pool
-        behavior.procrastinator.runLater {
-            result = callMethod(behavior, params, origin)
+        contract.procrastinator.runLater {
+            result = callMethod(contract, params, origin)
             task.wakeup()
         }
         if (result == NoResult)
@@ -114,7 +118,7 @@ class ObjectChip[S <: AnyRef] private(behavior: SynchronizedStructureBehavior[S]
 
 object ObjectChip {
 
-    def apply[S <: AnyRef](behavior: SynchronizedStructureBehavior[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
+    def apply[S <: AnyRef](contract: SynchronizedStructureContract[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
             throw new NullPointerException("puppet is null !")
         val clazz = wrapper.getClass
@@ -122,7 +126,7 @@ object ObjectChip {
         if (Modifier.isFinal(clazz.getModifiers))
             throw new CanNotSynchronizeException("Puppet can't be final.")
 
-        new ObjectChip[S](behavior, wrapper, network)
+        new ObjectChip[S](contract, wrapper, network)
     }
 
     object NoResult

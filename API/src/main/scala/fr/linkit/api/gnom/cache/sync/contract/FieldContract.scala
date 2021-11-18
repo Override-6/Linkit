@@ -11,17 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.contract.MethodContract
+package fr.linkit.api.gnom.cache.sync.contract
 
-trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
-
-    //override val methodContract: MethodContract
-
-    /**
-     * Calls the local method of the object.
-     * @return the method's call result.
-     * */
-    def callSuper(): R
+trait FieldContract {
 
 }

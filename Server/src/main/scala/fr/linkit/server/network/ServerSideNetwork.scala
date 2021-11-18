@@ -14,7 +14,7 @@
 package fr.linkit.server.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectBehaviorFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
 import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
@@ -29,7 +29,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
 
     override def serverIdentifier: String = traffic.currentIdentifier
 
-    override protected def retrieveDataTrunk(factory: SynchronizedObjectBehaviorFactory): NetworkDataTrunk = {
+    override protected def retrieveDataTrunk(factory: SynchronizedObjectContractFactory): NetworkDataTrunk = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this))
                 .syncObject(0, Constructor[NetworkDataTrunk](this), factory)
     }

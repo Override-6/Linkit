@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync
+package fr.linkit.api.gnom.cache.sync.contract
 
 import scala.reflect.runtime.universe._
 

@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
+import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
@@ -35,28 +35,28 @@ import scala.util.{Failure, Success, Try}
 class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
                                   data: ObjectNodeData[A]) extends TrafficInterestedSyncNode[A] {
 
-    override  val reference         : SyncObjectReference           = data.reference
-    override  val tree              : SynchronizedObjectTree[_]     = data.tree
+    override  val reference         : SyncObjectReference              = data.reference
+    override  val tree              : SynchronizedObjectTree[_]        = data.tree
     override  val puppeteer         : Puppeteer[A]                     = data.puppeteer
-    override  val behavior          : SynchronizedStructureBehavior[A] = puppeteer.objectBehavior
+    override  val contract          : SynchronizedStructureContract[A] = data.contract
     override  val chip              : Chip[A]                          = data.chip
-    override  val synchronizedObject: A with SynchronizedObject[A]  = data.synchronizedObject
-    override  val id                : Int                           = reference.nodePath.last
+    override  val synchronizedObject: A with SynchronizedObject[A]     = data.synchronizedObject
+    override  val id                : Int                              = reference.nodePath.last
     /**
      * The identifier of the engine that posted this object.
      */
-    override  val ownerID           : String                        = puppeteer.ownerID
+    override  val ownerID           : String                           = puppeteer.ownerID
     /**
      * This map contains all the synchronized object of the parent object
      * including method return values and parameters and class fields
      * */
-    protected val childs                                            = new mutable.HashMap[Int, ObjectSyncNode[_]]
-    private   val currentIdentifier : String                        = data.currentIdentifier
+    protected val childs                                               = new mutable.HashMap[Int, ObjectSyncNode[_]]
+    private   val currentIdentifier : String                           = data.currentIdentifier
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    override  val objectPresence    : NetworkObjectPresence         = data.presence
-    private val origin = data.origin
+    override  val objectPresence    : NetworkObjectPresence            = data.presence
+    private   val origin                                               = data.origin
 
     synchronizedObject.initialize(this)
 
@@ -120,9 +120,10 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
     }
 
     private def handleInvocationResult(initialResult: AnyRef, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
-        var result = initialResult
+        var result   = initialResult
+        val behavior = contract.behavior
         if (packet.expectedEngineIDReturn == currentIdentifier) {
-            val methodBehavior      = puppeteer.objectBehavior.getMethodBehavior(packet.methodID).get
+            val methodBehavior      = behavior.getMethodBehavior(packet.methodID).get
             val returnValueBehavior = methodBehavior.returnValueBehavior
             if (result != null && returnValueBehavior.isActivated && !result.isInstanceOf[SynchronizedObject[_]]) {
                 val id = ThreadLocalRandom.current().nextInt()

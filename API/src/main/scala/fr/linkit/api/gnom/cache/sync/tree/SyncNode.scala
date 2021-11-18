@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
@@ -32,7 +33,7 @@ trait SyncNode[A <: AnyRef] {
 
     val reference: SyncObjectReference
 
-    val behavior: SynchronizedStructureBehavior[A]
+    val contract: SynchronizedStructureContract[A]
 
     /**
      * The tree in which this node is stored.

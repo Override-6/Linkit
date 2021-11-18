@@ -14,7 +14,6 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
@@ -29,8 +28,7 @@ import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val cache: SynchronizedObjectCache[_],
-                                   override val nodeLocation: SyncObjectReference,
-                                   val objectBehavior: SynchronizedStructureBehavior[S]) extends Puppeteer[S] {
+                                   override val nodeLocation: SyncObjectReference) extends Puppeteer[S] {
 
     private lazy val tree                       = cache.treeCenter.findTree(nodeLocation.nodePath.head).get
     override     val network          : Network = cache.network
@@ -49,9 +47,10 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         if (desiredEngineReturn == currentIdentifier)
             throw new IllegalArgumentException("invocation's desired engine return is this engine.")
 
-        val bhv      = invocation.methodBehavior
-        val methodId = bhv.desc.methodId
-        AppLogger.debug(s"Remotely invoking method ${bhv.desc.javaMethod.getName}")
+        val contract = invocation.methodContract
+        val desc     = contract.description
+        val methodId = desc.methodId
+        AppLogger.debug(s"Remotely invoking method ${desc.javaMethod.getName}")
         val scope            = new AgreementScope(writer, network, agreement)
         var requestResult: R = JavaUtils.nl()
         var isResultSet      = false
@@ -78,14 +77,12 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
 
-        //procrastinator.runLater {
-        val bhv      = invocation.methodBehavior
-        val methodId = bhv.desc.methodId
+        val desc     = invocation.methodContract.description
+        val methodId = desc.methodId
 
         val scope      = new AgreementScope(writer, network, agreement)
         val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
         invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
-        //}
     }
 
     override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with SynchronizedObject[AnyRef] = {

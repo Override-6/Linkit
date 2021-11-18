@@ -13,7 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{SynchronizedStructureBehavior, SynchronizedObjectBehaviorFactory}
+import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference}
@@ -50,9 +51,9 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
      * @return the behavior of this object
      * @see ObjectBehavior
      */
-    def getBehavior: SynchronizedStructureBehavior[T]
+    def getContract: SynchronizedStructureContract[T]
 
-    def getBehaviorFactory: SynchronizedObjectBehaviorFactory
+    def getBehaviorFactory: SynchronizedObjectContractFactory
 
     /**
      * @return the invocation choreographer of this object

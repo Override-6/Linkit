@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueMultiModifier
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 
@@ -22,10 +22,10 @@ trait SynchronizedStructureBehavior[A <: AnyRef] {
 
     def listMethods(): Iterable[MethodBehavior]
 
-    def getMethodBehavior(id: Int): Option[InternalMethodBehavior]
+    def getMethodBehavior(id: Int): Option[MethodBehavior]
 
-    def listField(): Iterable[FieldBehavior[AnyRef]]
+    def getFieldBehavior(id: Int): Option[FieldBehavior[Any]]
 
-    def getFieldBehavior(id: Int): Option[FieldBehavior[AnyRef]]
+    def listField(): Iterable[FieldBehavior[Any]]
 
 }

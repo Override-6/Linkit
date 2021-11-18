@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.cache.sync.contract.modification
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
 
-trait MethodCompModifier[T <: AnyRef] {
+trait MethodCompModifier[T] {
 
     def fromRemote(receivedParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = receivedParam
 

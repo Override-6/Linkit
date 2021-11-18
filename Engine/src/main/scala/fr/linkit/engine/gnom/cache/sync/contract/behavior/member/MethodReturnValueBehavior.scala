@@ -13,17 +13,8 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior.member
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.returnvalue.ReturnValueBehavior
-import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifier
-import org.jetbrains.annotations.Nullable
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.ReturnValueBehavior
 
 import scala.reflect.ClassTag
 
-class MethodReturnValueBehavior[A <: AnyRef](@Nullable override val modifier: MethodCompModifier[A],
-                                             override val isActivated: Boolean)(implicit tag: ClassTag[A]) extends ReturnValueBehavior[A] {
-
-    override val tpe: Class[_] = tag.runtimeClass
-
-    override def getName: String = "<undefined>"
-
-}
+class MethodReturnValueBehavior[A](override val isActivated: Boolean)(implicit tag: ClassTag[A]) extends ReturnValueBehavior[A]
