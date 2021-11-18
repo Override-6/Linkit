@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.{RMIRulesAgreement, RMIRu
 
 import scala.collection.mutable.ListBuffer
 
-class GenericRMIRulesAgreementBuilder(ownerID: String, currentID: String, rootOwnerID: String) extends RMIRulesAgreementBuilder {
+class GenericRMIRulesAgreementBuilder extends RMIRulesAgreementBuilder {
 
     private val currentIsOwner               = ownerID == currentID
     private val currentIsRootOwner           = rootOwnerID == currentID
