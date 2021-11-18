@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 
@@ -42,7 +42,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The behavior of the synchronized object.
      * */
-    val objectBehavior: SynchronizedObjectBehavior[S]
+    val objectBehavior: SynchronizedStructureBehavior[S]
 
     /**
      * The identifier of the current engine.

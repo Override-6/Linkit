@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder}
 
 import scala.collection.mutable.ListBuffer
 

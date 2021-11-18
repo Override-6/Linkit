@@ -129,7 +129,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         if (!alive)
             return
 
-        AppLogger.vWarn(s"HANDLING PACKET $packet, $attributes, $coordinates")
+        //AppLogger.vWarn(s"HANDLING PACKET $packet, $attributes, $coordinates")
 
         packet match {
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)

@@ -13,12 +13,15 @@
 
 package fr.test
 
-import java.nio.file.{FileSystems, Files, Path}
+import fr.linkit.macros.ClassStaticAccessorGenerator
+
+import java.nio.file.Files
 
 object Main {
 
     def main(args: Array[String]): Unit = {
-        Path.of("D:/test/C:/Test")
+        val accessor = ClassStaticAccessorGenerator.newStaticAccessor[String]
+        accessor.getClass.getDeclaredMethods.foreach(println)
     }
 
 }

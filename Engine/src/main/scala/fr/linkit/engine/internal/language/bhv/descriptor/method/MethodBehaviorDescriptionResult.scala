@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.descriptor.method
 
-import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule
+import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule
 import fr.linkit.engine.internal.language.bhv.descriptor.DescriptionResult
 
 case class MethodBehaviorDescriptionResult(isEnabled: Boolean, synchronizedParameters: Seq[Boolean], syncReturnValue: Boolean, rule: BasicInvocationRule) extends DescriptionResult {

@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.generation.rectifier
 import java.lang.reflect.{Method, Modifier}
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.description.{MethodDescription, SyncObjectSuperclassDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.engine.gnom.cache.sync.generation.rectifier.ClassRectifier.{StringToPrimitiveID, SuperMethodModifiers}
 import javassist.bytecode.MethodInfo
@@ -24,7 +24,7 @@ import javassist._
 
 import scala.collection.mutable.ListBuffer
 
-class ClassRectifier(desc: SyncObjectSuperclassDescription[_], syncClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
+class ClassRectifier(desc: SyncStructureDescription[_], syncClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
 
     private val pool = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))

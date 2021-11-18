@@ -14,9 +14,8 @@
 package fr.linkit.engine.gnom.network
 
 import java.sql.Timestamp
-
 import fr.linkit.api.application.connection.ConnectionContext
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectBehaviorFactory
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
@@ -24,8 +23,10 @@ import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, Remainin
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.SynchronizedObjectBehaviorFactoryBuilder
-import fr.linkit.engine.gnom.cache.sync.behavior.v2.builder.helper.{LambdaFieldModifier, LambdaMethodCompModifier}
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.SynchronizedObjectBehaviorFactoryBuilder
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.helper.LambdaMethodCompModifier
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.v2.builder.helper.LambdaMethodCompModifier
+import fr.linkit.engine.gnom.cache.sync.contract.modification.{LambdaFieldModifier, LambdaMethodCompModifier}
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
@@ -33,8 +34,7 @@ import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
 
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
-    //rootRefStore += (10, this)
-    //traffic.context.initNetwork(this)
+
     override       val reference              : NetworkReference           = new NetworkReference()
     override       val connection             : ConnectionContext          = traffic.connection
     override       val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
@@ -47,7 +47,6 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override lazy  val globalCache            : SharedCacheManager         = createGlobalCache
     protected lazy val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)
     private var engine0                       : Engine                     = _
-
     override def connectionEngine: Engine = engine0
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
@@ -113,7 +112,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
 
     private def getEngineStoreBehaviors: SynchronizedObjectBehaviorFactory = {
-        import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription.fromTag
+        import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.fromTag
         new SynchronizedObjectBehaviorFactoryBuilder {
             describe(new ClassDescriptor[SharedCacheManager]() {
                 whenParameter = new LambdaMethodCompModifier[SharedCacheManager]() {

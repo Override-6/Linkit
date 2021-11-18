@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -146,12 +147,17 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
             objPool.add(new PacketObject(ref, decomposed, profile))
             addAll(decomposed)
+            ref match {
+                case sync: SynchronizedObject[_] =>
+                    AppLogger.info(s"Missing synchronized object reference ${sync.reference} on client.")
+                case _                           =>
+            }
         } else {
             val chunk = getChunkFromFlag[ReferencedNetworkObject](RNO)
-            val nrl  = nrlOpt.get
+            val nrl   = nrlOpt.get
             if (chunks(Object).indexOf(nrl) >= 0)
                 return
-            val pos  = chunks(Object).size
+            val pos = chunks(Object).size
             addObj(nrl)
             val rno = new ReferencedNetworkObject {
                 override val locationIdx: Int = pos

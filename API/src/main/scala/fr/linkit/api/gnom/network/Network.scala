@@ -25,7 +25,7 @@ trait Network extends StaticNetworkObject[NetworkReference] {
 
     val connection: ConnectionContext
 
-    val objectManagementChannel: ObjectManagementChannel //FIXME to remove !!!
+    val objectManagementChannel: ObjectManagementChannel //TODO remove !!!
 
     val gnol: GeneralNetworkObjectLinker
 

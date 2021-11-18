@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.compilation.CompilationRequest
 import fr.linkit.engine.gnom.cache.sync.generation.SyncClassCompilationRequestFactory.DefaultClassBlueprint
@@ -27,9 +27,9 @@ import fr.linkit.engine.internal.mapping.ClassMappings
 import java.io.File
 import java.nio.file.{Files, NoSuchFileException}
 
-class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[SyncObjectSuperclassDescription[_], SynchronizedObject[_]](DefaultClassBlueprint) {
+class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[SyncStructureDescription[_], SynchronizedObject[_]](DefaultClassBlueprint) {
 
-    override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]], context: SyncObjectSuperclassDescription[_], className: String, loader: GeneratedClassLoader): Class[_] = {
+    override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]], context: SyncStructureDescription[_], className: String, loader: GeneratedClassLoader): Class[_] = {
         val wrapperClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
         if (Files.notExists(wrapperClassFile))
             throw new NoSuchFileException(s"class file for class $className at ${req.classDir} not found.")

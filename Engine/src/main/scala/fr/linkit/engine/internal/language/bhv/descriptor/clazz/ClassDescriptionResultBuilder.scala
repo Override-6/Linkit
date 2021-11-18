@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.descriptor.clazz
 
-import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.internal.language.bhv.{BehaviorFileException, BehaviorFileSyntaxException}
 import fr.linkit.engine.internal.language.bhv.descriptor.FieldBehaviorDescriptionResult
 import fr.linkit.engine.internal.language.bhv.descriptor.method.{MethodBehaviorDescriptionException, MethodBehaviorDescriptionResult, MethodDescriptor}
@@ -23,7 +23,7 @@ import java.util.Scanner
 
 import scala.collection.mutable
 
-class ClassDescriptionResultBuilder(scanner: Scanner, classDesc: SimpleSyncObjectSuperClassDescription[_]) {
+class ClassDescriptionResultBuilder(scanner: Scanner, classDesc: SyncObjectDescription[_]) {
 
     private val clazz                                                  = classDesc.clazz
     private val className                                              = clazz.getName

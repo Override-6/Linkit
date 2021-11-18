@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectBehaviorFactory
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
@@ -113,9 +113,14 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         if (source.isInstanceOf[SynchronizedObject[_]])
             throw new CanNotSynchronizeException("This object is already wrapped.")
 
-        val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](source))
-        val node       = initSynchronizedObject[B](parent, id, syncObject, source, ownerID)
-        node
+        center.findMatchingNode(source) match {
+            case Some(value: SyncNode[B]) =>
+                value
+            case None                     =>
+                val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](source))
+                val node       = initSynchronizedObject[B](parent, id, syncObject, source, ownerID)
+                node
+        }
     }
 
     private def initSynchronizedObject[B <: AnyRef](parent: ObjectSyncNode[_], id: Int,

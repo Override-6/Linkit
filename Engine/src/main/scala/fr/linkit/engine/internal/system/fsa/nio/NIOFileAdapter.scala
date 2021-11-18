@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.system.fsa.nio
 
-import fr.linkit.api.gnom.cache.sync.behavior.annotation.MethodControl
+import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.MethodControl
 import fr.linkit.api.internal.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io.{InputStream, OutputStream}

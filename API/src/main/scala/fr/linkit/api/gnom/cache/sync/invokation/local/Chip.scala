@@ -32,7 +32,7 @@ trait Chip[S] {
      * The method is determined by the methodID integer.
      * @param methodID the method identifier that must be called
      * @param params the parameters for the method call
-     * @see [[fr.linkit.api.gnom.cache.sync.description.SyncObjectSuperclassDescription]]
+     * @see [[fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription]]
      * */
     def callMethod(methodID: Int, params: Array[Any], origin: String): Any
 }

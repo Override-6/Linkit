@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.bp
 
-import fr.linkit.api.gnom.cache.sync.description.{MethodDescription, SyncObjectSuperclassDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaBlueprintUtilities._
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerTypes
@@ -21,7 +21,7 @@ import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
 
 import java.io.InputStream
 
-class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncObjectSuperclassDescription[_]](in) {
+class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStructureDescription[_]](in) {
 
     override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 

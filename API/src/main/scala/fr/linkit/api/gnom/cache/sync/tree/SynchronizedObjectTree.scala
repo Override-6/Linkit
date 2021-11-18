@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.gnom.cache.sync.CanNotSynchronizeException
-import fr.linkit.api.gnom.cache.sync.behavior.SynchronizedObjectBehaviorFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectBehaviorFactory
 
 
 trait SynchronizedObjectTree[A <: AnyRef] {
@@ -37,7 +37,7 @@ trait SynchronizedObjectTree[A <: AnyRef] {
     def rootNode: SyncNode[A]
 
     /**
-     * Retrieves a node from it's path (see [[fr.linkit.api.gnom.cache.sync.description.SyncNode.treePath]]
+     * Retrieves a node from it's path (see [[fr.linkit.api.gnom.cache.sync.contract.description.SyncNode.treePath]]
      *
      * @param path the path of the node.
      * @tparam B the type of the node's synchronized object

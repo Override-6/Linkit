@@ -14,8 +14,9 @@
 package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.cache.sync.behavior.annotation.{BasicInvocationRule, MethodControl}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{BasicInvocationRule, MethodControl}
 import fr.linkit.api.gnom.network._
+import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.internal.system.Versions
 import fr.linkit.engine.internal.system.StaticVersions
 
@@ -24,8 +25,8 @@ import java.sql.Timestamp
 class DefaultEngine(override val identifier: String,
                     override val cache: SharedCacheManager) extends Engine {
 
-    override val network       : Network        = cache.network
-    override val staticAccessor: StaticAccessor = null
+    override val network     : Network      = cache.network
+    override val staticAccess: StaticAccess = null
 
     //val reference: EngineReference = new EngineReference(identifier)
     override val versions: Versions = StaticVersions.currentVersions
