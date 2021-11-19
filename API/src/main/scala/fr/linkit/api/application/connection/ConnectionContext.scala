@@ -37,7 +37,7 @@ trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference] 
 
     def network: Network
 
-    def eventNotifier: EventNotifier
+    //def eventNotifier: EventNotifier
 
     @workerExecution
     def shutdown(): Unit

@@ -42,7 +42,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
     override val compilerCenter  : CompilerCenter = new DefaultCompilerCenter
     @volatile protected var alive: Boolean        = false
     protected val appPool: BusyWorkerPool
-    override def reference: ApplicationReference = ApplicationReference
+    override val reference: ApplicationReference = ApplicationReference
 
     setInstance(this)
 
@@ -100,9 +100,9 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
         }
 
         if (pluginFolder != null) {
-          /*  val pluginCount = pluginManager.loadAll(pluginFolder).length
-            configuration.fsAdapter.getAdapter(pluginFolder)
-            AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")*/
+            /*  val pluginCount = pluginManager.loadAll(pluginFolder).length
+              configuration.fsAdapter.getAdapter(pluginFolder)
+              AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")*/
         }
     }
 
@@ -163,15 +163,15 @@ object LinkitApplication {
 
         val appResources        = prepareAppResources(configuration)
         val propertiesResources = appResources.find[LocalResourceFile](AppPropertiesName)
-                .getOrElse {
-                    val res = appResources.openResource(AppPropertiesName, LocalResourceFile)
-                    res.getAdapter
-                            .write(getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes(), true)
-                    res
-                }
+            .getOrElse {
+                val res = appResources.openResource(AppPropertiesName, LocalResourceFile)
+                res.getAdapter
+                    .write(getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes(), true)
+                res
+            }
         properties.load(propertiesResources.getAdapter.newInputStream())
-//        AppLogger.info("Loading Native Libraries...")
- //       InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
+        //        AppLogger.info("Loading Native Libraries...")
+        //       InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
 
         isPrepared = true
         appResources

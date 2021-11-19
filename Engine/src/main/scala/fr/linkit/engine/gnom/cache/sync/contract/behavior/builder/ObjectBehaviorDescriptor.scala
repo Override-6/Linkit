@@ -20,7 +20,7 @@ trait ObjectBehaviorDescriptor[T <: AnyRef] extends ValueBehavior[T] {
 
     val targetClass: Class[T]
 
-    val usingHierarchy: Array[ObjectBehaviorDescriptor[_ >: T]]
+    val usingHierarchy: Array[ObjectBehaviorDescriptor[_ >: T]] //TODO Not used
     val withMethods   : Array[MethodContractDescriptor]
     val withFields    : Array[FieldBehavior[Any]]
 }

@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.network
 
 import java.sql.Timestamp
+
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
@@ -24,8 +25,6 @@ import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.SynchronizedObjectBehaviorFactoryBuilder
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.helper.LambdaMethodCompModifier
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.v2.builder.helper.LambdaMethodCompModifier
 import fr.linkit.engine.gnom.cache.sync.contract.modification.{LambdaFieldModifier, LambdaMethodCompModifier}
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID

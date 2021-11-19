@@ -23,7 +23,8 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
 import org.jetbrains.annotations.Nullable
 
-case class MethodContractDescriptor(description: MethodDescription, rule: RemoteInvocationRule,
+case class MethodContractDescriptor(description: MethodDescription,
+                                    rule: RemoteInvocationRule,
                                     isActivated: Boolean,
                                     parameterContracts: Array[ParameterContract[Any]],
                                     @Nullable returnValueBehavior: ReturnValueBehavior[Any],

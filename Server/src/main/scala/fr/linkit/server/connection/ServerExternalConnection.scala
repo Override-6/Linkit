@@ -13,6 +13,9 @@
 
 package fr.linkit.server.connection
 
+import java.net.Socket
+import java.nio.ByteBuffer
+
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
@@ -22,13 +25,9 @@ import fr.linkit.api.gnom.persistence.obj.TrafficPresenceReference
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketTransferResult}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.api.internal.system.event.EventNotifier
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.system.SystemPacket
 import org.jetbrains.annotations.NotNull
-
-import java.net.Socket
-import java.nio.ByteBuffer
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
 
@@ -37,7 +36,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override val currentIdentifier: String           = server.currentIdentifier
     override val traffic          : PacketTraffic    = server.traffic
     override val translator       : ObjectTranslator = server.translator
-    override val eventNotifier    : EventNotifier    = server.eventNotifier
+    //override val eventNotifier    : EventNotifier    = server.eventNotifier
     override val network          : Network          = session.network
     override val port             : Int              = server.port
     override val boundIdentifier  : String           = session.boundIdentifier

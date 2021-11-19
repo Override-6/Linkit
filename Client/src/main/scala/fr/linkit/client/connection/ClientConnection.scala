@@ -42,7 +42,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     override val currentIdentifier: String            = configuration.identifier
     override val port             : Int               = configuration.remoteAddress.getPort
     override val translator       : ObjectTranslator  = session.translator
-    override val eventNotifier    : EventNotifier     = session.eventNotifier
+    //override val eventNotifier    : EventNotifier     = session.eventNotifier
     override val traffic          : PacketTraffic     = session.traffic
     override val boundIdentifier  : String            = serverIdentifier
     private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(session.traffic)

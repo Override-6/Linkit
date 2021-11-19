@@ -145,8 +145,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val behavior       = syncObject.getContract
         for (bhv <- behavior.listField()) {
             val field      = bhv.desc.javaField
-            var fieldValue = ScalaUtils.getValueAnyRef(syncObject, field)
-            fieldValue = findMatchingSyncNode(fieldValue).map(_.synchronizedObject).getOrElse(fieldValue)
+            var fieldValue = ScalaUtils.getValue(syncObject, field)
+            fieldValue = findMatchingSyncNode(cast(fieldValue)).map(_.synchronizedObject).getOrElse(fieldValue)
             val modifier = bhv.modifier
             if (modifier != null) {
                 fieldValue = modifier.receivedFromRemote(fieldValue, syncObject, engine)
@@ -158,11 +158,13 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                             val id = sync.reference.nodePath.last
                             initSynchronizedObject(node, id, sync, sync, ownerID)
                         }
-                        val modifier = sync.getContract.multiModifier
-                        modifier.modifyForField(sync, cast(field.getType))(syncObject, engine)
+                        val modifier = sync.getContract.modifier.orNull
+                        if (modifier != null)
+                            modifier.modifyForField(sync, cast(field.getType))(syncObject, engine)
+                        sync
                     case _                                =>
                         val id = ThreadLocalRandom.current().nextInt()
-                        genSynchronizedObject(node, id, fieldValue)(ownerID).synchronizedObject
+                        genSynchronizedObject(node, id, cast(fieldValue))(ownerID).synchronizedObject
                 }
             }
             ScalaUtils.setValue(syncObject, field, fieldValue)

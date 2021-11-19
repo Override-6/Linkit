@@ -22,9 +22,6 @@ import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecutio
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.Versions
 
-//TODO Recap :
-// Rewrite/write Doc and README of API
-// Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
 trait ApplicationContext extends StaticNetworkObject[ApplicationReference] with ProcrastinatorControl {
 
     val configuration: ApplicationConfiguration

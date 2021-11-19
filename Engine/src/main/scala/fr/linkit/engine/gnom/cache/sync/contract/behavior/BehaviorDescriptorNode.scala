@@ -22,7 +22,7 @@ import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ParameterContract
 import fr.linkit.api.gnom.cache.sync.invokation.remote.MethodInvocationHandler
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.ObjectBehaviorDescriptor
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.SyncMethodBehavior
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, SyncMethodBehavior}
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contract.modification.DefaultValueMultiModifier
 import fr.linkit.engine.gnom.cache.sync.contract.{AbstractSynchronizedStructure, MethodParameterContract}
@@ -58,7 +58,7 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
                 val bhv = SyncMethodBehavior(isActivated, parameterBehaviors, returnValueBehavior, isHidden, forceLocalInnerInvocations, agreement)
                 map.put(id, new MethodContract {
                     override val description        : MethodDescription             = contractDesc.description
-                    override val behavior           : Option[MethodBehavior]        = Some(bhv)
+                    override val behavior           : MethodBehavior                = bhv
                     override val parameterContracts : Array[ParameterContract[Any]] = contractDesc.parameterContracts
                     override val returnValueModifier: MethodCompModifier[Any]       = contractDesc.returnValueModifier
                     override val procrastinator     : Procrastinator                = contractDesc.procrastinator
@@ -85,9 +85,10 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
     private def getParameterContracts(methodDesc: MethodDescription, methodBehavior: MethodBehavior): Array[ParameterContract[Any]] = {
         val params         = methodDesc.params
         val paramBehaviors = methodBehavior.parameterBehaviors
+        val paramBhvCount  = paramBehaviors.length
         (for (i <- methodDesc.params.indices) yield {
             val param         = params(i)
-            val paramBehavior = paramBehaviors(i)
+            val paramBehavior = if (i < paramBhvCount) paramBehaviors(i) else MethodParameterBehavior[Any](false)
 
             MethodParameterContract[Any](param, Some(paramBehavior), None)
         }).toArray
@@ -106,7 +107,7 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
                 val parameterContracts0 = getParameterContracts(methodDesc, bhv)
                 methodMap.put(id, new MethodContract {
                     override val description        : MethodDescription             = methodDesc
-                    override val behavior           : Option[MethodBehavior]        = Some(bhv)
+                    override val behavior           : MethodBehavior                = bhv
                     override val parameterContracts : Array[ParameterContract[Any]] = parameterContracts0
                     override val returnValueModifier: MethodCompModifier[Any]       = null
                     override val procrastinator     : Procrastinator                = null
@@ -123,7 +124,7 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
         })
     }
 
-    def getBehavior(clazz: Class[_], ownerID: String, rootOwnerID: String, currentID: String): SynchronizedStructureContract[A] = {
+    def getContract(clazz: Class[_], ownerID: String, rootOwnerID: String, currentID: String): SynchronizedStructureContract[A] = {
         val classDesc = SyncObjectDescription[A](clazz)
         val methodMap = mutable.HashMap.empty[Int, MethodContract]
         val fieldMap  = mutable.HashMap.empty[Int, FieldBehavior[Any]]
@@ -148,6 +149,8 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
             override val description: SyncStructureDescription[A]      = SyncObjectDescription(clazz)
             override val behavior   : SynchronizedStructureBehavior[A] = bhv
             override val modifier   : Option[ValueMultiModifier[A]]    = Some(new DefaultValueMultiModifier[A](BehaviorDescriptorNode.this))
+
+            override def getMethodContract(id: Int): Option[MethodContract] = getMethod(id)
         }
     }
 }
