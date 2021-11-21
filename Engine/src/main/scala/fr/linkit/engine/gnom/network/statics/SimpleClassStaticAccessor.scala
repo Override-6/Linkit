@@ -12,19 +12,19 @@ class SimpleClassStaticAccessor[A <: AnyRef](desc: SyncStructureDescription[A]) 
     private val fields  = desc.listFields().map(f => (f.javaField.getName, f.javaField)).toMap
 
     @MethodControl(BasicInvocationRule.ONLY_OWNER)
-    override protected def applyDynamic(methodName: String)(args: Any*): Any = {
+    override def applyDynamic[T](methodName: String)(args: Any*): T = {
         val javaMethod = methods(methodName)
-        javaMethod.invoke(null, args: _*)
+        javaMethod.invoke(null, args: _*).asInstanceOf[T]
     }
 
     @MethodControl(BasicInvocationRule.ONLY_OWNER)
-    override protected def selectDynamic(fieldName: String): Any = {
+    override def selectDynamic[T](fieldName: String): T = {
         val javaField = fields(fieldName)
-        ScalaUtils.getValue(null, javaField)
+        ScalaUtils.getValue(null, javaField).asInstanceOf[T]
     }
 
     @MethodControl(BasicInvocationRule.ONLY_OWNER)
-    override protected def updateDynamic(fieldName: String)(newValue: Any): Unit = {
+    override def updateDynamic(fieldName: String)(newValue: Any): Unit = {
         val javaField = fields(fieldName)
         ScalaUtils.setValue(null, javaField, newValue)
     }

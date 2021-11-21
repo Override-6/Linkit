@@ -5,10 +5,10 @@ trait ClassStaticAccessor[A <: AnyRef] extends Dynamic {
 
     //TODO val behavior: SynchronizedStructureBehavior[A]
 
-    protected def applyDynamic(method: String)(args: Any*): Any
+    def applyDynamic[T](method: String)(args: Any*): T
 
-    protected def selectDynamic(method: String): Any
+    def selectDynamic[T](method: String): T
 
-    protected def updateDynamic(method: String)(arg: Any): Unit
+    def updateDynamic(method: String)(arg: Any): Unit
 
 }

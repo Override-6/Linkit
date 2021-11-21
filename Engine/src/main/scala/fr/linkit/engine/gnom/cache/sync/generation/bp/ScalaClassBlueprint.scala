@@ -18,8 +18,8 @@ import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaBlueprintUtilities._
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
-
 import java.io.InputStream
+import java.lang.reflect.TypeVariable
 
 class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStructureDescription[_]](in) {
 
@@ -28,7 +28,7 @@ class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncSt
     override val rootScope: RootValueScope = new RootValueScope {
         bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
         bindValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
-        bindValue("TParamsIn" ~> (getGenericParams(_, _.getName)))
+        bindValue("TParamsIn" ~> (getGenericParams(_, typeToScalaDeclaration)))
         bindValue("TParamsOut" ~> (getGenericParams(_, _.getName)))
         bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))
 
@@ -40,6 +40,10 @@ class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncSt
                     .foreach(action)
         })
 
+    }
+
+    private def typeToScalaDeclaration(tpe: TypeVariable[_]): String = {
+        tpe.getName + " <: " + tpe.getBounds.map(_.getTypeName).mkString(" with ")
     }
 
 }

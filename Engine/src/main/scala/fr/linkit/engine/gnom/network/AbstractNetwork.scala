@@ -34,18 +34,19 @@ import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
 
-    override       val reference              : NetworkReference           = new NetworkReference()
-    override       val connection             : ConnectionContext          = traffic.connection
-    override       val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
-    protected      val networkStore           : PacketInjectableStore      = traffic.createStore(0)
-    private        val currentIdentifier      : String                     = connection.currentIdentifier
-    private        val tnol                                                = traffic.getTrafficObjectLinker
-    private        val rnol                                                = new MapNetworkObjectsLinker(objectManagementChannel) with RemainingNetworkObjectsLinker
-    private lazy   val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
-    override lazy  val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, Some(rnol))
-    override lazy  val globalCache            : SharedCacheManager         = createGlobalCache
-    protected lazy val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)
-    private var engine0                       : Engine                     = _
+    override           val reference              : NetworkReference           = new NetworkReference()
+    override           val connection             : ConnectionContext          = traffic.connection
+    override           val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
+    protected[network] val networkStore           : PacketInjectableStore      = traffic.createStore(0)
+    private            val currentIdentifier      : String                     = connection.currentIdentifier
+    private            val tnol                                                = traffic.getTrafficObjectLinker
+    private            val rnol                                                = new MapNetworkObjectsLinker(objectManagementChannel) with RemainingNetworkObjectsLinker
+    private lazy       val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
+    override lazy      val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, Some(rnol))
+    override lazy      val globalCache            : SharedCacheManager         = createGlobalCache
+    protected lazy     val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)
+    private var engine0                           : Engine                     = _
+
     override def connectionEngine: Engine = engine0
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {

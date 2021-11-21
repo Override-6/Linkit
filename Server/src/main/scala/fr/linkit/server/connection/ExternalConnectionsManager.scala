@@ -100,6 +100,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         candidates.foreach(connection => {
             if (connection.canHandlePacketInjection(result))
                 connection.send(buff)
+            else throw new NoSuchElementException("Could not find presence for")
         })
     }
 

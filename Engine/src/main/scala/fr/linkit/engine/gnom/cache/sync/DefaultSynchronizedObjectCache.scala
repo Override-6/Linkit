@@ -232,12 +232,12 @@ object DefaultSynchronizedObjectCache {
 
     implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = apply()
 
-    def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
+    implicit def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         val treeView = new SynchronizedObjectBehaviorFactoryBuilder {}.build()
         apply[A](treeView)
     }
 
-    def apply[A <: AnyRef : ClassTag](factory: SynchronizedObjectContractFactory): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
+    implicit def apply[A <: AnyRef : ClassTag](factory: SynchronizedObjectContractFactory): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         channel => {
             apply[A](channel, factory, channel.traffic.connection.network)
         }

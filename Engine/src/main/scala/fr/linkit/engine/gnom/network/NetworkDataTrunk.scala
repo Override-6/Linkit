@@ -25,7 +25,7 @@ import java.sql.Timestamp
 
 import scala.collection.mutable
 
-//FIXME OriginManagers and DistantManagers can be bypass
+//FIXME OriginManagers and DistantManagers can be bypassed
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
     private val traffic = network.connection.traffic
@@ -61,7 +61,9 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     @MethodControl(value = BROADCAST_IF_ROOT_OWNER)
     def removeEngine(engine: Engine): Unit = engines -= engine.identifier
 
-    def findCache(family: String): Option[SharedCacheManager] = caches.get(family).map(_._1)
+    def findCache(family: String): Option[SharedCacheManager] = {
+        caches.get(family).map(_._1)
+    }
 
     @MethodControl(value = BROADCAST)
     def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
@@ -83,7 +85,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
 
     private def getDistantCache(engineIdentifier: String): SharedCacheManager = caches.getOrElseUpdate(engineIdentifier, {
         val code  = engineIdentifier.hashCode
-        val store = traffic.createStore(code)
+        val store = network.networkStore.createStore(code)
         (new SharedCacheDistantManager(engineIdentifier, engineIdentifier, network, store), store.trafficPath)
     })._1
 
