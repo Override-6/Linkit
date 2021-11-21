@@ -176,7 +176,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                         .addPacket(BooleanPacket(isObjectPresent(location)))
                         .submit()
 
-                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner, behavior)) =>
+                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner)) =>
                     handleRootObjectPacket(treeID, rootObject, owner)
             }
         }
