@@ -33,7 +33,7 @@ class ClientSideNetwork(traffic: SocketPacketTraffic) extends AbstractNetwork(tr
     }
 
     override protected def createGlobalCache: SharedCacheManager = {
-        traffic.setGnol(gnol)
+        traffic.setNetwork(this)
         new SharedCacheDistantManager(GlobalCacheID, serverIdentifier, this, networkStore.createStore(GlobalCacheID.hashCode))
     }
 

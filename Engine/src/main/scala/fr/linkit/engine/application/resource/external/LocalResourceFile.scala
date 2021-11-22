@@ -15,14 +15,13 @@ package fr.linkit.engine.application.resource.external
 
 import fr.linkit.api.application.resource.external._
 import fr.linkit.api.application.resource.{ResourceListener, ResourcesMaintainer}
-import fr.linkit.api.internal.system.fsa.FileAdapter
 import fr.linkit.engine.application.resource.base.AbstractResource
 import org.jetbrains.annotations.NotNull
 
-import java.nio.file.FileSystemException
+import java.nio.file.{FileSystemException, Files, Path}
 import java.util.zip.Adler32
 
-class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile with LocalResource {
+class LocalResourceFile(@NotNull parent: ResourceFolder, path: Path) extends AbstractResource(parent, path) with ResourceFile with LocalResource {
 
     protected val entry = new DefaultResourceEntry[ResourceFile](this)
 
@@ -30,7 +29,7 @@ class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) e
 
     override def getChecksum: Long = try {
         val crc32 = new Adler32()
-        val in    = adapter.newInputStream()
+        val in    = Files.newInputStream(path)
         crc32.update(in.readAllBytes())
         in.close()
         crc32.getValue
@@ -40,16 +39,16 @@ class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) e
 
     override protected def getMaintainer: ResourcesMaintainer = parent.getMaintainer
 
-    override def createOnDisk(): Unit = getAdapter.createAsFile()
+    override def createOnDisk(): Unit = Files.createFile(getPath)
 
     override def close(): Unit = entry.close()
 }
 
 object LocalResourceFile extends ResourceFactory[LocalResourceFile] {
 
-    override def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): LocalResourceFile = {
+    override def apply(adapter: Path, listener: ResourceListener, parent: ResourceFolder): LocalResourceFile = {
         apply(parent, adapter)
     }
 
-    def apply(parent: ResourceFolder, adapter: FileAdapter): LocalResourceFile = new LocalResourceFile(parent, adapter)
+    def apply(parent: ResourceFolder, adapter: Path): LocalResourceFile = new LocalResourceFile(parent, adapter)
 }

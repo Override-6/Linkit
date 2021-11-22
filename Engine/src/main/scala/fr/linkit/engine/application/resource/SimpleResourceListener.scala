@@ -79,7 +79,7 @@ class SimpleResourceListener extends ResourceListener with Closeable {
     override def putMaintainer(maintainer: ResourcesMaintainer,
                                resourceKey: ResourceKey): Unit = {
 
-        val location = maintainer.getResources.getAdapter.getAbsolutePath
+        val location = maintainer.getResources.getPath.toString
 
         if (keys.contains(location)) {
             keys(location)._2.cancel()

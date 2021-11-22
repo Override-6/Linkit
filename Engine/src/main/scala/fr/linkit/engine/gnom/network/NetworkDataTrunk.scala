@@ -65,7 +65,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         caches.get(family).map(_._1)
     }
 
-    @MethodControl(value = BROADCAST)
+    //@MethodControl(value = BROADCAST)
     def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
         if (caches.contains(manager.family))
             throw new Exception("Cache Manager already exists")

@@ -13,22 +13,21 @@
 
 package fr.linkit.engine.application.resource.external
 
-import fr.linkit.api.application.resource.{OpenActionShortener, ResourceListener}
 import fr.linkit.api.application.resource.external._
 import fr.linkit.api.application.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
-import fr.linkit.api.internal.system.fsa.FileAdapter
+import fr.linkit.api.application.resource.{OpenActionShortener, ResourceListener}
 import fr.linkit.engine.application.resource.base.BaseResourceFolder
 
+import java.nio.file.{Files, Path}
 import scala.reflect.{ClassTag, classTag}
 
-class LocalResourceFolder protected(adapter: FileAdapter,
+class LocalResourceFolder protected(adapter: Path,
                                     listener: ResourceListener,
                                     parent: ResourceFolder) extends BaseResourceFolder(parent, listener, adapter) with LocalFolder {
 
     //println(s"Creating resource folder $getLocation...")
 
-
-    override def createOnDisk(): Unit = getAdapter.createAsFolder()
+    override def createOnDisk(): Unit = Files.createDirectories(getPath)
 
     override def scanFolders(scanAction: String => Unit): Unit = {
         scan(scanAction, true)
@@ -39,9 +38,10 @@ class LocalResourceFolder protected(adapter: FileAdapter,
     }
 
     private def scan(scanAction: String => Unit, filterDirs: Boolean): Unit = {
-        fsa.list(getAdapter)
-                .filter(_.isDirectory == filterDirs)
-                .map(_.getName)
+        Files.list(getPath)
+                .toArray(new Array[Path](_))
+                .filter(p => Files.isDirectory(p) == filterDirs)
+                .map(_.getFileName.toString)
                 .filterNot(maintainer.isKnown)
                 .foreach(scanAction)
     }
@@ -50,10 +50,10 @@ class LocalResourceFolder protected(adapter: FileAdapter,
 
 object LocalResourceFolder extends ResourceFactory[LocalResourceFolder] {
 
-    override def apply(adapter: FileAdapter,
+    override def apply(path: Path,
                        listener: ResourceListener,
                        parent: ResourceFolder): LocalResourceFolder = {
-        new LocalResourceFolder(adapter, listener, parent)
+        new LocalResourceFolder(path, listener, parent)
     }
 
     implicit def shortenRepresentation[E <: Resource : ClassTag, R <: ResourceRepresentation : ClassTag](name: String)

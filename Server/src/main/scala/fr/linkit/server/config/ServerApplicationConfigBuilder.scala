@@ -15,9 +15,7 @@ package fr.linkit.server.config
 
 import fr.linkit.api.application.config.ApplicationInstantiationException
 import fr.linkit.api.application.config.schematic.{AppSchematic, EmptySchematic}
-import fr.linkit.api.internal.system.fsa.FileSystemAdapter
 import fr.linkit.api.internal.system.security.ApplicationSecurityManager
-import fr.linkit.engine.internal.system.fsa.LocalFileSystemAdapters
 import fr.linkit.server.ServerApplication
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -25,8 +23,7 @@ abstract class ServerApplicationConfigBuilder {
 
     @NotNull val resourceFolder: String
               var mainPoolThreadCount: Int                             = 2
-    @Nullable var pluginFolder      : Option[String]                  = Some("/Plugins")
-    @NotNull  var fsAdapter          : FileSystemAdapter               = LocalFileSystemAdapters.Nio
+    @Nullable var pluginFolder       : Option[String]                  = Some("/Plugins")
     @NotNull  var securityManager    : ApplicationSecurityManager      = ApplicationSecurityManager.none
     @NotNull  var loadSchematic      : AppSchematic[ServerApplication] = EmptySchematic[ServerApplication]
 
@@ -36,7 +33,6 @@ abstract class ServerApplicationConfigBuilder {
         new ServerApplicationConfiguration {
             override val pluginFolder       : Option[String]                  = builder.pluginFolder
             override val resourceFolder     : String                          = builder.resourceFolder
-            override val fsAdapter          : FileSystemAdapter               = builder.fsAdapter
             override val securityManager    : ApplicationSecurityManager      = builder.securityManager
             override val mainPoolThreadCount: Int                             = builder.mainPoolThreadCount
             override var loadSchematic      : AppSchematic[ServerApplication] = builder.loadSchematic

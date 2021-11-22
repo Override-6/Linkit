@@ -13,47 +13,10 @@
 
 package fr.linkit.api.gnom.packet
 
-import fr.linkit.api.gnom.network.ExecutorEngine
-
 case class BroadcastPacketCoordinates(override val path: Array[Int],
                                       override val senderID: String,
                                       discardTargets: Boolean,
                                       targetIDs: Seq[String]) extends PacketCoordinates {
-
-    override def forallConcernedTargets(action: String => Boolean): Boolean = {
-        //FIXME discuss about Packet Broadcasting utility,
-        // Broadcasting a packet is useful to clients to save bandwidth and persistence operation
-        // However, with incoming enhancements that comes with the GNOL, new object persistence features etc,
-        // Broadcasting becomes hard to maintain because the result of a serialized packet can vary between engines.
-        // So, either remove packet broadcasting (which can lead to performance issues) or add constraints to serialisation
-        if (discardTargets) {
-            val network        = ExecutorEngine.currentEngine.network //FIXME causes Thread context problems
-            val allConnections = network.listEngines
-            for (engine <- allConnections) {
-                val engineId = engine.identifier
-                if (!targetIDs.contains(engineId)) {
-                    if (!action(engineId))
-                        return false
-                }
-            }
-            return true
-        }
-        targetIDs.forall(action)
-    }
-
-    override def foreachConcernedTargets(action: String => Unit): Unit = {
-        if (discardTargets) {
-            val network        = ExecutorEngine.currentEngine.network //FIXME causes Thread context problems
-            val allConnections = network.listEngines
-            for (engine <- allConnections) {
-                val engineId = engine.identifier
-                if (!targetIDs.contains(engineId)) {
-                    action(engineId)
-                }
-            }
-        }
-        targetIDs.foreach(action)
-    }
 
     override def toString: String = s"BroadcastPacketCoordinates(${path.mkString("/")}, $senderID, $discardTargets, $targetIDs)"
 

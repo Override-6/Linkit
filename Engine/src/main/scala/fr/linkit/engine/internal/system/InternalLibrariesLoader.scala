@@ -17,7 +17,6 @@ import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.internal.system.AppInitialisationException
 import fr.linkit.engine.internal.LinkitApplication
 
-import java.io.File
 import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
 import java.util.zip.{ZipEntry, ZipFile}
 
@@ -118,7 +117,7 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def getPathProperty(resources: ResourceFolder, name: String): Path = {
-        Path.of(resources.getAdapter.getPath + '/' + LinkitApplication.getProperty(name))
+        Path.of(resources.getPath + "/" + LinkitApplication.getProperty(name))
     }
 
 }

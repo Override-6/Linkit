@@ -28,40 +28,47 @@ class SocketPacketWriter(socket: DynamicSocket,
     override     val currentIdentifier: String            = traffic.currentIdentifier
     override     val path             : Array[Int]        = writerInfo.path
     private      val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
-    private lazy val gnol                                 = writerInfo.gnol
+    private lazy val network                              = writerInfo.network
 
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)
     }
 
     override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
-        val coords       = if (targetIDs.length == 1) {
+        if (targetIDs.length == 1) {
             val target    = targetIDs.head
             val dedicated = DedicatedPacketCoordinates(path, target, currentIdentifier)
             if (target == currentIdentifier) {
                 traffic.processInjection(packet, attributes, dedicated)
                 return
             }
-            dedicated
+            addToChoreographer(dedicated)(attributes, packet)
         } else {
             if (targetIDs.contains(currentIdentifier)) {
                 val coords = DedicatedPacketCoordinates(path, serverIdentifier, currentIdentifier)
                 traffic.processInjection(packet, attributes, coords)
             }
 
-            BroadcastPacketCoordinates(path, currentIdentifier, false, targetIDs.filter(_ != currentIdentifier))
+            for (target <- targetIDs) if (target != currentIdentifier) {
+                val coords = DedicatedPacketCoordinates(path, target, currentIdentifier)
+                addToChoreographer(coords)(attributes, packet)
+            }
         }
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, gnol)
-
-        choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
-        val coords       = BroadcastPacketCoordinates(path, currentIdentifier, true, discardedIDs)
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, gnol)
-
         if (!discardedIDs.contains(currentIdentifier))
-            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(coords.path, currentIdentifier, currentIdentifier))
+            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, currentIdentifier))
+        network.listEngines
+                .filterNot(e => discardedIDs.contains(e.identifier))
+                .foreach(engine => {
+                    val coords = DedicatedPacketCoordinates(path, engine.identifier, currentIdentifier)
+                    addToChoreographer(coords)(attributes, packet)
+                })
+    }
+
+    private def addToChoreographer(coords: DedicatedPacketCoordinates)(attributes: PacketAttributes, packet: Packet): Unit = {
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, network.gnol)
         choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 

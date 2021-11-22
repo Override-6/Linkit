@@ -16,21 +16,19 @@ package fr.linkit.engine.application.resource.base
 import fr.linkit.api.application.resource.exception.{IllegalResourceException, IncompatibleResourceTypeException, NoSuchResourceException, ResourceAlreadyPresentException}
 import fr.linkit.api.application.resource.external.{Resource, ResourceEntry, ResourceFactory, ResourceFolder}
 import fr.linkit.api.application.resource.{ResourceListener, ResourcesMaintainer}
-import fr.linkit.api.internal.system.fsa.{FileAdapter, FileSystemAdapter}
 import fr.linkit.engine.application.resource.ResourceFolderMaintainer
 import fr.linkit.engine.application.resource.external.DefaultResourceEntry
 import fr.linkit.engine.application.resource.external.LocalResourceFolder.ForbiddenChars
 import org.jetbrains.annotations.NotNull
+
 import java.io.File
 import java.nio.file.{Files, Path}
-
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceListener, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFolder {
+abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceListener, adapter: Path) extends AbstractResource(parent, adapter) with ResourceFolder {
 
     protected val resources                                 = new mutable.HashMap[String, Resource]()
-    protected val fsa       : FileSystemAdapter             = adapter.getFSAdapter
     protected val entry     : ResourceEntry[ResourceFolder] = new DefaultResourceEntry[ResourceFolder](this)
     protected val maintainer: ResourceFolderMaintainer      = this.synchronized {
         new ResourceFolderMaintainer(this, listener)
@@ -61,7 +59,7 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
         register(name, factory)
     }
 
-    override def isPresentOnDrive(name: String): Boolean = fsa.getAdapter(getAdapter.getAbsolutePath + File.separator + name).exists
+    override def isPresentOnDrive(name: String): Boolean = Files.exists(Path.of(getPath.toString + File.separator + name))
 
     @throws[NoSuchResourceException]("If no resource was found with the provided name")
     @throws[IncompatibleResourceTypeException]("If a resource was found but with another type than R.")
@@ -103,8 +101,8 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
     override def register[R <: Resource](name: String, factory: ResourceFactory[R]): R = this.synchronized {
         checkResourceName(name)
 
-        val resourcePath = getAdapter.getAbsolutePath + File.separator + name
-        val adapter      = fsa.getAdapter(resourcePath)
+        val resourcePath = getPath + File.separator + name
+        val adapter      = Path.of(resourcePath)
         val resource     = factory(adapter, listener, this)
 
         resources.put(name, resource)

@@ -1,17 +1,21 @@
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.persistence.context.Deconstructible
+import fr.linkit.engine.gnom.persistence.context.Persist
 
 import java.lang.reflect.{Executable, Modifier}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-class SyncStaticsDescription[A <: AnyRef](clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) {
+class SyncStaticsDescription[A <: AnyRef]@Persist() (clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
 
     override protected def applyNotFilter(e: Executable): Boolean = {
         val mods = e.getModifiers
         !Modifier.isStatic(mods) || e.isSynthetic
     }
+
+    override def deconstruct(): Array[Any] = Array(clazz)
 }
 
 object SyncStaticsDescription {

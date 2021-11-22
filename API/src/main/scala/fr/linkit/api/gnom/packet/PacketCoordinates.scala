@@ -18,7 +18,4 @@ trait PacketCoordinates extends Serializable {
     val path    : Array[Int]
     val senderID: String
 
-    def forallConcernedTargets(action: String => Boolean): Boolean
-
-    def foreachConcernedTargets(action: String => Unit): Unit
 }

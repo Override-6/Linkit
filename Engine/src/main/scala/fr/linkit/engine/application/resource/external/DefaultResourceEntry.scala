@@ -24,7 +24,7 @@ import scala.reflect.{ClassTag, classTag}
 class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry[E] {
 
     private val representations  = mutable.Map.empty[Class[_], ResourceRepresentation]
-    private val adapter          = resource.getAdapter
+    private val path          = resource.getPath
     @volatile private var closed = false
 
     override def getResource: Resource = resource
@@ -81,8 +81,6 @@ class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry
         representations.clear()
         closed = true
     }
-
-    def path: String = adapter.getAbsolutePath
 
     private def ensureAlive(): Unit = {
         if (closed)

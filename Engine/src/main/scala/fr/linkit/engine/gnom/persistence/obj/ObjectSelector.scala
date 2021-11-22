@@ -21,40 +21,56 @@ import fr.linkit.engine.gnom.reference.ContextObject
 
 class ObjectSelector(bundle: PersistenceBundle) {
 
-    private val gnol        = bundle.gnol
-    private val rnol        = gnol.remainingNOL
-    private val col         = bundle.config.contextualObjectLinker
-    private val coords      = bundle.coordinates
-    private val channelPath = coords.path
-    private val cnol        = gnol.cacheNOL
+    private val gnol       = bundle.gnol
+    private val rnol       = gnol.remainingNOL
+    private val col        = bundle.config.contextualObjectLinker
+    private val boundId    = bundle.boundId
+    private val packetPath = bundle.packetPath
+    private val cnol       = gnol.cacheNOL
 
     def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
         if (!obj.isInstanceOf[NetworkObject[_]]) {
-            return col
-                    .findPersistableReference(obj, coords)
-                    .map(new ContextualObjectReference(channelPath, _))
+            return findNonNetworkObjectReference(obj)
         }
         obj match {
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
-                val reference = obj.reference
-                if (obj.presence.isPresentOn(coords))
-                    Some(reference)
-                else {
-                    if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
-                        rnol.get.save(obj)
-                    None
-                }
+                findDynamicNetworkObjectReference(obj)
             case obj: StaticNetworkObject[NetworkObjectReference]  =>
                 Some(obj.reference)
             case obj: NetworkObject[NetworkObjectReference]        =>
-                val reference = obj.reference
-                if (gnol.findPresence(reference).exists(_.isPresentOn(coords)))
-                    Some(reference)
-                else {
-                    if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
-                        rnol.get.save(obj)
-                    None
-                }
+                findNetworkObjectReference(obj)
+        }
+    }
+
+    private def findNonNetworkObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
+        col.findReferenceID(obj) match {
+            case None     => None
+            case Some(id) =>
+                val ref = new ContextualObjectReference(packetPath, id)
+                if (col.isPresentOnEngine(boundId, ref)) Some(ref)
+                else None
+        }
+    }
+
+    private def findDynamicNetworkObjectReference(obj: DynamicNetworkObject[NetworkObjectReference]): Option[NetworkObjectReference] = {
+        val reference = obj.reference
+        if (obj.presence.isPresentOn(boundId))
+            Some(reference)
+        else {
+            if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
+                rnol.get.save(obj)
+            None
+        }
+    }
+
+    private def findNetworkObjectReference(obj: NetworkObject[NetworkObjectReference]): Option[NetworkObjectReference] = {
+        val reference = obj.reference
+        if (gnol.findPresence(reference).exists(_.isPresentOn(boundId)))
+            Some(reference)
+        else {
+            if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
+                rnol.get.save(obj)
+            None
         }
     }
 

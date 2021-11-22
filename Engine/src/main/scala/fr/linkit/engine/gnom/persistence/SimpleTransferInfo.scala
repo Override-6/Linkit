@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
-import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle, TransferInfo}
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
-case class SimpleTransferInfo(override val coords: PacketCoordinates,
+case class SimpleTransferInfo(override val coords: DedicatedPacketCoordinates,
                               override val attributes: PacketAttributes,
                               override val packet: Packet,
                               config: PersistenceConfig,
@@ -42,10 +42,11 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
         }
         val content = packetBuff.toArray[AnyRef]
         serializer.serializeObjects(content)(new PersistenceBundle {
-            override val buff       : ByteBuffer                 = b
-            override val coordinates: PacketCoordinates          = coords
-            override val config     : PersistenceConfig          = info.config
-            override val gnol       : GeneralNetworkObjectLinker = info.gnol
+            override val buff      : ByteBuffer                 = b
+            override val boundId   : String                     = coords.targetID
+            override val packetPath: Array[Int]                 = coords.path
+            override val config    : PersistenceConfig          = info.config
+            override val gnol      : GeneralNetworkObjectLinker = info.gnol
         })
     }
 }

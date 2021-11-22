@@ -35,15 +35,15 @@ abstract class ArrayObjectStructure() extends ObjectStructure {
         true
     }
 
-    override def isAssignable(fieldsValues: Array[Any], from: Int, to: Int): Boolean = {
-        val len = fieldsValues.length
-        var i = from
+    override def isAssignable(args: Array[Any], from: Int, to: Int): Boolean = {
+        val len = args.length
+        var i   = from
         if (to > len)
             throw new ArrayIndexOutOfBoundsException(s"to > array length. ($to > ${len})")
         if (to > types.length || to - from < types.length)
             return false
         while (i < to) {
-            val value = fieldsValues(i)
+            val value = args(i)
             if (value != null) {
                 val tpe = types(i)
                 if (!(tpe.isAssignableFrom(value.getClass) || tpe.isAssignableFrom(UnWrapper.getPrimitiveClass(value))))
@@ -58,7 +58,7 @@ abstract class ArrayObjectStructure() extends ObjectStructure {
         case that: ClassObjectStructure => (that eq this) || isAssignable(that.types)
         case _                          => false
     }
-    
+
 }
 
 object ArrayObjectStructure {

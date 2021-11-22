@@ -110,7 +110,8 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         getChunkFromFlag(Array).add(array)
         if (!comp.isPrimitive) {
             val a = array.asInstanceOf[Array[Any]] //it's an array of object
-            addObj(ArrayPersistence.getAbsoluteCompType(a)._1)
+            val absoluteComp = ArrayPersistence.getAbsoluteCompType(a)._1
+            addObj(absoluteComp)
             addAll(a)
         }
     }

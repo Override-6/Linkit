@@ -13,8 +13,7 @@
 
 package fr.linkit.engine.application.plugin
 
-import fr.linkit.api.internal.system.fsa.FileAdapter
-
+import java.nio.file.Path
 import scala.collection.mutable.ListBuffer
 
 class PluginClassLoaderBridge {
@@ -22,7 +21,7 @@ class PluginClassLoaderBridge {
     private val loaders =
         ListBuffer.empty[PluginClassLoader]
 
-    def newClassLoader(urls: Array[FileAdapter]): PluginClassLoader = {
+    def newClassLoader(urls: Array[Path]): PluginClassLoader = {
         val loader = new PluginClassLoader(urls, this)
         loaders += loader
         loader

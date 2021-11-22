@@ -15,21 +15,21 @@ package fr.linkit.engine.application.plugin
 
 import fr.linkit.api.application.plugin.{LinkitPlugin, Plugin, PluginLoadException}
 import fr.linkit.api.internal.system.AppException
-import fr.linkit.api.internal.system.fsa.FileAdapter
-import fr.linkit.engine.internal.mapping.ClassMappings
 import fr.linkit.engine.application.plugin.PluginClassLoader.{MainClassField, PropertiesFileName}
+import fr.linkit.engine.internal.mapping.ClassMappings
+
 import java.net.URLClassLoader
+import java.nio.file.Path
 import java.util.Properties
 import java.util.zip.ZipFile
-
 import scala.collection.mutable
 
-class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bridge: PluginClassLoaderBridge)
+class PluginClassLoader(private[plugin] val pluginFiles: Array[Path], bridge: PluginClassLoaderBridge)
         extends URLClassLoader(pluginFiles.map(_.toUri.toURL)) {
 
-    private val map = mutable.HashMap.empty[FileAdapter, String]
+    private val map = mutable.HashMap.empty[Path, String]
 
-    private[plugin] def setPluginName(file: FileAdapter, name: String): Unit = {
+    private[plugin] def setPluginName(file: Path, name: String): Unit = {
         ensureContained(file)
         map.put(file, name)
     }
@@ -45,16 +45,16 @@ class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bri
         clazz
     }
 
-    def loadMainClass(file: FileAdapter): Class[_ <: Plugin] = {
+    def loadMainClass(file: Path): Class[_ <: Plugin] = {
         ensureContained(file)
         loadJar(file)
     }
 
     def countUrls: Int = pluginFiles.length
 
-    private def loadJar(adapter: FileAdapter): Class[_ <: Plugin] = {
+    private def loadJar(adapter: Path): Class[_ <: Plugin] = {
 
-        val jarFile      = new ZipFile(adapter.getPath)
+        val jarFile      = new ZipFile(adapter.toFile)
         val propertyFile = jarFile.getEntry(PropertiesFileName)
         //Checking property presence
         if (propertyFile == null)
@@ -79,9 +79,9 @@ class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bri
         clazz.asInstanceOf[Class[_ <: LinkitPlugin]]
     }
 
-    private def ensureContained(file: FileAdapter): Unit = {
+    private def ensureContained(file: Path): Unit = {
         if (!pluginFiles.contains(file))
-            throw new IllegalArgumentException(s"Plugin url '${file.getAbsolutePath}' not handled by this ClassLoader.")
+            throw new IllegalArgumentException(s"Plugin url '${file}' not handled by this ClassLoader.")
     }
 
 }

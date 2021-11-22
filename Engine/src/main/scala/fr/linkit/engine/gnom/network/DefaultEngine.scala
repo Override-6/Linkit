@@ -28,7 +28,7 @@ class DefaultEngine(override val identifier: String,
                     override val cache: SharedCacheManager) extends Engine {
 
     override val network     : Network      = cache.network
-    override lazy val staticAccess: StaticAccess = {
+    override val staticAccess: StaticAccess = {
         val center = cache.attachToCache(5, DefaultSynchronizedObjectCache[ClassStaticAccessor[_ <: AnyRef]]())
         new SimpleStaticAccess(center)
     }

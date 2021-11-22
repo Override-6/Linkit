@@ -96,7 +96,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     protected def createGlobalCache: SharedCacheManager
 
-    protected def initialize(): this.type = {
+    def initialize(): this.type = {
         //init those lazy vals
         gnol
         globalCache

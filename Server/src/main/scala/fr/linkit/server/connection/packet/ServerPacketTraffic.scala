@@ -32,6 +32,6 @@ class ServerPacketTraffic(override val connection: ServerConnection,
     override val serverIdentifier : String = currentIdentifier
 
     override def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter = {
-        new ServerPacketWriter(connection, WriterInfo(this, persistenceConfig, path, () => connection.network.gnol))
+        new ServerPacketWriter(connection, WriterInfo(this, persistenceConfig, path, () => connection.network))
     }
 }

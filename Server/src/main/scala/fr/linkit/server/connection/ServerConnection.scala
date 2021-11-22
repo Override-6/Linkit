@@ -17,17 +17,15 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.CentralConnection
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.api.internal.system.event.EventNotifier
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.internal.system.Rules
-import fr.linkit.engine.internal.system.event.DefaultEventNotifier
 import fr.linkit.engine.internal.utils.NumberSerializer.serializeInt
 import fr.linkit.server.config.ServerConnectionConfiguration
 import fr.linkit.server.connection.packet.ServerPacketTraffic
@@ -41,18 +39,18 @@ import scala.util.control.NonFatal
 class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends CentralConnection {
 
-    override val currentIdentifier       : String                     = configuration.identifier
-    override val translator              : ObjectTranslator           = configuration.translatorFactory(applicationContext)
-    override val port                    : Int                        = configuration.port
-    private  val workerPool              : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
-    private  val serverSocket            : ServerSocket               = new ServerSocket(configuration.port)
-    private  val connectionsManager      : ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    private  val serverTraffic           : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
-    override val traffic                 : PacketTraffic              = serverTraffic
-   // override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
-    private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(serverTraffic)
-    override val network                 : Network                    = sideNetwork
-    @volatile private var alive          : Boolean                    = false
+    override val currentIdentifier : String                     = configuration.identifier
+    override val translator        : ObjectTranslator           = configuration.translatorFactory(applicationContext)
+    override val port              : Int                        = configuration.port
+    private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
+    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
+    private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
+    private  val serverTraffic     : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
+    override val traffic           : PacketTraffic              = serverTraffic
+    // override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
+    private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(serverTraffic)
+    override val network           : Network                    = sideNetwork
+    @volatile private var alive    : Boolean                    = false
 
     override def getApp: ApplicationContext = applicationContext
 
@@ -108,9 +106,14 @@ class ServerConnection(applicationContext: ServerApplication,
             // There is nowhere to send this packet.
             return
         }
-        val broadcast = BroadcastPacketCoordinates(path, sender, true, discarded)
-        val result    = translator.translate(SimpleTransferInfo(broadcast, attributes, packet, config, network.gnol))
-        connectionsManager.broadcastPacket(result, discarded: _*)
+        connectionsManager.listIdentifiers
+                .filterNot(discarded.contains)
+                .foreach(candidate => {
+                    val coords = DedicatedPacketCoordinates(path, candidate, sender)
+                    val result = translator.translate(SimpleTransferInfo(coords, attributes, packet, config, network.gnol))
+                    connectionsManager.broadcastPacket(result)
+                })
+
         if (!discarded.contains(currentIdentifier)) {
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, sender))
         }
@@ -187,7 +190,7 @@ class ServerConnection(applicationContext: ServerApplication,
         if (args.length != Rules.WPArgsLength)
             return WelcomePacketVerdict(null, false, s"Arguments length does not conform to server's rules of ${Rules.WPArgsLength}")
         try {
-            val identifier          = args(0)
+            val identifier = args(0)
 
             /*if (!(configuration.hasher.signature sameElements hasherSignature))
                 return WelcomePacketVerdict(identifier, false, "Hasher signatures mismatches !")*/

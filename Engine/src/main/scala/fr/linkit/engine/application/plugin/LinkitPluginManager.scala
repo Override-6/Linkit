@@ -14,19 +14,17 @@
 package fr.linkit.engine.application.plugin
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.application.plugin.{Plugin, PluginLoader, PluginManager}
+import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.api.internal.system.fsa.FileSystemAdapter
-import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.internal.mapping.ClassMapEngine
 import fr.linkit.engine.application.plugin.fragment.SimpleFragmentManager
-import java.nio.file.{NoSuchFileException, NotDirectoryException}
+import fr.linkit.engine.internal.mapping.ClassMapEngine
 
+import java.nio.file.{Files, NoSuchFileException, NotDirectoryException, Path}
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) extends PluginManager {
+class LinkitPluginManager(context: ApplicationContext) extends PluginManager {
 
     private val bridge  = new PluginClassLoaderBridge
     private val plugins = ListBuffer.empty[Plugin]
@@ -38,12 +36,12 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
         WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         AppLogger.debug(s"Plugin $file is preparing to be loaded.")
 
-        val adapter = fsa.getAdapter(file)
+        val path = Path.of(file)
 
-        if (adapter.notExists)
+        if (Files.notExists(path))
             throw new NoSuchFileException(file)
 
-        val classLoader  = bridge.newClassLoader(Array(adapter))
+        val classLoader  = bridge.newClassLoader(Array(path))
         val pluginLoader = new URLPluginLoader(context, classLoader)
         enablePlugins(pluginLoader).head
     }
@@ -53,13 +51,13 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
         WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         AppLogger.debug(s"Plugins into folder '$folder' are preparing to be loaded.")
 
-        val adapter = fsa.getAdapter(folder)
-        if (adapter.notExists)
+        val path = Path.of(folder)
+        if (Files.notExists(path))
             throw new NoSuchFileException(folder)
-        if (!adapter.isDirectory)
+        if (Files.isDirectory(path))
             throw new NotDirectoryException(folder)
 
-        val classLoader  = bridge.newClassLoader(fsa.list(adapter))
+        val classLoader  = bridge.newClassLoader(Files.list(path).toArray(new Array(_)))
         val pluginLoader = new URLPluginLoader(context, classLoader)
         enablePlugins(pluginLoader)
     }
@@ -74,7 +72,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
         if (classes.isEmpty)
             return Array()
 
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, classes)
+        ClassMapEngine.mapAllSourcesOfClasses(classes)
         WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         val pluginLoader = new DirectPluginLoader(context, classes)
         enablePlugins(pluginLoader)

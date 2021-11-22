@@ -70,7 +70,7 @@ object PacketTest {
     private val coords                           = DedicatedPacketCoordinates(Array(7, 8, 9), "you", "me")
     private val attributes                       = SimplePacketAttributes.empty
     private val omc    : ObjectManagementChannel = {
-        val writer = new SocketPacketWriter(mock(classOf[DynamicSocket]), new PacketSerializationChoreographer(translator), WriterInfo(traffic, null, Array.empty, () => gnol))
+        val writer = new SocketPacketWriter(mock(classOf[DynamicSocket]), new PacketSerializationChoreographer(translator), WriterInfo(traffic, null, Array.empty, () => network))
         new DefaultObjectManagementChannel(null, ChannelScopes.include().apply(writer))
     }
     private val config                           = {

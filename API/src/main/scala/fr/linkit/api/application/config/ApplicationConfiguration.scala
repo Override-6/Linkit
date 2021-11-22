@@ -13,17 +13,14 @@
 
 package fr.linkit.api.application.config
 
-import fr.linkit.api.internal.system.fsa.FileSystemAdapter
 import fr.linkit.api.internal.system.security.ApplicationSecurityManager
-import org.jetbrains.annotations.{NotNull, Nullable}
+import org.jetbrains.annotations.NotNull
 
 trait ApplicationConfiguration {
 
     val pluginFolder: Option[String] //can be relative or global
 
     @NotNull val resourceFolder: String
-
-    @NotNull val fsAdapter: FileSystemAdapter
 
     @NotNull val securityManager: ApplicationSecurityManager
 

@@ -21,13 +21,13 @@ import fr.linkit.engine.application.resource.external.LocalResourceFactories
 import fr.linkit.engine.internal.system.EngineConstants.{UserGson => Gson}
 import fr.linkit.engine.internal.system.{DynamicVersions, StaticVersions}
 
+import java.nio.file.{Files, Path}
 import java.util
 
 class ResourceFolderMaintainer(maintained: ResourceFolder,
                                listener: ResourceListener) extends ResourcesMaintainer {
 
-    private   val fsa                   = maintained.getAdapter.getFSAdapter
-    private   val maintainerFileAdapter = fsa.getAdapter(maintained.getAdapter.getAbsolutePath + "/" + MaintainerFileName)
+    private   val maintainerFileAdapter = Path.of(maintained.getPath.toString + "/" + MaintainerFileName)
     protected val resources: Resources  = loadResources()
     listener.putMaintainer(this, MaintainerKey)
 
@@ -90,11 +90,11 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
     }
 
     private def updateFile(resources: Resources = this.resources): Unit = try {
-        if (maintainerFileAdapter.notExists)
-            maintainerFileAdapter.createAsFile()
+        if (Files.notExists(maintainerFileAdapter))
+            Files.createFile(maintainerFileAdapter)
         //println(s"Saving resources for folder : ${resources.folder}")
         val json = Gson.toJson(resources)
-        val out  = maintainerFileAdapter.newOutputStream()
+        val out  = Files.newOutputStream(maintainerFileAdapter)
         out.write(json.getBytes())
         out.close()
     }
@@ -159,15 +159,15 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
     }
 
     def loadResources(): Resources = {
-        val maintainerPath        = maintained.getAdapter.getAbsolutePath + "/" + MaintainerFileName
-        val maintainerFileAdapter = fsa.getAdapter(maintainerPath)
-        if (maintainerFileAdapter.notExists) {
-            maintainerFileAdapter.createAsFile()
+        val maintainerPath     = maintained.getPath.toString + "/" + MaintainerFileName
+        val maintainerFilePath = Path.of(maintainerPath)
+        if (Files.notExists(maintainerFilePath)) {
+            Files.createFile(maintainerFilePath)
             val resources = Resources(ResourceItem.minimal(maintained))
             updateFile(resources)
             return resources
         }
-        val json      = maintainerFileAdapter.getContentString
+        val json      = Files.readString(maintainerFilePath)
         val resources = Gson.fromJson(json, classOf[Resources])
         if (resources == null) {
             val resources = Resources(ResourceItem.minimal(maintained))
@@ -179,8 +179,8 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
 
         def handleItem(item: ResourceItem): Unit = {
             val name    = item.name
-            val adapter = fsa.getAdapter(maintained.getAdapter.getAbsolutePath + "/" + name)
-            if (adapter.notExists) {
+            val adapter = Path.of(maintained.getPath.toString + "/" + name)
+            if (Files.notExists(adapter)) {
                 resources -= item
                 modified = true
                 return

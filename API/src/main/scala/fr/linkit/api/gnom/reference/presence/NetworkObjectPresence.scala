@@ -21,8 +21,4 @@ trait NetworkObjectPresence {
 
     def isPresentOn(engineId: String): Boolean = getPresenceFor(engineId) eq ObjectPresenceType.PRESENT
 
-    def isPresentOn(coords: PacketCoordinates): Boolean = {
-        coords.forallConcernedTargets(isPresentOn)
-    }
-
 }

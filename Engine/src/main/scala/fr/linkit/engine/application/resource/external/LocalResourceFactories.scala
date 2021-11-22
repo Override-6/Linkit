@@ -15,11 +15,13 @@ package fr.linkit.engine.application.resource.external
 
 import fr.linkit.api.application.resource.external.{Resource, ResourceFactory, ResourceFile, ResourceFolder}
 
+import java.nio.file.Files
+
 object LocalResourceFactories {
 
-    def adaptive: ResourceFactory[Resource] = (adapter, listener, parent) => {
-        if (adapter.isDirectory) folder(adapter, listener, parent)
-        else file(adapter, listener, parent)
+    def adaptive: ResourceFactory[Resource] = (path, listener, parent) => {
+        if (Files.isDirectory(path)) folder(path, listener, parent)
+        else file(path, listener, parent)
     }
 
     def folder: ResourceFactory[ResourceFolder] = LocalResourceFolder.apply

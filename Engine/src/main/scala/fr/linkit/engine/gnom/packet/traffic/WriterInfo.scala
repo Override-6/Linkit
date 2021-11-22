@@ -13,16 +13,16 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.NetworkObjectReference
-import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 
 case class WriterInfo(traffic: PacketTraffic,
                       persistenceConfig: PersistenceConfig,
                       path: Array[Int],
-                      private val gnol0: () => GeneralNetworkObjectLinker) {
-    lazy val gnol: GeneralNetworkObjectLinker = {
-        gnol0.apply()
+                      private val network0: () => Network) {
+
+    lazy val network: Network = {
+        network0.apply()
     }
 }

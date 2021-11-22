@@ -20,6 +20,7 @@ import fr.linkit.api.internal.system.Versions
 import java.sql.Timestamp
 
 trait Engine extends /*NetworkObject[EngineReference] with*/ Updatable {
+
     val identifier: String
 
     val cache: SharedCacheManager
@@ -30,7 +31,7 @@ trait Engine extends /*NetworkObject[EngineReference] with*/ Updatable {
 
     val network: Network
 
-    def staticAccess: StaticAccess
+    val staticAccess: StaticAccess
 
     def isServer: Boolean = network.serverEngine eq this
 

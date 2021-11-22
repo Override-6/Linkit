@@ -14,11 +14,12 @@
 package fr.linkit.api.application.resource.external
 
 import fr.linkit.api.application.resource.ResourceListener
-import fr.linkit.api.internal.system.fsa.FileAdapter
+
+import java.nio.file.Path
 
 trait ResourceFactory[E <: Resource] {
 
     implicit final val self: this.type = this
 
-    def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): E
+    def apply(adapter: Path, listener: ResourceListener, parent: ResourceFolder): E
 }

@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
+import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
@@ -41,43 +41,51 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
     override def translate(packetInfo: TransferInfo): ObjectSerializationResult = {
         new LazyObjectSerializationResult(packetInfo, serializer) {
             override def writeCoords(buff: ByteBuffer): Unit = coords match {
+                //TODO Better broadcast persistence handling
+                // <------------------------ MAINTAINED ------------------------>
                 case BroadcastPacketCoordinates(path, senderID, discardTargets, targetIDs) =>
-                    buff.put(BroadcastedFlag) //set the broadcast flag
-                    buff.putInt(path.length) //path length
-                    path.foreach(buff.putInt) //path content
-                    putString(senderID, buff) //senderID String
-                    buff.put((if (discardTargets) 1 else 0): Byte) //discardTargets boolean
-                    buff.putInt(targetIDs.length) //targetIds length
-                    targetIDs.foreach(putString(_, buff)) //targetIds content
-
+                    throw new UnsupportedOperationException("Can't send broadcast packets.")
+                /*buff.put(BroadcastedFlag) //set the broadcast flag
+                buff.putInt(path.length) //path length
+                path.foreach(buff.putInt) //path content
+                putString(senderID, buff) //senderID String
+                buff.put((if (discardTargets) 1 else 0): Byte) //discardTargets boolean
+                buff.putInt(targetIDs.length) //targetIds length
+                targetIDs.foreach(putString(_, buff)) //targetIds content
+                */
                 case DedicatedPacketCoordinates(path, targetID, senderID) =>
                     buff.put(DedicatedFlag) //set the dedicated flag
                     buff.putInt(path.length) //path length
                     path.foreach(buff.putInt) //path content
                     putString(targetID, buff) // targetID String
                     putString(senderID, buff) // senderID String
-                case _                                                    => throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
+                case _                                                    =>
+                    throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
             }
         }
     }
 
-    private def readCoordinates(buff: ByteBuffer): PacketCoordinates = {
+    private def readCoordinates(buff: ByteBuffer): DedicatedPacketCoordinates = {
         (buff.get(): @switch) match {
+            //TODO Better broadcast persistence handling
+            // <------------------------ MAINTAINED ------------------------>
             case BroadcastedFlag =>
+                throw new UnsupportedOperationException("Can't read broadcast packet.")
+            /*
+            val path = new Array[Int](buff.getInt) //init path array
+            for (i <- path.indices) path(i) = buff.getInt() //fill path content
+            val senderId       = getString(buff) //senderID string
+            val discardTargets = buff.get == 1 //discardTargets boolean
+            val targetIds      = new Array[String](buff.getInt) //init targetIds array
+            for (i <- targetIds.indices) targetIds(i) = getString(buff) //fill path content
+            BroadcastPacketCoordinates(path, senderId, discardTargets, targetIds)*/
+            case DedicatedFlag =>
                 val path = new Array[Int](buff.getInt) //init path array
-                for (i <- path.indices) path(i) = buff.getInt() //fill path content
-                val senderId       = getString(buff) //senderID string
-                val discardTargets = buff.get == 1 //discardTargets boolean
-                val targetIds      = new Array[String](buff.getInt) //init targetIds array
-                for (i <- targetIds.indices) targetIds(i) = getString(buff) //fill path content
-                BroadcastPacketCoordinates(path, senderId, discardTargets, targetIds)
-            case DedicatedFlag   =>
-                val path = new Array[Int](buff.getInt) //init path array
-                for (i <- path.indices) path(i) = buff.getInt() //fill path content
+                for (i <- path.indices) path(i) = buff.getInt() //fill path array
                 val targetID = getString(buff) //targetID string
                 val senderID = getString(buff) //senderID string
                 DedicatedPacketCoordinates(path, targetID, senderID)
-            case unknown         => throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'.")
+            case unknown       => throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'.")
         }
     }
 
@@ -97,10 +105,11 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         val conf    = traffic.getPersistenceConfig(coords.path)
         val network = traffic.connection.network
         val bundle  = new PersistenceBundle {
-            override val buff       : ByteBuffer                 = buffer
-            override val coordinates: PacketCoordinates          = coords
-            override val config     : PersistenceConfig          = conf
-            override val gnol       : GeneralNetworkObjectLinker = network.gnol
+            override val buff      : ByteBuffer                 = buffer
+            override val boundId   : String                     = coords.senderID
+            override val packetPath: Array[Int]                 = coords.path
+            override val config    : PersistenceConfig          = conf
+            override val gnol      : GeneralNetworkObjectLinker = network.gnol
         }
         new LazyObjectDeserializationResult(buffer, coords)(serializer.deserializeObjects(bundle))
     }

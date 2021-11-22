@@ -13,12 +13,9 @@
 
 package fr.linkit.client.config
 
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.application.config.schematic.{AppSchematic, EmptySchematic}
-import fr.linkit.api.internal.system.fsa.FileSystemAdapter
 import fr.linkit.api.internal.system.security.ApplicationSecurityManager
 import fr.linkit.client.ClientApplication
-import fr.linkit.engine.internal.system.fsa.LocalFileSystemAdapters
 
 abstract class ClientApplicationConfigBuilder {
 
@@ -28,7 +25,6 @@ abstract class ClientApplicationConfigBuilder {
     var loadSchematic           : AppSchematic[ClientApplication] = new EmptySchematic()
     var nWorkerThreadFunction   : Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 threads for application.
     var pluginFolder            : Option[String]                  = Some("/Plugins")
-    var fsAdapter               : FileSystemAdapter               = LocalFileSystemAdapters.Nio
     var securityManager         : ApplicationSecurityManager      = ApplicationSecurityManager.none
 
     def buildConfig(): ClientApplicationConfiguration = {
@@ -38,7 +34,6 @@ abstract class ClientApplicationConfigBuilder {
             override val nWorkerThreadFunction: Int => Int                      = builder.nWorkerThreadFunction
             override val pluginFolder         : Option[String]                  = builder.pluginFolder
             override val resourceFolder       : String                          = builder.resourcesFolder
-            override val fsAdapter            : FileSystemAdapter               = builder.fsAdapter
             override val securityManager      : ApplicationSecurityManager      = builder.securityManager
         }
     }

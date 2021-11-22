@@ -15,12 +15,11 @@ package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
 import fr.linkit.api.gnom.persistence.context.{Deconstructor, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.context
 import fr.linkit.engine.gnom.persistence.context.Persist
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
-import fr.linkit.engine.gnom.persistence.context.structure.ClassObjectStructure
+import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 
-import java.lang.invoke.MethodHandles
+import java.lang.invoke.{MethodHandles, MethodType}
 import java.lang.reflect.Constructor
 
 class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
@@ -33,9 +32,9 @@ class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T]
         this(clazz, constructor, deconstructor.deconstruct(_))
     }
 
-    override val structure: ObjectStructure = ClassObjectStructure(clazz)
+    override val structure: ObjectStructure = ArrayObjectStructure(constructor.getParameterTypes: _*)
 
-    private val handle = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()).unreflectConstructor(constructor)
+    private val handle = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()).findConstructor(clazz, MethodType.methodType(clazz, constructor.getParameterTypes))
 
     override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
        handle.bindTo(allocatedObject).invoke(args)

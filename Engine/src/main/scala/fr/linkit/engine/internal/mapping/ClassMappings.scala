@@ -13,10 +13,11 @@
 
 package fr.linkit.engine.internal.mapping
 
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.internal.utils.NumberSerializer
 import org.nustaq.serialization.FSTConfiguration
-import java.security.CodeSource
 
+import java.security.CodeSource
 import scala.collection.mutable
 
 object ClassMappings {
@@ -58,8 +59,10 @@ object ClassMappings {
 
     @inline def codeOfClass(clazz: Class[_]): Int = {
         val name = clazz.getName
-        if (!classes.contains(name.hashCode))
+        if (!classes.contains(name.hashCode)) {
+            AppLogger.warn(s"Class map did not contained $clazz. (code: ${name.hashCode})")
             putClass(clazz)
+        }
         name.hashCode
     }
 

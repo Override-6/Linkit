@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
 
-class PoolChunk[@specialized() T](val tag: Byte,
+class PoolChunk[/*@specialized()*/ T](val tag: Byte,
                                   freezable: Freezable,
                                   maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
@@ -43,6 +43,11 @@ class PoolChunk[@specialized() T](val tag: Byte,
     def add(t: T): Unit = {
         if (t == null)
             throw new NullPointerException("Can't add null item")
+        t match {
+            case value: Class[_] if value.isArray =>
+                throw new IllegalArgumentException()
+            case _                                =>
+        }
         //if (isFrozen)
         //    throw new IllegalStateException("Could not add item in chunk: This chunk (or its pool) is frozen !")
         if (pos != 0 && pos % BuffSteps == 0) {
