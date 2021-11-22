@@ -202,7 +202,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
 
     abstract class MethodBehaviorBuilder(rule: RemoteInvocationRule = BasicInvocationRule.ONLY_CURRENT) extends AbstractBehaviorBuilder[MethodDescription] {
 
-        private val paramBehaviors             = mutable.HashMap.empty[Parameter, ParameterContract[Any]]
+        private val paramContract             = mutable.HashMap.empty[Parameter, ParameterContract[Any]]
         private var usedParams: Option[params] = None
 
         private var forceLocalInvocation: Boolean        = false
@@ -252,13 +252,13 @@ object SynchronizedObjectBehaviorFactoryBuilder {
             def enable[P <: AnyRef](paramName: String)(paramModifier: MethodCompModifier[P]): Unit = callOnceContextSet {
                 val param = getParam(paramName)
                 val bhv   = new MethodParameterContract[P](param, Some(MethodParameterBehavior(true)), Option(paramModifier))
-                paramBehaviors.put(param, bhv.asInstanceOf[ParameterContract[Any]])
+                paramContract.put(param, bhv.asInstanceOf[ParameterContract[Any]])
             }
 
             def enable[P <: AnyRef](idx: Int, paramModifier: MethodCompModifier[P]): Unit = callOnceContextSet {
                 val param = getParam(idx)
                 val bhv   = new MethodParameterContract[P](param, Some(MethodParameterBehavior(true)), Option(paramModifier))
-                paramBehaviors.put(param, bhv.asInstanceOf[ParameterContract[Any]])
+                paramContract.put(param, bhv.asInstanceOf[ParameterContract[Any]])
             }
 
             def enable(paramName: String): As = {
@@ -280,7 +280,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
                         case Some(name: String) => getParam(name)
                     }
                     val bhv   = as.assignedBehavior
-                    paramBehaviors.put(param, bhv)
+                    paramContract.put(param, bhv)
                 }
             }
         }
@@ -305,8 +305,8 @@ object SynchronizedObjectBehaviorFactoryBuilder {
         }
 
         private def getOrDefaultContract(parameter: Parameter): ParameterContract[Any] = {
-            paramBehaviors.getOrElse(parameter, AnnotationBasedMemberBehaviorFactory.genParameterBehavior(parameter))
-                    .asInstanceOf[ParameterContract[Any]]
+            val bhv = AnnotationBasedMemberBehaviorFactory.genParameterBehavior(parameter)
+            paramContract.getOrElse(parameter, MethodParameterContract(parameter, Some(bhv), None))
         }
 
         private def getParam(paramName: String): Parameter = {
@@ -325,7 +325,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
             val param = getParam(name)
             if (param.getType.isPrimitive)
                 throw new UnsupportedOperationException("can't synchronize or apply modifiers on primitive values.")
-            paramBehaviors.getOrElse(param, {
+            paramContract.getOrElse(param, {
                 throw new NoSuchElementException(noSuchMsg)
             })
         }
@@ -334,7 +334,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
             val param = getParam(idx)
             if (param.getType.isPrimitive)
                 throw new UnsupportedOperationException("can't synchronize or apply modifiers on primitive values.")
-            paramBehaviors.getOrElse(param, {
+            paramContract.getOrElse(param, {
                 throw new NoSuchElementException(noSuchMsg)
             })
         }

@@ -23,8 +23,8 @@ case class BroadcastPacketCoordinates(override val path: Array[Int],
     override def forallConcernedTargets(action: String => Boolean): Boolean = {
         //FIXME discuss about Packet Broadcasting utility,
         // Broadcasting a packet is useful to clients to save bandwidth and persistence operation
-        // However, with incoming enhancements that comes with the GNOL, object persistence configuration etc,
-        // Broadcasting becomes hard to maintain as a serialized packet result can vary between engines,
+        // However, with incoming enhancements that comes with the GNOL, new object persistence features etc,
+        // Broadcasting becomes hard to maintain because the result of a serialized packet can vary between engines.
         // So, either remove packet broadcasting (which can lead to performance issues) or add constraints to serialisation
         if (discardTargets) {
             val network        = ExecutorEngine.currentEngine.network //FIXME causes Thread context problems

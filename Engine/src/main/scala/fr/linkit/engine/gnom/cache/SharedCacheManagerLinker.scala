@@ -58,7 +58,9 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
     override def injectRequest(bundle: LinkerRequestBundle): Unit = {
         bundle.linkerReference match {
             case ref: SharedCacheReference      =>
-                network.findCacheManager(ref.family).fold() { manager =>
+                network.findCacheManager(ref.family)
+                        .fold(throw new NoSuchElementException(s"Could not find cache manager '${ref.family}'"))
+                { manager =>
                     manager.getCachesLinker.injectRequest(bundle)
                 }
             case _: SharedCacheManagerReference => handleBundle(bundle)

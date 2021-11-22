@@ -86,21 +86,24 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
         val store   = networkStore.createStore(family.hashCode)
         val manager = new SharedCacheOriginManager(family, this, store)
+        val trafficPath = store.trafficPath
         scnol.registerReference(manager.reference)
-        (manager, store.trafficPath)
+        trunk.addCacheManager(manager, trafficPath)
+        (manager, trafficPath)
     }
 
     protected def retrieveDataTrunk(factory: SynchronizedObjectContractFactory): NetworkDataTrunk
 
     protected def createGlobalCache: SharedCacheManager
 
-    def initialize(): this.type = {
+    protected def initialize(): this.type = {
         //init those lazy vals
         gnol
         globalCache
         trunk
         engine0 = trunk.newEngine(currentIdentifier)
         ExecutorEngine.initDefaultEngine(connectionEngine)
+        engine0.staticAccess //lazy val
         this
         //cacheManagerChannel.addRequestListener(handleRequest)
     }

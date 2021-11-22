@@ -73,12 +73,12 @@ class ObjectReader(bundle: PersistenceBundle, center: SyncClassCenter) {
         def collectAndUpdateChunk[T: ClassTag](@inline action: => T): Unit = {
             var i     = 0
             val chunk = pool.getChunkFromFlag[Any](flag)
-            val array = chunk.array
+            chunk.resetPos()
             while (i < size) {
                 //println(s"reading item (type: $flag, pos: ${buff.position()})")
                 val item: T = action
                 //println(s"Item read ! (type: $flag, pos: ${buff.position()})")
-                array(i) = item
+                chunk.add(item)
                 i += 1
             }
         }

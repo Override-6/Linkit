@@ -52,7 +52,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                 val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
                 val submitter      = new ResponseSubmitter(request.id, submitterScope)
 
-                requestConsumers.applyAllLater(DefaultRequestBundle(this, request, coords, submitter))
+                requestConsumers.applyAll(DefaultRequestBundle(this, request, coords, submitter))
 
             case response: ResponsePacket =>
                 AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
