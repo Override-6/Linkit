@@ -15,6 +15,7 @@ package fr.linkit.engine.internal.utils;
 
 public class NativeUtils {
 
-    static native Object allocate(Class<?> clazz);
+    public static native Object allocate(Class<?> clazz);
 
+    public static native void callConstructor(Object o, String signature, Object[] args);
 }

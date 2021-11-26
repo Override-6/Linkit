@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.compilation.CompilationRequest
 import fr.linkit.engine.gnom.cache.sync.generation.SyncClassCompilationRequestFactory.DefaultClassBlueprint
 import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaClassBlueprint
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.ClassRectifier
+import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
 import fr.linkit.engine.internal.generation.compilation.RuntimeClassOperations
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.mapping.ClassMappings
@@ -33,7 +33,7 @@ class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[
         val wrapperClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
         if (Files.notExists(wrapperClassFile))
             throw new NoSuchFileException(s"class file for class $className at ${req.classDir} not found.")
-        val (byteCode, wrapperClass) = new ClassRectifier(context, className, loader, context.clazz).rectifiedClass
+        val (byteCode, wrapperClass) = new SyncClassRectifier(context, className, loader, context.clazz).rectifiedClass
         Files.write(wrapperClassFile, byteCode)
         RuntimeClassOperations.prepareClass(wrapperClass)
         ClassMappings.putClass(wrapperClass)

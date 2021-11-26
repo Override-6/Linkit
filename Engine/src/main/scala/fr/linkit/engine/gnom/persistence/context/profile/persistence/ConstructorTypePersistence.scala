@@ -18,9 +18,11 @@ import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.context.Persist
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
-
 import java.lang.invoke.{MethodHandles, MethodType}
 import java.lang.reflect.Constructor
+
+import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
+import fr.linkit.engine.internal.utils.NativeUtils
 
 class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
 
@@ -32,12 +34,11 @@ class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T]
         this(clazz, constructor, deconstructor.deconstruct(_))
     }
 
+    private  val signature: String          = SyncClassRectifier.getMethodDescriptor(constructor.getParameterTypes, Void.TYPE)
     override val structure: ObjectStructure = ArrayObjectStructure(constructor.getParameterTypes: _*)
 
-    private val handle = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()).findConstructor(clazz, MethodType.methodType(clazz, constructor.getParameterTypes))
-
     override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
-       handle.bindTo(allocatedObject).invoke(args)
+        NativeUtils.callConstructor(allocatedObject, signature, args.asInstanceOf[Array[AnyRef]])
     }
 
     override def toArray(t: T): Array[Any] = {
@@ -50,15 +51,15 @@ object ConstructorTypePersistence {
 
     def getConstructor[T](clazz: Class[_]): Constructor[T] = {
         findPersistConstructor(clazz)
-                .getOrElse {
-                    throw new NoSuchElementException(s"No Constructor is annotated for $clazz, please specify a constructor in your configuration or annotate one using @${classOf[Persist].getSimpleName}")
-                }.asInstanceOf[Constructor[T]]
+            .getOrElse {
+                throw new NoSuchElementException(s"No Constructor is annotated for $clazz, please specify a constructor in your configuration or annotate one using @${classOf[Persist].getSimpleName}")
+            }.asInstanceOf[Constructor[T]]
     }
 
     def findPersistConstructor[T](clazz: Class[_]): Option[Constructor[T]] = {
         val opt = clazz.getDeclaredConstructors
-                .find(_.isAnnotationPresent(classOf[Persist]))
-                .asInstanceOf[Option[Constructor[T]]]
+            .find(_.isAnnotationPresent(classOf[Persist]))
+            .asInstanceOf[Option[Constructor[T]]]
         if (opt.isDefined)
             opt.get.setAccessible(true)
         opt

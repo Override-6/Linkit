@@ -18,13 +18,13 @@ import java.lang.reflect.{Method, Modifier}
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.ClassRectifier.{StringToPrimitiveID, SuperMethodModifiers}
+import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.{StringToPrimitiveID, SuperMethodModifiers}
 import javassist.bytecode.MethodInfo
 import javassist._
 
 import scala.collection.mutable.ListBuffer
 
-class ClassRectifier(desc: SyncStructureDescription[_], syncClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
+class SyncClassRectifier(desc: SyncStructureDescription[_], syncClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
 
     private val pool = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
@@ -163,59 +163,9 @@ class ClassRectifier(desc: SyncStructureDescription[_], syncClassName: String, c
         else s"return $str"
     }
 
-    private def getMethodDescriptor(method: Method): String = {
-        getMethodDescriptor(method.getParameterTypes, method.getReturnType)
-    }
-
-    private def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
-
-        val sb = new StringBuilder("(")
-        params.foreach { clazz =>
-            sb.append(typeStringClass(clazz))
-        }
-        sb.append(')')
-            .append(typeStringClass(returnType))
-        sb.toString()
-    }
-
-    private def getMethodDescriptor(params: Array[CtClass], returnType: Class[_]): String = {
-
-        val sb = new StringBuilder("(")
-        params.foreach { clazz =>
-            sb.append(typeStringCtClass(clazz))
-        }
-        sb.append(')')
-            .append(typeStringClass(returnType))
-        sb.toString()
-    }
-
-    private def typeStringCtClass(clazz: CtClass): String = {
-        var cl = clazz
-        val finalSB = new StringBuilder
-        while (cl.isArray) {
-            finalSB.append("[")
-            cl = clazz.getComponentType
-        }
-        val jvmTpe = StringToPrimitiveID.getOrElse(cl.getName, {
-            val objSB = new StringBuilder()
-            objSB.append("L")
-                .append(cl.getName.replace(".", "/"))
-                .append(";")
-            objSB.toString()
-        })
-        finalSB.append(jvmTpe)
-        finalSB.toString()
-    }
-
-    private def typeStringClass(clazz: Class[_]): String = {
-        if (clazz == Void.TYPE)
-            return "V"
-        val arrayString = java.lang.reflect.Array.newInstance(clazz, 0).toString
-        arrayString.slice(1, arrayString.indexOf('@')).replace(".", "/")
-    }
 }
 
-object ClassRectifier {
+object SyncClassRectifier {
 
     //used AccessFlags that are not in the java's reflection public api
     val Access_Synthetic          = 0x00001000
@@ -248,4 +198,56 @@ object ClassRectifier {
             "short" -> "S",
             "byte" -> "B"
         )
+
+
+    def getMethodDescriptor(method: Method): String = {
+        getMethodDescriptor(method.getParameterTypes, method.getReturnType)
+    }
+
+    def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
+
+        val sb = new StringBuilder("(")
+        params.foreach { clazz =>
+            sb.append(typeStringClass(clazz))
+        }
+        sb.append(')')
+            .append(typeStringClass(returnType))
+        sb.toString()
+    }
+
+    def getMethodDescriptor(params: Array[CtClass], returnType: Class[_]): String = {
+
+        val sb = new StringBuilder("(")
+        params.foreach { clazz =>
+            sb.append(typeStringCtClass(clazz))
+        }
+        sb.append(')')
+            .append(typeStringClass(returnType))
+        sb.toString()
+    }
+
+    def typeStringCtClass(clazz: CtClass): String = {
+        var cl = clazz
+        val finalSB = new StringBuilder
+        while (cl.isArray) {
+            finalSB.append("[")
+            cl = clazz.getComponentType
+        }
+        val jvmTpe = StringToPrimitiveID.getOrElse(cl.getName, {
+            val objSB = new StringBuilder()
+            objSB.append("L")
+                .append(cl.getName.replace(".", "/"))
+                .append(";")
+            objSB.toString()
+        })
+        finalSB.append(jvmTpe)
+        finalSB.toString()
+    }
+
+    def typeStringClass(clazz: Class[_]): String = {
+        if (clazz == Void.TYPE)
+            return "V"
+        val arrayString = java.lang.reflect.Array.newInstance(clazz, 0).toString
+        arrayString.slice(1, arrayString.indexOf('@')).replace(".", "/")
+    }
 }
