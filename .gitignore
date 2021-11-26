@@ -6,6 +6,7 @@
 */out/
 .gradle
 .idea
+.vs
 .idea_modules
 *.class
 *.iml
