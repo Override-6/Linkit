@@ -26,9 +26,9 @@ case class Player(@(MC@setter)(BROADCAST) id: Int,
 
     private val own = this
     private val test = "on m'appelle l'auvni"
-
+/*
     def this(other: Player) = {
         this(other.id, other.owner, other.name, other.x, other.y)
-    }
+    }*/
 
 }

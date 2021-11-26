@@ -27,10 +27,10 @@ import fr.linkit.engine.internal.LinkitApplication.setInstance
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.mapping.ClassMapEngine
-import fr.linkit.engine.internal.system.EngineConstants
-
+import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
 import java.nio.file.{Files, Path}
 import java.util.{Objects, Properties}
+
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
@@ -108,7 +108,7 @@ object LinkitApplication {
 
     private val AppPropertiesName     = "app.properties"
     private val AppDefaultsProperties = "/app_defaults.properties"
-    private val LibrariesNames        = Array("tests")
+    private val LibrariesNames        = Array("LinkitNativesHelper")
 
     private val properties          : Properties        = new Properties()
     @volatile private var instance  : LinkitApplication = _
@@ -165,8 +165,8 @@ object LinkitApplication {
                     res
                 }
         properties.load(Files.newInputStream(propertiesResources.getPath))
-        //AppLogger.info("Loading Native Libraries...")
-        //InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
+        AppLogger.info("Loading Native Libraries...")
+        InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
 
         isPrepared = true
         appResources

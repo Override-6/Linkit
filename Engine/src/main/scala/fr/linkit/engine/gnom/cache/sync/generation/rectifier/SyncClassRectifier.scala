@@ -18,7 +18,7 @@ import java.lang.reflect.{Method, Modifier}
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.{StringToPrimitiveID, SuperMethodModifiers}
+import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.{StringToPrimitiveID, SuperMethodModifiers, getMethodDescriptor}
 import javassist.bytecode.MethodInfo
 import javassist._
 

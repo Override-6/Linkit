@@ -13,10 +13,11 @@
 
 package fr.linkit.engine.internal.system
 
+import java.io.File
+
 import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.internal.system.AppInitialisationException
 import fr.linkit.engine.internal.LinkitApplication
-
 import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
 import java.util.zip.{ZipEntry, ZipFile}
 
@@ -39,20 +40,19 @@ private[linkit] object InternalLibrariesLoader {
 
     private def loadLib(path: Path): Unit = {
         //FIXME
-        /*val paths = System.getProperty(LibraryProperty)
-        System.setProperty(LibraryProperty, paths + ";" + path)
-        System.loadLibrary(path.getFileName.toString)*/
+        val name = path.getFileName.toString
+        System.load(path.toString + File.separator + name + ".dll")
     }
 
     private def extract(resources: ResourceFolder, libs: Array[String]): Unit = {
         val fileUrl        = classOf[LinkitApplication].getResource(ResourceMark)
-        val path           = fileUrl.getPath.drop(6) //Removes "file:/" header
+        val path           = fileUrl.getPath.drop(1) //Removes "/" char header
         val zipMarkerIndex = path.lastIndexOf("!")
         if (zipMarkerIndex > 0) {
             extractJar(resources, path.take(zipMarkerIndex), libs)
             return
         }
-        val dirPath = path.dropRight(ResourceMark.length).drop(1)
+        val dirPath = path.dropRight(ResourceMark.length)
         if (Files.isDirectory(Path.of(dirPath))) {
             extractFolder(resources, dirPath, libs)
         } else {
