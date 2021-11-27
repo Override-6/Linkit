@@ -6,7 +6,7 @@
 */out/
 .gradle
 .idea
-/.vs
+*/.vs
 CMakeSettings.json
 .idea_modules
 *.class
