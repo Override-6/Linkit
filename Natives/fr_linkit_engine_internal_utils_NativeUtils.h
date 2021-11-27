@@ -5,24 +5,31 @@
 #ifndef _Included_fr_linkit_engine_internal_utils_NativeUtils
 #define _Included_fr_linkit_engine_internal_utils_NativeUtils
 #ifdef __cplusplus
-
 extern "C" {
 #endif
-/*
- * Class:     fr_linkit_engine_internal_utils_NativeUtils
- * Method:    callConstructor
- * Signature: (Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V
- */
-JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_callConstructor
-  (JNIEnv *, jclass, jobject, jstring, jobjectArray);
-
-/*
- * Class:     fr_linkit_engine_internal_utils_NativeUtils
- * Method:    allocate
- * Signature: ([Ljava/lang/Class;)Object
- */
-JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_allocate
+	/*
+	 * Class:     fr_linkit_engine_internal_utils_NativeUtils
+	 * Method:    allocate
+	 * Signature: (Ljava/lang/Class;)Ljava/lang/Object;
+	 */
+	JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_allocate
 	(JNIEnv*, jclass, jclass);
+
+	/*
+	 * Class:     fr_linkit_engine_internal_utils_NativeUtils
+	 * Method:    callConstructor
+	 * Signature: (Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V
+	 */
+	JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_callConstructor
+	(JNIEnv*, jclass, jobject, jstring, jobjectArray);
+
+	/*
+	 * Class:     fr_linkit_engine_internal_utils_NativeUtils
+	 * Method:    testArgs
+	 * Signature: ([Ljava/lang/Object;)[Ljava/lang/Object;
+	 */
+	JNIEXPORT jint JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_testArgs
+	(JNIEnv*, jclass, jobjectArray);
 
 #ifdef __cplusplus
 }

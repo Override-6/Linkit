@@ -25,7 +25,6 @@ private[linkit] object InternalLibrariesLoader {
 
     private val ResourceMark    = "/mapEngineFilter.txt"
     private val LibsDestination = "system.internal.libraries_dir"
-    private val LibraryProperty = "java.library.path"
 
     def extractAndLoad(resources: ResourceFolder, libs: Array[String]): Unit = {
         extract(resources, libs)
@@ -109,9 +108,9 @@ private[linkit] object InternalLibrariesLoader {
                 /*if (entry.isDirectory) {
                     exportDirEntry(file, entry, path)*/
                 if (!entry.isDirectory) {
-                    val in = file.getInputStream(dirZip)
+                    val bytes = file.getInputStream(entry).readAllBytes()
                     Files.createDirectories(path.getParent)
-                    Files.write(path, in.readAllBytes(), StandardOpenOption.CREATE)
+                    Files.write(path, bytes, StandardOpenOption.CREATE)
                 }
             }
         }

@@ -18,4 +18,6 @@ public class NativeUtils {
     public static native Object allocate(Class<?> clazz);
 
     public static native void callConstructor(Object o, String signature, Object[] args);
+
+    public static native int testArgs(Object[] args);
 }

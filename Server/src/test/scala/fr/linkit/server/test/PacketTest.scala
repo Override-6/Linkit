@@ -40,14 +40,21 @@ import org.mockito.Mockito
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {
+    PacketTest // Load statics
+
+    @Test
+    def test(): Unit = {
+        val args = Array[AnyRef]("test", "audd")
+        val other = NativeUtils.testArgs(args)
+        println(s"other = ${other}")
+    }
 
     @Test
     def other(): Unit = {
-        PacketTest // Load statics
         val obj = NativeUtils.allocate(classOf[JavaObject])
         val constructor = classOf[JavaObject].getConstructors.head
         val descriptor = getMethodDescriptor(constructor.getParameterTypes: Array[Class[_]], Void.TYPE)
-        NativeUtils.callConstructor(obj, descriptor, Array(89, "test", "ddd", 78, 90))
+        NativeUtils.callConstructor(obj, descriptor, Array("test", 84))
         println("done")
         println(s"obj = ${obj}")
     }
@@ -55,8 +62,7 @@ class PacketTest {
     @Test
     def serialAndDeserialList(): Unit = {
         val tested = new util.HashSet[(String, Int)]() {
-            Seq("Strings" -> 1, "To" -> 0, "Consider" -> -1, "Cool" -> -2)
-                    .foreach(add)
+            Seq("Strings" -> 1, "To" -> 0, "Consider" -> -1, "Cool" -> -2).foreach(add)
         }
         serialAndDeserial(tested)
     }
@@ -67,8 +73,7 @@ class PacketTest {
         params.foreach { clazz =>
             sb.append(typeStringClass(clazz))
         }
-        sb.append(')')
-                .append(typeStringClass(returnType))
+        sb.append(')').append(typeStringClass(returnType))
         sb.toString()
     }
 
