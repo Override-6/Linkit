@@ -109,7 +109,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         val comp = array.getClass.componentType()
         getChunkFromFlag(Array).add(array)
         if (!comp.isPrimitive) {
-            val a = array.asInstanceOf[Array[Any]] //it's an array of object
+            val a            = array.asInstanceOf[Array[Any]] //it's an array of object
             val absoluteComp = ArrayPersistence.getAbsoluteCompType(a)._1
             addObj(absoluteComp)
             addAll(a)
@@ -150,7 +150,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             addAll(decomposed)
             ref match {
                 case sync: SynchronizedObject[_] =>
-                    AppLogger.info(s"Missing synchronized object reference ${sync.reference} on client.")
+                    AppLogger.info(s"Missing synchronized object reference ${sync.reference} on targeted engine ${bundle.boundId}.")
                 case _                           =>
             }
         } else {

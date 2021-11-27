@@ -18,7 +18,7 @@ import fr.linkit.api.internal.system.{Version, Versions}
 class DynamicVersions() extends Versions {
 
     private var api            = Version.Unknown
-    private var Engine   = Version.Unknown
+    private var Engine         = Version.Unknown
     private var implementation = Version.Unknown
 
     def setApiVersion(version: Version): this.type = {
@@ -54,6 +54,7 @@ class DynamicVersions() extends Versions {
 }
 
 object DynamicVersions {
+
     def unknown: DynamicVersions = new DynamicVersions
 
     def from(other: Versions): DynamicVersions = {

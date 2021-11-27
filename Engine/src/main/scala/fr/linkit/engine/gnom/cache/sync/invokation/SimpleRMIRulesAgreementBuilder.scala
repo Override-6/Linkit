@@ -13,12 +13,15 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{AgreementContext, RMIRulesAgreement, RMIRulesAgreementBuilder}
 
 import scala.collection.mutable.ListBuffer
 
-class SimpleRMIRulesAgreementBuilder(ownerID: String, rootOwnerID: String, currentID: String) extends RMIRulesAgreementBuilder {
+class SimpleRMIRulesAgreementBuilder(context: AgreementContext) extends RMIRulesAgreementBuilder {
 
+    import context._
+
+    private val currentIsCacheOwner          = ownerID == cacheOwnerID
     private val currentIsOwner               = ownerID == currentID
     private val currentIsRootOwner           = rootOwnerID == currentID
     private val discarded                    = ListBuffer.empty[String]
@@ -37,6 +40,11 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, rootOwnerID: String, curre
 
     override def desireRootOwnerEngineToReturn(): this.type = {
         desiredEngineReturn = rootOwnerID
+        this
+    }
+
+    override def desireCacheOwnerEngineToReturn(): this.type = {
+        desiredEngineReturn = cacheOwnerID
         this
     }
 
@@ -84,6 +92,10 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, rootOwnerID: String, curre
 
     override def discardOwner(): this.type = discard(ownerID)
 
+    override def acceptCacheOwner(): this.type = accept(cacheOwnerID)
+
+    override def discardCacheOwner(): this.type = discard(cacheOwnerID)
+
     override def setDesiredEngineReturn(target: String): this.type = {
         desiredEngineReturn = target
         this
@@ -107,4 +119,13 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, rootOwnerID: String, curre
         new SimpleRMIRulesAgreement(currentID, ownerID, desiredEngineReturn, acceptAllTargets, accepted.toArray, discarded.toArray)
     }
 
+    override def ifCurrentIsCacheOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type = {
+        if (currentIsCacheOwner) action(this)
+        this
+    }
+
+    override def ifCurrentIsNotCacheOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type = {
+        if (!currentIsCacheOwner) action(this)
+        this
+    }
 }

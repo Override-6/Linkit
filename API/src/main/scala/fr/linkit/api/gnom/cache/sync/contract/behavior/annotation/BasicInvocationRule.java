@@ -40,6 +40,15 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
                 .desireOwnerEngineToReturn();
     }),
     /**
+     * Invocation will only be performed on the engine that hosts the cache manager in which the object's
+     * {@link fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache} is open.
+     * */
+    ONLY_CACHE_OWNER((agreement) -> {
+        agreement.discardAll()
+                .acceptCacheOwner()
+                .desireCacheOwnerEngineToReturn();
+    }),
+    /**
      * The invocation will be performed on every remote machines, excluding the current machine.
      * The return value of the invocation will come from the machine that owns the original object.
      * However, If the current machine owns the object, the invocation will still be performed,

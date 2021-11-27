@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{AgreementContext, SynchronizedStructureBehavior}
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
@@ -43,13 +43,12 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
         interfaces.foreach(f)
     }
 
-    private def putMethods(map: mutable.HashMap[Int, MethodContract],
-                           ownerID: String, rootOwnerID: String, currentID: String): Unit = {
+    private def putMethods(map: mutable.HashMap[Int, MethodContract], context: AgreementContext): Unit = {
         for (contractDesc <- descriptor.withMethods) {
             val id = contractDesc.description.methodId
             if (!map.contains(id)) {
                 import contractDesc._
-                val agreementBuilder = new SimpleRMIRulesAgreementBuilder(ownerID, rootOwnerID, currentID)
+                val agreementBuilder = new SimpleRMIRulesAgreementBuilder(context)
                 contractDesc.rule.apply(agreementBuilder)
                 val agreement          = agreementBuilder.result
                 var parameterBehaviors = contractDesc.parameterContracts.map(_.behavior.orNull)
@@ -67,8 +66,8 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
             }
         }
         if (superClass != null)
-            superClass.putMethods(map, ownerID, rootOwnerID, currentID)
-        interfaces.foreach(_.putMethods(map, ownerID, rootOwnerID, currentID))
+            superClass.putMethods(map, context)
+        interfaces.foreach(_.putMethods(map, context))
     }
 
     private def putFields(map: mutable.HashMap[Int, FieldBehavior[Any]]): Unit = {
@@ -97,12 +96,12 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
     private def fillWithAnnotatedBehaviors(desc: SyncStructureDescription[A],
                                            methodMap: mutable.HashMap[Int, MethodContract],
                                            fieldMap: mutable.HashMap[Int, FieldBehavior[Any]],
-                                           ownerID: String, rootOwnerID: String, currentID: String): Unit = {
+                                           context: AgreementContext): Unit = {
         desc.listMethods().foreach(methodDesc => {
             val id = methodDesc.methodId
             if (!methodMap.contains(id)) {
                 //TODO maybe add a default procrastinator in this node's descriptor.
-                val builder             = new SimpleRMIRulesAgreementBuilder(ownerID, rootOwnerID, currentID)
+                val builder             = new SimpleRMIRulesAgreementBuilder(context)
                 val bhv                 = AnnotationBasedMemberBehaviorFactory.genMethodBehavior(None, builder, methodDesc)
                 val parameterContracts0 = getParameterContracts(methodDesc, bhv)
                 methodMap.put(id, new MethodContract {
@@ -124,14 +123,14 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
         })
     }
 
-    def getContract(clazz: Class[_], ownerID: String, rootOwnerID: String, currentID: String): SynchronizedStructureContract[A] = {
+    def getContract(clazz: Class[_], context: AgreementContext): SynchronizedStructureContract[A] = {
         val classDesc = SyncObjectDescription[A](clazz)
         val methodMap = mutable.HashMap.empty[Int, MethodContract]
         val fieldMap  = mutable.HashMap.empty[Int, FieldBehavior[Any]]
 
-        putMethods(methodMap, ownerID, rootOwnerID, currentID)
+        putMethods(methodMap, context)
         putFields(fieldMap)
-        fillWithAnnotatedBehaviors(classDesc, methodMap, fieldMap, ownerID, rootOwnerID, currentID)
+        fillWithAnnotatedBehaviors(classDesc, methodMap, fieldMap, context)
 
         val bhv = new AbstractSynchronizedStructure[MethodBehavior, FieldBehavior[Any]] with SynchronizedStructureBehavior[A] {
             override protected val methods: Map[Int, MethodBehavior]     = methodMap.view.mapValues(_.behavior).toMap

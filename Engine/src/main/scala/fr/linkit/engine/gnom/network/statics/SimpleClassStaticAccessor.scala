@@ -17,20 +17,20 @@ class SimpleClassStaticAccessor[A <: AnyRef]@Persist() (desc: SyncStructureDescr
             .map(m => (m._1, m._2.map(m => (ArrayObjectStructure(m.getParameterTypes: _*), m))))
     private val fields  = desc.listFields().map(f => (f.javaField.getName, f.javaField)).toMap
 
-    @MethodControl(BasicInvocationRule.ONLY_OWNER)
+    @MethodControl(BasicInvocationRule.ONLY_CACHE_OWNER)
     override def applyDynamic[T](methodName: String)(args: Any*): T = {
         val (_, javaMethod) = methods(methodName).find(_._1.isAssignable(args.toArray)).get
         val result = javaMethod.invoke(null, args: _*).asInstanceOf[T]
         result
     }
 
-    @MethodControl(BasicInvocationRule.ONLY_OWNER)
+    @MethodControl(BasicInvocationRule.ONLY_CACHE_OWNER)
     override def selectDynamic[T](fieldName: String): T = {
         val javaField = fields(fieldName)
         ScalaUtils.getValue(null, javaField).asInstanceOf[T]
     }
 
-    @MethodControl(BasicInvocationRule.ONLY_OWNER)
+    @MethodControl(BasicInvocationRule.ONLY_CACHE_OWNER)
     override def updateDynamic(fieldName: String)(newValue: Any): Unit = {
         val javaField = fields(fieldName)
         ScalaUtils.setValue(null, javaField, newValue)

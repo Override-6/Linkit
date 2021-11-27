@@ -4,9 +4,10 @@
 #include <typeinfo>
 #include <iostream>
 #include <fstream>
+#include <vector>
 using namespace std;
 
-std::ofstream debugfile("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\NativesCommunication.txt");
+//std::ofstream debugfile("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\NativesCommunication.txt");
 
 const short BYTE_FLAG = 0;
 const short BOOLEAN_FLAG = 1;
@@ -27,7 +28,6 @@ const char* GetJClassName(JNIEnv* env, jclass clazz) {
 
 jvalue ConvertToJValue(JNIEnv* env, jbyte type, double n) {
 	jvalue val{};
-	debugfile << "\tConvertToJValue : type = " << type << " value = " << n << endl;
 	switch (type) {
 	case BYTE_FLAG:
 		val.b = n;
@@ -60,8 +60,6 @@ jvalue ConvertToJValue(JNIEnv* env, jbyte type, double n) {
 jvalue JObjectToJValue(JNIEnv* env, jbyte type, jobject object) {
 	jclass clazz = env->GetObjectClass(object);
 	const char* name = GetJClassName(env, clazz);
-	debugfile << "JObjectToValue :" << endl;
-	debugfile << "class name : " << name << endl;
 
 	if (strcmp(name, "java.lang.Boolean") == 0) {
 		jfieldID valueID = env->GetFieldID(clazz, "value", "Z");
@@ -102,13 +100,13 @@ jvalue JObjectToJValue(JNIEnv* env, jbyte type, jobject object) {
 	}
 }
 
-jvalue* GetJObjects(JNIEnv* env, jbyte* types, jobjectArray array) {
+std::vector<jvalue> GetJObjects(JNIEnv* env, jbyte* types, jobjectArray array) {
 	const int len = env->GetArrayLength(array);
-	jvalue* buff = new jvalue[len];
+	std::vector<jvalue> vec;
 	for (int i = 0; i < len; i++) {
-		buff[i] = JObjectToJValue(env, types[i], env->GetObjectArrayElement(array, i));
+		vec[i] = JObjectToJValue(env, types[i], env->GetObjectArrayElement(array, i));
 	}
-	return buff;
+	return vec;
 }
 
 JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_callConstructor
@@ -117,8 +115,8 @@ JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_callCons
 	const char* signatureUTF = env->GetStringUTFChars(signature, false);
 	jmethodID constructorID = env->GetMethodID(targetClass, "<init>", signatureUTF);
 
-	const jvalue* objects = GetJObjects(env, env ->GetByteArrayElements(types, false), arguments);
-	env->CallVoidMethodA(target, constructorID, objects);
+	const jvalue* values = GetJObjects(env, env ->GetByteArrayElements(types, false), arguments).data();
+	env->CallVoidMethodA(target, constructorID, values);
 }
 
 JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_allocate

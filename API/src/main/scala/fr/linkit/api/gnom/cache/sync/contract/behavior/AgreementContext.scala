@@ -13,10 +13,5 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
-
-trait SynchronizedObjectContractFactory {
-
-    def getObjectContract[A <: AnyRef](clazz: Class[_], context: AgreementContext): SynchronizedStructureContract[A]
-
-}
+case class AgreementContext(ownerID: String, rootOwnerID: String,
+                            currentID: String, cacheOwnerID: String)

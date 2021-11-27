@@ -45,7 +45,10 @@ private[linkit] object InternalLibrariesLoader {
 
     private def extract(resources: ResourceFolder, libs: Array[String]): Unit = {
         val fileUrl        = classOf[LinkitApplication].getResource(ResourceMark)
-        val path           = fileUrl.getPath.drop(6) //Removes "file:\" char header
+        val path           = {
+            val s = fileUrl.toString
+            s.drop(s.indexOf("file:") + "file:".length + 1)
+        } //Removes "file:\" char header
         val zipMarkerIndex = path.lastIndexOf("!")
         if (zipMarkerIndex > 0) {
             extractJar(resources, path.take(zipMarkerIndex), libs)

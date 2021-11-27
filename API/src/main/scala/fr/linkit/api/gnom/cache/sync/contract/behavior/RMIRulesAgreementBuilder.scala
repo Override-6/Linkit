@@ -19,21 +19,25 @@ trait RMIRulesAgreementBuilder {
 
     def accept(target: String): this.type
 
-    def acceptOwner(): this.type
-
-    def acceptRootOwner(): this.type
-
     def acceptAll(): this.type
 
     def discardAll(): this.type
 
     def acceptCurrent(): this.type
 
+    def acceptOwner(): this.type
+
+    def acceptCacheOwner(): this.type
+
+    def acceptRootOwner(): this.type
+
     def discardCurrent(): this.type
 
     def discardOwner(): this.type
 
     def discardRootOwner(): this.type
+
+    def discardCacheOwner(): this.type
 
     def setDesiredEngineReturn(target: String): this.type
 
@@ -43,14 +47,21 @@ trait RMIRulesAgreementBuilder {
 
     def desireRootOwnerEngineToReturn(): this.type
 
+    def desireCacheOwnerEngineToReturn(): this.type
+
     def ifCurrentIsOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
+
+    def ifCurrentIsCacheOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
 
     def ifCurrentIsRootOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
 
     def ifCurrentIsNotOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
 
-    def result: RMIRulesAgreement
+    def ifCurrentIsNotCacheOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
 
     def ifCurrentIsNotRootOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
+
+    def result: RMIRulesAgreement
+
 }
 

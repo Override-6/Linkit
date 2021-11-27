@@ -19,6 +19,7 @@ import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 import scala.collection.IterableFactory
+import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
 class ScalaIterableTypePersistence extends TypePersistence[Iterable[Any]] {

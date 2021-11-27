@@ -1,7 +1,0 @@
-import fr.linkit.engine.connection.packet.channel.SimplePacketChannel
-
-match {
-
-}
-
-allow 0/0 : SimplePacketChannel
