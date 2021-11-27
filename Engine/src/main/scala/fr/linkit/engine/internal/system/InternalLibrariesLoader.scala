@@ -46,7 +46,7 @@ private[linkit] object InternalLibrariesLoader {
 
     private def extract(resources: ResourceFolder, libs: Array[String]): Unit = {
         val fileUrl        = classOf[LinkitApplication].getResource(ResourceMark)
-        val path           = fileUrl.getPath.drop(1) //Removes "/" char header
+        val path           = fileUrl.getPath.drop(6) //Removes "file:\" char header
         val zipMarkerIndex = path.lastIndexOf("!")
         if (zipMarkerIndex > 0) {
             extractJar(resources, path.take(zipMarkerIndex), libs)
@@ -61,7 +61,7 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def extractFolder(resources: ResourceFolder, filePath: String, libs: Array[String]): Unit = {
-        val root               = Path.of(filePath + "/natives/")
+        val root               = Path.of(filePath)
         val extractDestination = getPathProperty(resources, LibsDestination)
         Files.createDirectories(extractDestination)
         Files.list(root)
@@ -89,11 +89,11 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def extractJar(resources: ResourceFolder, jarPath: String, libs: Array[String]): Unit = {
-        val zipFile = new ZipFile(jarPath + "!/natives/")
+        val zipFile = new ZipFile(jarPath)
         val root    = getPathProperty(resources, LibsDestination)
         Files.createDirectories(root)
         libs.foreach { lib =>
-            val entry = zipFile.getEntry(lib)
+            val entry = zipFile.getEntry("natives/" + lib)
             exportDirEntry(zipFile, entry, root)
         }
     }
@@ -105,11 +105,12 @@ private[linkit] object InternalLibrariesLoader {
             val entry     = entries.nextElement()
             val entryName = entry.getName
             if (entryName.startsWith(dirName)) {
-                val path = Path.of(destination.toString + '/' + entryName)
+                val path = Path.of(destination.toString + '/' + entryName.drop("natives/".length))
                 /*if (entry.isDirectory) {
                     exportDirEntry(file, entry, path)*/
                 if (!entry.isDirectory) {
                     val in = file.getInputStream(dirZip)
+                    Files.createDirectories(path.getParent)
                     Files.write(path, in.readAllBytes(), StandardOpenOption.CREATE)
                 }
             }

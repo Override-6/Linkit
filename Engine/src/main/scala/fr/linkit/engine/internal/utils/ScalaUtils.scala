@@ -178,7 +178,7 @@ object ScalaUtils {
     def allocate[A](clazz: Class[_]): A = {
         if (clazz == null)
             throw new NullPointerException
-        val instance = TheUnsafe.allocateInstance(clazz).asInstanceOf[A]
+        val instance = NativeUtils.allocate(clazz).asInstanceOf[A]
         instance
     }
 

@@ -14,13 +14,13 @@
 package fr.linkit.server.test
 
 import java.util
-
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
+import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.typeStringClass
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
@@ -44,9 +44,9 @@ class PacketTest {
     @Test
     def other(): Unit = {
         PacketTest // Load statics
-        val obj = NativeUtils.allocate(classOf[Player])
-        val constructor = classOf[Player].getConstructors.head
-        val descriptor = SyncClassRectifier.getMethodDescriptor(constructor.getParameterTypes, Void.TYPE)
+        val obj = NativeUtils.allocate(classOf[JavaObject])
+        val constructor = classOf[JavaObject].getConstructors.head
+        val descriptor = getMethodDescriptor(constructor.getParameterTypes: Array[Class[_]], Void.TYPE)
         NativeUtils.callConstructor(obj, descriptor, Array(89, "test", "ddd", 78, 90))
         println("done")
         println(s"obj = ${obj}")
@@ -59,6 +59,17 @@ class PacketTest {
                     .foreach(add)
         }
         serialAndDeserial(tested)
+    }
+
+    private def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
+
+        val sb = new StringBuilder("(")
+        params.foreach { clazz =>
+            sb.append(typeStringClass(clazz))
+        }
+        sb.append(')')
+                .append(typeStringClass(returnType))
+        sb.toString()
     }
 
 }

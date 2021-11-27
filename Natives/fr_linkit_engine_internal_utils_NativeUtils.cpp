@@ -1,8 +1,5 @@
 #include "fr_linkit_engine_internal_utils_NativeUtils.h"
 #include <jni.h>
-#include <iostream>
-
-using namespace std;
 
 jobject* GetJObjects(JNIEnv* env, jobjectArray array) {
 	const int len = env->GetArrayLength(array);
@@ -19,7 +16,7 @@ JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_callCons
 	const char* signatureUTF = env->GetStringUTFChars(signature, false);
 	jmethodID constructorID = env->GetMethodID(targetClass, "<init>", signatureUTF);
 	jobject* objects = GetJObjects(env, arguments);
-	env->CallVoidMethod(target, constructorID, **objects);
+	env->CallVoidMethod(target, constructorID, *objects);
 }
 
 JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_allocate
