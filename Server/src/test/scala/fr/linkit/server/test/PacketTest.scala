@@ -13,13 +13,11 @@
 
 package fr.linkit.server.test
 
-import java.util
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
 import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.typeStringClass
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
@@ -30,7 +28,6 @@ import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, P
 import fr.linkit.engine.gnom.persistence.{DefaultObjectTranslator, PacketSerializationChoreographer, SimpleTransferInfo}
 import fr.linkit.engine.gnom.reference.linker.WeakContextObjectLinker
 import fr.linkit.engine.internal.utils.{ClassMap, NativeUtils, ScalaUtils}
-import fr.linkit.engine.test.Player
 import fr.linkit.server.connection.ServerConnection
 import fr.linkit.server.connection.packet.ServerPacketTraffic
 import fr.linkit.server.test.PacketTest.serialAndDeserial
@@ -38,25 +35,26 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Test, TestInstance}
 import org.mockito.Mockito
 
+import java.util
+
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {
     PacketTest // Load statics
 
     @Test
-    def test(): Unit = {
-        val args = Array[AnyRef]("test", "audd")
-        val other = NativeUtils.testArgs(args)
-        println(s"other = ${other}")
-    }
-
-    @Test
     def other(): Unit = {
         val obj = NativeUtils.allocate(classOf[JavaObject])
         val constructor = classOf[JavaObject].getConstructors.head
-        val descriptor = getMethodDescriptor(constructor.getParameterTypes: Array[Class[_]], Void.TYPE)
-        NativeUtils.callConstructor(obj, descriptor, Array("test", 84))
+        var args: Array[Any] = Array[Any](1, 2, 3, 4, 5, 6, true, 0.5, 0.2)
+        NativeUtils.invokeConstructor(obj, constructor, args.asInstanceOf[Array[AnyRef]])
         println("done")
         println(s"obj = ${obj}")
+
+        args = Array[Any](Long.MaxValue, Double.MinValue, Char.MaxValue, Double.MinValue, Double.MaxValue, 60, 3, 0.50, 0.200)
+        NativeUtils.invokeConstructor(obj, constructor, args.asInstanceOf[Array[AnyRef]])
+        println("done")
+        println(s"obj = ${obj}")
+
     }
 
     @Test
@@ -67,15 +65,6 @@ class PacketTest {
         serialAndDeserial(tested)
     }
 
-    private def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
-
-        val sb = new StringBuilder("(")
-        params.foreach { clazz =>
-            sb.append(typeStringClass(clazz))
-        }
-        sb.append(')').append(typeStringClass(returnType))
-        sb.toString()
-    }
 
 }
 

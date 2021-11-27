@@ -34,11 +34,12 @@ class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T]
         this(clazz, constructor, deconstructor.deconstruct(_))
     }
 
-    private  val signature: String          = SyncClassRectifier.getMethodDescriptor(constructor.getParameterTypes, Void.TYPE)
-    override val structure: ObjectStructure = ArrayObjectStructure(constructor.getParameterTypes: _*)
+    private val paramTypes = constructor.getParameterTypes
+    private  val signature: String          = SyncClassRectifier.getMethodDescriptor(paramTypes, Void.TYPE)
+    override val structure: ObjectStructure = ArrayObjectStructure(paramTypes: _*)
 
     override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
-        NativeUtils.callConstructor(allocatedObject, signature, args.asInstanceOf[Array[AnyRef]])
+        NativeUtils.invokeConstructor(allocatedObject, signature, paramTypes, args.asInstanceOf[Array[AnyRef]])
     }
 
     override def toArray(t: T): Array[Any] = {

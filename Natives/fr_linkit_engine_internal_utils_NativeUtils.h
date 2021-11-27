@@ -18,18 +18,10 @@ extern "C" {
 	/*
 	 * Class:     fr_linkit_engine_internal_utils_NativeUtils
 	 * Method:    callConstructor
-	 * Signature: (Ljava/lang/Object;Ljava/lang/String;[Ljava/lang/Object;)V
+	 * Signature: (Ljava/lang/Object;Ljava/lang/String;[B[Ljava/lang/Object;)V
 	 */
 	JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_callConstructor
-	(JNIEnv*, jclass, jobject, jstring, jobjectArray);
-
-	/*
-	 * Class:     fr_linkit_engine_internal_utils_NativeUtils
-	 * Method:    testArgs
-	 * Signature: ([Ljava/lang/Object;)[Ljava/lang/Object;
-	 */
-	JNIEXPORT jint JNICALL Java_fr_linkit_engine_internal_utils_NativeUtils_testArgs
-	(JNIEnv*, jclass, jobjectArray);
+	(JNIEnv*, jclass, jobject, jstring, jbyteArray, jobjectArray);
 
 #ifdef __cplusplus
 }

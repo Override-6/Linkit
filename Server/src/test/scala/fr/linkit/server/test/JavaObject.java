@@ -15,8 +15,26 @@ package fr.linkit.server.test;
 
 public class JavaObject {
 
-    public JavaObject(String a, int b) {
-        System.out.println("Constructor called ! (" + a + ", " + b + ")");
+    private final long a;
+    private final int b;
+    private final char c;
+    private final byte d;
+    private final float f;
+    private final double g;
+    private final boolean z;
+    private final float ff;
+    private final double dd;
+
+    public JavaObject(long a, int b, char c, byte d, float f, double g, boolean z, float ff, double dd) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.d = d;
+        this.f = f;
+        this.g = g;
+        this.z = z;
+        this.ff = ff;
+        this.dd = dd;
     }
 
 }

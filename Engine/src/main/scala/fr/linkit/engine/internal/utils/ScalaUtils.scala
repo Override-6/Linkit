@@ -14,6 +14,7 @@
 package fr.linkit.engine.internal.utils
 
 import fr.linkit.api.gnom.packet.Packet
+import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.typeStringClass
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import sun.misc.Unsafe
 
@@ -205,6 +206,16 @@ object ScalaUtils {
             case _: InaccessibleObjectException =>
                 false
         }
+    }
+
+    private[utils] def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
+
+        val sb = new StringBuilder("(")
+        params.foreach { clazz =>
+            sb.append(typeStringClass(clazz))
+        }
+        sb.append(')').append(typeStringClass(returnType))
+        sb.toString()
     }
 
 }
