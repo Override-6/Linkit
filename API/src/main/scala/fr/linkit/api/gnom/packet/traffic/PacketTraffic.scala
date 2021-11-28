@@ -18,7 +18,7 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
+import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.JustifiedCloseable
@@ -50,7 +50,7 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
 
     def getPersistenceConfig(path: Array[Int]): PersistenceConfig
 
-    def getNode(path: Array[Int]): TrafficNode[PacketInjectable]
+    def findNode(path: Array[Int]): Option[TrafficNode[PacketInjectable]]
 
 }
 

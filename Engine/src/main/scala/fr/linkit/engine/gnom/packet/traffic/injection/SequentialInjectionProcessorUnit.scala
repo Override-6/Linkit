@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.gnom.packet.traffic.injection
 
-import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectable, PacketTraffic}
+import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
+import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController

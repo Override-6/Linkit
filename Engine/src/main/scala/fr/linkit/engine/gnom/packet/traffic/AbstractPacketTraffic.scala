@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
+import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
 import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
@@ -97,7 +97,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             processInjection(bundle)
         } else {
             val path = result.coords.path
-            val node = getNode(path)
+            val node = findNode(path)
             node.ipu().post(result, node.injectable)
         }
     }
@@ -105,6 +105,8 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     override def newWriter(path: Array[Int]): PacketWriter = {
         newWriter(path, defaultPersistenceConfig)
     }
+
+    override def findNode(path: Array[Int]): Option[TrafficNode[PacketInjectable]] = rootStore.findNode(path)
 
     override def findStore(id: Int): Option[PacketInjectableStore] = rootStore.findStore(id)
 
@@ -114,7 +116,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     def getObjectManagementChannel: ObjectManagementChannel = objectChannel
 
-    def findTrafficObject(reference: TrafficPresenceReference): Option[TrafficObject[TrafficReference]] = {
+    def findTrafficObject(reference: TrafficObjectReference): Option[TrafficObject[TrafficReference]] = {
         rootStore.findNode(reference.trafficPath).map(_.injectable)
     }
 
@@ -132,7 +134,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
             new DefaultObjectManagementChannel(null, scope)
         }
-        new SimpleTrafficNode[ObjectManagementChannel](objectChannel, objectChannelConfig)
+        new SimpleTrafficNode[ObjectManagementChannel](objectChannel, objectChannelConfig, this)
     }
 
 }

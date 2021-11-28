@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 
 import java.util
 
-class TrafficPresenceReference(val trafficPath: Array[Int]) extends TrafficReference {
+class TrafficObjectReference(val trafficPath: Array[Int]) extends TrafficReference {
 
     override def toString: String = {
         s"@traffic/${trafficPath.mkString("/")}"
@@ -26,13 +26,13 @@ class TrafficPresenceReference(val trafficPath: Array[Int]) extends TrafficRefer
     override def hashCode(): Int = util.Arrays.deepHashCode(Array(trafficPath))
 
     override def equals(obj: Any): Boolean = obj match {
-        case ref: TrafficPresenceReference => ref.trafficPath sameElements trafficPath
-        case _                             => false
+        case ref: TrafficObjectReference => ref.trafficPath sameElements trafficPath
+        case _                           => false
     }
 
-    def /(id: Int): TrafficPresenceReference = new TrafficPresenceReference(trafficPath :+ id)
+    def /(id: Int): TrafficObjectReference = new TrafficObjectReference(trafficPath :+ id)
 
-    def /(path: Array[Int]): TrafficPresenceReference = new TrafficPresenceReference(trafficPath ++ path)
+    def /(path: Array[Int]): TrafficObjectReference = new TrafficObjectReference(trafficPath ++ path)
 
-    def /~(id: Int): TrafficPresenceReference = new ContextualObjectReference(trafficPath, id)
+    def /~(id: Int): TrafficObjectReference = new ContextualObjectReference(trafficPath, id)
 }

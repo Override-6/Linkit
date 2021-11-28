@@ -13,12 +13,19 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.gnom.packet.traffic.{TrafficNode, TrafficObject}
+import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
+import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, TrafficNode, TrafficObject}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
+import fr.linkit.engine.gnom.packet.traffic.injection.{PerformanceInjectionProcessorUnit, SequentialInjectionProcessorUnit}
 
 case class SimpleTrafficNode[C <: TrafficObject[TrafficReference]](override val injectable: C,
-                                                                   override val persistenceConfig: PersistenceConfig) extends TrafficNode[C] {
+                                                                   override val persistenceConfig: PersistenceConfig,
+                                                                   private val traffic: PacketTraffic) extends TrafficNode[C] {
+
+    private final val sipu = new SequentialInjectionProcessorUnit()
+    private final val pipu = new PerformanceInjectionProcessorUnit()
+    chainIPU(ObjectManagementChannelReference) //Chain with the OMC when sequential is used
 
     private var preferPerformances0 = false
 
@@ -33,4 +40,16 @@ case class SimpleTrafficNode[C <: TrafficObject[TrafficReference]](override val 
     }
 
     override def preferPerformances(): Boolean = preferPerformances0
+
+    override def chainIPU(path: Array[Int]): this.type = {
+        traffic.getNode(path).ipu() match {
+            case unit: SequentialInjectionProcessorUnit => sipu.chainWith(unit)
+            case _                                      => //FIXME Should always be able to chain with a SIPU. Here is a fast fix because i have to go xoxo
+        }
+        this
+    }
+
+    override def ipu(): InjectionProcessorUnit = {
+        if (preferPerformances0) pipu else sipu
+    }
 }

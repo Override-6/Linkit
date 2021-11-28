@@ -22,5 +22,4 @@ trait InternalPacketInjectableStore {
 
     def findNode(path: Array[Int], pos: Int = 0): Option[TrafficNode[PacketInjectable]]
 
-    def inject(injection: PacketInjectionControl): Unit
 }

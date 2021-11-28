@@ -18,7 +18,7 @@ import fr.linkit.api.application.connection.{ConnectionException, ExternalConnec
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet._
-import fr.linkit.api.gnom.persistence.obj.TrafficPresenceReference
+import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
@@ -110,7 +110,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     def canHandlePacketInjection(result: ObjectTransferResult): Boolean = {
         val channelPath = result.coords.path
         channelPath.length == 0 || {
-            val reference = new TrafficPresenceReference(channelPath)
+            val reference = new TrafficObjectReference(channelPath)
             val present   = tnol.isPresentOnEngine(boundIdentifier, reference)
             present
         }
@@ -119,7 +119,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     def send(result: ObjectTransferResult): Unit = {
         if (!canHandlePacketInjection(result)) {
             val channelPath = result.coords.path
-            val reference   = new TrafficPresenceReference(channelPath)
+            val reference   = new TrafficObjectReference(channelPath)
             throw new PacketNotInjectableException(this, s"Engine '$boundIdentifier' does not contains any traffic packet injectable presence at $reference.")
         }
         session.send(result.buff)

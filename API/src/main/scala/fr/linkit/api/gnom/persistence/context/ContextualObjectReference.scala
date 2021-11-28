@@ -13,11 +13,11 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.gnom.persistence.obj.TrafficPresenceReference
+import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 
 import java.util
 
-class ContextualObjectReference(private val trafficPath0: Array[Int], val objectID: Int) extends TrafficPresenceReference(trafficPath0) {
+class ContextualObjectReference(private val trafficPath0: Array[Int], val objectID: Int) extends TrafficObjectReference(trafficPath0) {
     override def toString: String = {
         s"@traffic/${trafficPath0.mkString("/")}/~$objectID"
     }

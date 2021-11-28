@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.packet.traffic.channel
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.persistence.obj.TrafficPresenceReference
+import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
@@ -39,7 +39,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
     override  val trafficPath  : Array[Int]                       = writer.path
     override  val traffic      : PacketTraffic                    = writer.traffic
     private   val storedBundles: mutable.Set[ChannelPacketBundle] = mutable.HashSet.empty[ChannelPacketBundle]
-    override  val reference    : TrafficPresenceReference         = new TrafficPresenceReference(trafficPath)
+    override  val reference    : TrafficObjectReference           = new TrafficObjectReference(trafficPath)
     override  val presence     : NetworkObjectPresence            = {
         if (this.isInstanceOf[ObjectManagementChannel])
             SystemNetworkObjectPresence

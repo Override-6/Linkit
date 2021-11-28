@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.packet.traffic
 
 import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.obj.TrafficReference
+import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
 
 trait TrafficNode[C <: TrafficObject[TrafficReference]] {
 
@@ -59,6 +59,14 @@ trait TrafficNode[C <: TrafficObject[TrafficReference]] {
      * */
     def preferPerformances(): Boolean
 
+    def chainIPU(reference: TrafficObjectReference): this.type = chainIPU(reference.trafficPath)
+
+    def chainIPU(path: Array[Int]): this.type
+
+    /**
+     * Returns the used [[InjectionProcessorUnit]].
+     * The InjectionProcessorUnit (or IPU) is used by the PacketTraffic to inject and trigger deserialization of a packet.
+     * */
     def ipu(): InjectionProcessorUnit
 }
 

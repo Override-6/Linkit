@@ -13,21 +13,8 @@
 
 package fr.linkit.engine.gnom.packet.traffic.injection
 
-import fr.linkit.api.gnom.packet.traffic.PacketInjectable
+import fr.linkit.api.gnom.packet.PacketException
 
-class SimpleInjection(override val injectablePath: Array[Int]) extends PacketInjection with PacketInjectionControl {
+class EndOfInjectionChainException(msg: String) extends PacketException(msg) {
 
-    private var processing = false
-
-    override def isProcessing: Boolean = processing
-
-    override def markAsProcessing(): Unit = processing = true
-
-    override def canAcceptMoreInjection: Boolean = ???
-
-    override def nextIdentifier: Int = ???
-
-    override def haveMoreIdentifier: Boolean = ???
-
-    override def process(injectable: PacketInjectable): Unit = ???
 }

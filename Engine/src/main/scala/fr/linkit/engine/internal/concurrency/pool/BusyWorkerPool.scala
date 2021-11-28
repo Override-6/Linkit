@@ -346,13 +346,14 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
 
         //AppLogger.vDebug(s"EXECUTING ALL REMAINING TASKS (${System.identityHashCode(workQueue)}), $this")
         val currentController = currentWorker.getController
-        while (!workQueue.isEmpty && currentTask.isPaused) {
+        val ct = currentTask.get
+        while (!workQueue.isEmpty && ct.isPaused) {
             val task = workQueue.poll()
             if (task != null) {
                 currentController.runSubTask(task)
             }
         }
-        AppLogger.vError(s"Exit executeRemainingTasks... (${workQueue.isEmpty}, ${currentTask.isPaused})")
+        AppLogger.vError(s"Exit executeRemainingTasks... (${workQueue.isEmpty}, ${ct.isPaused})")
     }
 
     override def runLater(task: => Unit): Unit = runLaterControl {

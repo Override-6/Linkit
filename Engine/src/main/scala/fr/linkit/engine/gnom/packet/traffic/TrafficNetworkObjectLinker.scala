@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
+import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
@@ -25,15 +25,15 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
 
     override def findObject(reference: TrafficReference): Option[NetworkObject[_ <: TrafficReference]] = {
         reference match {
-            case reference: ContextualObjectReference                                     =>
+            case reference: ContextualObjectReference                                   =>
                 traffic.getPersistenceConfig(reference.trafficPath)
                         .contextualObjectLinker
                         .findObject(reference)
-            case reference: TrafficPresenceReference if reference.trafficPath.length == 0 =>
+            case reference: TrafficObjectReference if reference.trafficPath.length == 0 =>
                 Some(traffic.getObjectManagementChannel)
-            case ref if ref == TrafficReference                                           =>
+            case ref if ref == TrafficReference                                         =>
                 Some(traffic)
-            case reference: TrafficPresenceReference                                      =>
+            case reference: TrafficObjectReference                                      =>
                 traffic.findTrafficObject(reference)
         }
     }

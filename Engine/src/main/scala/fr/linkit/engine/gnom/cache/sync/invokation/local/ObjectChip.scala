@@ -104,7 +104,7 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
     @inline private def callMethodProcrastinator(contract: MethodContract, params: Array[Any], origin: String): Any = {
         @volatile var result: Any = NoResult
         val worker                = WorkerPools.currentWorker
-        val task                  = WorkerPools.currentTask
+        val task                  = WorkerPools.currentTask.get
         val pool                  = worker.pool
         contract.procrastinator.runLater {
             result = callMethod(contract, params, origin)

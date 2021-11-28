@@ -11,14 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.packet.traffic
+package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.gnom.packet.{DedicatedPacketBundle, DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
+import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 
-trait InjectionContainer {
-
-    def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionControl
-
-    def makeInjection(bundle: PacketBundle): PacketInjectionControl
-
-}
+object ObjectManagementChannelReference extends TrafficObjectReference(Array.empty)

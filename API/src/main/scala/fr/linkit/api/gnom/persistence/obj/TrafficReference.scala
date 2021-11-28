@@ -27,8 +27,8 @@ class TrafficReference extends NetworkObjectReference {
 
 object TrafficReference extends TrafficReference with SystemObjectReference {
 
-    def /(id: Int): TrafficPresenceReference = new TrafficPresenceReference(Array(id))
+    def /(id: Int): TrafficObjectReference = new TrafficObjectReference(Array(id))
 
-    def /(path: Array[Int]): TrafficPresenceReference = new TrafficPresenceReference(path)
+    def /(path: Array[Int]): TrafficObjectReference = new TrafficObjectReference(path)
 
 }
