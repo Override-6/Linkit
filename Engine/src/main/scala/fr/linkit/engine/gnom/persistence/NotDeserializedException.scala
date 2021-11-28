@@ -11,10 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence
+package fr.linkit.engine.gnom.persistence
 
-trait ObjectDeserializationResult extends ObjectTransferResult {
+import fr.linkit.api.gnom.packet.PacketException
 
-    def makeDeserialization(): Unit
-
-}
+class NotDeserializedException(msg: String, cause: Throwable = null) extends PacketException(msg, cause)

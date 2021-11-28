@@ -17,7 +17,8 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
-import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
+import fr.linkit.api.gnom.packet._
+import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
 import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
@@ -38,19 +39,19 @@ import scala.reflect.ClassTag
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                                      defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
 
-    val context: ImmutablePersistenceContext = ImmutablePersistenceContext(new ClassMap(), new ClassMap())
-    private val minimalConfigBuilder = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
-    private val objectChannelConfig  = {
+    val context: ImmutablePersistenceContext = ImmutablePersistenceContext()
+    private  val minimalConfigBuilder                            = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
+    private  val objectChannelConfig                             = {
         val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
         new SimplePersistenceConfig(context, new ClassMap(), linker, false, true, false)
     }
-    override val reference: TrafficReference = TrafficReference
-    private val objectChannel = {
+    override val reference               : TrafficReference      = TrafficReference
+    private  val objectChannel                                   = {
         val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
         new DefaultObjectManagementChannel(null, scope)
     }
-    override val presence: NetworkObjectPresence = SystemNetworkObjectPresence
-    override val defaultPersistenceConfig: PersistenceConfig = {
+    override val presence                : NetworkObjectPresence = SystemNetworkObjectPresence
+    override val defaultPersistenceConfig: PersistenceConfig     = {
         defaultPersistenceConfigUrl
                 .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
                 .transfer(minimalConfigBuilder)
@@ -94,6 +95,10 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     override def processInjection(bundle: PacketBundle): Unit = {
         val injection = injectionContainer.makeInjection(bundle)
         processInjection0(injection)
+    }
+
+    override def processInjection(result: ObjectDeserializationResult): Unit = {
+
     }
 
     override def newWriter(path: Array[Int]): PacketWriter = {

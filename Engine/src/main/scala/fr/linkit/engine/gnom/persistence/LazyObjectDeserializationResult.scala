@@ -26,9 +26,26 @@ class LazyObjectDeserializationResult(override val buff: ByteBuffer,
                                       override val coords: PacketCoordinates)
                                      (forEachObjects: (AnyRef => Unit) => Unit) extends ObjectDeserializationResult {
 
-    private lazy  val cache     : Array[AnyRef]    = createCache()
-    override lazy val attributes: PacketAttributes = extract[PacketAttributes](SimplePacketAttributes.empty)
-    override lazy val packet    : Packet           = extract[Packet](EmptyPacket).prepare()
+    private lazy val cache : Array[AnyRef]    = createCache()
+    private var attributes0: PacketAttributes = _
+    private var packet0    : Packet           = _
+
+    override def attributes: PacketAttributes = {
+        if (attributes0 == null)
+            throw new NotDeserializedException("Object is not deserialized")
+        attributes0
+    }
+
+    override def packet: Packet = {
+        if (attributes0 == null)
+            throw new NotDeserializedException("Object is not deserialized")
+        packet0
+    }
+
+    override def makeDeserialization(): Unit = {
+        attributes0 = extract[PacketAttributes](SimplePacketAttributes.empty)
+        packet0 = extract[Packet](EmptyPacket).prepare()
+    }
 
     private def extract[T <: Serializable : ClassTag](orElse: => T): T = {
         val clazz       = classTag[T].runtimeClass

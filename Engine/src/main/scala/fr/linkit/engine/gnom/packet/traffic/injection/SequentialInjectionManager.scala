@@ -11,20 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence
+package fr.linkit.engine.gnom.packet.traffic.injection
 
-import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
+class SequentialInjectionManager {
 
-import java.nio.ByteBuffer
 
-trait PacketTransferResult {
-
-    def buff: ByteBuffer
-
-    def coords: PacketCoordinates
-
-    def attributes: PacketAttributes
-
-    def packet: Packet
 
 }

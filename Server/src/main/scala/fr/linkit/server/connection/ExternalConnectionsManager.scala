@@ -15,7 +15,7 @@ package fr.linkit.server.connection
 
 import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
-import fr.linkit.api.gnom.persistence.PacketTransferResult
+import fr.linkit.api.gnom.persistence.ObjectTransferResult
 import fr.linkit.api.internal.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
@@ -92,7 +92,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     /**
      * Broadcast bytes sequence to every connected clients
      * */
-    def broadcastPacket(result: PacketTransferResult, discardedIDs: String*): Unit = {
+    def broadcastPacket(result: ObjectTransferResult, discardedIDs: String*): Unit = {
         PacketReaderThread.checkNotCurrent()
         val candidates = connections.values
                 .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
@@ -151,7 +151,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      *
      * @throws NoSuchConnectionException if no connection where found for this packet.
      * */
-    private[connection] def deflect(result: PacketTransferResult): Unit = {
+    private[connection] def deflect(result: ObjectTransferResult): Unit = {
         val target = result.coords match {
             case e: DedicatedPacketCoordinates => e.targetID
             case _                             => throw new IllegalArgumentException("Direct packet must be provided with DedicatedPacketCoordinates")

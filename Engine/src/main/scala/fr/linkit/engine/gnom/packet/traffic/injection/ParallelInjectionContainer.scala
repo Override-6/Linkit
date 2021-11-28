@@ -27,8 +27,6 @@ class ParallelInjectionContainer extends InjectionContainer {
     }
 
     override def makeInjection(bundle: PacketBundle): PacketInjectionControl = {
-        val packet      = bundle.packet
-        val number      = packet.number
         val coordinates = bundle.coords
         //AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR BUNDLE $bundle")
         val path        = coordinates.path

@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.persistence
 
 import java.nio.ByteBuffer
 
-trait ObjectSerializationResult extends PacketTransferResult {
+trait ObjectSerializationResult extends ObjectTransferResult {
 
     def buff: ByteBuffer
 

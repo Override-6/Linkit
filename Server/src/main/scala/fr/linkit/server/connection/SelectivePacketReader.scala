@@ -32,7 +32,7 @@ class SelectivePacketReader(socket: DynamicSocket,
     private val simpleReader     = new DefaultPacketReader(socket, server, server.traffic, server.translator)
     private val serverIdentifier = server.currentIdentifier
 
-    override def nextPacket(@workerExecution callback: (ObjectDeserializationResult) => Unit): Unit = {
+    override def nextPacket(@workerExecution callback: ObjectDeserializationResult => Unit): Unit = {
         try {
             nextConcernedPacket(callback)
         } catch {
@@ -66,9 +66,7 @@ class SelectivePacketReader(socket: DynamicSocket,
 
                 //would inject into the server too
                 if (broadcast.targetIDs.contains(serverIdentifier) != broadcast.discardTargets) {
-                    val coords     = DedicatedPacketCoordinates(broadcast.path, server.currentIdentifier, broadcast.senderID)
-                    val attributes = result.attributes
-                    server.traffic.processInjection(result.packet, attributes, coords)
+                    callback(result)
                 }
         }
     }

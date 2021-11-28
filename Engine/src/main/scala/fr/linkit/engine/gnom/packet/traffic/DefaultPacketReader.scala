@@ -36,7 +36,7 @@ class DefaultPacketReader(socket: DynamicSocket,
     def nextPacketSync(callback: ObjectDeserializationResult => Unit): Unit = {
         val nextLength = socket.readInt()
         if (nextLength == -1 || socket.isClosed) {
-            AppLogger.error(s"PACKET READ READ WAS ABORTED : $nextLength || ${socket.isOpen}")
+            AppLogger.error(s"PACKET READ WAS ABORTED : $nextLength | ${socket.isOpen}")
             return
         }
 

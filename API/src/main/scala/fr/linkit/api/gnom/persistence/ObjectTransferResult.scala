@@ -13,8 +13,18 @@
 
 package fr.linkit.api.gnom.persistence
 
-trait ObjectDeserializationResult extends ObjectTransferResult {
+import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 
-    def makeDeserialization(): Unit
+import java.nio.ByteBuffer
+
+trait ObjectTransferResult {
+
+    def buff: ByteBuffer
+
+    def coords: PacketCoordinates
+
+    def attributes: PacketAttributes
+
+    def packet: Packet
 
 }

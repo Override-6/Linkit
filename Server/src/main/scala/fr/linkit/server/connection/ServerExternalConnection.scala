@@ -13,21 +13,20 @@
 
 package fr.linkit.server.connection
 
-import java.net.Socket
-import java.nio.ByteBuffer
-
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.persistence.obj.TrafficPresenceReference
-import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketTransferResult}
+import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
-import fr.linkit.engine.internal.system.SystemPacket
 import org.jetbrains.annotations.NotNull
+
+import java.net.Socket
+import java.nio.ByteBuffer
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
 
@@ -75,10 +74,16 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         readThread.onPacketRead = result => {
             val coordinates: DedicatedPacketCoordinates = result.coords match {
                 case d: DedicatedPacketCoordinates => d
-                case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
+                case b: BroadcastPacketCoordinates => b.getDedicated(currentIdentifier)
             }
-
-            handlePacket(result.packet, result.attributes, coordinates)
+            val rectifiedResult                         = new ObjectDeserializationResult {
+                override def buff: ByteBuffer = result.buff
+                override def coords: PacketCoordinates = coordinates
+                override def attributes: PacketAttributes = result.attributes
+                override def packet: Packet = result.packet
+                override def makeDeserialization(): Unit = result.makeDeserialization()
+            }
+            handlePacket(rectifiedResult)
         }
         readThread.start()
         //Method useless but kept because services could need to be started in the future?
@@ -86,7 +91,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
         runLater {
-            val coords       = DedicatedPacketCoordinates(path, boundIdentifier, server.currentIdentifier)
+            val coords       = DedicatedPacketCoordinates(path, boundIdentifier, currentIdentifier)
             val config       = traffic.getPersistenceConfig(coords.path)
             val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network.gnol)
             val result       = translator.translate(transferInfo)
@@ -101,16 +106,16 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         session.updateSocket(socket)
     }
 
-    def canHandlePacketInjection(result: PacketTransferResult): Boolean = {
+    def canHandlePacketInjection(result: ObjectTransferResult): Boolean = {
         val channelPath = result.coords.path
         channelPath.length == 0 || {
             val reference = new TrafficPresenceReference(channelPath)
-            val present = tnol.isPresentOnEngine(boundIdentifier, reference)
+            val present   = tnol.isPresentOnEngine(boundIdentifier, reference)
             present
         }
     }
 
-    def send(result: PacketTransferResult): Unit = {
+    def send(result: ObjectTransferResult): Unit = {
         if (!canHandlePacketInjection(result)) {
             val channelPath = result.coords.path
             val reference   = new TrafficPresenceReference(channelPath)
@@ -124,31 +129,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     @workerExecution
-    private def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
-        if (!alive)
-            return
-
-        //AppLogger.vWarn(s"HANDLING PACKET $packet, $attributes, $coordinates")
-
-        packet match {
-            case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
-            case _: Packet                  =>
-                serverTraffic.processInjection(packet, attributes, coordinates)
-        }
-    }
-
-    private def handleSystemOrder(packet: SystemPacket): Unit = {
-        val orderType = packet.order
-        import fr.linkit.engine.internal.system.SystemOrder._
-        orderType match {
-            case CLIENT_CLOSE => runLater(shutdown())
-            case SERVER_CLOSE => server.shutdown()
-
-            case _ =>
-                val msg = s"Could not complete order '$orderType', can't be handled by a server or unknown order"
-                AppLogger.error(msg)
-            //UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
-            //.printStackTrace(getConsoleErr)
+    private def handlePacket(result: ObjectDeserializationResult): Unit = {
+        if (alive) {
+            serverTraffic.processInjection(result)
         }
     }
 

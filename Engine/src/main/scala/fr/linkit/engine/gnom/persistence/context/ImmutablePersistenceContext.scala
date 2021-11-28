@@ -13,7 +13,6 @@
 
 package fr.linkit.engine.gnom.persistence.context
 
-import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context.{Deconstructor, PersistenceContext}
 import fr.linkit.engine.internal.utils.ClassMap
 
@@ -39,5 +38,8 @@ object ImmutablePersistenceContext {
 
     def apply(constructors: ClassMap[Constructor[_]], deconstructor: ClassMap[Deconstructor[_]]): ImmutablePersistenceContext = {
         new ImmutablePersistenceContext(new ClassMap(constructors), new ClassMap(deconstructor))
+    }
+    def apply(): ImmutablePersistenceContext = {
+        new ImmutablePersistenceContext(new ClassMap(), new ClassMap())
     }
 }

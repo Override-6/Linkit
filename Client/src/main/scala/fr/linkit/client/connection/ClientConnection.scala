@@ -21,7 +21,6 @@ import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.api.internal.system.event.EventNotifier
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork
