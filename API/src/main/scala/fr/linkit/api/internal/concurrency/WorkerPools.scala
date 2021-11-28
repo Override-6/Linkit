@@ -17,6 +17,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.global
 
 object WorkerPools {
+
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Application Worker")
 
     /**
@@ -123,13 +124,16 @@ object WorkerPools {
     def currentWorker: WorkerThread = {
         currentThread match {
             case worker: WorkerThread => worker
-            case other                    => throw IllegalThreadException(s"Current thread is not a WorkerThread. ($other)")
+            case other                => throw IllegalThreadException(s"Current thread is not a WorkerThread. ($other)")
         }
     }
 
     @workerExecution
-    def currentTask: AsyncTask[_] = {
-        currentWorker.getCurrentTask.get
+    def currentTask: Option[AsyncTask[_]] = {
+        currentThread match {
+            case worker: WorkerThread => worker.getCurrentTask
+            case _                    => None
+        }
     }
 
     @workerExecution

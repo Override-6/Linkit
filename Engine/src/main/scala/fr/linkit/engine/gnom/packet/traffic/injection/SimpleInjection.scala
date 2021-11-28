@@ -14,7 +14,6 @@
 package fr.linkit.engine.gnom.packet.traffic.injection
 
 import fr.linkit.api.gnom.packet.traffic.PacketInjectable
-import fr.linkit.api.gnom.packet.traffic.injection.{PacketInjection, PacketInjectionControl}
 
 class SimpleInjection(override val injectablePath: Array[Int]) extends PacketInjection with PacketInjectionControl {
 

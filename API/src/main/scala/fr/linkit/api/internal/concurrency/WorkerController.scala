@@ -27,11 +27,13 @@ trait WorkerController {
     @workerExecution
     def wakeupNTask(n: Int): Unit
 
+    def wakeupAllTasks(): Unit = wakeupNTask(-1)
+
     @workerExecution
     def wakeupAnyTask(): Unit
 
     @workerExecution
-    def wakeupAllTasks(taskIds: Int*): Unit
+    def wakeupTasks(taskIds: Seq[Int]): Unit
 
     @workerExecution
     def wakeupWorkerTask(task: AsyncTask[_]): Unit

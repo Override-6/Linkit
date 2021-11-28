@@ -11,17 +11,13 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.packet.traffic.injection
+package fr.linkit.api.gnom.packet.traffic.injection
 
-import fr.linkit.api.gnom.packet.traffic.injection.PacketInjection
-import fr.linkit.api.internal.system.AppException
+import fr.linkit.api.gnom.packet.traffic.{PacketInjectable, PacketTraffic}
+import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 
-case class InjectionAlreadyProcessingException(injection: PacketInjection, msg: String) extends AppException(msg) {
+trait InjectionProcessorUnit {
 
-    override protected def appendMessage(sb: StringBuilder): Unit = {
-        super.appendMessage(sb)
-        val path = injection.injectablePath
-        sb.append(s"For injection into packet injectable at '${path.mkString("/")}'\n")
-    }
+    def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit
 
 }

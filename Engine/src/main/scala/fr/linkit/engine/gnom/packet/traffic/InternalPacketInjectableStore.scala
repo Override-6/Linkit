@@ -13,7 +13,6 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.packet.traffic.{TrafficNode, PacketInjectable}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 

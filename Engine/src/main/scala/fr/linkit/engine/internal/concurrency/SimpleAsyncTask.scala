@@ -54,7 +54,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     @workerExecution
     override def derivate(): Try[A] = {
         val pool       = WorkerPools.ensureCurrentIsWorker()
-        val pausedTask = currentTask
+        val pausedTask = currentTask.get
         awaitComplete(pool.pauseCurrentTask(), _ => {
             pausedTask.wakeup()
         }).get
@@ -64,7 +64,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     override def derivateForAtLeast(millis: Long): Option[Try[A]] = {
         val pool = WorkerPools.ensureCurrentIsWorker()
         val task = currentTask
-        awaitComplete(pool.pauseCurrentTaskForAtLeast(millis), _ => task.wakeup())
+        awaitComplete(pool.pauseCurrentTaskForAtLeast(millis), _ => task.get.wakeup())
     }
 
     @workerExecution
@@ -143,18 +143,17 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         else onCompleteConsumers.synchronized(onCompleteConsumers +:+= (t => f(t)))
     }
 
-    private def awaitComplete(wait: => Unit, wakeup: Thread => Unit): Option[Try[A]] = {
+    private def awaitComplete(makeWait: => Unit, onWakeup: Thread => Unit): Option[Try[A]] = {
         if (isCompleted)
             return Option(attempt)
-
 
         val parkedThread = currentThread
         onCompleteConsumers.synchronized {
             onCompleteConsumers +:+= (_ => {
-                wakeup(parkedThread)
+                onWakeup(parkedThread)
             })
         }
-        wait
+        makeWait
         setContinue()
         Option(attempt)
     }
@@ -167,7 +166,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
             val pool = WorkerPools.currentPool.get
             val task = currentTask
             (() => pool.pauseCurrentTask(), () => {
-                task.wakeup()
+                task.get.wakeup()
             })
         } else {
             val thread = currentThread
@@ -199,12 +198,12 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     }
 
     override def setPaused(): Unit = {
-        AppLogger.vInfo(s"TASK $this MARKED AS PAUSED")
+        //AppLogger.vInfo(s"TASK $this MARKED AS PAUSED")
         paused = true
     }
 
     override def setContinue(): Unit = {
-        AppLogger.vInfo(s"TASK $this MARKED AS CONTINUE")
+        //AppLogger.vInfo(s"TASK $this MARKED AS CONTINUE")
         paused = false
     }
 

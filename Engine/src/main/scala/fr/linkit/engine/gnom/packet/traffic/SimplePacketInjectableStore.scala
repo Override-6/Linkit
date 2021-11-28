@@ -15,7 +15,6 @@ package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence

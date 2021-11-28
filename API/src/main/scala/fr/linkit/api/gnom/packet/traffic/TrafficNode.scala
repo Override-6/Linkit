@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
+import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 
@@ -58,6 +59,7 @@ trait TrafficNode[C <: TrafficObject[TrafficReference]] {
      * */
     def preferPerformances(): Boolean
 
+    def ipu(): InjectionProcessorUnit
 }
 
 object TrafficNode {

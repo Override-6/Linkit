@@ -47,7 +47,9 @@ class SimpleWorkerController extends WorkerController {
     }
 
     override def wakeupNTask(n: Int): Unit = {
-        for (_ <- 0 to n) {
+        val count = workingThreads.size
+        val x = if (n > count || n < 0) count else n
+        for (_ <- 0 to x) {
             wakeupAnyTask()
         }
     }
@@ -68,7 +70,7 @@ class SimpleWorkerController extends WorkerController {
     }
 
     @workerExecution
-    override def wakeupAllTasks(taskIds: Int*): Unit = {
+    override def wakeupTasks(taskIds: Seq[Int]): Unit = {
         AppLogger.vError(s"$currentTasksId <> entertainedThreads = " + workingThreads)
 
         if (workingThreads.isEmpty) {
@@ -97,7 +99,7 @@ class SimpleWorkerController extends WorkerController {
     def pauseCurrentTask(millis: Long): Unit = WorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
 
     private def createControlTicket(pauseCondition: => Boolean): Unit = {
-        val currentTask = WorkerPools.currentTask
+        val currentTask = WorkerPools.currentTask.get
         workingThreads.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
         pauseCurrentTask()
     }

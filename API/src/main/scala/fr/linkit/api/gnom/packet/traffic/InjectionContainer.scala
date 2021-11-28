@@ -13,7 +13,6 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
-import fr.linkit.api.gnom.packet.traffic.injection.{PacketInjection, PacketInjectionControl}
 import fr.linkit.api.gnom.packet.{DedicatedPacketBundle, DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 
 trait InjectionContainer {

@@ -17,7 +17,6 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.packet.traffic.injection.{PacketInjectionControl, PacketInjectionHandler}
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
@@ -28,7 +27,6 @@ import fr.linkit.api.gnom.reference.traffic.{ObjectManagementChannel, TrafficInt
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
-import fr.linkit.engine.gnom.packet.traffic.injection.{ParallelInjectionContainer, PerformanceInjectionHandler, SequentialInjectionHandler}
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.reference.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.internal.utils.ClassMap
@@ -39,34 +37,23 @@ import scala.reflect.ClassTag
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                                      defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
 
-    val context: ImmutablePersistenceContext = ImmutablePersistenceContext()
-    private  val minimalConfigBuilder                            = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
-    private  val objectChannelConfig                             = {
-        val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
-        new SimplePersistenceConfig(context, new ClassMap(), linker, false, true, false)
-    }
-    override val reference               : TrafficReference      = TrafficReference
-    private  val objectChannel                                   = {
-        val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
-        new DefaultObjectManagementChannel(null, scope)
-    }
-    override val presence                : NetworkObjectPresence = SystemNetworkObjectPresence
-    override val defaultPersistenceConfig: PersistenceConfig     = {
+    private  val context                 : ImmutablePersistenceContext = ImmutablePersistenceContext()
+    private  val minimalConfigBuilder                                  = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
+    private  val omcNode                                               = createObjectManagementChannel()
+    private  val objectChannel                                         = omcNode.injectable
+    override val defaultPersistenceConfig: PersistenceConfig           = {
         defaultPersistenceConfigUrl
                 .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
                 .transfer(minimalConfigBuilder)
                 .build(context, null, objectChannel)
     }
 
-    @volatile private var closed = false
-
-    override  val trafficPath: Array[Int] = Array.empty
-    private   val injectionContainer      = new ParallelInjectionContainer()
-    private   val linker                  = new TrafficNetworkObjectLinker(objectChannel, this)
-    protected val rootStore               = new SimplePacketInjectableStore(this, linker, defaultPersistenceConfig, trafficPath)
-
-    private val performanceIH = new PerformanceInjectionHandler(this)
-    private val sequentialIH  = new SequentialInjectionHandler(this)
+    override  val reference  : TrafficReference      = TrafficReference
+    override  val presence   : NetworkObjectPresence = SystemNetworkObjectPresence
+    override  val trafficPath: Array[Int]            = Array.empty
+    private   val linker                             = new TrafficNetworkObjectLinker(objectChannel, this)
+    protected val rootStore                          = new SimplePacketInjectableStore(this, linker, defaultPersistenceConfig, trafficPath)
+    @volatile private var closed                     = false
 
     override def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH = {
         linker
@@ -78,7 +65,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     override def getPersistenceConfig(path: Array[Int]): PersistenceConfig = {
         if (path.isEmpty)
-            objectChannelConfig
+            omcNode.persistenceConfig
         else
             rootStore.getPersistenceConfig(path)
     }
@@ -96,8 +83,8 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     }
 
     override def processInjection(bundle: PacketBundle): Unit = {
-        val injection = injectionContainer.makeInjection(bundle)
-        processInjection0(injection)
+        val path = bundle.coords.path
+        getNode(path).injectable.inject(bundle)
     }
 
     override def processInjection(result: ObjectDeserializationResult): Unit = {
@@ -110,7 +97,8 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             processInjection(bundle)
         } else {
             val path = result.coords.path
-            getInjectionHandler(path).deserializeAndInject(result)
+            val node = getNode(path)
+            node.ipu().post(result, node.injectable)
         }
     }
 
@@ -135,37 +123,16 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             throw new ClosedException("This Traffic handler is closed")
     }
 
-    private def processInjection0(injection: PacketInjectionControl): Unit = {
-        injection.synchronized {
-            if (injection.isProcessing) {
-                //If a thread is already processing the injection, don't do it with this thread.
-                return
-            }
-            injection.markAsProcessing()
+    private def createObjectManagementChannel(): TrafficNode[ObjectManagementChannel] = {
+        val objectChannelConfig = {
+            val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
+            new SimplePersistenceConfig(context, new ClassMap(), linker, false, true, false)
         }
-        //AppLogger.debug(s"Injection is not processing : injection.isProcessing = ${injection.isProcessing}")
-        makeProcess(injection)
-    }
-
-    private def makeProcess(injection: PacketInjectionControl): Unit = {
-        //AppLogger.debug(s"Processing injection $injection...")
-        ensureOpen()
-        if (injection.haveMoreIdentifier) {
-            rootStore.inject(injection)
-        } else {
-            injection.process(objectChannel)
+        val objectChannel       = {
+            val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
+            new DefaultObjectManagementChannel(null, scope)
         }
-        injectionContainer.removeInjection(injection)
-    }
-
-    private def getInjectionHandler(path: Array[Int]): PacketInjectionHandler = {
-        if (path.isEmpty) //targets the Object Management Channel
-            return performanceIH //OMC Sets to performant
-        val nodeOpt = rootStore.findNode(path)
-        if (nodeOpt.isEmpty)
-            throw new NoSuchTrafficPresenceException(s"Could not find traffic object located at ${path.mkString("/")}")
-        if (nodeOpt.get.preferPerformances()) performanceIH
-        else sequentialIH
+        new SimpleTrafficNode[ObjectManagementChannel](objectChannel, objectChannelConfig)
     }
 
 }
