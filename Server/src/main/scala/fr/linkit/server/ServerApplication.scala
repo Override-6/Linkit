@@ -67,7 +67,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             }
             downCount += 1
             if (downCount == totalConnectionCount)
-                shutdownTask.wakeup()
+                shutdownTask.get.wakeup()
         })
         if (countConnections > 0)
             appPool.pauseCurrentTask()

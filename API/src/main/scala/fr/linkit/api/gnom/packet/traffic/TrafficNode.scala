@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
 
-trait TrafficNode[C <: TrafficObject[TrafficReference]] {
+trait TrafficNode[+C <: TrafficObject[TrafficReference]] {
 
     val injectable: C
 

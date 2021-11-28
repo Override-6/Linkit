@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
+import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
@@ -27,6 +28,7 @@ import fr.linkit.api.gnom.reference.traffic.{ObjectManagementChannel, TrafficInt
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
+import fr.linkit.engine.gnom.packet.traffic.injection.SequentialInjectionProcessorUnit
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.reference.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.internal.utils.ClassMap
@@ -84,7 +86,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     override def processInjection(bundle: PacketBundle): Unit = {
         val path = bundle.coords.path
-        getNode(path).injectable.inject(bundle)
+        findNode(path).get.injectable.inject(bundle)
     }
 
     override def processInjection(result: ObjectDeserializationResult): Unit = {
@@ -97,7 +99,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             processInjection(bundle)
         } else {
             val path = result.coords.path
-            val node = findNode(path)
+            val node = findNode(path).get
             node.ipu().post(result, node.injectable)
         }
     }
@@ -106,7 +108,10 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         newWriter(path, defaultPersistenceConfig)
     }
 
-    override def findNode(path: Array[Int]): Option[TrafficNode[PacketInjectable]] = rootStore.findNode(path)
+    override def findNode(path: Array[Int]): Option[TrafficNode[PacketInjectable]] = {
+        if (path.isEmpty) return Some(omcNode)
+        rootStore.findNode(path)
+    }
 
     override def findStore(id: Int): Option[PacketInjectableStore] = rootStore.findStore(id)
 
@@ -134,7 +139,15 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
             new DefaultObjectManagementChannel(null, scope)
         }
-        new SimpleTrafficNode[ObjectManagementChannel](objectChannel, objectChannelConfig, this)
+        new TrafficNode[ObjectManagementChannel]{
+            override val injectable       : ObjectManagementChannel = objectChannel
+            override val persistenceConfig: PersistenceConfig     = objectChannelConfig
+            override val ipu: InjectionProcessorUnit = new SequentialInjectionProcessorUnit()
+            override def setPerformantInjection(): this.type = throw new UnsupportedOperationException
+            override def setSequentialInjection(): this.type = throw new UnsupportedOperationException
+            override def preferPerformances(): Boolean = throw new UnsupportedOperationException
+            override def chainIPU(path: Array[Int]): this.type = throw new UnsupportedOperationException
+        }
     }
 
 }

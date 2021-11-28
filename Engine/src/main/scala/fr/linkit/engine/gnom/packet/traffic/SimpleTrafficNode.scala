@@ -42,7 +42,7 @@ case class SimpleTrafficNode[C <: TrafficObject[TrafficReference]](override val 
     override def preferPerformances(): Boolean = preferPerformances0
 
     override def chainIPU(path: Array[Int]): this.type = {
-        traffic.getNode(path).ipu() match {
+        traffic.findNode(path).get.ipu() match {
             case unit: SequentialInjectionProcessorUnit => sipu.chainWith(unit)
             case _                                      => //FIXME Should always be able to chain with a SIPU. Here is a fast fix because i have to go xoxo
         }

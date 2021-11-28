@@ -25,7 +25,7 @@ import scala.collection.mutable.ListBuffer
 
 class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
 
-    private final var executor = Thread.currentThread()
+    private final var executor: Thread = _
     private final val queue    = mutable.Queue.empty[ObjectDeserializationResult]
     private final val chain  = ListBuffer.empty[SequentialInjectionProcessorUnit]
     private final val locker   = new SimpleWorkerController()
