@@ -11,20 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.packet
+package fr.linkit.api.gnom.packet.traffic.injection
 
-/**
- * a Bundle is a class that contains a defined amount of typed items.
- * Bundle are useful to packet channels because they can be stored and processed later.
- *
- * @see [[PacketBundle]] for an implementation.
- * */
-trait PacketBundle {
+import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 
-    val packet: Packet
-
-    val attributes: PacketAttributes
-
-    val coords: PacketCoordinates
-
+trait PacketInjectionHandler {
+    def deserializeAndInject(result: ObjectDeserializationResult): Unit
 }

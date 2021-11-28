@@ -21,31 +21,21 @@ import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 import scala.reflect.ClassTag
 
-trait PacketInjectableStore extends TrafficPresence[TrafficReference] {
+trait PacketInjectableStore extends TrafficObject[TrafficReference] {
 
     val defaultPersistenceConfig: PersistenceConfig
 
-    /**
-     * retrieves or create (and register) a [[PacketInjectable]] depending on the requested id and scope
-     *
-     * @param injectableID the injectable identifier
-     * @param scopeFactory the scope factory that determines which engine can receive or send a packet to the injectable
-     * @param factory      the factory of the injectable that will create the instance if needed.
-     * @return an injectable matching the given identifier and scope
-     * @see [[ChannelScope]]
-     * @see [[PacketChannel]]
-     * */
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): TrafficNode[C] = {
         getInjectable[C](injectableID, defaultPersistenceConfig, factory, scopeFactory)
     }
 
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): C = {
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): TrafficNode[C] = {
         getInjectable[C](injectableID, defaultPersistenceConfig, factory, scopeFactory)
     }
 
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): TrafficNode[C]
 
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): C = {
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): TrafficNode[C] = {
         getInjectable[C](injectableID, config, factory, scopeFactory)
     }
 

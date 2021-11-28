@@ -47,6 +47,8 @@ class LazyObjectDeserializationResult(override val buff: ByteBuffer,
         packet0 = extract[Packet](EmptyPacket).prepare()
     }
 
+    override def isDeserialized: Boolean = attributes0 != null && packet0 != null
+
     private def extract[T <: Serializable : ClassTag](orElse: => T): T = {
         val clazz       = classTag[T].runtimeClass
         val coordsIndex = cache.indexWhere(o => o != null && clazz.isAssignableFrom(o.getClass))

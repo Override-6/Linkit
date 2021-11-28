@@ -17,4 +17,6 @@ trait ObjectDeserializationResult extends ObjectTransferResult {
 
     def makeDeserialization(): Unit
 
+    def isDeserialized: Boolean
+
 }

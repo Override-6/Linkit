@@ -50,6 +50,8 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
 
     def getPersistenceConfig(path: Array[Int]): PersistenceConfig
 
+    def getNode(path: Array[Int]): TrafficNode[PacketInjectable]
+
 }
 
 object PacketTraffic {

@@ -11,13 +11,16 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.packet.traffic
+package fr.linkit.engine.gnom.packet.traffic.injection
 
-import fr.linkit.api.gnom.persistence.obj.TrafficReference
-import fr.linkit.api.gnom.reference.DynamicNetworkObject
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionHandler
+import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 
-trait TrafficPresence[R <: TrafficReference] extends DynamicNetworkObject[R] {
+class PerformanceInjectionHandler(traffic: PacketTraffic) extends PacketInjectionHandler {
 
-    val trafficPath: Array[Int]
-
+    override def deserializeAndInject(result: ObjectDeserializationResult): Unit = {
+        result.makeDeserialization()
+        traffic.processInjection(result)
+    }
 }

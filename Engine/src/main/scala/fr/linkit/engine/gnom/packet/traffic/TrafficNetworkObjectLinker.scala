@@ -34,7 +34,7 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
             case ref if ref == TrafficReference                                           =>
                 Some(traffic)
             case reference: TrafficPresenceReference                                      =>
-                traffic.findPresence(reference)
+                traffic.findTrafficObject(reference)
         }
     }
 

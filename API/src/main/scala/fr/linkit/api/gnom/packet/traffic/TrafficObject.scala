@@ -11,10 +11,13 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.packet.traffic.injection
+package fr.linkit.api.gnom.packet.traffic
 
-class SequentialInjectionManager {
+import fr.linkit.api.gnom.persistence.obj.TrafficReference
+import fr.linkit.api.gnom.reference.DynamicNetworkObject
 
+trait TrafficObject[R <: TrafficReference] extends DynamicNetworkObject[R] {
 
+    val trafficPath: Array[Int]
 
 }

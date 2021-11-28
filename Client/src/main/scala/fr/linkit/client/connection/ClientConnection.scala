@@ -18,7 +18,7 @@ import fr.linkit.api.application.connection.{ConnectionInitialisationException, 
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.persistence.ObjectTranslator
+import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.client.ClientApplication
@@ -30,6 +30,7 @@ import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
 
+import java.nio.ByteBuffer
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends ExternalConnection {
@@ -96,7 +97,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                     case null                                  => throw new PacketException("Received null packet coordinates.")
                     case other                                 => throw new PacketException(s"Unknown packet coordinates of type ${other.getClass.getName}. Only Dedicated and Broadcast packet coordinates are allowed on this client.")
                 }
-                handlePacket(result.packet, result.attributes, coordinates)
+                handlePacket(result, coordinates)
             } catch {
                 case NonFatal(e) => throw new PacketException(s"Could not deserialize '${ScalaUtils.toPresentableString(result.buff)}'", e)
             }
@@ -116,14 +117,16 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         }
     }
 
-    private def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
-        //packet match {
-        //case system: SystemPacket => handleSystemPacket(system, coordinates)
-        //    case _: Packet =>
-        //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
-        traffic.processInjection(packet, attributes, coordinates)
-        //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
-        // }
+    private def handlePacket(result: ObjectDeserializationResult, coordinates: DedicatedPacketCoordinates): Unit = {
+        val rectifiedResult = new ObjectDeserializationResult {
+            override def makeDeserialization(): Unit = result.makeDeserialization()
+            override def isDeserialized: Boolean = result.isDeserialized
+            override def buff: ByteBuffer = result.buff
+            override def coords: PacketCoordinates = coordinates
+            override def attributes: PacketAttributes = result.attributes
+            override def packet: Packet = result.packet
+        }
+        traffic.processInjection(rectifiedResult)
     }
 
     override def getApp: ApplicationContext = appContext

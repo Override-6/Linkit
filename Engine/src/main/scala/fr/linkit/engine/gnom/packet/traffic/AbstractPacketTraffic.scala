@@ -13,12 +13,12 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
+import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionControl
-import fr.linkit.api.gnom.packet._
-import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult}
+import fr.linkit.api.gnom.packet.traffic.injection.{PacketInjectionControl, PacketInjectionHandler}
+import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficPresenceReference, TrafficReference}
 import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
@@ -28,7 +28,7 @@ import fr.linkit.api.gnom.reference.traffic.{ObjectManagementChannel, TrafficInt
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
-import fr.linkit.engine.gnom.packet.traffic.injection.ParallelInjectionContainer
+import fr.linkit.engine.gnom.packet.traffic.injection.{ParallelInjectionContainer, PerformanceInjectionHandler, SequentialInjectionHandler}
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.reference.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.internal.utils.ClassMap
@@ -65,11 +65,14 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     private   val linker                  = new TrafficNetworkObjectLinker(objectChannel, this)
     protected val rootStore               = new SimplePacketInjectableStore(this, linker, defaultPersistenceConfig, trafficPath)
 
+    private val performanceIH = new PerformanceInjectionHandler(this)
+    private val sequentialIH  = new SequentialInjectionHandler(this)
+
     override def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH = {
         linker
     }
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): TrafficNode[C] = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)
     }
 
@@ -98,7 +101,17 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     }
 
     override def processInjection(result: ObjectDeserializationResult): Unit = {
-
+        if (result.isDeserialized) {
+            val bundle = new PacketBundle {
+                override val packet    : Packet            = result.packet
+                override val attributes: PacketAttributes  = result.attributes
+                override val coords    : PacketCoordinates = result.coords
+            }
+            processInjection(bundle)
+        } else {
+            val path = result.coords.path
+            getInjectionHandler(path).deserializeAndInject(result)
+        }
     }
 
     override def newWriter(path: Array[Int]): PacketWriter = {
@@ -113,8 +126,8 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     def getObjectManagementChannel: ObjectManagementChannel = objectChannel
 
-    def findPresence(reference: TrafficPresenceReference): Option[TrafficPresence[TrafficReference]] = {
-        rootStore.findPresence(reference.trafficPath)
+    def findTrafficObject(reference: TrafficPresenceReference): Option[TrafficObject[TrafficReference]] = {
+        rootStore.findNode(reference.trafficPath).map(_.injectable)
     }
 
     protected def ensureOpen(): Unit = {
@@ -144,4 +157,15 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         }
         injectionContainer.removeInjection(injection)
     }
+
+    private def getInjectionHandler(path: Array[Int]): PacketInjectionHandler = {
+        if (path.isEmpty) //targets the Object Management Channel
+            return performanceIH //OMC Sets to performant
+        val nodeOpt = rootStore.findNode(path)
+        if (nodeOpt.isEmpty)
+            throw new NoSuchTrafficPresenceException(s"Could not find traffic object located at ${path.mkString("/")}")
+        if (nodeOpt.get.preferPerformances()) performanceIH
+        else sequentialIH
+    }
+
 }

@@ -82,6 +82,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
                 override def attributes: PacketAttributes = result.attributes
                 override def packet: Packet = result.packet
                 override def makeDeserialization(): Unit = result.makeDeserialization()
+                override def isDeserialized: Boolean = result.isDeserialized
             }
             handlePacket(rectifiedResult)
         }
