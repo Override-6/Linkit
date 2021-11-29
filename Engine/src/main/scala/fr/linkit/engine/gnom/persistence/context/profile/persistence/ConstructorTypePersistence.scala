@@ -18,11 +18,11 @@ import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.context.Persist
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
+
 import java.lang.invoke.{MethodHandles, MethodType}
 import java.lang.reflect.Constructor
-
 import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
-import fr.linkit.engine.internal.utils.NativeUtils
+import fr.linkit.engine.internal.manipulation.invokation.ObjectInvocator
 
 class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
 
@@ -39,7 +39,7 @@ class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T]
     override val structure: ObjectStructure = ArrayObjectStructure(paramTypes: _*)
 
     override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
-        NativeUtils.invokeConstructor(allocatedObject, signature, paramTypes, args.asInstanceOf[Array[AnyRef]])
+        ObjectInvocator.invokeConstructor(allocatedObject, signature, paramTypes, args.asInstanceOf[Array[AnyRef]])
     }
 
     override def toArray(t: T): Array[Any] = {

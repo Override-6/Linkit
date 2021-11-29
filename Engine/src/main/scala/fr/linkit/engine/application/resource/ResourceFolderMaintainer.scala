@@ -162,6 +162,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
         val maintainerPath     = maintained.getPath.toString + "/" + MaintainerFileName
         val maintainerFilePath = Path.of(maintainerPath)
         if (Files.notExists(maintainerFilePath)) {
+            Files.createDirectories(maintainerFilePath.getParent)
             Files.createFile(maintainerFilePath)
             val resources = Resources(ResourceItem.minimal(maintained))
             updateFile(resources)
