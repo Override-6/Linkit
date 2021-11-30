@@ -3,12 +3,14 @@
 #include <algorithm>
 #include <fstream>
 #include "JValueTranslator.h"
+#include "fr_linkit_engine_internal_manipulation_creation_ObjectCreator.h"
+
 using namespace std;
 
 std::ofstream debugfile("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\NativesCommunication-ObjectCreator.txt");
 
 
-void putField(JNIEnv* env, jobject target, const char* fieldname, string signature, jobject data) {
+void PutField(JNIEnv* env, jobject target, const char* fieldname, string signature, jobject data) {
 	jclass clazz = env->GetObjectClass(target);
 
 	jfieldID fieldID = env->GetFieldID(clazz, fieldname, signature.data());
@@ -61,7 +63,7 @@ JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_manipulation_creation_Obje
 		const char* name = env->GetStringUTFChars(static_cast<jstring>(env->GetObjectArrayElement(fieldNames, i)), false);
 		string signature(env->GetStringUTFChars(static_cast<jstring>(env->GetObjectArrayElement(fieldSignatures, i)), false));
 		jobject value = env->GetObjectArrayElement(fieldValues, i);
-		putField(env, target, name, signature, value);
+		PutField(env, target, name, signature, value);
 	}
 }
 

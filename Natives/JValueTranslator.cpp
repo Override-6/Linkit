@@ -84,9 +84,11 @@ double ExtractNumber(JNIEnv* env, JValueType objectType, jobject object) {
 	case JValueType::SHORT_FLAG:
 		valueID = env->GetFieldID(clazz, "value", "S");
 		return env->GetShortField(object, valueID);
-	case JValueType::INT_FLAG:
+	case JValueType::INT_FLAG: {
 		valueID = env->GetFieldID(clazz, "value", "I");
-		return env->GetIntField(object, valueID);
+		const int i = env->GetIntField(object, valueID);
+		return i;
+	}
 	case JValueType::LONG_FLAG:
 		valueID = env->GetFieldID(clazz, "value", "J");
 		return env->GetLongField(object, valueID);
