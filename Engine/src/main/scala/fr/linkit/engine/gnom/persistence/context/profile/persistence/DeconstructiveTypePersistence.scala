@@ -18,7 +18,7 @@ import fr.linkit.engine.gnom.persistence.context.profile.persistence.Constructor
 
 import java.lang.reflect.Constructor
 
-class DeconstructiveTypePersistence[D <: Deconstructible](clazz: Class[_], constructor: Constructor[D])
+class DeconstructiveTypePersistence[D <: AnyRef with Deconstructible](clazz: Class[_], constructor: Constructor[D])
         extends ConstructorTypePersistence[D](clazz: Class[_], constructor, (_: D).deconstruct()) {
     def this(clazz: Class[_]) {
         this(clazz, getConstructor[D](clazz))

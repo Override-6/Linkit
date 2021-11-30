@@ -22,12 +22,12 @@ class ImmutablePersistenceContext private(constructors: ClassMap[Constructor[_]]
                                           deconstructor: ClassMap[Deconstructor[_]]) extends PersistenceContext {
 
 
-    override def findConstructor[T](clazz: Class[_]): Option[java.lang.reflect.Constructor[T]] = {
+    override def findConstructor[T <: AnyRef](clazz: Class[_]): Option[java.lang.reflect.Constructor[T]] = {
         constructors.get(clazz)
                 .asInstanceOf[Option[java.lang.reflect.Constructor[T]]]
     }
 
-    override def findDeconstructor[T](clazz: Class[_]): Option[Deconstructor[T]] = {
+    override def findDeconstructor[T <: AnyRef](clazz: Class[_]): Option[Deconstructor[T]] = {
         deconstructor.get(clazz)
                 .asInstanceOf[Option[Deconstructor[T]]]
     }

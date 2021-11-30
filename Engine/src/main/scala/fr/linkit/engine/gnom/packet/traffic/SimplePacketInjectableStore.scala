@@ -28,22 +28,22 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   tnol: TrafficNetworkObjectLinker,
                                   override val defaultPersistenceConfig: PersistenceConfig,
                                   override val trafficPath: Array[Int])
-        extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable {
+    extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable {
 
     override val reference: TrafficObjectReference = new TrafficObjectReference(trafficPath)
     override val presence : NetworkObjectPresence  = tnol.getPresence(reference)
-    private  val children                            = mutable.HashMap.empty[Int, TrafficNode[_]]
-    private var closed    : Boolean                  = false
+    private  val children                          = mutable.HashMap.empty[Int, TrafficNode[_]]
+    private var closed    : Boolean                = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): TrafficNode[C] = {
         val childPath = trafficPath :+ id
 
         val nodeOpt = children.get(id)
         if (nodeOpt.isDefined) {
-            val clazz         = classTag[C].runtimeClass
-            val node          = nodeOpt.get
-            val injectable    = node.injectable
-            val presenceClass = injectable.getClass
+            val clazz                = classTag[C].runtimeClass
+            val node: TrafficNode[_] = nodeOpt.get
+            val injectable           = node.injectable
+            val presenceClass        = injectable.getClass
             node match {
                 case node: TrafficNode[C] if clazz.isAssignableFrom(presenceClass) => return node
                 case o                                                             =>
@@ -104,14 +104,14 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     override def close(cause: Reason): Unit = {
         children.values.foreach {
             case SimpleTrafficNode(closeable: Closeable, _, _) => closeable.close()
-            case _                                          => //not closeable ? don't close.
+            case _                                             => //not closeable ? don't close.
         }
         closed = true
     }
 
     override def findStore(id: Int): Option[PacketInjectableStore] = children.get(id).flatMap {
         case SimpleTrafficNode(store: PacketInjectableStore, _, _) => Some(store)
-        case _                                                  => None
+        case _                                                     => None
     }
 
     override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = {
@@ -131,7 +131,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
 
     override def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C] = children.get(id).flatMap {
         case SimpleTrafficNode(value: C, _, _) if value.getClass.isAssignableFrom(classTag[C].runtimeClass) => Some(value)
-        case _                                                                                           => None
+        case _                                                                                              => None
     }
 
     override def isClosed: Boolean = closed

@@ -25,7 +25,7 @@ public class ClassTypeTranslator {
     private static final byte FLOAT_FLAG = 6;
     private static final byte DOUBLE_FLAG = 7;
 
-    static byte determineType(Class<?> clazz) {
+    public static byte determineType(Class<?> clazz) {
         return switch (clazz.getName()) {
             case "byte" -> BYTE_FLAG;
             case "boolean" -> BOOLEAN_FLAG;

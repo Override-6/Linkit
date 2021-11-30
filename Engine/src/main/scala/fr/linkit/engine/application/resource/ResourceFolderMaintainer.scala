@@ -39,30 +39,30 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
 
     override def getLastChecksum(name: String): Long = {
         resources
-                .get(name)
-                .map(_.lastChecksum)
-                .getOrElse {
-                    if (name == maintained.name) {
-                        resources.folder.lastChecksum
-                    } else {
-                        throw NoSuchResourceException(s"Resource $name is unknown for folder resource ${maintained.getLocation}")
-                    }
+            .get(name)
+            .map(_.lastChecksum)
+            .getOrElse {
+                if (name == maintained.name) {
+                    resources.folder.lastChecksum
+                } else {
+                    throw NoSuchResourceException(s"Resource $name is unknown for folder resource ${maintained.getLocation}")
                 }
+            }
     }
 
     override def getLastModified(name: String): DynamicVersions = {
         resources
-                .get(name)
-                .map(_.lastModified)
-                .getOrElse {
-                    if (maintained.isPresentOnDrive(name)) {
-                        DynamicVersions.unknown
-                    } else if (name == maintained.name) {
-                        resources.folder.lastModified
-                    } else {
-                        throw NoSuchResourceException(s"Resource $name is unknown for folder resource ${maintained.getLocation}")
-                    }
+            .get(name)
+            .map(_.lastModified)
+            .getOrElse {
+                if (maintained.isPresentOnDrive(name)) {
+                    DynamicVersions.unknown
+                } else if (name == maintained.name) {
+                    resources.folder.lastModified
+                } else {
+                    throw NoSuchResourceException(s"Resource $name is unknown for folder resource ${maintained.getLocation}")
                 }
+            }
     }
 
     private[resource] def unregisterResource(name: String): Unit = {

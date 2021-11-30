@@ -121,3 +121,7 @@ trait NetworkObject[R <: NetworkObjectReference] {
     def reference: R
 
 }
+
+object NetworkObject {
+    implicit def unwrap[R <: NetworkObjectReference](o: NetworkObject[R]): R = o.reference
+}

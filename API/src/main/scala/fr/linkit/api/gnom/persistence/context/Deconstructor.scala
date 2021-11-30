@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-trait Deconstructor[T] {
+trait Deconstructor[T <: AnyRef] {
 
     def deconstruct(t: T): Array[Any]
 

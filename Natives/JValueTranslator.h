@@ -16,7 +16,7 @@ enum class JValueType {
 
 jvalue NumberToJValue(JNIEnv*, JValueType, double);
 
-jvalue JObjectToJValue(JNIEnv*, int, jobject);
+jvalue JObjectToJValue(JNIEnv*, JValueType, jobject);
 
 JValueType ClassNameToType(std::string);
 

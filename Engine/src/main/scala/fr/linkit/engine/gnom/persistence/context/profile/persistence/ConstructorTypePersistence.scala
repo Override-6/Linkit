@@ -13,33 +13,30 @@
 
 package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
+import java.lang.reflect.Constructor
+
 import fr.linkit.api.gnom.persistence.context.{Deconstructor, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.context.Persist
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
+import fr.linkit.engine.internal.manipulation.invokation.ConstructorInvoker
 
-import java.lang.invoke.{MethodHandles, MethodType}
-import java.lang.reflect.Constructor
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
-import fr.linkit.engine.internal.manipulation.invokation.ObjectInvocator
-
-class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
+class ConstructorTypePersistence[T <: AnyRef](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
 
     def this(clazz: Class[_], deconstructor: Deconstructor[T]) {
-        this(clazz, getConstructor[T](clazz), deconstructor.deconstruct(_))
+        this(clazz, getConstructor[T](clazz), deconstructor.deconstruct(_: T))
     }
 
     def this(clazz: Class[_], constructor: Constructor[T], deconstructor: Deconstructor[T]) {
-        this(clazz, constructor, deconstructor.deconstruct(_))
+        this(clazz, constructor, deconstructor.deconstruct(_: T))
     }
 
-    private val paramTypes = constructor.getParameterTypes
-    private  val signature: String          = SyncClassRectifier.getMethodDescriptor(paramTypes, Void.TYPE)
-    override val structure: ObjectStructure = ArrayObjectStructure(paramTypes: _*)
+    override val structure: ObjectStructure = ArrayObjectStructure(constructor.getParameterTypes: _*)
+    private  val invoker                    = new ConstructorInvoker(constructor)
 
     override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
-        ObjectInvocator.invokeConstructor(allocatedObject, signature, paramTypes, args.asInstanceOf[Array[AnyRef]])
+        invoker.invoke(allocatedObject, args)
     }
 
     override def toArray(t: T): Array[Any] = {

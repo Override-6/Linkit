@@ -10,7 +10,7 @@ std::ofstream debugfile("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\NativesCo
 
 JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_allocate
 (JNIEnv* env, jclass clazz, jclass target) {
-	return env->AllocObject(clazz);
+	return env->AllocObject(target);
 }
 
 

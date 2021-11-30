@@ -9,7 +9,7 @@ using namespace std::literals;
 
 jobject WrapPrimitive(JNIEnv* env, string className, string paramSignature, double value) {
 	jclass clazz = env->FindClass(className.data());
-	replace(className.begin(), className.end(), ".", "/");
+	replace(className.begin(), className.end(), '.', '/');
 	string signature = "(" + paramSignature + ")" + className + ";";
 	jmethodID methodID = env->GetStaticMethodID(clazz, "valueOf", signature.data());
 	return env->CallStaticObjectMethod(clazz, methodID, value);
@@ -19,7 +19,8 @@ std::vector<jvalue> GetJObjects(JNIEnv* env, jbyte* types, jobjectArray array) {
 	const int len = env->GetArrayLength(array);
 	std::vector<jvalue> vec;
 	for (int i = 0; i < len; i++) {
-		vec[i] = JObjectToJValue(env, types[i], env->GetObjectArrayElement(array, i));
+		JValueType type = static_cast<JValueType>(types[i]);
+		vec[i] = JObjectToJValue(env, type, env->GetObjectArrayElement(array, i));
 	}
 	return vec;
 }
@@ -66,6 +67,9 @@ JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_invokation
 	case JValueType::SHORT_FLAG:
 		val = env->CallShortMethodA(target, methodID, argsValues);
 		return WrapPrimitive(env, "java.lang.Short", "S", val);
+	default:
+		return NULL;
 	}
+
 }
 

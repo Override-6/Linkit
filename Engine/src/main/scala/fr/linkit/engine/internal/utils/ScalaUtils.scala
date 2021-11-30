@@ -18,10 +18,12 @@ import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.internal.manipulation.invokation.ObjectInvocator
 import sun.misc.Unsafe
-
 import java.io.File
 import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
 import java.nio.ByteBuffer
+
+import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
+
 import scala.annotation.switch
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
@@ -180,7 +182,7 @@ object ScalaUtils {
     def allocate[A](clazz: Class[_]): A = {
         if (clazz == null)
             throw new NullPointerException
-        val instance = ObjectInvocator.allocate(clazz).asInstanceOf[A]
+        val instance = ObjectCreator.allocate(clazz).asInstanceOf[A]
         instance
     }
 

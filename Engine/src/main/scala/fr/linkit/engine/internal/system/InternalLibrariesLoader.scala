@@ -63,7 +63,7 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def extractFolder(resources: ResourceFolder, filePath: String, libs: Array[String]): Unit = {
-        val root               = Path.of(filePath)
+        val root               = Path.of(filePath + "/natives/")
         val extractDestination = getPathProperty(resources, LibsDestination)
         Files.createDirectories(extractDestination)
         Files.list(root)

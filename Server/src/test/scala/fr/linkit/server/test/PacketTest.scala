@@ -27,7 +27,7 @@ import fr.linkit.engine.gnom.packet.traffic.{ChannelScopes, DynamicSocket, Socke
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
 import fr.linkit.engine.gnom.persistence.{DefaultObjectTranslator, PacketSerializationChoreographer, SimpleTransferInfo}
 import fr.linkit.engine.gnom.reference.linker.WeakContextObjectLinker
-import fr.linkit.engine.internal.manipulation.invokation.ObjectInvocator
+import fr.linkit.engine.internal.manipulation.invokation.{ConstructorInvoker, ObjectInvocator}
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 import fr.linkit.server.connection.ServerConnection
 import fr.linkit.server.connection.packet.ServerPacketTraffic
@@ -35,8 +35,9 @@ import fr.linkit.server.test.PacketTest.serialAndDeserial
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Test, TestInstance}
 import org.mockito.Mockito
-
 import java.util
+
+import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {
@@ -44,15 +45,16 @@ class PacketTest {
 
     @Test
     def other(): Unit = {
-        val obj = ObjectInvocator.allocate(classOf[JavaObject])
+        val obj = ObjectCreator.allocate(classOf[JavaObject])
         val constructor = classOf[JavaObject].getConstructors.head
+        val invoker = new ConstructorInvoker(constructor)
         var args: Array[Any] = Array[Any](1, 2, 3, 4, 5, 6, true, 0.5, 0.2)
-        ObjectInvocator.invokeConstructor(obj, constructor, args.asInstanceOf[Array[AnyRef]])
+        invoker.invoke(obj, args)
         println("done")
         println(s"obj = ${obj}")
 
         args = Array[Any](Long.MaxValue, Double.MinValue, Char.MaxValue, Double.MinValue, Double.MaxValue, 60, 3, 0.50, 0.200)
-        ObjectInvocator.invokeConstructor(obj, constructor, args.asInstanceOf[Array[AnyRef]])
+        invoker.invoke(obj, args)
         println("done")
         println(s"obj = ${obj}")
 
