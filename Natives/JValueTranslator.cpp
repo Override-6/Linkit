@@ -96,6 +96,7 @@ double ExtractNumber(JNIEnv* env, JValueType objectType, jobject object) {
 	case JValueType::DOUBLE_FLAG:
 		valueID = env->GetFieldID(clazz, "value", "D");
 		return env->GetDoubleField(object, valueID);
+	default: return NULL;
 	}
 }
 

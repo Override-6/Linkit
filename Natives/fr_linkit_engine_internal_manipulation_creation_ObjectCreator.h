@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (Ljava/lang/Class;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_allocate
-  (JNIEnv *, jclass, jclass);
+(JNIEnv*, jclass, jclass);
 
 /*
  * Class:     fr_linkit_engine_internal_manipulation_creation_ObjectCreator
@@ -21,7 +21,7 @@ JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_creation_O
  * Signature: (Ljava/lang/Object;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_pasteAllFields0
-  (JNIEnv *, jclass, jobject, jobjectArray, jobjectArray, jobjectArray);
+(JNIEnv*, jclass, jobject, jobjectArray, jobjectArray, jobjectArray);
 
 #ifdef __cplusplus
 }

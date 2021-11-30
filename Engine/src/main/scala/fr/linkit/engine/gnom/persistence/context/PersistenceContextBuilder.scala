@@ -24,7 +24,7 @@ abstract class PersistenceContextBuilder {
     private val constructorMap = new ClassMap[Constructor[_]]()
     private val deconstructorMap = new ClassMap[Deconstructor[_]]()
 
-    def secureClass[T : ClassTag](constructor: Constructor[T])(deconstructor: Deconstructor[T]): Unit = {
+    def useConstructor[T <: AnyRef : ClassTag](constructor: Constructor[T])(deconstructor: Deconstructor[T]): Unit = {
         val clazz = classTag[T].runtimeClass
         constructorMap.put(clazz, constructor)
         deconstructorMap.put(clazz, deconstructor)

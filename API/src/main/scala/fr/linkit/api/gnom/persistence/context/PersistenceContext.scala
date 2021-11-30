@@ -18,8 +18,8 @@ import java.lang.reflect.Constructor
 trait PersistenceContext {
 
 
-    def findConstructor[T](clazz: Class[_]): Option[Constructor[T]]
+    def findConstructor[T <: AnyRef](clazz: Class[_]): Option[Constructor[T]]
 
-    def findDeconstructor[T](clazz: Class[_]): Option[Deconstructor[T]]
+    def findDeconstructor[T <: AnyRef](clazz: Class[_]): Option[Deconstructor[T]]
 
 }

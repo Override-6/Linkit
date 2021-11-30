@@ -15,8 +15,6 @@ package fr.linkit.engine.internal.manipulation.invokation;
 
 public class ObjectInvocator {
     
-
-
     private static String getMethodDescriptor(Class<?>[] params, Class<?> returnType) {
         var sb = new StringBuilder("(");
         for (Class<?> param : params) {
@@ -33,7 +31,7 @@ public class ObjectInvocator {
         return arrayString.substring(1, arrayString.indexOf('@')).replace(".", "/");
     }
 
-    static native void invokeMethod0(
+    static native Object invokeMethod0(
             Object o, String name, String signature,
             byte[] paramTypes, byte returnType,
             Object[] args
