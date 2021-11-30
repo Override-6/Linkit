@@ -12,7 +12,7 @@ extern "C" {
  * Method:    invokeMethod0
  * Signature: (Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;[BB[Ljava/lang/Object;)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_invokation_ObjectInvocator_invokeMethod0
+extern "C" JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_invokation_ObjectInvocator_invokeMethod0
 (JNIEnv*, jclass, jobject, jstring, jstring, jbyteArray, jbyte, jobjectArray);
 
 #ifdef __cplusplus

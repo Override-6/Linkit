@@ -8,12 +8,6 @@ using namespace std;
 std::ofstream debugfile("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\NativesCommunication-ObjectCreator.txt");
 
 
-JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_allocate
-(JNIEnv* env, jclass clazz, jclass target) {
-	return env->AllocObject(target);
-}
-
-
 void putField(JNIEnv* env, jobject target, const char* fieldname, string signature, jobject data) {
 	jclass clazz = env->GetObjectClass(target);
 
@@ -52,6 +46,12 @@ void putField(JNIEnv* env, jobject target, const char* fieldname, string signatu
 		env->SetDoubleField(target, fieldID, primitive);
 	};
 }
+
+JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_allocate
+(JNIEnv* env, jclass clazz, jclass target) {
+	return env->AllocObject(target);
+}
+
 
 JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_pasteAllFields0
 (JNIEnv* env, jclass clazz, jobject target, jobjectArray fieldNames, jobjectArray fieldSignatures, jobjectArray fieldValues) {

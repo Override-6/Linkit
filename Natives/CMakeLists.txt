@@ -7,12 +7,11 @@ file(GLOB src
      "*.cpp"
 )
 
-include_directories(LinkitNativesHelper SHARED
+include_directories(LinkitNativesHelper 
  	$ENV{JAVA_HOME}/include
  	$ENV{JAVA_HOME}/include/win32
 	$ENV{JAVA_HOME}/include/win32/bridge
-	D:/Perso/VisualStudio/VCTools/MSVC/14.29.30133/include/vector.h
-    ${src}
-	)
+	D:/Perso/VisualStudio/VCTools/MSVC/14.29.30133/include
+    ${src})
 
 add_library(LinkitNativesHelper SHARED ${src})

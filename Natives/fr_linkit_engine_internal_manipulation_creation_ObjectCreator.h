@@ -12,7 +12,7 @@ extern "C" {
  * Method:    allocate
  * Signature: (Ljava/lang/Class;)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_allocate
+extern "C" JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_allocate
 (JNIEnv*, jclass, jclass);
 
 /*
