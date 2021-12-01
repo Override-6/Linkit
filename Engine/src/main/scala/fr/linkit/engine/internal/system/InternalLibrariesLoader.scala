@@ -34,7 +34,7 @@ private[linkit] object InternalLibrariesLoader {
     private def load(resources: ResourceFolder): Unit = {
         val libsPath = getPathProperty(resources, LibsDestination)
         Files.list(libsPath)
-                .forEach(loadLib)
+            .forEach(loadLib)
     }
 
     private def loadLib(path: Path): Unit = {
@@ -67,27 +67,25 @@ private[linkit] object InternalLibrariesLoader {
         val extractDestination = getPathProperty(resources, LibsDestination)
         Files.createDirectories(extractDestination)
         Files.list(root)
-                .filter(p => libs.contains(p.getFileName.toString))
-                .forEach { libPath =>
-                    val destination = Path.of(extractDestination + "/" + libPath.getFileName)
-                    copyFolder(libPath, destination)
-                }
+            .filter(p => libs.contains(p.getFileName.toString))
+            .forEach { libPath =>
+                val destination = Path.of(extractDestination + "/" + libPath.getFileName)
+                copyFolder(libPath, destination)
+            }
     }
 
     private def copyFolder(from: Path, to: Path): Unit = {
         Files.list(from)
-                .forEach(child => {
-                    val toChild = Path.of(to + "/" + child.getFileName)
-                    if (Files.isDirectory(child))
-                        copyFolder(child, toChild)
-                    else {
-                        if (Files.notExists(toChild)) {
-                            Files.createDirectories(to)
-                            Files.createFile(toChild)
-                        }
-                        Files.copy(child, toChild, StandardCopyOption.REPLACE_EXISTING)
-                    }
-                })
+            .forEach(child => {
+                val toChild = Path.of(to + "/" + child.getFileName)
+                if (Files.isDirectory(child))
+                    copyFolder(child, toChild)
+                else if (Files.notExists(toChild)) {
+                    Files.createDirectories(to)
+                    Files.createFile(toChild)
+                    Files.copy(child, toChild, StandardCopyOption.REPLACE_EXISTING)
+                }
+            })
     }
 
     private def extractJar(resources: ResourceFolder, jarPath: String, libs: Array[String]): Unit = {

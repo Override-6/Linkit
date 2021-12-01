@@ -13,12 +13,14 @@
 
 package fr.linkit.server.test
 
+import java.lang.invoke.{MethodHandles, MethodType}
+import java.util
+
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.typeStringClass
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
@@ -27,7 +29,8 @@ import fr.linkit.engine.gnom.packet.traffic.{ChannelScopes, DynamicSocket, Socke
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
 import fr.linkit.engine.gnom.persistence.{DefaultObjectTranslator, PacketSerializationChoreographer, SimpleTransferInfo}
 import fr.linkit.engine.gnom.reference.linker.WeakContextObjectLinker
-import fr.linkit.engine.internal.manipulation.invokation.{ConstructorInvoker, ObjectInvocator}
+import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
+import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 import fr.linkit.server.connection.ServerConnection
 import fr.linkit.server.connection.packet.ServerPacketTraffic
@@ -35,9 +38,6 @@ import fr.linkit.server.test.PacketTest.serialAndDeserial
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Test, TestInstance}
 import org.mockito.Mockito
-import java.util
-
-import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {
@@ -45,19 +45,38 @@ class PacketTest {
 
     @Test
     def other(): Unit = {
-        val obj = ObjectCreator.allocate(classOf[JavaObject])
-        val constructor = classOf[JavaObject].getConstructors.head
-        val invoker = new ConstructorInvoker(constructor)
-        var args: Array[Any] = Array[Any](1, 2, 3, 4, 5, 6, true, 0.5, 0.2)
-        invoker.invoke(obj, args)
-        println("done")
-        println(s"obj = ${obj}")
+        val obj              = ObjectCreator.allocate(classOf[JavaObject]).asInstanceOf[JavaObject]
+        val method           = classOf[JavaObject].getDeclaredMethods.head
+        val invoker          = new MethodInvoker(method)
+        val args: Array[Any] = Array[Any](1: Long, 2, 3: Char, 4: Byte, 5: Float, 6: Double, true, 0.5F: Float, 0.2: Double)
+        println("For invoker: ")
+        for (i <- 0 to 10) {
+            val t0 = System.currentTimeMillis()
+            for (_ <- 0 to 10000)
+                obj.test(9, 9, 9, 9, 9, 9, true, 9, 9)
+            val t1 = System.currentTimeMillis()
+            println(s"\t$i - invoker took ${t1 - t0}")
+        }
 
-        args = Array[Any](Long.MaxValue, Double.MinValue, Char.MaxValue, Double.MinValue, Double.MaxValue, 60, 3, 0.50, 0.200)
-        invoker.invoke(obj, args)
-        println("done")
-        println(s"obj = ${obj}")
+        println("For java reflect: ")
+        for (i <- 0 to 10) {
+            val t0 = System.currentTimeMillis()
+            for (_ <- 0 to 10000)
+                method.invoke(obj, args: _*)
+            val t1 = System.currentTimeMillis()
+            println(s"\t$i - method took ${t1 - t0}")
+        }
 
+        val tpe    = MethodType.methodType(method.getReturnType, method.getParameterTypes)
+        val handle = MethodHandles.lookup().bind(obj, method.getName, tpe)
+        println("For method handles: ")
+        for (i <- 0 to 10) {
+            val t0 = System.currentTimeMillis()
+            for (_ <- 0 to 10000)
+                handle.invokeWithArguments(util.Arrays.asList(args: _*))
+            val t1 = System.currentTimeMillis()
+            println(s"\t$i - handle took ${t1 - t0}")
+        }
     }
 
     @Test
@@ -80,11 +99,11 @@ object PacketTest {
     private val connection                       = mock(classOf[ServerConnection])
     private val network                          = mock(classOf[Network])
     when(connection.getApp)
-            .thenReturn(app)
+        .thenReturn(app)
     when(connection.network)
-            .thenReturn(network)
+        .thenReturn(network)
     when(network.gnol)
-            .thenReturn(gnol)
+        .thenReturn(gnol)
     private val traffic: PacketTraffic           = new ServerPacketTraffic(connection, None)
     private val translator                       = new DefaultObjectTranslator(app)
     private val coords                           = DedicatedPacketCoordinates(Array(7, 8, 9), "you", "me")
@@ -98,7 +117,7 @@ object PacketTest {
         val context = ImmutablePersistenceContext(new ClassMap(), new ClassMap())
         val linker  = new WeakContextObjectLinker(null, omc)
         PersistenceConfigBuilder.fromScript(script, traffic)
-                .build(context, linker, omc)
+            .build(context, linker, omc)
     }
 
     def serialAndDeserial(obj: AnyRef): Unit = {

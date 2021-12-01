@@ -121,7 +121,6 @@ jvalue JObjectToJValue(JNIEnv* env, JValueType fieldType, jobject object) {
 	}
 	double number = ExtractNumber(env, objectType, object);
 	return NumberToJValue(env, fieldType, number);
-
 }
 
 

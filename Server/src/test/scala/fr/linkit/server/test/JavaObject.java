@@ -37,4 +37,8 @@ public class JavaObject {
         this.dd = dd;
     }
 
+    public void test(long a, int b, char c, byte d, float f, double g, boolean z, float ff, double dd){
+
+    }
+
 }

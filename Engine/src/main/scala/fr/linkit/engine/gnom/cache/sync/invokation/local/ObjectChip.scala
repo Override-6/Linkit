@@ -62,8 +62,9 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
             val engine = network.findEngine(origin).orNull
             modifyParameters(contract, engine, params)
             ExecutorEngine.setCurrentEngine(engine)
-            contract.description.javaMethod.invoke(syncObject, params: _*)
+            val result = contract.description.javaMethod.invoke(syncObject, params: _*)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
+            result
         }
     }
 
