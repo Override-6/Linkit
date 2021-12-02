@@ -3,6 +3,8 @@
 #include <string.h>
 #include <vector>
 #include <string>
+#include <algorithm>;
+using namespace std;
 
 jvalue NumberToJValue(JNIEnv* env, JValueType type, double n) {
 	jvalue val;
@@ -36,31 +38,31 @@ jvalue NumberToJValue(JNIEnv* env, JValueType type, double n) {
 }
 
 JValueType ClassNameToType(std::string name) {
-	if (name == "java.lang.Boolean" || name == "Z") {
+	if (name == "boolean" || name == "Z") {
 		return JValueType::BOOLEAN_FLAG;
 	}
-	else if (name == "java.lang.Byte" || name == "B") {
+	else if (name == "byte" || name == "B") {
 		return JValueType::BYTE_FLAG;
 	}
-	else if (name == "java.lang.Character" || name == "C") {
+	else if (name == "char" || name == "C") {
 		return JValueType::CHAR_FLAG;
 	}
-	else if (name == "java.lang.Short" || name == "S") {
+	else if (name == "short" || name == "S") {
 		return JValueType::SHORT_FLAG;
 	}
-	else if (name == "java.lang.Integer" || name == "I") {
+	else if (name == "int" || name == "I") {
 		return JValueType::INT_FLAG;
 	}
-	else if (name == "java.lang.Long" || name == "J") {
+	else if (name == "long" || name == "J") {
 		return JValueType::LONG_FLAG;
 	}
-	else if (name == "java.lang.Float" || name == "F") {
+	else if (name == "float" || name == "F") {
 		return JValueType::FLOAT_FLAG;
 	}
-	else if (name == "java.lang.Double" || name == "D") {
+	else if (name == "double" || name == "D") {
 		return JValueType::DOUBLE_FLAG;
 	}
-	else if (name == "java.lang.Void" || name == "V") {
+	else if (name == "void" || name == "V") {
 		return JValueType::VOID_FLAG;
 	}
 	else {
@@ -68,7 +70,17 @@ JValueType ClassNameToType(std::string name) {
 	}
 }
 
-double ExtractNumber(JNIEnv* env, JValueType objectType, jobject object) {
+jobject WrapPrimitive(JNIEnv* env, string className, string paramSignature, double value) {
+	replace(className.begin(), className.end(), '.', '/');
+	jclass clazz = env->FindClass(className.data());
+	string signature = "(" + paramSignature + ")L" + className + ";";
+	jmethodID methodID = env->GetStaticMethodID(clazz, "valueOf", signature.data());
+	jvalue* v;
+	v->d = value;
+	return env->CallStaticObjectMethodA(clazz, methodID, v);
+}
+
+double UnwrapPrimitive(JNIEnv* env, JValueType objectType, jobject object) {
 	auto clazz = env->GetObjectClass(object);
 	jfieldID valueID;
 	switch (objectType) {
@@ -119,7 +131,7 @@ jvalue JObjectToJValue(JNIEnv* env, JValueType fieldType, jobject object) {
 		val.l = object;
 		return val;
 	}
-	double number = ExtractNumber(env, objectType, object);
+	double number = UnwrapPrimitive(env, objectType, object);
 	return NumberToJValue(env, fieldType, number);
 }
 

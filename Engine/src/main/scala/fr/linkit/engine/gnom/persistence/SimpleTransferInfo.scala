@@ -38,7 +38,7 @@ case class SimpleTransferInfo(override val coords: DedicatedPacketCoordinates,
         if (packet != EmptyPacket)
             packetBuff += packet
         InvocationChoreographer.forceLocalInvocation {
-            AppLogger.debug(s"$currentTasksId <> Making simple serialize $coords, $packetBuff...")
+            //AppLogger.debug(s"$currentTasksId <> Making simple serialize $coords, $packetBuff...")
         }
         val content = packetBuff.toArray[AnyRef]
         serializer.serializeObjects(content)(new PersistenceBundle {

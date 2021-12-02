@@ -8,13 +8,7 @@ using namespace std;
 using namespace std::literals;
 
 
-jobject WrapPrimitive(JNIEnv* env, string className, string paramSignature, double value) {
-	jclass clazz = env->FindClass(className.data());
-	replace(className.begin(), className.end(), '.', '/');
-	string signature = "(" + paramSignature + ")" + className + ";";
-	jmethodID methodID = env->GetStaticMethodID(clazz, "valueOf", signature.data());
-	return env->CallStaticObjectMethod(clazz, methodID, value);
-}
+
 
 std::vector<jvalue> GetJObjects(JNIEnv* env, jbyte* types, jobjectArray array) {
 	const int len = env->GetArrayLength(array);

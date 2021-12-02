@@ -1,6 +1,6 @@
 
 #include <string>
-
+using namespace std;
 enum class JValueType {
 	VOID_FLAG = -2,
 	OBJECT_FLAG,
@@ -20,4 +20,6 @@ jvalue JObjectToJValue(JNIEnv*, JValueType, jobject);
 
 JValueType ClassNameToType(std::string);
 
-double ExtractNumber(JNIEnv*, JValueType, jobject);
+double UnwrapPrimitive(JNIEnv*, JValueType, jobject);
+
+jobject WrapPrimitive(JNIEnv*, string, string, double);

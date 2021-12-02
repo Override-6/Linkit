@@ -15,12 +15,12 @@ package fr.linkit.server.test
 
 import java.lang.invoke.{MethodHandles, MethodType}
 import java.util
-
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
@@ -38,6 +38,8 @@ import fr.linkit.server.test.PacketTest.serialAndDeserial
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Test, TestInstance}
 import org.mockito.Mockito
+
+import java.util.concurrent.ThreadLocalRandom
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {
@@ -80,11 +82,20 @@ class PacketTest {
     }
 
     @Test
-    def serialAndDeserialList(): Unit = {
-        val tested = new util.HashSet[(String, Int)]() {
-            Seq("Strings" -> 1, "To" -> 0, "Consider" -> -1, "Cool" -> -2).foreach(add)
+    def whet(): Unit = {
+        println(SyncClassRectifier.getMethodDescriptor(classOf[Integer].getMethod("valueOf", Integer.TYPE)))
+    }
+
+    @Test
+    def serialAndDeserialObject(): Unit = {
+        val random = ThreadLocalRandom.current().nextInt(0, 100)
+        val tested: String => String = str => str * random
+        for (_ <- 0 to 1000) {
+            val t0 = System.currentTimeMillis()
+            serialAndDeserial(tested)
+            val t1 = System.currentTimeMillis()
+            println(s"took ${t1 - t0}.")
         }
-        serialAndDeserial(tested)
     }
 
 
@@ -121,14 +132,15 @@ object PacketTest {
     }
 
     def serialAndDeserial(obj: AnyRef): Unit = {
-        println(s"Serializing and deserializing object $obj")
+        //println(s"Serializing and deserializing object $obj")
         val serialResult = translator.translate(SimpleTransferInfo(coords, attributes, ObjectPacket(obj), config, gnol))
         val buff         = serialResult.buff
-        println("Packet bytes: " + ScalaUtils.toPresentableString(buff) + s" (size: ${buff.limit()} bytes)")
+        //println("Packet bytes: " + ScalaUtils.toPresentableString(buff) + s" (size: ${buff.limit()} bytes)")
         buff.position(4)
         val deserialResult = translator.translate(traffic, buff)
+        deserialResult.makeDeserialization()
         val result         = deserialResult.packet.asInstanceOf[ObjectPacket].value
-        println(s"Deserialization result: $result")
+        //println(s"Deserialization result: $result")
     }
 
 }

@@ -22,6 +22,14 @@ extern "C" JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation
  */
 JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_pasteAllFields0
 (JNIEnv*, jclass, jobject, jobjectArray, jobjectArray, jobjectArray);
+/*
+ * Class:     fr_linkit_engine_internal_manipulation_creation_ObjectCreator
+ * Method:    getAllFields
+ * Signature: (Ljava/lang/Object;[Ljava/lang/reflect/Field;)[Ljava/lang/Object;
+ */
+JNIEXPORT jobjectArray JNICALL Java_fr_linkit_engine_internal_manipulation_creation_ObjectCreator_getAllFields
+  (JNIEnv *, jclass, jobject, jobjectArray, jobjectArray);
+
 
 #ifdef __cplusplus
 }

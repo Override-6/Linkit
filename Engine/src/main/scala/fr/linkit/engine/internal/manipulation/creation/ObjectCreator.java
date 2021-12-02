@@ -13,17 +13,33 @@
 
 package fr.linkit.engine.internal.manipulation.creation;
 
+import java.lang.reflect.Field;
+
 public class ObjectCreator {
 
     public static native Object allocate(Class<?> clazz);
 
-    public static void pasteAllFields(Object target, String[] fieldNames, String[] fieldSignatures, Object[] fieldValues) {
-        if (fieldNames.length != fieldSignatures.length || fieldNames.length != fieldValues.length) {
+    public static void pasteAllFields(Object target, Field[] fields, Object[] fieldValues) {
+        if (fields.length != fieldValues.length) {
             throw new IllegalArgumentException("Field names, field types and field values arrays must have the same length.");
         }
-        pasteAllFields0(target, fieldNames, fieldSignatures, fieldValues);
+        String[] fieldReturnTypes = new String[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            fieldReturnTypes[i] = fields[i].getType().getName();
+        }
+        pasteAllFields0(target, fields, fieldReturnTypes, fieldValues);
     }
 
-    private static native void pasteAllFields0(Object target, String[] fieldNames, String[] fieldSignatures, Object[] fieldValues);
+    public static Object[] getAllFields(Object target, Field[] fields) {
+        String[] fieldReturnTypes = new String[fields.length];
+        for (int i = 0; i < fields.length; i++) {
+            fieldReturnTypes[i] = fields[i].getType().getName();
+        }
+        return getAllFields(target, fields, fieldReturnTypes);
+    }
+
+    private static native void pasteAllFields0(Object target, Field[] fields, String[] fieldReturnTypes, Object[] fieldValues);
+
+    private static native Object[] getAllFields(Object target, Field[] fields, String[] fieldReturnTypes);
 
 }
