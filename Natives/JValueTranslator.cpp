@@ -71,13 +71,12 @@ JValueType ClassNameToType(std::string name) {
 }
 
 jobject WrapPrimitive(JNIEnv* env, string className, string paramSignature, double value) {
+	const jvalue* val = &NumberToJValue(env, ClassNameToType(className), value);
 	replace(className.begin(), className.end(), '.', '/');
 	jclass clazz = env->FindClass(className.data());
 	string signature = "(" + paramSignature + ")L" + className + ";";
 	jmethodID methodID = env->GetStaticMethodID(clazz, "valueOf", signature.data());
-	jvalue* v;
-	v->d = value;
-	return env->CallStaticObjectMethodA(clazz, methodID, v);
+	return env->CallStaticObjectMethodA(clazz, methodID, val);
 }
 
 double UnwrapPrimitive(JNIEnv* env, JValueType objectType, jobject object) {
