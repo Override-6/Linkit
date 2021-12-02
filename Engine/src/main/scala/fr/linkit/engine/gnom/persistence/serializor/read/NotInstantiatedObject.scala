@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
-import fr.linkit.api.gnom.persistence.context.TypeProfile
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypeProfile}
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
@@ -23,6 +23,7 @@ import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
                                          clazz: Class[_],
                                          content: Array[Int],
+                                         controlBox: ControlBox,
                                          selector: ObjectSelector,
                                          pool: DeserializerObjectPool) extends InstanceObject[T] with RegistrablePoolObject[T] {
 
@@ -75,7 +76,7 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
             }
             i += 1
         }
-        profile.getPersistence(args).initInstance(obj, args)
+        profile.getPersistence(args).initInstance(obj, args, controlBox)
     }
 
 }

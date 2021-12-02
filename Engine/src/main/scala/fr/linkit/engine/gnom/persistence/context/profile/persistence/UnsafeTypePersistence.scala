@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
-import fr.linkit.api.gnom.persistence.context.TypePersistence
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
 import fr.linkit.engine.gnom.persistence.context.structure.ClassObjectStructure
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
@@ -25,7 +25,7 @@ class UnsafeTypePersistence[T](clazz: Class[_]) extends TypePersistence[T]() {
     override      val structure: ClassObjectStructure = ClassObjectStructure(clazz)
     private final val fields   : Array[Field]         = structure.fields
 
-    override def initInstance(instance: T, args: Array[Any]): Unit = {
+    override def initInstance(instance: T, args: Array[Any], box: ControlBox): Unit = {
         ObjectCreator.pasteAllFields(instance, fields, args.asInstanceOf[Array[AnyRef]])
     }
 

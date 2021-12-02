@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.defaults
 
-import fr.linkit.api.gnom.persistence.context.TypePersistence
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
@@ -23,7 +23,7 @@ class JavaHashMapTypePersistence extends TypePersistence[util.HashMap[Any, Any]]
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 
-    override def initInstance(allocatedObject: util.HashMap[Any, Any], args: Array[Any]): Unit = {
+    override def initInstance(allocatedObject: util.HashMap[Any, Any], args: Array[Any], box: ControlBox): Unit = {
         val data = new util.HashMap[Any, Any]()
         args.head.asInstanceOf[Array[AnyRef]]
                 .foreach(x => {

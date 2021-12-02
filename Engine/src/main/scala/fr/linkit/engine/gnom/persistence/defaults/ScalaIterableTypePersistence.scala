@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.defaults
 
-import fr.linkit.api.gnom.persistence.context.TypePersistence
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
@@ -26,7 +26,7 @@ class ScalaIterableTypePersistence extends TypePersistence[Iterable[Any]] {
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 
-    override def initInstance(allocatedObject: Iterable[Any], args: Array[Any]): Unit = {
+    override def initInstance(allocatedObject: Iterable[Any], args: Array[Any], box: ControlBox): Unit = {
         val factory = companionOf(allocatedObject.getClass, allocatedObject.getClass)
         val result  = factory.newBuilder
                 .addAll(args.head.asInstanceOf[Array[AnyRef]])

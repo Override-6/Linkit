@@ -14,7 +14,9 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.Freezable
-import fr.linkit.api.gnom.persistence.obj.{ReferencedNetworkObject, InstanceObject}
+import fr.linkit.api.gnom.persistence.context.ControlBox
+import fr.linkit.api.gnom.persistence.obj.{InstanceObject, LambdaObject, ReferencedNetworkObject}
+import fr.linkit.engine.gnom.persistence.context.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 
 class ObjectPool(sizes: Array[Int]) extends Freezable {
@@ -39,6 +41,7 @@ class ObjectPool(sizes: Array[Int]) extends Freezable {
         // Objects
         new PoolChunk[Enum[_]](Enum, this, sizes(Enum)),
         new PoolChunk[InstanceObject[AnyRef]](Object, this, sizes(Object)),
+        new PoolChunk[LambdaObject](Lambda, this, sizes(Lambda)),
         // Arrays
         new PoolChunk[Array[_]](Array, this, sizes(Array)),
         // Context Objects Locations

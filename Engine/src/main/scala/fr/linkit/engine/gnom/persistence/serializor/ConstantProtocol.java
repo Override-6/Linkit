@@ -30,9 +30,10 @@ public class ConstantProtocol {
 
     public static final byte Enum = 11;
     public static final byte Object = 12;
-    public static final byte Array = 13;
-    public static final byte RNO = 14; //Referenced Network Object
+    public static final byte Lambda = 13;
+    public static final byte Array = 14;
+    public static final byte RNO = 15; //Referenced Network Object
 
-    public static final byte ChunkCount = 15;
+    public static final byte ChunkCount = 16;
 
 }

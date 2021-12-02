@@ -13,18 +13,20 @@
 
 package fr.linkit.engine.internal.system
 
-import java.io.File
-
 import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.internal.system.AppInitialisationException
 import fr.linkit.engine.internal.LinkitApplication
+
+import java.io.File
+import java.lang.management.ManagementFactory
 import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
 import java.util.zip.{ZipEntry, ZipFile}
 
 private[linkit] object InternalLibrariesLoader {
 
-    private val ResourceMark    = "/mapEngineFilter.txt"
-    private val LibsDestination = "system.internal.libraries_dir"
+    private       val ResourceMark    = "/mapEngineFilter.txt"
+    private       val LibsDestination = "system.internal.libraries_dir"
+    private final val processTag      = "@" + ManagementFactory.getRuntimeMXBean.getPid
 
     def extractAndLoad(resources: ResourceFolder, libs: Array[String]): Unit = {
         extract(resources, libs)
@@ -32,9 +34,9 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def load(resources: ResourceFolder): Unit = {
-        val libsPath = getPathProperty(resources, LibsDestination)
+        val libsPath = Path.of(getPathProperty(resources, LibsDestination) + s"/$processTag")
         Files.list(libsPath)
-            .forEach(loadLib)
+                .forEach(loadLib)
     }
 
     private def loadLib(path: Path): Unit = {
@@ -64,33 +66,33 @@ private[linkit] object InternalLibrariesLoader {
 
     private def extractFolder(resources: ResourceFolder, filePath: String, libs: Array[String]): Unit = {
         val root               = Path.of(filePath + "/natives/")
-        val extractDestination = getPathProperty(resources, LibsDestination)
+        val extractDestination = Path.of(getPathProperty(resources, LibsDestination).toString + s"/$processTag")
         Files.createDirectories(extractDestination)
         Files.list(root)
-            .filter(p => libs.contains(p.getFileName.toString))
-            .forEach { libPath =>
-                val destination = Path.of(extractDestination + "/" + libPath.getFileName)
-                copyFolder(libPath, destination)
-            }
+                .filter(p => libs.contains(p.getFileName.toString))
+                .forEach { libPath =>
+                    val destination = Path.of(extractDestination + "/" + libPath.getFileName)
+                    copyFolder(libPath, destination)
+                }
     }
 
     private def copyFolder(from: Path, to: Path): Unit = {
         Files.list(from)
-            .forEach(child => {
-                val toChild = Path.of(to + "/" + child.getFileName)
-                if (Files.isDirectory(child))
-                    copyFolder(child, toChild)
-                else if (Files.notExists(toChild)) {
-                    Files.createDirectories(to)
-                    Files.createFile(toChild)
-                    Files.copy(child, toChild, StandardCopyOption.REPLACE_EXISTING)
-                }
-            })
+                .forEach(child => {
+                    val toChild = Path.of(to + "/" + child.getFileName)
+                    if (Files.isDirectory(child))
+                        copyFolder(child, toChild)
+                    else if (Files.notExists(toChild)) {
+                        Files.createDirectories(to)
+                        Files.createFile(toChild)
+                        Files.copy(child, toChild, StandardCopyOption.REPLACE_EXISTING)
+                    }
+                })
     }
 
     private def extractJar(resources: ResourceFolder, jarPath: String, libs: Array[String]): Unit = {
         val zipFile = new ZipFile(jarPath)
-        val root    = getPathProperty(resources, LibsDestination)
+        val root    = Path.of(getPathProperty(resources, LibsDestination).toString + s"/$processTag")
         Files.createDirectories(root)
         libs.foreach { lib =>
             val entry = zipFile.getEntry("natives/" + lib)

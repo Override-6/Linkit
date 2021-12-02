@@ -16,6 +16,7 @@ package fr.linkit.server.connection
 import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.persistence.ObjectTransferResult
+import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.internal.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
@@ -100,7 +101,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         candidates.foreach(connection => {
             if (connection.canHandlePacketInjection(result))
                 connection.send(buff)
-            else throw new NoSuchElementException("Could not find presence for")
+            else throw new NoSuchElementException(s"Unable to send packet to ${connection.boundIdentifier}: Could not find traffic presence at ${new TrafficObjectReference(result.coords.path)}")
         })
     }
 

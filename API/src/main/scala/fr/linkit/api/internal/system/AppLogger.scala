@@ -26,6 +26,8 @@ object AppLogger {
     var useVerbose         : Boolean = false
     var printVerbosesOnKill: Boolean = false
 
+    var printTraffic: Boolean = true
+
     val logger: Logger = Logger.getLogger(classOf[ApplicationContext])
 
     def trace(msg: AnyRef): Unit = logger.trace(msg)
@@ -75,14 +77,14 @@ object AppLogger {
     }
 
     def logUpload(target: String, bytes: Array[Byte]): Unit = /*verbose*/ {
-        if (logger.isDebugEnabled) {
+        if (printTraffic) {
             val preview = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length})")
         }
     }
 
     def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = /*verbose*/ {
-        if (logger.isDebugEnabled) {
+        if (printTraffic) {
             val preview     = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             val finalTarget = if (target == null) "" else target
             debug(s"${Console.CYAN}Received: ↓ $finalTarget ↓ $preview (l: ${bytes.length + 4})")

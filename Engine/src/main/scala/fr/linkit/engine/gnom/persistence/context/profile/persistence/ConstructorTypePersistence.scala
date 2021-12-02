@@ -14,8 +14,7 @@
 package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
 import java.lang.reflect.Constructor
-
-import fr.linkit.api.gnom.persistence.context.{Deconstructor, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Deconstructor, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.context.Persist
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
@@ -35,7 +34,7 @@ class ConstructorTypePersistence[T <: AnyRef](clazz: Class[_], constructor: Cons
     override val structure: ObjectStructure = ArrayObjectStructure(constructor.getParameterTypes: _*)
     private  val invoker                    = new ConstructorInvoker(constructor)
 
-    override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
+    override def initInstance(allocatedObject: T, args: Array[Any], box: ControlBox): Unit = {
         invoker.invoke(allocatedObject, args)
     }
 

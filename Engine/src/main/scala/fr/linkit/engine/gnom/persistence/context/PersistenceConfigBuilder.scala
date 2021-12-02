@@ -23,6 +23,7 @@ import fr.linkit.engine.gnom.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.gnom.reference.linker.WeakContextObjectLinker
+import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 import org.jetbrains.annotations.Nullable
@@ -78,20 +79,23 @@ class PersistenceConfigBuilder {
                 override val types: Array[Class[_]] = Array(toClass)
             }
 
-            override def initInstance(allocatedObject: A, args: Array[Any]): Unit = {
+            override def initInstance(allocatedObject: A, args: Array[Any], box: ControlBox): Unit = {
                 if (procrastinator eq null)
                     initInstance0(allocatedObject, args)
-                else
-                    procrastinator.runLater(initInstance0(allocatedObject, args))
+                else {
+                    box.beginTask()
+                    procrastinator.runLater {
+                        initInstance0(allocatedObject, args)
+                        box.releaseTask()
+                    }
+                }
             }
 
             private def initInstance0(allocatedObject: A, args: Array[Any]): Unit = {
-                val t: B = args.head.asInstanceOf[B]
-                val from = fFrom(t)
-                fields.foreach(f => {
-                    val value = ScalaUtils.getValue(from, f)
-                    ScalaUtils.setValue(allocatedObject, f, value)
-                })
+                val t: B   = args.head.asInstanceOf[B]
+                val from   = fFrom(t)
+                val values = ObjectCreator.getAllFields(from, fields)
+                ObjectCreator.pasteAllFields(allocatedObject, fields, values)
             }
 
             override def toArray(t: A): Array[Any] = {

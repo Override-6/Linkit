@@ -13,13 +13,27 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.gnom.persistence.obj.ObjectStructure
+/**
+ * The Control box is used during object deserialisation.
+ * The control box is currently very simple but could get more complex in the future
+ * Used to handle async object deserialisation
+ * */
+trait ControlBox {
 
-trait TypePersistence[-T] {
 
-    val structure: ObjectStructure
+    /**
+     * informs the control box that an async task will be performed.
+     * */
+    def beginTask(): Unit
 
-    def initInstance(allocatedObject: T, args: Array[Any], box: ControlBox): Unit
+    /**
+     * Informs the control box that an async tas has ended.
+     * */
+    def releaseTask(): Unit
 
-    def toArray(t: T): Array[Any]
+    /**
+     * The thread that executes the method will wait until all signaled async tasks are terminated.
+     * */
+    def join(): Unit
+
 }

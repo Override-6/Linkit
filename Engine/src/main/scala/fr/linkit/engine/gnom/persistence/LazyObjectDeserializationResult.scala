@@ -13,8 +13,10 @@
 
 package fr.linkit.engine.gnom.persistence
 
+import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
@@ -43,8 +45,13 @@ class LazyObjectDeserializationResult(override val buff: ByteBuffer,
     }
 
     override def makeDeserialization(): Unit = {
+        val t0 = System.currentTimeMillis()
         attributes0 = extract[PacketAttributes](SimplePacketAttributes.empty)
         packet0 = extract[Packet](EmptyPacket).prepare()
+        val t1 = System.currentTimeMillis()
+        InvocationChoreographer.forceLocalInvocation {
+            AppLogger.debug(s"Deserialization has been performed $coords, $packet0, $attributes0 (took ${t1 - t0} ms.)")
+        }
     }
 
     override def isDeserialized: Boolean = attributes0 != null && packet0 != null

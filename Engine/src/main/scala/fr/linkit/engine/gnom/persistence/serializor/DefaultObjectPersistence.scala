@@ -14,10 +14,14 @@
 package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
+import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
+import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.persistence.serializor.read.ObjectReader
 import fr.linkit.engine.gnom.persistence.serializor.write.{ObjectWriter, SerializerObjectPool}
+
 import java.nio.ByteBuffer
 
 class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistence {
@@ -32,6 +36,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
     }
 
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = {
+        val t0 = System.currentTimeMillis()
         val buffer = bundle.buff
         buffer.put(signature.toArray)
         val writer = new ObjectWriter(bundle)
@@ -39,6 +44,10 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         writer.writePool()
         val pool = writer.getPool
         writeEntries(objects, writer, pool)
+        val t1 = System.currentTimeMillis()
+        InvocationChoreographer.forceLocalInvocation {
+            AppLogger.debug(s"Ended serialization of ${objects.mkString(", ")} (took ${t1 - t0} ms.)")
+        }
     }
 
     private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,
@@ -58,7 +67,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         checkSignature(buff)
 
         val reader = new ObjectReader(bundle, center)
-        reader.initPool()
+        reader.readAndInit()
         val contentSize = buff.getChar
         val pool        = reader.getPool
         for (_ <- 0 until contentSize) {
@@ -71,6 +80,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
                 case o: PoolObject[AnyRef]            => o.value
                 case o: AnyRef                        => o
             }
+            reader.controlBox.join()
             forEachObjects(obj)
         }
     }

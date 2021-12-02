@@ -11,9 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence
+package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.packet.PacketException
-import fr.linkit.engine.gnom.persistence.serializor.ObjectDeserializationException
 
-class NotDeserializedException(msg: String, cause: Throwable = null) extends ObjectDeserializationException(msg, cause)
+class ObjectDeserializationException(msg: String, cause: Throwable = null) extends PacketException(msg, cause) {
+
+}

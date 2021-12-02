@@ -38,7 +38,7 @@ class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
                 override val types: Array[Class[_]] = Array(clazz)
             }
 
-            override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
+            override def initInstance(allocatedObject: T, args: Array[Any], box: ControlBox): Unit = {
                 args.head match {
                     case t: B => ScalaUtils.pasteAllFields(allocatedObject, fFrom(t))
                 }

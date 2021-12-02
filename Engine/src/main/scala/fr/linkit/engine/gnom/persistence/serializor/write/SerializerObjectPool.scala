@@ -23,6 +23,8 @@ import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
 
+import java.lang.invoke.SerializedLambda
+
 class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends ObjectPool(sizes) {
 
     private         val config          = bundle.config
@@ -44,10 +46,11 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             case _: Boolean => getChunkFromFlag(Boolean)
             case _: Char    => getChunkFromFlag(Char)
 
-            case _: String                 => getChunkFromFlag(String)
-            case _ if ref.getClass.isArray => getChunkFromFlag(Array)
-            case _: Enum[_]                => getChunkFromFlag(Enum)
-            case _                         => getChunkFromFlag(Object)
+            case _: String                          => getChunkFromFlag(String)
+            case _ if ref.getClass.isArray          => getChunkFromFlag(Array)
+            case _: Enum[_]                         => getChunkFromFlag(Enum)
+            case ref: AnyRef if isLambdaObject(ref) => getChunkFromFlag(Lambda)
+            case _                                  => getChunkFromFlag(Object)
         }
     }
 
@@ -93,7 +96,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         var idx   = chunk.indexOf(ref)
         if (idx > -1)
             idx += chunksPositions(chunk.tag) + 1
-        else if (tag == Object) { //it may be a referenced object
+        else if (tag == Object) { //it could be a referenced object
             idx = chunks(RNO).indexOf(ref) + chunksPositions(RNO) + 1
         }
         idx
@@ -116,9 +119,16 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         }
     }
 
-    private def addLambda(ref: AnyRef): Unit = {
-        val clazz = ref.getClass
-        println()
+    private def addLambda(lambdaObject: AnyRef): Unit = {
+        val lambdaClass = lambdaObject.getClass
+        val m           = lambdaClass.getDeclaredMethod("writeReplace")
+        m.setAccessible(true)
+        val serializedLambda = m.invoke(lambdaObject).asInstanceOf[SerializedLambda]
+        val className = serializedLambda.getCapturingClass.replace('/', '.')
+        val enclosingClass = java.lang.Class.forName(className)
+        val slo = new SimpleLambdaObject(enclosingClass, lambdaObject, serializedLambda)
+        getChunkFromFlag(Lambda).add(slo)
+        addObj(serializedLambda)
     }
 
     private def addObj(ref: AnyRef): Unit = {
@@ -138,10 +148,24 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
                 getChunkFromFlag(Class).add(ref)
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
-            case _ if ref.getClass.isHidden =>
+            case _ if isLambdaObject(ref)               =>
                 addLambda(ref)
             case _                                      =>
                 addObj0(ref)
+        }
+    }
+
+    @inline
+    private def isLambdaObject(ref: AnyRef): Boolean = {
+        val clazz = ref.getClass
+        clazz.getSimpleName.contains("$Lambda$") && {
+            try {
+                clazz.getDeclaredMethod("writeReplace")
+                true
+            } catch {
+                case _: NoSuchMethodException =>
+                    false
+            }
         }
     }
 
@@ -153,7 +177,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             val persistence = profile.getPersistence(ref)
             val decomposed  = persistence.toArray(ref)
             val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
-            objPool.add(new PacketObject(ref, decomposed, profile))
+            objPool.add(new SimpleObject(ref, decomposed, profile))
             addAll(decomposed)
             ref match {
                 case sync: SynchronizedObject[_] =>

@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
-import fr.linkit.api.gnom.persistence.context.TypePersistence
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.context.structure.SyncObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
@@ -24,9 +24,9 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
 
     override val structure: ObjectStructure = new SyncObjectStructure(objectPersistence.structure)
 
-    override def initInstance(syncObj: T, args: Array[Any]): Unit = {
+    override def initInstance(syncObj: T, args: Array[Any], box: ControlBox): Unit = {
         setReference(syncObj, args.last.asInstanceOf[SyncObjectReference])
-        objectPersistence.initInstance(syncObj, args.dropRight(1))
+        objectPersistence.initInstance(syncObj, args.dropRight(1), box)
     }
 
     private def setReference(syncObj: SynchronizedObject[T], reference: SyncObjectReference): Unit = {

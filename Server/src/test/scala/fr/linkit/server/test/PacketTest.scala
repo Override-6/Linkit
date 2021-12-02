@@ -40,6 +40,7 @@ import org.junit.jupiter.api.{Test, TestInstance}
 import org.mockito.Mockito
 
 import java.util.concurrent.ThreadLocalRandom
+import scala.runtime.{LambdaDeserialize, LambdaDeserializer}
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {

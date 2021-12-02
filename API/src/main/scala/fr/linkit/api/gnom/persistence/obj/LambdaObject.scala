@@ -11,9 +11,6 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence
+package fr.linkit.api.gnom.persistence.obj
 
-import fr.linkit.api.gnom.packet.PacketException
-import fr.linkit.engine.gnom.persistence.serializor.ObjectDeserializationException
-
-class NotDeserializedException(msg: String, cause: Throwable = null) extends ObjectDeserializationException(msg, cause)
+trait LambdaObject extends PoolObject[AnyRef]

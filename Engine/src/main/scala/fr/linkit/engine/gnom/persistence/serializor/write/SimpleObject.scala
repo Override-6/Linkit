@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.InstanceObject
 import fr.linkit.engine.internal.utils.JavaUtils
 
-class PacketObject(override val value: AnyRef,
+class SimpleObject(override val value: AnyRef,
                    val decomposed: Array[Any],
                    override val profile: TypeProfile[_]) extends InstanceObject[AnyRef] {
 
