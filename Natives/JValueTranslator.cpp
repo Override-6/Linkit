@@ -71,7 +71,7 @@ JValueType ClassNameToType(std::string name) {
 }
 
 jobject WrapPrimitive(JNIEnv* env, string className, string paramSignature, double value) {
-	const jvalue* val = &NumberToJValue(env, ClassNameToType(className), value);
+	const jvalue* val = &NumberToJValue(env, ClassNameToType(paramSignature), value);
 	replace(className.begin(), className.end(), '.', '/');
 	jclass clazz = env->FindClass(className.data());
 	string signature = "(" + paramSignature + ")L" + className + ";";

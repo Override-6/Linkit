@@ -116,6 +116,11 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         }
     }
 
+    private def addLambda(ref: AnyRef): Unit = {
+        val clazz = ref.getClass
+        println()
+    }
+
     private def addObj(ref: AnyRef): Unit = {
         //just do not add null elements (automatically referenced to '0' when written)
         //nor do not add elements that are already contained in the pool
@@ -133,6 +138,8 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
                 getChunkFromFlag(Class).add(ref)
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
+            case _ if ref.getClass.isHidden =>
+                addLambda(ref)
             case _                                      =>
                 addObj0(ref)
         }

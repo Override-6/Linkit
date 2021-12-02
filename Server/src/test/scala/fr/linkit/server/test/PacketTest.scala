@@ -55,7 +55,7 @@ class PacketTest {
         for (i <- 0 to 10) {
             val t0 = System.currentTimeMillis()
             for (_ <- 0 to 10000)
-                obj.test(9, 9, 9, 9, 9, 9, true, 9, 9)
+                invoker.invoke(obj, args)
             val t1 = System.currentTimeMillis()
             println(s"\t$i - invoker took ${t1 - t0}")
         }
