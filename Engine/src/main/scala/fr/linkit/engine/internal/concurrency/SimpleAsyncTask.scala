@@ -33,7 +33,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     private val onThrowConsumers                = new ConsumerContainer[Option[Throwable]]
     private           var worker : Worker = _
 
-    override def getWorkerThread: Worker = worker
+    override def getWorker: Worker = worker
 
     override def isExecuting: Boolean = worker != null
 

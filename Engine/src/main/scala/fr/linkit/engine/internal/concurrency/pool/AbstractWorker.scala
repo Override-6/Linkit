@@ -133,8 +133,8 @@ private[concurrency] trait AbstractWorker
     override def isSleeping: Boolean = isParkingForWorkflow
 
     private def ensureCurrentThreadEqualsThisObject(): Unit = {
-        if (Thread.currentThread() != this)
-            throw IllegalThreadException("This Thread must run methods of it's own object representation.")
+        if (Thread.currentThread() != thread)
+            throw IllegalThreadException("This Thread does not in its own worker.")
     }
 
 }

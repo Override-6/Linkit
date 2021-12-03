@@ -47,6 +47,6 @@ class SimpleControlBox extends ControlBox {
             WorkerPools.currentTask.orNull
         }
         if (currentTask == null) this.wait()
-        else locker.pauseCurrentTask()
+        else locker.pauseTask()
     }
 }

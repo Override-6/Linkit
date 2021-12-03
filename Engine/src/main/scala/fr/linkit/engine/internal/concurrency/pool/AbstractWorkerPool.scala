@@ -83,17 +83,9 @@ import scala.util.control.NonFatal
  * @see [[BusyBlockingQueue]] for busy waitings example.
  * @param initialThreadCount The number of threads the pool will contain (can ba changed with [[setThreadCount]].
  * */
-abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPool with AutoCloseable {
+abstract class AbstractWorkerPool(val name: String) extends WorkerPool with AutoCloseable {
 
     import fr.linkit.api.internal.concurrency.WorkerPools._
-
-    if (initialThreadCount <= 0)
-        throw new IllegalArgumentException(s"Worker pool '$name' must contain at least 1 thread, provided: '$initialThreadCount'")
-
-    //The extracted workQueue of the executor which contains all the tasks to execute
-    private val workQueue = new LinkedBlockingQueue[Runnable]()
-    //private val choreographer = new Choreographer(this)
-    private val executor  = new ThreadPoolExecutor(initialThreadCount, initialThreadCount, 0, TimeUnit.MILLISECONDS, workQueue, getThreadFactory)
 
     protected val workers: ListBuffer[Worker] = ListBuffer.empty
     private var closed                        = false
@@ -101,11 +93,14 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
     //additional values for debugging
     @volatile private var activeThreads = 0
     @volatile private var taskCount     = 0
-    private val workTaskIds             = ListBuffer.empty[Int]
+
+    protected def nextTaskCount: Int = {
+        taskCount += 1
+        taskCount
+    }
 
     override def close(): Unit = {
         closed = true
-        executor.shutdownNow()
     }
 
     /**
@@ -120,11 +115,10 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
             throw new IllegalStateException("Attempted to submit a task in a closed thread pool !")
 
         var runnable: Runnable = null
-        taskCount += 1
-        val submittedTaskID = taskCount
-        val currentTask     = currentTaskWithController.orNull
-        val childTask       = SimpleAsyncTask[A](submittedTaskID, currentTask)(Try(task))
-        val currentEngine   = ExecutorEngine.currentEngine
+        val submittedTaskID    = nextTaskCount
+        val currentTask        = currentTaskWithController.orNull
+        val childTask          = SimpleAsyncTask[A](submittedTaskID, currentTask)(Try(task))
+        val currentEngine      = ExecutorEngine.currentEngine
         runnable = () => {
             val oldEngine = ExecutorEngine.currentEngine
             if (currentEngine != null)
@@ -132,7 +126,6 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
             val rootExecution = currentTaskExecutionDepth == 0
             if (rootExecution)
                 activeThreads += 1
-            AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID TAKEN FROM POOL $name")
 
             try {
                 currentWorker
@@ -146,23 +139,21 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
                 ExecutorEngine.setCurrentEngine(oldEngine) //return to the previous engine
             if (rootExecution)
                 activeThreads -= 1
-            workTaskIds.synchronized {
-                workTaskIds -= submittedTaskID
-                val tasks = workTaskIds.toString()
-                AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK ACCOMPLISHED ($submittedTaskID) ($tasks).")
-            }
         }
-        val tasks = workTaskIds.synchronized {
-            workTaskIds += submittedTaskID
-            workTaskIds.toString()
-        }
-        AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID SUBMIT TO POOL $name, TOTAL TASKS : $tasks (${System.identityHashCode(workQueue)}), $this")
-        executor.execute(runnable)
+        post(runnable)
 
         //If there is one busy thread that is waiting for a new task to be performed,
         //It would instantly execute the current task.
         unparkBusyThread()
         childTask
+    }
+
+    protected def post(runnable: Runnable): Unit
+
+    protected def addWorker(worker: Worker): Unit = {
+        workers.synchronized {
+            workers += worker
+        }
     }
 
     override def ensureCurrentThreadOwned(): Unit = {
@@ -200,18 +191,11 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
         workers.filter(_.isSleeping)
     }
 
-    def countRemainingTasks: Int = workQueue.size()
-
     /**
      * @return the number of threads that are currently executing a task.
      * */
     def busyThreads: Int = activeThreads
 
-    def setThreadCount(newCount: Int): Unit = {
-        executor.setMaximumPoolSize(newCount)
-        AppLogger.trace(s"$name's core pool size is set to $newCount")
-        executor.setCorePoolSize(newCount)
-    }
 
     /**
      * Keep executing tasks contained in the workQueue while
@@ -238,6 +222,10 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
         AppLogger.vError(s"$currentTasksId task '${currentTask.taskID}' is continuing")
     }
 
+    def haveMoreTasks: Boolean
+
+    protected def nextTask: Runnable
+
     /**
      * Keep the current thread busy with task execution for at least
      * x milliseconds.
@@ -260,9 +248,9 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
 
         def pauseCurrentTaskTimed(): Long = {
             var busiedMillis: Long = 0
-            while (!workQueue.isEmpty && busiedMillis <= timeoutMillis) {
+            while (haveMoreTasks && busiedMillis <= timeoutMillis) {
                 val t0 = now()
-                workQueue.take().run()
+                nextTask.run()
                 val t1 = now()
                 busiedMillis += (t1 - t0)
             }
@@ -328,7 +316,6 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
 
     protected def threadCount: Int = workers.length
 
-    protected def getThreadFactory: ThreadFactory
 
     /**
      * Executes all tasks contained in the workQueue
@@ -342,13 +329,12 @@ abstract class AbstractWorkerPool(initialThreadCount: Int, val name: String) ext
         //AppLogger.vDebug(s"EXECUTING ALL REMAINING TASKS (${System.identityHashCode(workQueue)}), $this")
         val currentController = currentWorker.getController
         val ct                = currentTask.get
-        while (!workQueue.isEmpty && ct.isPaused) {
-            val task = workQueue.poll()
+        while (haveMoreTasks && ct.isPaused) {
+            val task = nextTask
             if (task != null) {
                 currentController.runSubTask(task)
             }
         }
-        AppLogger.vError(s"Exit executeRemainingTasks... (${workQueue.isEmpty}, ${ct.isPaused})")
     }
 
     override def runLater(task: => Unit): Unit = runLaterControl {

@@ -22,9 +22,9 @@ object WorkerPools {
 
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Application Worker")
 
-    private val boundedThreads = mutable.Map.empty[Thread, Thread with Worker]
+    private val boundedThreads = mutable.Map.empty[Thread, Worker]
 
-    def bindWorker(thread: Thread, workerVersion: Thread with Worker): Unit = {
+    def bindWorker(thread: Thread, workerVersion: Worker): Unit = {
         boundedThreads.put(thread, workerVersion)
     }
 
@@ -90,7 +90,7 @@ object WorkerPools {
      * @return {{{true}}} if and only if the current thread is an instance of [[Worker]]
      * */
     def isCurrentThreadWorker: Boolean = {
-        currentThread.isInstanceOf[Worker]
+        Try(currentWorker).isSuccess
     }
 
     /**

@@ -63,7 +63,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
             WorkerPools.currentTask.orNull
         }
         if (currentTask == null && executor != null) this.wait()
-        else if (executor != null) locker.pauseCurrentTask()
+        else if (executor != null) locker.pauseTask()
     }
 
     def deserializeNextResult(injectable: PacketInjectable): Unit = {

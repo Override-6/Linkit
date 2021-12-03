@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerController, WorkerPools, Worker, workerExecution}
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.internal.concurrency.WorkerPools.{currentTasksId, currentWorker}
+import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerController, WorkerPools, workerExecution}
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController.ControlTicket
 
 import scala.collection.mutable
@@ -38,7 +38,7 @@ class SimpleWorkerController extends WorkerController {
     }
 
     @workerExecution
-    override def pauseTaskForAtLeast(millis: Long): Unit = {
+    override def pauseTaskForAtLeast(millis: Long): Unit =  {
         val worker      = currentWorker
         val currentTask = worker.getCurrentTask.get
         val lockDate    = System.currentTimeMillis()
@@ -46,7 +46,7 @@ class SimpleWorkerController extends WorkerController {
         pauseCurrentTask(millis)
     }
 
-    override def wakeupNTask(n: Int): Unit = {
+    override def wakeupNTask(n: Int): Unit = this.synchronized {
         val count = workingThreads.size
         val x = if (n > count || n < 0) count else n
         for (_ <- 0 to x) {
@@ -55,7 +55,7 @@ class SimpleWorkerController extends WorkerController {
     }
 
     @workerExecution
-    override def wakeupAnyTask(): Unit = {
+    override def wakeupAnyTask(): Unit = this.synchronized {
         AppLogger.vError(s"$currentTasksId <> entertainedThreads = " + workingThreads)
         val opt = workingThreads.find(entry => entry._2.isConditionFalse)
         if (opt.isEmpty)
@@ -70,7 +70,7 @@ class SimpleWorkerController extends WorkerController {
     }
 
     @workerExecution
-    override def wakeupTasks(taskIds: Seq[Int]): Unit = {
+    override def wakeupTasks(taskIds: Seq[Int]): Unit = this.synchronized {
         AppLogger.vError(s"$currentTasksId <> entertainedThreads = " + workingThreads)
 
         if (workingThreads.isEmpty) {
@@ -87,20 +87,24 @@ class SimpleWorkerController extends WorkerController {
     }
 
     @workerExecution
-    override def wakeupWorkerTask(task: AsyncTask[_]): Unit = {
+    override def wakeupWorkerTask(task: AsyncTask[_]): Unit = this.synchronized {
         if (!workingThreads.contains(task.taskID))
-            throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorkerThread.getName})")
+            throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorker.thread.getName})")
 
         task.wakeup()
     }
 
-    def pauseCurrentTask(): Unit = WorkerPools.ensureCurrentIsWorker().pauseCurrentTask()
+    private def pauseCurrentTask(): Unit = {
+        WorkerPools.ensureCurrentIsWorker().pauseCurrentTask()
+    }
 
-    def pauseCurrentTask(millis: Long): Unit = WorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
+    private def pauseCurrentTask(millis: Long): Unit = WorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
 
     private def createControlTicket(pauseCondition: => Boolean): Unit = {
-        val currentTask = WorkerPools.currentTask.get
-        workingThreads.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
+        this.synchronized {
+            val currentTask = WorkerPools.currentTask.get
+            workingThreads.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
+        }
         pauseCurrentTask()
     }
 
@@ -112,7 +116,6 @@ object SimpleWorkerController {
 
         def isConditionFalse: Boolean = !condition
 
-        def getWorker: Worker = task.getWorkerThread
     }
 
 }

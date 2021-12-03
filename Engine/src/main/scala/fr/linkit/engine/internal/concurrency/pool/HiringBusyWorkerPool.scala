@@ -1,48 +1,39 @@
 package fr.linkit.engine.internal.concurrency.pool
 
-import java.util.concurrent.ThreadFactory
+import java.util.concurrent.LinkedBlockingQueue
 
-import fr.linkit.engine.internal.concurrency.pool.HiringBusyWorkerPool.HiringTicket
+import fr.linkit.api.internal.concurrency.WorkerPools
+import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
 
-import scala.collection.mutable
+class HiringBusyWorkerPool(name: String) extends AbstractWorkerPool(name) {
 
-class HiringBusyWorkerPool(name: String) extends AbstractWorkerPool(0, name) {
-
-    private val tickets = mutable.Queue.empty[HiringTicket]
+    private val workQueue = new LinkedBlockingQueue[Runnable]()
 
     def hireCurrentThread(): Nothing = {
-        val ticket = new HiringTicket(Thread.currentThread())
-        tickets += ticket
-        setThreadCount(threadCount + 1)
-        ticket.go()
-        //The method will never end
-        throw new Error()
+        val currentThread = Thread.currentThread()
+        val worker        = new HiredWorker(currentThread, this)
+        WorkerPools.bindWorker(currentThread, worker)
+        addWorker(worker)
+
+        def nothing: Nothing = throw new Error()
+
+        val task = new SimpleAsyncTask[Nothing](0, null, () => {
+            pauseCurrentTask() //This pause will never end
+            nothing //keep compiler happy
+        })
+        worker.runTask(task)
+        nothing //keep compiler happy
     }
 
-    override protected def getThreadFactory: ThreadFactory = { runnable =>
-        val ticket       = tickets.dequeue()
-        val thread       = ticket.thread
-        val workerThread = new HiredWorker(ticket.thread, this)
-        workers += workerThread
-        ticket.informHired(runnable)
-        thread
-    }
-}
-
-object HiringBusyWorkerPool {
-
-    class HiringTicket(val thread: Thread) {
-        private var runnable: Runnable = _
-
-        def go(): Unit = {
-            this.wait()
-            runnable.run()
-        }
-
-        def informHired(runnable: Runnable): Unit = this.synchronized {
-            this.runnable = runnable
-            this.notify()
-        }
+    override protected def post(runnable: Runnable): Unit = {
+        workQueue.put(runnable)
     }
 
+    override def haveMoreTasks: Boolean = {
+        !workQueue.isEmpty
+    }
+
+    override protected def nextTask: Runnable = {
+        workQueue.take()
+    }
 }

@@ -70,7 +70,7 @@ class PersistenceConfigBuilder {
         this
     }
 
-    def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A, procrastinator: Procrastinator = null): this.type = {
+    def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A, procrastinator: => Procrastinator = null): this.type = {
         val fromClass = classTag[A].runtimeClass
         val toClass   = classTag[B].runtimeClass
         val persistor = new TypePersistence[A] {
@@ -150,15 +150,15 @@ class PersistenceConfigBuilder {
 
         persistors.foreachEntry((clazz, persistence) => {
             map.getOrElseUpdate(clazz, new TypeProfileBuilder()(ClassTag(clazz)))
-                    .addPersistence(cast(persistence))
+                .addPersistence(cast(persistence))
         })
         val finalMap = map.toSeq
-                .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
-                .map(pair => {
-                    val clazz   = pair._1
-                    val profile = pair._2.build(store)
-                    (clazz, profile)
-                }).toMap
+            .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
+            .map(pair => {
+                val clazz   = pair._1
+                val profile = pair._2.build(store)
+                (clazz, profile)
+            }).toMap
         new ClassMap[TypeProfile[_]](finalMap)
     }
 
@@ -179,8 +179,8 @@ object PersistenceConfigBuilder {
     def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
         val application = traffic.application
         val script      = ScriptExecutor
-                .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
-                .newScript(application, traffic)
+            .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
+            .newScript(application, traffic)
         script.execute()
         script
     }
