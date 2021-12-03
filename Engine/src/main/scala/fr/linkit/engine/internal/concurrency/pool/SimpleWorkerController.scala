@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerController, WorkerPools, WorkerThread, workerExecution}
+import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerController, WorkerPools, Worker, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.internal.concurrency.WorkerPools.{currentTasksId, currentWorker}
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController.ControlTicket
@@ -112,7 +112,7 @@ object SimpleWorkerController {
 
         def isConditionFalse: Boolean = !condition
 
-        def getWorker: WorkerThread = task.getWorkerThread
+        def getWorker: Worker = task.getWorkerThread
     }
 
 }

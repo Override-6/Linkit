@@ -24,7 +24,7 @@ import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecuti
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
-import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.utils.NumberSerializer.serializeInt
 import fr.linkit.server.config.ServerConnectionConfiguration
@@ -41,9 +41,9 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override val currentIdentifier : String                     = configuration.identifier
     override val translator        : ObjectTranslator           = configuration.translatorFactory(applicationContext)
-    override val port              : Int                        = configuration.port
-    private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
-    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
+    override val port              : Int                = configuration.port
+    private  val workerPool        : AbstractWorkerPool = new AbstractWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
+    private  val serverSocket      : ServerSocket       = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     private  val serverTraffic     : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
     override val traffic           : PacketTraffic              = serverTraffic

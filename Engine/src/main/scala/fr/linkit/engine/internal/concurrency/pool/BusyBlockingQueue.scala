@@ -25,10 +25,10 @@ import scala.collection.mutable.ListBuffer
  * This queue works like a FIFO queue, excepted that blocking operations are replaced with
  * 'busy operations'.
  *
- * @see [[BusyWorkerPool]] for more details on the 'busy operations' (or called 'busy thread system' in the doc).
+ * @see [[AbstractWorkerPool]] for more details on the 'busy operations' (or called 'busy thread system' in the doc).
  * @param pool the pool that created this blocking queue, at which will be used by the queue to handle busy locks.
  * */
-class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
+class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extends BlockingQueue[A] {
 
     private val content    = new util.LinkedList[A]()
     private val controller = new SimpleWorkerController()

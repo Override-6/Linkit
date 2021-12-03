@@ -13,12 +13,20 @@
 
 package fr.linkit.api.internal.concurrency
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.global
+import scala.util.Try
 
 object WorkerPools {
 
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Application Worker")
+
+    private val boundedThreads = mutable.Map.empty[Thread, Thread with Worker]
+
+    def bindWorker(thread: Thread, workerVersion: Thread with Worker): Unit = {
+        boundedThreads.put(thread, workerVersion)
+    }
 
     /**
      * This method may execute the given action into the current thread pool.
@@ -39,7 +47,7 @@ object WorkerPools {
     }
 
     /**
-     * @throws IllegalThreadException if the current thread is a [[WorkerThread]]
+     * @throws IllegalThreadException if the current thread is a [[Worker]]
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
     def ensureCurrentIsWorker(): WorkerPool = {
@@ -49,7 +57,7 @@ object WorkerPools {
     }
 
     /**
-     * @throws IllegalThreadException if the current thread is a [[WorkerThread]]
+     * @throws IllegalThreadException if the current thread is a [[Worker]]
      * @param msg the message to complain with the exception
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
@@ -60,7 +68,7 @@ object WorkerPools {
     }
 
     /**
-     * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
+     * @throws IllegalThreadException if the current thread is not a [[Worker]]
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is an instance of WorkerThread.")
     def ensureCurrentIsNotWorker(): Unit = {
@@ -69,7 +77,7 @@ object WorkerPools {
     }
 
     /**
-     * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
+     * @throws IllegalThreadException if the current thread is not a [[Worker]]
      * @param msg the message to complain with the exception
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is an instance of WorkerThread.")
@@ -79,14 +87,14 @@ object WorkerPools {
     }
 
     /**
-     * @return {{{true}}} if and only if the current thread is an instance of [[WorkerThread]]
+     * @return {{{true}}} if and only if the current thread is an instance of [[Worker]]
      * */
     def isCurrentThreadWorker: Boolean = {
-        currentThread.isInstanceOf[WorkerThread]
+        currentThread.isInstanceOf[Worker]
     }
 
     /**
-     * Toggles between two actions if the current thread is an instance of [[WorkerThread]]
+     * Toggles between two actions if the current thread is an instance of [[Worker]]
      *
      * @param ifCurrent The action to process if the current thread is a worker thread.
      *                  The given entry is the current thread pool
@@ -95,7 +103,6 @@ object WorkerPools {
      * */
     def ifCurrentWorkerOrElse[A](ifCurrent: WorkerPool => A, orElse: => A): A = {
         val pool = currentPool
-
         if (pool.isDefined) {
             ifCurrent(pool.get)
         } else {
@@ -104,13 +111,17 @@ object WorkerPools {
     }
 
     /**
-     * @return Some if the current thread is a member of a [[BusyWorkerPool]], None instead
+     * @return Some if the current thread is a member of a [[WorkerPool]], None instead
      * */
     implicit def currentPool: Option[WorkerPool] = {
-        currentThread match {
-            case worker: WorkerThread => Some(worker.pool)
-            case _                    => None
-        }
+        Try(currentWorker)
+            .map(x => Some(x.pool))
+            .getOrElse(None)
+    }
+
+    @workerExecution
+    def currentTask: Option[AsyncTask[_]] = {
+        Try(currentWorker).map(_.getCurrentTask).getOrElse(None)
     }
 
     implicit def currentExecutionContext: ExecutionContext = {
@@ -121,18 +132,14 @@ object WorkerPools {
     }
 
     @workerExecution
-    def currentWorker: WorkerThread = {
+    def currentWorker: Worker = {
         currentThread match {
-            case worker: WorkerThread => worker
-            case other                => throw IllegalThreadException(s"Current thread is not a WorkerThread. ($other)")
-        }
-    }
-
-    @workerExecution
-    def currentTask: Option[AsyncTask[_]] = {
-        currentThread match {
-            case worker: WorkerThread => worker.getCurrentTask
-            case _                    => None
+            case worker: Worker => worker
+            case other          =>
+                boundedThreads.get(other) match {
+                    case Some(worker) => worker
+                    case _            => throw IllegalThreadException(s"Current thread is not a WorkerThread. ($other)")
+                }
         }
     }
 

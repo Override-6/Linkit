@@ -24,7 +24,7 @@ import fr.linkit.engine.application.plugin.LinkitPluginManager
 import fr.linkit.engine.application.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
 import fr.linkit.engine.internal.LinkitApplication.setInstance
-import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.mapping.ClassMapEngine
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
@@ -39,7 +39,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
     override val pluginManager   : PluginManager  = new LinkitPluginManager(this)
     override val compilerCenter  : CompilerCenter = new DefaultCompilerCenter
     @volatile protected var alive: Boolean        = false
-    protected val appPool: BusyWorkerPool
+    protected val appPool: AbstractWorkerPool
     override val reference: ApplicationReference = ApplicationReference
 
     setInstance(this)

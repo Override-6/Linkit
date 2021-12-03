@@ -13,9 +13,11 @@
 
 package fr.linkit.api.internal.concurrency
 
-trait WorkerThread extends Thread {
+trait Worker {
 
     val pool: WorkerPool
+
+    val thread: Thread
 
     def taskRecursionDepth: Int
 

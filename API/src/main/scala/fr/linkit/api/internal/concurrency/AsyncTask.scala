@@ -28,7 +28,7 @@ trait AsyncTask[A] extends Future[A] {
      * */
     val taskID: Int
 
-    def getWorkerThread: WorkerThread
+    def getWorkerThread: Worker
 
     def isExecuting: Boolean
 
