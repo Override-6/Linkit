@@ -15,7 +15,6 @@ package fr.linkit.engine.internal.concurrency
 
 import fr.linkit.api.internal.concurrency.WorkerPools.{currentTask, currentWorker}
 import fr.linkit.api.internal.concurrency._
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.internal.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
 
@@ -27,11 +26,15 @@ import scala.util.{Failure, Success, Try}
 
 class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent: AsyncTask[_] with AsyncTaskController, task: () => Try[A]) extends AsyncTask[A] with AsyncTaskController {
 
-    @volatile private var attempt: Try[A]       = _
-    @volatile private var paused                = true
-    private val onCompleteConsumers             = new ConsumerContainer[Try[A]]
-    private val onThrowConsumers                = new ConsumerContainer[Option[Throwable]]
-    private           var worker : Worker = _
+    @volatile private var attempt: Try[A] = _
+    @volatile private var paused          = true
+    private val onCompleteConsumers       = new ConsumerContainer[Try[A]]
+    private val onThrowConsumers          = new ConsumerContainer[Option[Throwable]]
+    private final     var worker : Worker = _
+
+    protected def setWorker(worker: Worker): Unit = {
+        this.worker = worker
+    }
 
     override def getWorker: Worker = worker
 
@@ -72,7 +75,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         WorkerPools.ensureCurrentIsWorker()
 
         paused = false
-        worker = currentWorker
+        setWorker(currentWorker)
         this.attempt = task.apply()
         //AppLogger.info(s"$this -> Task attempt: $attempt")
 
@@ -121,7 +124,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     }
 
     override def transformWith[S](f: Try[A] => Future[S])(implicit executor: ExecutionContext): Future[S] = {
-       throw new UnsupportedOperationException("Method signature not understood.") //TODO "Method signature not understood."
+        throw new UnsupportedOperationException("Method signature not understood.") //TODO "Method signature not understood."
     }
 
     override def ready(atMost: Duration)(implicit permit: CanAwait): this.type = {
@@ -193,7 +196,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
 
     override def wakeup(): Unit = {
         setContinue()
-        if (worker != null)
+        if (isExecuting)
             worker.getController.wakeup(this)
     }
 

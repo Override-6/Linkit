@@ -96,6 +96,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                 override val attributes: PacketAttributes  = result.attributes
                 override val coords    : PacketCoordinates = result.coords
             }
+            result.informInjected
             processInjection(bundle)
         } else {
             val path = result.coords.path

@@ -125,6 +125,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             override def coords: PacketCoordinates = coordinates
             override def attributes: PacketAttributes = result.attributes
             override def packet: Packet = result.packet
+            override def isInjected: Boolean = result.isInjected
+            override def informInjected: Unit = result.informInjected
         }
         traffic.processInjection(rectifiedResult)
     }

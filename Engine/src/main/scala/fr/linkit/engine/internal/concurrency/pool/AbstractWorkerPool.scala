@@ -13,14 +13,13 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import java.util.concurrent._
-import java.util.concurrent.locks.LockSupport
-
 import fr.linkit.api.gnom.network.ExecutorEngine
 import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
 
+import java.util.concurrent._
+import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -129,8 +128,8 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
 
             try {
                 currentWorker
-                    .getController
-                    .runTask(childTask)
+                        .getController
+                        .runTask(childTask)
             } catch {
                 case e: Throwable =>
                     e.printStackTrace()
@@ -181,10 +180,10 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         if (!isCurrentThreadWorker)
             return
         currentWorker
-            .getController
-            .getCurrentTask
-            .get
-            .notifyNestThrow(cause)
+                .getController
+                .getCurrentTask
+                .get
+                .notifyNestThrow(cause)
     }
 
     def sleepingThreads: Iterable[Worker] = {
@@ -195,7 +194,6 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
      * @return the number of threads that are currently executing a task.
      * */
     def busyThreads: Int = activeThreads
-
 
     /**
      * Keep executing tasks contained in the workQueue while
@@ -209,14 +207,15 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
      * */
     @workerExecution
     override def pauseCurrentTask(): Unit = {
+        ensureCurrentThreadOwned()
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
         AppLogger.vError(s"$currentTasksId current task is about to pause indefinitely...")
         currentTask.setPaused()
-        executeRemainingTasks()
+        executeRemainingTasksWhilePaused()
 
         worker.execWhileCurrentTaskPaused(LockSupport.park(currentTask), currentTask.isPaused) { _ =>
-            executeRemainingTasks()
+            executeRemainingTasksWhilePaused()
         }
         currentTask.setContinue()
         AppLogger.vError(s"$currentTasksId task '${currentTask.taskID}' is continuing")
@@ -234,7 +233,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
      * @throws IllegalThreadException if the current thread is not a [[Worker]]
      * */
     override def pauseCurrentTaskForAtLeast(timeoutMillis: Long): Unit = {
-        ensureCurrentThreadOwned()
+        //ensureCurrentThreadOwned()
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
         AppLogger.vError(s"$currentTasksId current task is about to pause for at least $timeoutMillis ms...")
@@ -316,25 +315,26 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
 
     protected def threadCount: Int = workers.length
 
-
-    /**
-     * Executes all tasks contained in the workQueue
-     * until the queue is empty.
-     *
-     * @throws IllegalThreadException if the current thread is not a [[Worker]]
-     * */
-    private def executeRemainingTasks(): Unit = {
+    private def executeRemainingTasksWhile(condition: => Boolean): Unit = if (haveMoreTasks) {
         ensureCurrentThreadOwned()
 
         //AppLogger.vDebug(s"EXECUTING ALL REMAINING TASKS (${System.identityHashCode(workQueue)}), $this")
         val currentController = currentWorker.getController
-        val ct                = currentTask.get
-        while (haveMoreTasks && ct.isPaused) {
+        while (haveMoreTasks && condition) {
             val task = nextTask
             if (task != null) {
                 currentController.runSubTask(task)
             }
         }
+    }
+
+    def executeRemainingTasks(): Unit = {
+        executeRemainingTasksWhile(true)
+    }
+
+    private def executeRemainingTasksWhilePaused(): Unit = {
+        val ct = currentTask.get
+        executeRemainingTasksWhile(ct.isPaused)
     }
 
     override def runLater(task: => Unit): Unit = runLaterControl {

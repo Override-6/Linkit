@@ -14,7 +14,6 @@
 package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.network.{Network, Updatable}
-import fr.linkit.api.gnom.packet.traffic.TrafficObject
 import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
@@ -96,5 +95,9 @@ trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] with
      * @see [[CacheContent]]
      * */
     def retrieveCacheContent(cacheID: Int, behavior: CacheSearchBehavior): Option[CacheContent]
+
+    def setCacheChannelToPerformant(cacheID: Int): Unit
+
+    def setCacheChannelToSequential(cacheID: Int): Unit
 
 }

@@ -84,9 +84,9 @@ private[concurrency] trait AbstractWorker
     private def pushTask(task: ThreadTask): Unit = {
         workingTasks.put(task.taskID, TaskProfile(task))
         currentTask = task
-        tasksIdStr = getUpdatedTasksID
-        AppLogger.vInfo(s"$tasksIdStr push Task '${task.taskID}'")
+        //tasksIdStr = getUpdatedTasksID
     }
+
 
     private def removeTask(task: AsyncTask[_]): Unit = {
         val id = task.taskID
@@ -95,14 +95,10 @@ private[concurrency] trait AbstractWorker
             .lastOption
             .map(_._2.task)
             .orNull
-        tasksIdStr = getUpdatedTasksID
-        AppLogger.vInfo(s"$tasksIdStr remove Task '$id'")
+        //tasksIdStr = getUpdatedTasksID
     }
 
-    //debug only
-    private var tasksIdStr: String = _
-
-    private def getUpdatedTasksID: String = {
+    /*private def getUpdatedTasksID: String = {
         if (workingTasks.isEmpty)
             return s"[]"
 
@@ -122,9 +118,9 @@ private[concurrency] trait AbstractWorker
             .append(")")
             .toString()
         tasksIdStr
-    }
+    }*/
 
-    override def prettyPrintPrefix: String = tasksIdStr
+    override def prettyPrintPrefix: String = ""
 
     override def taskRecursionDepth: Int = taskRecursionDepthCount
 
@@ -144,8 +140,6 @@ object AbstractWorker {
     case class TaskProfile(task: AsyncTask[_] with AsyncTaskController) {
 
         val taskID: Int = task.taskID
-
-        var mustWakeup: Boolean = true
 
     }
 

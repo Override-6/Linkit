@@ -19,4 +19,7 @@ trait ObjectDeserializationResult extends ObjectTransferResult {
 
     def isDeserialized: Boolean
 
+    def isInjected: Boolean
+
+    def informInjected: Unit
 }

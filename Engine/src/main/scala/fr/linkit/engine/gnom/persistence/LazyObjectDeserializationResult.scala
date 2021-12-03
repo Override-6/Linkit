@@ -31,6 +31,11 @@ class LazyObjectDeserializationResult(override val buff: ByteBuffer,
     private lazy val cache : Array[AnyRef]    = createCache()
     private var attributes0: PacketAttributes = _
     private var packet0    : Packet           = _
+    private var injected = false
+
+    override def isInjected: Boolean = injected
+
+    override def informInjected: Unit = injected = true
 
     override def attributes: PacketAttributes = {
         if (attributes0 == null)
@@ -44,7 +49,9 @@ class LazyObjectDeserializationResult(override val buff: ByteBuffer,
         packet0
     }
 
-    override def makeDeserialization(): Unit = {
+    override def makeDeserialization(): Unit = this.synchronized {
+        if (isDeserialized)
+            throw new IllegalStateException("Already deserialized !")
         val t0 = System.currentTimeMillis()
         attributes0 = extract[PacketAttributes](SimplePacketAttributes.empty)
         packet0 = extract[Packet](EmptyPacket).prepare()

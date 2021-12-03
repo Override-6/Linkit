@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
-import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.packet.traffic.{PacketInjectableStore, TrafficNode}
 import fr.linkit.api.gnom.reference.linker.{InitialisableNetworkObjectLinker, NetworkObjectLinker}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, TrafficInterestedNPH}
@@ -47,6 +47,24 @@ abstract class AbstractSharedCacheManager(override val family: String,
     override  val reference        : SharedCacheManagerReference = new SharedCacheManagerReference(family)
 
     postInit()
+
+    override def setCacheChannelToPerformant(cacheID: Int): Unit = makeActionOnChannelNode(cacheID)(_.setPerformantInjection())
+
+    override def setCacheChannelToSequential(cacheID: Int): Unit = makeActionOnChannelNode(cacheID)(_.setPerformantInjection())
+
+    private def makeActionOnChannelNode(cacheID: Int)(action: TrafficNode[_] => Unit): Unit = {
+        LocalCachesStore.findCache(cacheID) match {
+            case None                  =>
+            case Some(registeredCache) =>
+                val channel = registeredCache.channel
+                val path = channel.trafficPath
+                network.connection.traffic.findNode(path) match {
+                    case None        => throw new NoSuchElementException(s"Could not find traffic node of channel ${channel.reference}, used by cache ${registeredCache.cache.reference} into traffic.")
+                    case Some(value) =>
+                        action(value)
+                }
+        }
+    }
 
     override def getCachesLinker: InitialisableNetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH = ManagerCachesLinker
 
