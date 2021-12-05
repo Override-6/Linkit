@@ -1,8 +1,8 @@
 package fr.linkit.engine.internal.concurrency.pool
 
-import java.util.concurrent.{LinkedBlockingQueue, ThreadFactory, ThreadPoolExecutor, TimeUnit}
+import fr.linkit.api.internal.concurrency.{Worker, WorkerPools}
 
-import fr.linkit.api.internal.system.AppLogger
+import java.util.concurrent.LinkedBlockingQueue
 
 class BusyWorkerPool(initialThreadCount: Int, name: String) extends AbstractWorkerPool(name) {
 
@@ -10,30 +10,41 @@ class BusyWorkerPool(initialThreadCount: Int, name: String) extends AbstractWork
         throw new IllegalArgumentException(s"Worker pool '$name' must contain at least 1 thread, provided: '$initialThreadCount'")
 
     //The extracted workQueue of the executor which contains all the tasks to execute
-    private   val workQueue = new LinkedBlockingQueue[Runnable]()
-    //private val choreographer = new Choreographer(this)
-    protected val executor  = new ThreadPoolExecutor(initialThreadCount, initialThreadCount, 0, TimeUnit.MILLISECONDS, workQueue, getThreadFactory)
+    private val workQueue                         = new LinkedBlockingQueue[Runnable]()
+    private val workerFactory: Runnable => Worker = target => {
+        val worker = new BusyWorkerThread(target, this, threadCount + 1)
+        addWorker(worker)
+        worker
+    }
+    setThreadCount(initialThreadCount)
 
     override def haveMoreTasks: Boolean = !workQueue.isEmpty
 
     override protected def nextTask: Runnable = workQueue.take()
 
     def setThreadCount(newCount: Int): Unit = {
-        executor.setMaximumPoolSize(newCount)
-        AppLogger.trace(s"$name's core pool size is set to $newCount")
-        executor.setCorePoolSize(newCount)
-    }
-
-    private def getThreadFactory: ThreadFactory = target => {
-        val worker = new BusyWorkerThread(target, this, threadCount + 1)
-        addWorker(worker)
-        worker
+        if (workers.size > newCount)
+            throw new IllegalArgumentException(s"newCount < workers.size ($newCount < ${workers.size})")
+        for (_ <- 0 until newCount - workers.size) {
+            val worker = workerFactory(() => waitingRoom())
+            addWorker(worker)
+            worker.thread.start()
+        }
     }
 
     override def close(): Unit = {
         super.close()
-        executor.shutdownNow()
+        val workerCount = workers.size
+        workers.clear()
+        for (_ <- 0 to workerCount)
+        //all threads waiting to execute another tasks will see a null task was submit & that super.closed = true so they'll stop executing
+            workQueue.add(null)
     }
 
-    override protected def post(runnable: Runnable): Unit = executor.submit(runnable)
+    override protected def post(runnable: Runnable): Unit = workQueue.offer(runnable)
+
+    private def waitingRoom(): Unit = {
+        val self = WorkerPools.currentWorker.asInstanceOf[BusyWorkerThread]
+        self.execWhileCurrentTaskPaused(workQueue.take(), !closed)(_.run())
+    }
 }

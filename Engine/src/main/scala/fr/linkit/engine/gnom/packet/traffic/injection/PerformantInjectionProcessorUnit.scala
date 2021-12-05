@@ -18,10 +18,11 @@ import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 
-class PerformanceInjectionProcessorUnit extends InjectionProcessorUnit {
+class PerformantInjectionProcessorUnit extends InjectionProcessorUnit {
 
     override def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit = {
         //performance is simplicity
+        result.makeDeserialization()
         val bundle = new PacketBundle {
             override val packet    : Packet            = result.packet
             override val attributes: PacketAttributes  = result.attributes

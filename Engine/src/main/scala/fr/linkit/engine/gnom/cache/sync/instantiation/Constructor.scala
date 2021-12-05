@@ -52,7 +52,7 @@ object Constructor {
                 return constructor.asInstanceOf[JConstructor[T]]
             }
         }
-        throw new NoSuchElementException(s"Could not find a constructor matching arguments ${objectsArray.mkString("Array(", ", ", ")")}")
+        throw new NoSuchMethodException(s"Could not find a constructor matching arguments ${objectsArray.mkString("Array(", ", ", ")")}")
     }
 
 }

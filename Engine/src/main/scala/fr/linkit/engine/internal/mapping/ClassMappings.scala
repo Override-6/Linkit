@@ -35,7 +35,9 @@ object ClassMappings {
 
     def getClassPaths: List[CodeSource] = sources.toList
 
-    def putClass(clazz: Class[_]): Unit = putClass(clazz.getName, clazz.getClassLoader)
+    def putClass(clazz: Class[_]): Unit = {
+        classes.put(clazz.getName.hashCode, clazz)
+    }
 
     def getClassName(hashCode: Int): String = classes(hashCode).getName
 

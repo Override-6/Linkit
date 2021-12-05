@@ -23,7 +23,7 @@ import fr.linkit.client.ClientApplication.Version
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.engine.internal.LinkitApplication
-import fr.linkit.engine.internal.concurrency.pool.{AbstractWorkerPool, BusyWorkerPool}
+import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
 
 import scala.collection.mutable

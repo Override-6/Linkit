@@ -95,30 +95,8 @@ private[concurrency] trait AbstractWorker
             .lastOption
             .map(_._2.task)
             .orNull
-        //tasksIdStr = getUpdatedTasksID
     }
 
-    /*private def getUpdatedTasksID: String = {
-        if (workingTasks.isEmpty)
-            return s"[]"
-
-        val sb = new StringBuilder(s"[")
-        workingTasks.values.foreach(taskProfile => {
-            val taskID = taskProfile.taskID
-            if (taskID == getCurrentTaskID) {
-                sb.append(taskID)
-            } else {
-                sb.append(taskID)
-            }
-            sb.append(',')
-        })
-        tasksIdStr = sb.dropRight(1) // remove last ',' char
-            .append("](")
-            .append(currentTask.taskID)
-            .append(")")
-            .toString()
-        tasksIdStr
-    }*/
 
     override def prettyPrintPrefix: String = ""
 

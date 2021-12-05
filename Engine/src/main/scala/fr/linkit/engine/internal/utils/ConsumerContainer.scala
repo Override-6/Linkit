@@ -64,6 +64,8 @@ class ConsumerContainer[A]() {
 
     @workerExecution
     def applyAllLater(t: A, onException: Throwable => Unit = throw _): this.type = {
+        if (consumers.isEmpty)
+            return this
         val pool = WorkerPools.ensureCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
         //AppLogger.debug(s"RunLater... ${hashCode}")
 //        Thread.dumpStack()
@@ -74,6 +76,8 @@ class ConsumerContainer[A]() {
     }
 
     def applyAll(t: A, onException: Throwable => Unit = throw _): this.type = {
+        if (consumers.isEmpty)
+            return this
         //AppLogger.debug(s"$hashCode - Apply all for ${consumers.size} consumers.")
         Array.from(consumers).foreach(consumer => {
             try {

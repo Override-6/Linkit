@@ -87,7 +87,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
     import fr.linkit.api.internal.concurrency.WorkerPools._
 
     protected val workers: ListBuffer[Worker] = ListBuffer.empty
-    private var closed                        = false
+    protected var closed                        = false
 
     //additional values for debugging
     @volatile private var activeThreads = 0

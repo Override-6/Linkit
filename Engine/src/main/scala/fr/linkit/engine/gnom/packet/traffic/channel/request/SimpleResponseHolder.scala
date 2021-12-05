@@ -14,8 +14,6 @@
 package fr.linkit.engine.gnom.packet.traffic.channel.request
 
 import fr.linkit.api.gnom.packet.channel.request.{ResponseHolder, SubmitterPacket}
-import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.engine.internal.utils.ConsumerContainer
 
 import java.util.concurrent.BlockingQueue
@@ -26,10 +24,16 @@ case class SimpleResponseHolder(override val id: Int,
 
     private val responseConsumer = ConsumerContainer[AbstractSubmitterPacket]()
 
+    private var responseReceivedCount = 0
+    private var responseSetCount = 0
+
     override def nextResponse: SubmitterPacket = {
-        AppLogger.vDebug(s"$currentTasksId <> Waiting for response... ($id) " + this)
         val response = queue.take()
-        AppLogger.vError(s"$currentTasksId <> RESPONSE ($id) RECEIVED ! $response, $queue")
+        if (response == null)
+            throw new NullPointerException("queue returned null response")
+        this.synchronized {
+            responseReceivedCount += 1
+        }
         response
     }
 
@@ -38,10 +42,13 @@ case class SimpleResponseHolder(override val id: Int,
     }
 
     private[request] def pushResponse(response: AbstractSubmitterPacket): Unit = {
-        AppLogger.vError(s"$currentTasksId <> ADDING RESPONSE $response FOR REQUEST $this")
+        if (response == null)
+            throw new NullPointerException()
+        this.synchronized {
+            responseSetCount += 1
+        }
         queue.add(response)
         responseConsumer.applyAllLater(response)
-        AppLogger.vError(s"$currentTasksId <> RESPONSE $response ADDED TO REQUEST $this")
     }
 
 }

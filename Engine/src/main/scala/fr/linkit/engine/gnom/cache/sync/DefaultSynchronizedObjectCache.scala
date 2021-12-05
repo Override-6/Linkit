@@ -161,7 +161,15 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
         override def newWrapper[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
             val syncClass = generator.getSyncClass[B](creator.tpeClass.asInstanceOf[Class[B]])
-            creator.getInstance(syncClass)
+            try {
+                creator.getInstance(syncClass)
+            } catch {
+                case e: NoSuchMethodException =>
+                    throw new NoSuchElementException(e.getMessage +
+                            s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
+                               | Try to regenerate the sync class of ${creator.tpeClass}.
+                               | """.stripMargin, e)
+            }
         }
 
     }
