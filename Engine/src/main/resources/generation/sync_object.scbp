@@ -24,10 +24,6 @@ import fr.linkit.engine.internal.utils.JavaUtils.nl
 @SerialVersionUID($CompileTime$L)
 class $ClassName$$TParamsIn$ extends AbstractSynchronizedObject[$WrappedClassSimpleName$$TParamsOut$] {
 
-    //Fun fact: Override annotations are conventional.
-    //They does not affect abstraction or classes behaviors.
-    //Override annotations are removed at compilation.
-
     override def wrappedClass: Class[_] = classOf[$WrappedClassSimpleName$$TParamsInBusted$]
 
 !!INHERITED_METHODS!! {

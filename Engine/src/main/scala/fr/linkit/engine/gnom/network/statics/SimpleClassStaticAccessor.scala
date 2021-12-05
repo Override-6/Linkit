@@ -1,5 +1,6 @@
 package fr.linkit.engine.gnom.network.statics
 
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{BasicInvocationRule, MethodControl}
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.network.statics.ClassStaticAccessor
@@ -8,7 +9,7 @@ import fr.linkit.engine.gnom.persistence.context.Persist
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
 
-class SimpleClassStaticAccessor[A <: AnyRef]@Persist() (desc: SyncStructureDescription[A]) extends ClassStaticAccessor[A] with Deconstructible {
+abstract class SimpleClassStaticAccessor[A <: AnyRef] @Persist()(desc: SyncStructureDescription[A]) extends ClassStaticAccessor[A] with Deconstructible with SynchronizedObject[this.type] {
     //override val behavior: SynchronizedStructureBehavior[A] = _
 
     private val methods = desc.listMethods()
@@ -19,8 +20,9 @@ class SimpleClassStaticAccessor[A <: AnyRef]@Persist() (desc: SyncStructureDescr
 
     @MethodControl(BasicInvocationRule.ONLY_CACHE_OWNER)
     override def applyDynamic[T](methodName: String)(args: Any*): T = {
-        val (_, javaMethod) = methods(methodName).find(_._1.isAssignable(args.toArray)).get
-        val result = javaMethod.invoke(null, args: _*).asInstanceOf[T]
+        val usedArgs        = args.map(applyBehavior).toArray[Any]
+        val (_, javaMethod) = methods(methodName).find(_._1.isAssignable(usedArgs)).get
+        val result          = javaMethod.invoke(null, usedArgs: _*).asInstanceOf[T]
         result
     }
 
@@ -35,6 +37,8 @@ class SimpleClassStaticAccessor[A <: AnyRef]@Persist() (desc: SyncStructureDescr
         val javaField = fields(fieldName)
         ScalaUtils.setValue(null, javaField, newValue)
     }
+
+    protected def applyBehavior(arg: Any): arg.type = arg
 
     override def deconstruct(): Array[Any] = Array(desc)
 }

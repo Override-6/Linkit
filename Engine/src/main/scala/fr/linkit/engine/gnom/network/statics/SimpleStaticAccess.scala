@@ -1,6 +1,7 @@
 package fr.linkit.engine.gnom.network.statics
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
 import fr.linkit.api.gnom.network.statics.{ClassStaticAccessor, StaticAccess}
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncStaticsDescription
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
