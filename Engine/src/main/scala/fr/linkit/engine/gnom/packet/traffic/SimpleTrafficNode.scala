@@ -17,14 +17,14 @@ import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, TrafficNode, TrafficObject}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
-import fr.linkit.engine.gnom.packet.traffic.injection.{PerformanceInjectionProcessorUnit, SequentialInjectionProcessorUnit}
+import fr.linkit.engine.gnom.packet.traffic.injection.{PerformantInjectionProcessorUnit, SequentialInjectionProcessorUnit}
 
 case class SimpleTrafficNode[C <: TrafficObject[TrafficReference]](override val injectable: C,
                                                                    override val persistenceConfig: PersistenceConfig,
                                                                    private val traffic: PacketTraffic) extends TrafficNode[C] {
 
     private final val sipu = new SequentialInjectionProcessorUnit()
-    private final val pipu = new PerformanceInjectionProcessorUnit()
+    private final val pipu = new PerformantInjectionProcessorUnit()
     chainIPU(ObjectManagementChannelReference) //Chain with the OMC when sequential is used
 
     private var preferPerformances0 = false
