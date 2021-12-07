@@ -13,11 +13,11 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.engine.gnom.cache.sync.contract.builder.ObjectBehaviorDescriptor
+import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 
 import scala.collection.mutable.ListBuffer
 
-class SyncObjectClassRelation[A <: AnyRef](descriptor: ObjectBehaviorDescriptor[A], nextSuperRelation: SyncObjectClassRelation[_ >: A]) {
+class SyncObjectClassRelation[A <: AnyRef](descriptor: StructureContractDescriptor[A], nextSuperRelation: SyncObjectClassRelation[_ >: A]) {
 
     val targetClass: Class[A] = descriptor.targetClass
     private val interfaceRelation = ListBuffer.empty[SyncObjectClassRelation[_ >: A]]
@@ -27,9 +27,9 @@ class SyncObjectClassRelation[A <: AnyRef](descriptor: ObjectBehaviorDescriptor[
             interfaceRelation += interface
     }
 
-    def toNode: BehaviorDescriptorNode[A] = {
+    def toNode: StructureBehaviorDescriptorNodeImpl[A] = {
         val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.toNode
-        new BehaviorDescriptorNode[A](descriptor, nextSuperNode, interfaceRelation.map(_.toNode).toArray)
+        new StructureBehaviorDescriptorNodeImpl[A](descriptor, nextSuperNode, interfaceRelation.map(_.toNode).toArray)
     }
 
 }

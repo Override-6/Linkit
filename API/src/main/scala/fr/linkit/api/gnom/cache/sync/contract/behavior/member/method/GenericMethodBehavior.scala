@@ -11,24 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract.builder
+package fr.linkit.api.gnom.cache.sync.contract.behavior.member.method
 
-import scala.collection.mutable.ListBuffer
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
 
-class AbstractBehaviorBuilder[C <: AnyRef] {
-    protected var context: C = _
-    private val methodCalls  = ListBuffer.empty[() => Unit]
+trait GenericMethodBehavior extends MethodBehavior {
 
-    protected def callOnceContextSet(action: => Unit): Unit = {
-        if (context != null)
-            action
-        else
-            methodCalls += (() => action)
-    }
-
-    def setContext(context: C): Unit = {
-        this.context = context
-        methodCalls.foreach(_.apply())
-    }
-
+    def toUsage(context: SyncObjectContext): UsageMethodBehavior
 }

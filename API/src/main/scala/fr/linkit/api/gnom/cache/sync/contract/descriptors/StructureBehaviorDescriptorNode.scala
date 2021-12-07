@@ -11,14 +11,16 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context;
+package fr.linkit.api.gnom.cache.sync.contract.descriptors
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
+import fr.linkit.api.gnom.cache.sync.contract.{StructureContractDescriptor, SynchronizedStructureContract}
 
-@Target(ElementType.CONSTRUCTOR)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Persist {
+trait StructureBehaviorDescriptorNode[A <: AnyRef] {
+
+    val descriptor: StructureContractDescriptor[A]
+
+    def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit
+
+    def getContract(clazz: Class[_], context: SyncObjectContext): SynchronizedStructureContract[A]
 }

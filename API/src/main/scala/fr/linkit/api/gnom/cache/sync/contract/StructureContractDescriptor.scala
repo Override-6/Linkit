@@ -11,16 +11,17 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract.builder
+package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ValueBehavior
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
+import fr.linkit.api.gnom.cache.sync.contract.descriptors.MethodContractDescriptor
 
-trait ObjectBehaviorDescriptor[T <: AnyRef] extends ValueBehavior[T] {
+trait StructureContractDescriptor[T <: AnyRef] extends ValueBehavior[T] {
 
     val targetClass: Class[T]
 
-    val usingHierarchy: Array[ObjectBehaviorDescriptor[_ >: T]] //TODO Not used
+    val usingHierarchy: Array[StructureContractDescriptor[_ >: T]] //FIXME Not used
     val withMethods   : Array[MethodContractDescriptor]
     val withFields    : Array[FieldBehavior[Any]]
 }

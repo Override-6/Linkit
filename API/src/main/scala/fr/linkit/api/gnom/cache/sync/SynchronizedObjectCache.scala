@@ -15,6 +15,7 @@ package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCache
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
+import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network
@@ -66,11 +67,11 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * "the behavior of a tree" is simply a set of [[fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior]]
      * that will set the behavior of each objects of a tree.
      * */
-    val defaultBehaviorFactory: SynchronizedObjectContractFactory
+    val defaultContracts: ContractDescriptorData
 
     /**
      * posts an object in the cache.
-     * The behavior of the object and sub objects will depends on the [[defaultBehaviorFactory]]
+     * The behavior of the object and sub objects will depends on the [[defaultContracts]]
      *
      * @throws CanNotSynchronizeException If the given object is a synchronized object.
      *                                    (No matters if the object is handled by this cache or not)
@@ -86,7 +87,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * @param behaviorFactory the behavior factory for the object
      * @return the synchronized object.
      * */
-    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], behaviorFactory: SynchronizedObjectContractFactory): A with SynchronizedObject[A]
+    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], behaviorFactory: ContractDescriptorData): A with SynchronizedObject[A]
 
     /**
      * Finds a synchronized object in the cache.

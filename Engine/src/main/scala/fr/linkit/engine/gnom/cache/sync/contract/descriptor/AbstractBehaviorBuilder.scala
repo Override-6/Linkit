@@ -11,13 +11,24 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior.member.method
+package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.MemberBehavior
+import scala.collection.mutable.ListBuffer
 
-trait MethodBehavior extends MemberBehavior {
-    val isHidden                  : Boolean
-    val forceLocalInnerInvocations: Boolean
-    val parameterBehaviors        : Array[ParameterBehavior[Any]]
-    val returnValueBehavior       : ReturnValueBehavior[Any]
+class AbstractBehaviorBuilder[C <: AnyRef] {
+    protected var context: C = _
+    private val methodCalls  = ListBuffer.empty[() => Unit]
+
+    protected def callOnceContextSet(action: => Unit): Unit = {
+        if (context != null)
+            action
+        else
+            methodCalls += (() => action)
+    }
+
+    def setContext(context: C): Unit = {
+        this.context = context
+        methodCalls.foreach(_.apply())
+    }
+
 }

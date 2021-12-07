@@ -17,6 +17,6 @@ import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
 
 trait SynchronizedObjectContractFactory {
 
-    def getObjectContract[A <: AnyRef](clazz: Class[_], context: AgreementContext): SynchronizedStructureContract[A]
+    def getObjectContract[A <: AnyRef](clazz: Class[_], context: SyncObjectContext): SynchronizedStructureContract[A]
 
 }

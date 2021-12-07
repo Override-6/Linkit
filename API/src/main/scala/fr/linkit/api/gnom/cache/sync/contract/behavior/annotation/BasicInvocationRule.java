@@ -30,57 +30,57 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * This behavior is the same as calling any normal java method.<br>
      * <u>This is the default rule applied for methods</u>
      */
-    ONLY_CURRENT((agreement) -> {
+    ONLY_CURRENT((agreement) ->
         agreement.discardAll()
-                .accept(CurrentEngine);
-    }),
+                .accept(CurrentEngine)
+    ),
     /**
      * Invocation will only be performed on the engine that owns the original object.
      */
-    ONLY_OWNER((agreement) -> {
+    ONLY_OWNER((agreement) ->
         agreement.discardAll()
                 .accept(OwnerEngine)
-                .setDesiredEngineReturn(OwnerEngine);
-    }),
+                .setDesiredEngineReturn(OwnerEngine)
+    ),
     /**
      * Invocation will only be performed on the engine that hosts the cache manager in which the object's
      * {@link fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache} is open.
      */
-    ONLY_CACHE_OWNER((agreement) -> {
+    ONLY_CACHE_OWNER((agreement) ->
         agreement.discardAll()
                 .accept(CacheOwnerEngine)
-                .setDesiredEngineReturn(CacheOwnerEngine);
-    }),
+                .setDesiredEngineReturn(CacheOwnerEngine)
+    ),
     /**
      * The invocation will be performed on every remote machines, excluding the current machine.
      * The return value of the invocation will come from the machine that owns the original object.
      * However, If the current machine owns the object, the invocation will still be performed,
      * and the return value of the method will be taken from the local invocation result
      */
-    NOT_CURRENT(((agreement) -> {
+    NOT_CURRENT(((agreement) ->
         agreement.discard(CurrentEngine)
-                .setDesiredEngineReturn(OwnerEngine);
-    })),
+                .setDesiredEngineReturn(OwnerEngine)
+    )),
     /**
      * The invocation will be performed on the current machine <b>and</b> on every remote machines.
      * The return value of the invocation will come from the current machine.
      */
-    BROADCAST(((agreement) -> {
+    BROADCAST(((agreement) ->
         agreement.acceptAll()
-                .setDesiredEngineReturn(CurrentEngine);
-    })),
+                .setDesiredEngineReturn(CurrentEngine)
+    )),
 
     /**
      * The invocation will be performed on the current machine <b>and</b> on every remote machines <b>only if</b> the current machine
      * is the owner of the object.
      * The return value of the invocation will come from the current machine.
      */
-    BROADCAST_IF_OWNER((agreement) -> {
-        agreement
+    BROADCAST_IF_OWNER((agreement) ->
+            agreement
                 .ifCurrentIs(OwnerEngine, RMIRulesAgreementBuilder::acceptAll)
                 .accept(CurrentEngine)
-                .setDesiredEngineReturn(CurrentEngine);
-    }),
+                .setDesiredEngineReturn(CurrentEngine)
+    ),
 
 
     /**
@@ -91,14 +91,15 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
     BROADCAST_IF_ROOT_OWNER((agreement ->
             agreement.ifCurrentIs(RootOwnerEngine, RMIRulesAgreementBuilder::acceptAll)
                     .accept(CurrentEngine)
-                    .setDesiredEngineReturn(CurrentEngine))),
+                    .setDesiredEngineReturn(CurrentEngine)
+    )),
     /**
      * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.
      * If the current machine owns the wrapper object, the execution will be called only once.
      * The return value of the invocation will come from the current machine.
      */
     CURRENT_AND_OWNER(((agreement) -> {
-        agreement.discardAll()
+        return agreement.discardAll()
                 .accept(CurrentEngine)
                 .accept(OwnerEngine)
                 .setDesiredEngineReturn(CurrentEngine);
@@ -111,7 +112,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
     }
 
     @Override
-    public void apply(RMIRulesAgreementBuilder agreement) {
-        rule.apply(agreement);
+    public RMIRulesAgreementBuilder apply(RMIRulesAgreementBuilder agreement) {
+        return rule.apply(agreement);
     }
 }

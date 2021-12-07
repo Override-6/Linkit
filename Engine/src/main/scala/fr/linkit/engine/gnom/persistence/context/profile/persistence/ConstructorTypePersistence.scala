@@ -13,22 +13,22 @@
 
 package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
-import java.lang.reflect.Constructor
-import fr.linkit.api.gnom.persistence.context.{ControlBox, Deconstructor, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Deconstructor, Persist, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.context.Persist
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.manipulation.invokation.ConstructorInvoker
 
-class ConstructorTypePersistence[T <: AnyRef](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
+import java.lang.reflect.Constructor
+
+class ConstructorTypePersistence[T <: AnyRef](constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
 
     def this(clazz: Class[_], deconstructor: Deconstructor[T]) {
-        this(clazz, getConstructor[T](clazz), deconstructor.deconstruct(_: T))
+        this(getConstructor[T](clazz), deconstructor.deconstruct(_: T))
     }
 
     def this(clazz: Class[_], constructor: Constructor[T], deconstructor: Deconstructor[T]) {
-        this(clazz, constructor, deconstructor.deconstruct(_: T))
+        this(constructor, deconstructor.deconstruct(_: T))
     }
 
     override val structure: ObjectStructure = ArrayObjectStructure(constructor.getParameterTypes: _*)

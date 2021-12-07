@@ -14,9 +14,9 @@
 package fr.linkit.engine.internal.language.bhv.descriptor.clazz
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.SyncMethodBehavior
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.DefaultUsageMethodBehavior
 import fr.linkit.engine.internal.language.bhv.descriptor.DescriptionResult
 
-class ClassDescriptionResult(fieldBehaviors: Array[FieldBehavior[Any]], methodsBehavior: Array[SyncMethodBehavior]) extends DescriptionResult {
+class ClassDescriptionResult(fieldBehaviors: Array[FieldBehavior[Any]], methodsBehavior: Array[DefaultUsageMethodBehavior]) extends DescriptionResult {
 
 }

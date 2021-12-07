@@ -13,17 +13,15 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior.member
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.GenericMethodBehavior
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription}
 import fr.linkit.api.internal.concurrency.Procrastinator
 
 trait MemberBehaviorFactory {
 
-    def genMethodBehavior(callProcrastinator: Option[Procrastinator],
-                          agreementBuilder: RMIRulesAgreementBuilder,
-                          desc: MethodDescription): MethodBehavior
+    def genMethodBehavior(procrastinator: Option[Procrastinator],
+                          desc: MethodDescription): GenericMethodBehavior
 
     def genFieldBehavior(desc: FieldDescription): FieldBehavior[Any]
 

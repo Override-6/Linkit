@@ -1,10 +1,10 @@
 package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{AgreementContext, EngineTag, IdentifierTag}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{SyncObjectContext, EngineTag, IdentifierTag}
 
-case class UsageAgreementContext(ownerID: String, rootOwnerID: String,
-                                 currentID: String, cacheOwnerID: String) extends AgreementContext {
+case class UsageSyncObjectContext(ownerID: String, rootOwnerID: String,
+                                  currentID: String, cacheOwnerID: String) extends SyncObjectContext {
 
     override def translate(tag: EngineTag): String = tag match {
         case IdentifierTag(identifier) => identifier

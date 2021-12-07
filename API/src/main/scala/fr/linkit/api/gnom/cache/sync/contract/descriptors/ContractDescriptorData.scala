@@ -11,13 +11,9 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior.member.method
+package fr.linkit.api.gnom.cache.sync.contract.descriptors
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.MemberBehavior
+trait ContractDescriptorData {
 
-trait MethodBehavior extends MemberBehavior {
-    val isHidden                  : Boolean
-    val forceLocalInnerInvocations: Boolean
-    val parameterBehaviors        : Array[ParameterBehavior[Any]]
-    val returnValueBehavior       : ReturnValueBehavior[Any]
+    def getNode(clazz: Class[_]): StructureBehaviorDescriptorNode[_]
 }

@@ -11,15 +11,14 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior
+package fr.linkit.api.gnom.persistence.context;
 
-trait AgreementContext {
-    val ownerID     : String
-    val rootOwnerID : String
-    val currentID   : String
-    val cacheOwnerID: String
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    def translate(tag: EngineTag): String
-
-    def currentIs(tag: EngineTag): Boolean = translate(tag) == currentID
+@Target(ElementType.CONSTRUCTOR)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Persist {
 }

@@ -13,11 +13,12 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior.member.method
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.MemberBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
+import org.jetbrains.annotations.Nullable
 
-trait MethodBehavior extends MemberBehavior {
-    val isHidden                  : Boolean
-    val forceLocalInnerInvocations: Boolean
-    val parameterBehaviors        : Array[ParameterBehavior[Any]]
-    val returnValueBehavior       : ReturnValueBehavior[Any]
+trait UsageMethodBehavior extends MethodBehavior {
+
+    @Nullable("when isActivated = false")
+    val agreement: RMIRulesAgreement
+
 }

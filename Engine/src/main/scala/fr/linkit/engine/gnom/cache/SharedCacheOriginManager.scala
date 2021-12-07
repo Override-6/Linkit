@@ -13,20 +13,19 @@
 
 package fr.linkit.engine.gnom.cache
 
-import fr.linkit.api.gnom.cache.CacheSearchBehavior.{GET_OR_CRASH, GET_OR_OPEN, GET_OR_WAIT}
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{CacheContent, CacheOpenException, CacheSearchBehavior}
+import fr.linkit.api.gnom.cache.CacheSearchBehavior._
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
-import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.engine.gnom.cache.AbstractSharedCacheManager.SystemCacheRange
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
-import fr.linkit.engine.gnom.persistence.context.Persist
 
 import scala.util.control.Breaks.{break, breakable}
 

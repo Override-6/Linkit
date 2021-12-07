@@ -15,21 +15,23 @@ package fr.linkit.api.gnom.cache.sync.contract.behavior
 
 trait RMIRulesAgreementBuilder {
 
-    type AgreementConditionAction = this.type => this.type
+    type AgreementConditionAction = RMIRulesAgreementBuilder => RMIRulesAgreementBuilder
 
-    def discard(target: EngineTag): this.type
+    def discard(target: EngineTag): RMIRulesAgreementBuilder
 
-    def accept(target: EngineTag): this.type
+    def accept(target: EngineTag): RMIRulesAgreementBuilder
 
-    def acceptAll(): this.type
+    def acceptAll(): RMIRulesAgreementBuilder
 
-    def discardAll(): this.type
+    def discardAll(): RMIRulesAgreementBuilder
 
-    def setDesiredEngineReturn(target: EngineTag): this.type
+    def setDesiredEngineReturn(target: EngineTag): RMIRulesAgreementBuilder
 
-    def ifCurrentIs(target: EngineTag)(action: AgreementConditionAction): this.type
+    def ifCurrentIs(target: EngineTag)(action: AgreementConditionAction): RMIRulesAgreementBuilder
 
-    def ifCurrentIsNot(target: EngineTag)(action: AgreementConditionAction): this.type
+    def ifCurrentIsNot(target: EngineTag)(action: AgreementConditionAction): RMIRulesAgreementBuilder
+
+    def result(context: SyncObjectContext): RMIRulesAgreement
 
 }
 

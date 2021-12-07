@@ -17,14 +17,12 @@ import fr.linkit.api.gnom.cache.{CacheContent, CacheNotAcceptedException, CacheO
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
-import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket.EmptyPacket
-import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.gnom.persistence.context.Persist
+import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 
 final class SharedCacheDistantManager @Persist()(family: String,

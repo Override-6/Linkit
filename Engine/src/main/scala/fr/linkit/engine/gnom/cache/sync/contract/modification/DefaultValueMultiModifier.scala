@@ -14,14 +14,14 @@
 package fr.linkit.engine.gnom.cache.sync.contract.modification
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldModifier
 import fr.linkit.api.gnom.cache.sync.contract.modification.{MethodCompModifier, MethodCompModifierKind, ValueMultiModifier}
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.BehaviorDescriptorNode
-import fr.linkit.engine.gnom.cache.sync.contract.builder.ObjectBehaviorDescriptor
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.StructureBehaviorDescriptorNodeImpl
 
-class DefaultValueMultiModifier[A <: AnyRef](node: BehaviorDescriptorNode[A]) extends ValueMultiModifier[A] {
+class DefaultValueMultiModifier[A <: AnyRef](node: StructureBehaviorDescriptorNodeImpl[A]) extends ValueMultiModifier[A] {
 
     override def modifyForField(obj: A, abstractionLimit: Class[_ >: A])(containingObject: SynchronizedObject[_], causeEngine: Engine): A = {
         handleModify[FieldModifier[_ >: A]](obj, abstractionLimit)(
@@ -45,7 +45,7 @@ class DefaultValueMultiModifier[A <: AnyRef](node: BehaviorDescriptorNode[A]) ex
     }
 
     private def handleMethodCompModify(@inline obj: A, @inline abstractionLimit: Class[_ >: A])
-                                      (@inline getModifier: ObjectBehaviorDescriptor[_ >: A] => Option[MethodCompModifier[_ >: A]],
+                                      (@inline getModifier: StructureContractDescriptor[_ >: A] => Option[MethodCompModifier[_ >: A]],
                                        @inline kind: MethodCompModifierKind)
                                       (@inline invocation: LocalMethodInvocation[_],
                                        @inline targetEngine: Engine): A = {
@@ -65,12 +65,12 @@ class DefaultValueMultiModifier[A <: AnyRef](node: BehaviorDescriptorNode[A]) ex
 
     @inline
     private def handleModify[M](@inline obj: A, @inline abstractionLimit: Class[_ >: A])
-                               (@inline getModifier: ObjectBehaviorDescriptor[_ >: A] => Option[M],
+                               (@inline getModifier: StructureContractDescriptor[_ >: A] => Option[M],
                                 @inline modify: M => Any,
                                 @inline event: M => Unit): A = {
         val clazz                                         = obj.getClass.asInstanceOf[Class[A]]
-        var superNode    : BehaviorDescriptorNode[_ >: A] = node
-        var modifierClass: Class[_ >: A]                  = clazz
+        var superNode    : StructureBehaviorDescriptorNodeImpl[_ >: A] = node
+        var modifierClass: Class[_ >: A]                               = clazz
         var result       : A                              = obj
         while (modifierClass != abstractionLimit && superNode != null) {
             val modifier = getModifier(superNode.descriptor)

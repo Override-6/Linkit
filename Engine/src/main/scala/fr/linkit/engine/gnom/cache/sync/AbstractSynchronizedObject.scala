@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.UsageMethodBehavior
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{SynchronizedObjectContractFactory, SynchronizedStructureBehavior}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.local.CallableLocalMethodInvocation
@@ -105,7 +105,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     @inline override def isInitialized: Boolean = puppeteer != null
 
-    private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
+    private def synchronizedParams(bhv: UsageMethodBehavior, objects: Array[Any]): Array[Any] = {
         if (bhv eq null)
             return objects
         val paramBehaviors = bhv.parameterBehaviors

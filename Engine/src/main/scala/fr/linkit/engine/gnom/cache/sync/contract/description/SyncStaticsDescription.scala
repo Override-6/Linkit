@@ -1,8 +1,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.persistence.context.Deconstructible
-import fr.linkit.engine.gnom.persistence.context.Persist
+import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 
 import java.lang.reflect.{Executable, Modifier}
 import scala.collection.mutable

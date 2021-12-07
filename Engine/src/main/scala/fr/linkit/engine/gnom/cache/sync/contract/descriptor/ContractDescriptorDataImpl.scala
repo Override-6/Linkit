@@ -1,21 +1,23 @@
-package fr.linkit.engine.gnom.cache.sync.contract.builder
+package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.{BehaviorDescriptorNode, SyncObjectClassRelation}
+import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
+import fr.linkit.api.gnom.cache.sync.contract.descriptors.{StructureBehaviorDescriptorNode, ContractDescriptorData}
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.{StructureBehaviorDescriptorNodeImpl, SyncObjectClassRelation}
 import fr.linkit.engine.internal.utils.ClassMap
 
-class ContractDescriptorData(descriptors: Array[ObjectBehaviorDescriptor[_]]) {
+class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[_]]) extends ContractDescriptorData {
 
     private val nodeMap = createNodes(descriptors)
 
-    def getNode(clazz: Class[_]): BehaviorDescriptorNode[_] = {
+    override def getNode(clazz: Class[_]): StructureBehaviorDescriptorNode[_] = {
         nodeMap.get(clazz).get
     }
 
-    private def createNodes(descriptors: Array[ObjectBehaviorDescriptor[_]]): ClassMap[BehaviorDescriptorNode[_]] = {
+    private def createNodes(descriptors: Array[StructureContractDescriptor[_]]): ClassMap[StructureBehaviorDescriptorNode[_]] = {
         descriptors
-            .sortInPlace()((a, b) => {
-                getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
-            })
+                .sortInPlace()((a, b) => {
+                    getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
+                })
         val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()
         val objectDescriptor = descriptors.head
         if (objectDescriptor.targetClass != classOf[Object])
@@ -36,7 +38,7 @@ class ContractDescriptorData(descriptors: Array[ObjectBehaviorDescriptor[_]]) {
             }
         }
         val map = relations.map(pair => (pair._1, pair._2.toNode)).toMap
-        new ClassMap[BehaviorDescriptorNode[_]](map)
+        new ClassMap[StructureBehaviorDescriptorNode[_]](map)
     }
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]

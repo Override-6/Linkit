@@ -14,15 +14,14 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{AgreementContext, SynchronizedObjectContractFactory}
-import fr.linkit.engine.gnom.cache.sync.contract.builder.{ContractDescriptorData, ObjectBehaviorDescriptor}
-import fr.linkit.engine.internal.utils.ClassMap
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{SyncObjectContext, SynchronizedObjectContractFactory}
+import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 
 class SyncObjectContractFactory(descriptions: ContractDescriptorData) extends SynchronizedObjectContractFactory {
 
 
-    override def getObjectContract[A <: AnyRef](clazz: Class[_], context: AgreementContext): SynchronizedStructureContract[A] = {
-        descriptions.getNode(clazz).getContract(clazz, context: AgreementContext).asInstanceOf[SynchronizedStructureContract[A]]
+    override def getObjectContract[A <: AnyRef](clazz: Class[_], context: SyncObjectContext): SynchronizedStructureContract[A] = {
+        descriptions.getNode(clazz).getContract(clazz, context: SyncObjectContext).asInstanceOf[SynchronizedStructureContract[A]]
     }
 
 

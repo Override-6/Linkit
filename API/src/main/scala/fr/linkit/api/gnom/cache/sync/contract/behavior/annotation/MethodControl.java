@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior.annotation;
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior;
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.UsageMethodBehavior;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -21,10 +21,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Contains basic information for a {@link MethodBehavior}
+ * Contains basic information for a {@link UsageMethodBehavior}
  *
  * @see fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior
- * @see MethodBehavior
+ * @see UsageMethodBehavior
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

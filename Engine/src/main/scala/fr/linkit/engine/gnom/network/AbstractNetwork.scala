@@ -13,10 +13,8 @@
 
 package fr.linkit.engine.gnom.network
 
-import java.sql.Timestamp
-
 import fr.linkit.api.application.connection.ConnectionContext
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
+import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
@@ -24,15 +22,16 @@ import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, Remainin
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractDescriptorDataBuilder
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
 import fr.linkit.engine.gnom.cache.sync.contract.modification.{LambdaFieldModifier, LambdaMethodCompModifier}
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
 
-abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
+import java.sql.Timestamp
 
+abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override           val reference              : NetworkReference           = new NetworkReference()
     override           val connection             : ConnectionContext          = traffic.connection
@@ -44,7 +43,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     private lazy       val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
     override lazy      val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, Some(rnol))
     override lazy      val globalCache            : SharedCacheManager         = createGlobalCache
-    protected lazy     val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)
+    protected lazy     val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreContracts)
     private var engine0                           : Engine                     = _
 
     override def connectionEngine: Engine = engine0
@@ -84,15 +83,15 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     private[network] def newCacheManager(family: String): (SharedCacheManager, Array[Int]) = {
         AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
-        val store   = networkStore.createStore(family.hashCode)
-        val manager = new SharedCacheOriginManager(family, this, store)
+        val store       = networkStore.createStore(family.hashCode)
+        val manager     = new SharedCacheOriginManager(family, this, store)
         val trafficPath = store.trafficPath
         scnol.registerReference(manager.reference)
         trunk.addCacheManager(manager, trafficPath)
         (manager, trafficPath)
     }
 
-    protected def retrieveDataTrunk(factory: SynchronizedObjectContractFactory): NetworkDataTrunk
+    protected def retrieveDataTrunk(factory: ContractDescriptorData): NetworkDataTrunk
 
     protected def createGlobalCache: SharedCacheManager
 
@@ -114,7 +113,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
     }
 
-    private def getEngineStoreBehaviors: SynchronizedObjectContractFactory = {
+    private def getEngineStoreContracts: ContractDescriptorData = {
         import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.fromTag
         new ContractDescriptorDataBuilder {
             describe(new ClassDescriptor[SharedCacheManager]() {

@@ -13,14 +13,15 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.ParameterBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{GenericMethodBehavior, ParameterBehavior}
 import fr.linkit.api.gnom.cache.sync.contract.description._
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior, SyncMethodBehavior}
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.DefaultGenericMethodBehavior
+import fr.linkit.engine.gnom.cache.sync.invokation.GenericRMIRulesAgreementBuilder
 
 import java.lang.reflect.{Method, Parameter}
 
@@ -41,22 +42,21 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         new MethodParameterBehavior[Any](isSynchronized)
     }
 
-    override def genMethodBehavior(procrastinator: Option[Procrastinator], agreementBuilder: RMIRulesAgreementBuilder, desc: MethodDescription): SyncMethodBehavior = {
-        val javaMethod       = desc.javaMethod
-        val controlOpt       = Option(javaMethod.getAnnotation(classOf[MethodControl]))
-        val control          = controlOpt.getOrElse(DefaultMethodControl)
-        val isActivated      = controlOpt.isDefined
-        val paramBehaviors   = getParamBehaviors(desc.javaMethod)
-        val rule             = control.value()
-        val isHidden         = control.hide
-        val innerInvocations = control.forceLocalInnerInvocations()
-        val returnValueBhv   = new MethodReturnValueBehavior[Any](control.synchronizeReturnValue())
+    override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): GenericMethodBehavior = {
+        val javaMethod                 = desc.javaMethod
+        val controlOpt                 = Option(javaMethod.getAnnotation(classOf[MethodControl]))
+        val control                    = controlOpt.getOrElse(DefaultMethodControl)
+        val isActivated                = controlOpt.isDefined
+        val paramBehaviors             = getParamBehaviors(desc.javaMethod)
+        val rule                       = control.value()
+        val agreementBuilder           = rule.apply(new GenericRMIRulesAgreementBuilder())
+        val isHidden                   = control.hide
+        val forceLocalInnerInvocations = control.forceLocalInnerInvocations()
+        val returnValueBhv             = new MethodReturnValueBehavior[Any](control.synchronizeReturnValue())
 
-        rule.apply(agreementBuilder)
-        val agreement = agreementBuilder.result(conte)
-        SyncMethodBehavior(
-            isActivated, paramBehaviors, returnValueBhv, isHidden,
-            innerInvocations, agreement
+        new DefaultGenericMethodBehavior(
+            isActivated, isHidden,
+            forceLocalInnerInvocations, paramBehaviors, returnValueBhv, agreementBuilder
         )
     }
 

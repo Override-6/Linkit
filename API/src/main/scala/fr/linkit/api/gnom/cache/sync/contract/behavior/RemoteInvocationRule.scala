@@ -24,6 +24,6 @@ trait RemoteInvocationRule {
      *
      * @param agreement the builder for the agreement
      * */
-    def apply(agreement: RMIRulesAgreementBuilder): Unit
+    def apply(agreement: RMIRulesAgreementBuilder): RMIRulesAgreementBuilder
 
 }

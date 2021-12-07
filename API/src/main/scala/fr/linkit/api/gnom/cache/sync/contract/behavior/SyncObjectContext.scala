@@ -11,13 +11,15 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior.member.method
+package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.MemberBehavior
+trait SyncObjectContext {
+    val ownerID     : String
+    val rootOwnerID : String
+    val currentID   : String
+    val cacheOwnerID: String
 
-trait MethodBehavior extends MemberBehavior {
-    val isHidden                  : Boolean
-    val forceLocalInnerInvocations: Boolean
-    val parameterBehaviors        : Array[ParameterBehavior[Any]]
-    val returnValueBehavior       : ReturnValueBehavior[Any]
+    def translate(tag: EngineTag): String
+
+    def currentIs(tag: EngineTag): Boolean = translate(tag) == currentID
 }
