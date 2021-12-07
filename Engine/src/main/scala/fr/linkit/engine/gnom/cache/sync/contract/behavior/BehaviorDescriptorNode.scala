@@ -21,12 +21,12 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.{MethodCompModifier, 
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ParameterContract, SynchronizedStructureContract}
 import fr.linkit.api.gnom.cache.sync.invokation.remote.MethodInvocationHandler
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.ObjectBehaviorDescriptor
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ObjectBehaviorDescriptor
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, SyncMethodBehavior}
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contract.modification.DefaultValueMultiModifier
 import fr.linkit.engine.gnom.cache.sync.contract.{AbstractSynchronizedStructure, MethodParameterContract}
-import fr.linkit.engine.gnom.cache.sync.invokation.{DefaultMethodInvocationHandler, SimpleRMIRulesAgreementBuilder}
+import fr.linkit.engine.gnom.cache.sync.invokation.{DefaultMethodInvocationHandler, GenericRMIRulesAgreementBuilder}
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -48,7 +48,7 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
             val id = contractDesc.description.methodId
             if (!map.contains(id)) {
                 import contractDesc._
-                val agreementBuilder = new SimpleRMIRulesAgreementBuilder(context)
+                val agreementBuilder = new GenericRMIRulesAgreementBuilder(context)
                 contractDesc.rule.apply(agreementBuilder)
                 val agreement          = agreementBuilder.result
                 var parameterBehaviors = contractDesc.parameterContracts.map(_.behavior.orNull)
@@ -101,7 +101,7 @@ class BehaviorDescriptorNode[A <: AnyRef](val descriptor: ObjectBehaviorDescript
             val id = methodDesc.methodId
             if (!methodMap.contains(id)) {
                 //TODO maybe add a default procrastinator in this node's descriptor.
-                val builder             = new SimpleRMIRulesAgreementBuilder(context)
+                val builder             = new GenericRMIRulesAgreementBuilder(context)
                 val bhv                 = AnnotationBasedMemberBehaviorFactory.genMethodBehavior(None, builder, methodDesc)
                 val parameterContracts0 = getParameterContracts(methodDesc, bhv)
                 methodMap.put(id, new MethodContract {

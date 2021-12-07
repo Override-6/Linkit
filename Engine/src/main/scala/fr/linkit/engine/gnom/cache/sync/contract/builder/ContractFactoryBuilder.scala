@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract.behavior.builder
+package fr.linkit.engine.gnom.cache.sync.contract.builder
 
 import fr.linkit.api.gnom.cache.sync.contract.ParameterContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule
@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, Met
 import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifier
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.MethodParameterContract
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.SynchronizedObjectBehaviorFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior}
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.{AnnotationBasedMemberBehaviorFactory, SyncObjectContractFactory}
 import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
@@ -31,7 +31,7 @@ import java.util.NoSuchElementException
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-abstract class SynchronizedObjectBehaviorFactoryBuilder {
+abstract class ContractFactoryBuilder {
 
     private val builders       = mutable.LinkedHashMap.empty[Any, ClassDescriptor[_]]
     private var defaultID: Int = 0
@@ -169,7 +169,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
             }
         }
 
-        private[SynchronizedObjectBehaviorFactoryBuilder] def getResult: ObjectBehaviorDescriptor[_] = {
+        private[ContractFactoryBuilder] def getResult: ObjectBehaviorDescriptor[_] = {
             if (result != null)
                 return result
             val hierarchy = inheritedBehaviorsTags.map(tag => builders.getOrElse(tag, {
@@ -193,7 +193,7 @@ abstract class SynchronizedObjectBehaviorFactoryBuilder {
 
 }
 
-object SynchronizedObjectBehaviorFactoryBuilder {
+object ContractFactoryBuilder {
 
     sealed trait Recognizable {
 
@@ -285,7 +285,7 @@ object SynchronizedObjectBehaviorFactoryBuilder {
             }
         }
 
-        private[SynchronizedObjectBehaviorFactoryBuilder] def build(): MethodContractDescriptor = {
+        private[ContractFactoryBuilder] def build(): MethodContractDescriptor = {
             usedParams.foreach(_.concludeAllAssignements()) //will modify the paramBehaviors map
             val jMethod             = context.javaMethod
             val parameterBehaviors  = getParamContracts(jMethod)

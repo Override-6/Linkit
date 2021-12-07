@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract.behavior.builder
+package fr.linkit.engine.gnom.cache.sync.contract.builder
 
 import fr.linkit.api.gnom.cache.sync.contract.ParameterContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule

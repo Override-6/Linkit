@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract.behavior.builder
+package fr.linkit.engine.gnom.cache.sync.contract.builder
 
 import scala.collection.mutable.ListBuffer
 

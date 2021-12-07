@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
-import fr.linkit.engine.gnom.cache.sync.invokation.SimpleRMIRulesAgreement
+import fr.linkit.engine.gnom.cache.sync.invokation.UsageRMIRulesAgreement
 import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
 class AgreementScope(override val writer: PacketWriter, network: Network, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {
@@ -70,7 +70,7 @@ class AgreementScope(override val writer: PacketWriter, network: Network, agreem
 
 object AgreementScope {
 
-    def apply(agreement: SimpleRMIRulesAgreement, network: Network): ScopeFactory[AgreementScope] = {
+    def apply(agreement: UsageRMIRulesAgreement, network: Network): ScopeFactory[AgreementScope] = {
         writer => new AgreementScope(writer, network, agreement)
     }
 }

@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{AgreementContext, SynchronizedObjectContractFactory}
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.ObjectBehaviorDescriptor
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ObjectBehaviorDescriptor
 import fr.linkit.engine.internal.utils.ClassMap
 
 class SyncObjectContractFactory(descriptions: Array[ObjectBehaviorDescriptor[_]]) extends SynchronizedObjectContractFactory {

@@ -13,5 +13,15 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-case class AgreementContext(ownerID: String, rootOwnerID: String,
-                            currentID: String, cacheOwnerID: String)
+trait AgreementContext {
+    val ownerID     : String
+    val rootOwnerID : String
+    val currentID   : String
+    val cacheOwnerID: String
+
+    val currentIsCacheOwner: Boolean
+    val currentIsOwner     : Boolean
+    val currentIsRootOwner : Boolean
+
+    def translate(tag: EngineTag): String
+}

@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.ObjectBehaviorDescriptor
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ObjectBehaviorDescriptor
 
 import scala.collection.mutable.ListBuffer
 

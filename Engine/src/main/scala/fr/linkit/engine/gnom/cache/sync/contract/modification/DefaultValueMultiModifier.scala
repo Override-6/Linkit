@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.{MethodCompModifier, 
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.BehaviorDescriptorNode
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.ObjectBehaviorDescriptor
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ObjectBehaviorDescriptor
 
 class DefaultValueMultiModifier[A <: AnyRef](node: BehaviorDescriptorNode[A]) extends ValueMultiModifier[A] {
 

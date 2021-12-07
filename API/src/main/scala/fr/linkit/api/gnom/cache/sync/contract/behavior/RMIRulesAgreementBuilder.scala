@@ -15,6 +15,8 @@ package fr.linkit.api.gnom.cache.sync.contract.behavior
 
 trait RMIRulesAgreementBuilder {
 
+    type AgreementConditionAction = this.type => this.type
+
     def discard(target: String): this.type
 
     def accept(target: String): this.type
@@ -49,19 +51,17 @@ trait RMIRulesAgreementBuilder {
 
     def desireCacheOwnerEngineToReturn(): this.type
 
-    def ifCurrentIsOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
+    def ifCurrentIsOwner(action: AgreementConditionAction): this.type
 
-    def ifCurrentIsCacheOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
+    def ifCurrentIsCacheOwner(action: AgreementConditionAction): this.type
 
-    def ifCurrentIsRootOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
+    def ifCurrentIsRootOwner(action: AgreementConditionAction): this.type
 
-    def ifCurrentIsNotOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
+    def ifCurrentIsNotOwner(action: AgreementConditionAction): this.type
 
-    def ifCurrentIsNotCacheOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
+    def ifCurrentIsNotCacheOwner(action: AgreementConditionAction): this.type
 
-    def ifCurrentIsNotRootOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type
-
-    def result: RMIRulesAgreement
+    def ifCurrentIsNotRootOwner(action: AgreementConditionAction): this.type
 
 }
 

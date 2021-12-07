@@ -29,7 +29,7 @@ import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.builder.SynchronizedObjectBehaviorFactoryBuilder
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractFactoryBuilder
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip
@@ -245,7 +245,7 @@ object DefaultSynchronizedObjectCache {
     implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = apply()
 
     implicit def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
-        val treeView = new SynchronizedObjectBehaviorFactoryBuilder {}.build()
+        val treeView = new ContractFactoryBuilder {}.build()
         apply[A](treeView)
     }
 
@@ -257,7 +257,7 @@ object DefaultSynchronizedObjectCache {
 
     private[linkit] def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         channel => {
-            val treeView = new SynchronizedObjectBehaviorFactoryBuilder {}.build()
+            val treeView = new ContractFactoryBuilder {}.build()
             apply[A](channel, treeView, network)
         }
     }

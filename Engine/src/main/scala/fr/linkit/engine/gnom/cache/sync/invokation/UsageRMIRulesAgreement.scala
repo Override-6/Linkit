@@ -15,9 +15,9 @@ package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 
-class SimpleRMIRulesAgreement(currentID: String, ownerID: String,
-                              desiredEngineReturn: String, acceptAll: Boolean,
-                              accepted: Array[String], excluded: Array[String]) extends RMIRulesAgreement {
+class UsageRMIRulesAgreement(currentID: String, ownerID: String,
+                             desiredEngineReturn: String, acceptAll: Boolean,
+                             accepted: Array[String], excluded: Array[String]) extends RMIRulesAgreement {
     private val currentIsOwner = currentID == ownerID
 
     override val acceptedEngines: Array[String] = accepted
