@@ -27,17 +27,9 @@ trait RMIRulesAgreementBuilder {
 
     def setDesiredEngineReturn(target: EngineTag): this.type
 
-    def ifCurrentIsOwner(action: AgreementConditionAction): this.type
+    def ifCurrentIs(target: EngineTag)(action: AgreementConditionAction): this.type
 
-    def ifCurrentIsCacheOwner(action: AgreementConditionAction): this.type
-
-    def ifCurrentIsRootOwner(action: AgreementConditionAction): this.type
-
-    def ifCurrentIsNotOwner(action: AgreementConditionAction): this.type
-
-    def ifCurrentIsNotCacheOwner(action: AgreementConditionAction): this.type
-
-    def ifCurrentIsNotRootOwner(action: AgreementConditionAction): this.type
+    def ifCurrentIsNot(target: EngineTag)(action: AgreementConditionAction): this.type
 
 }
 

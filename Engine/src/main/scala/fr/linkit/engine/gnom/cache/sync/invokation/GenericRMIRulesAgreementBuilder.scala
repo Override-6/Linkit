@@ -51,33 +51,18 @@ class GenericRMIRulesAgreementBuilder private(discarded: Seq[EngineTag], accepte
         new GenericRMIRulesAgreementBuilder(Seq.empty, Seq.empty, conditions, acceptAllTargets, target)
     }
 
-    private def addCondition(condition: AgreementCondition, action: AgreementConditionAction): GenericRMIRulesAgreementBuilder = {
-        val conditions = this.conditions :+ ((context: AgreementContext) => condition(context, this, action))
+    private def addCondition(condition: AgreementCondition, testedState: EngineTag, action: AgreementConditionAction): GenericRMIRulesAgreementBuilder = {
+        val conditions = this.conditions :+ ((context: AgreementContext) => condition(context, testedState, this, action))
         new GenericRMIRulesAgreementBuilder(Seq.empty, Seq.empty, conditions, acceptAllTargets, desiredEngineReturn)
     }
 
-    override def ifCurrentIsRootOwner(action: AgreementConditionAction): this.type = {
-        addCondition(CurrentIsRootOwner, action)
+    override def ifCurrentIs(target: EngineTag)(action: AgreementConditionAction): this.type = {
+        addCondition(CurrentIs, target, action)
     }
 
-    override def ifCurrentIsNotRootOwner(action: AgreementConditionAction): this.type = {
-        addCondition(CurrentIsNotRootOwner, action)
-    }
 
-    override def ifCurrentIsOwner(action: AgreementConditionAction): this.type = {
-        addCondition(CurrentIsOwner, action)
-    }
-
-    override def ifCurrentIsNotOwner(action: AgreementConditionAction): this.type = {
-        addCondition(CurrentIsNotOwner, action)
-    }
-
-    override def ifCurrentIsCacheOwner(action: AgreementConditionAction): this.type = {
-        addCondition(CurrentIsCacheOwner, action)
-    }
-
-    override def ifCurrentIsNotCacheOwner(action: AgreementConditionAction): this.type = {
-        addCondition(CurrentIsNotCacheOwner, action)
+    override def ifCurrentIsNot(target: EngineTag)(action: AgreementConditionAction): this.type = {
+        addCondition(CurrentIsNot, target, action)
     }
 
     def result(context: AgreementContext): RMIRulesAgreement = {
@@ -86,8 +71,8 @@ class GenericRMIRulesAgreementBuilder private(discarded: Seq[EngineTag], accepte
             builder = condition(context)
         }
         val desiredEngineReturnIdentifier = context.translate(builder.desiredEngineReturn)
-        val accepted = builder.accepted.map(context.translate).toArray
-        val discarded = builder.discarded.map(context.translate).toArray
+        val accepted                      = builder.accepted.map(context.translate).toArray
+        val discarded                     = builder.discarded.map(context.translate).toArray
         new UsageRMIRulesAgreement(context.currentID, context.ownerID, desiredEngineReturnIdentifier, acceptAllTargets, accepted, discarded)
     }
 
@@ -95,14 +80,10 @@ class GenericRMIRulesAgreementBuilder private(discarded: Seq[EngineTag], accepte
 
 object GenericRMIRulesAgreementBuilder {
 
-    type AgreementCondition = (AgreementContext, GenericRMIRulesAgreementBuilder, GenericRMIRulesAgreementBuilder => GenericRMIRulesAgreementBuilder) => GenericRMIRulesAgreementBuilder
+    type AgreementCondition = (AgreementContext, EngineTag, GenericRMIRulesAgreementBuilder, GenericRMIRulesAgreementBuilder => GenericRMIRulesAgreementBuilder) => GenericRMIRulesAgreementBuilder
     type AgreementConditionResult = AgreementContext => GenericRMIRulesAgreementBuilder
-    private final val CurrentIsCacheOwner   : AgreementCondition = (c, b, e) => if (c.currentIsCacheOwner) e(b) else b
-    private final val CurrentIsNotCacheOwner: AgreementCondition = (c, b, e) => if (!c.currentIsCacheOwner) e(b) else b
-    private final val CurrentIsOwner        : AgreementCondition = (c, b, e) => if (c.currentIsOwner) e(b) else b
-    private final val CurrentIsNotOwner     : AgreementCondition = (c, b, e) => if (!c.currentIsOwner) e(b) else b
-    private final val CurrentIsRootOwner    : AgreementCondition = (c, b, e) => if (c.currentIsRootOwner) e(b) else b
-    private final val CurrentIsNotRootOwner : AgreementCondition = (c, b, e) => if (!c.currentIsRootOwner) e(b) else b
+    private final val CurrentIs   : AgreementCondition = (c, t, b, e) => if (c.currentIs(t)) e(b) else b
+    private final val CurrentIsNot: AgreementCondition = (c, t, b, e) => if (!c.currentIs(t)) e(b) else b
 
     implicit private def fastWrap(in: () => Unit): Boolean = true
 

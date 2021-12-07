@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
@@ -16,6 +17,8 @@ package fr.linkit.api.gnom.cache.sync.contract.behavior.annotation;
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder;
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule;
 
+import static fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.*;
+
 /**
  * Basic RMI rules that defines simple agreements.
  */
@@ -29,24 +32,24 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     ONLY_CURRENT((agreement) -> {
         agreement.discardAll()
-                .acceptCurrent();
+                .accept(CurrentEngine);
     }),
     /**
      * Invocation will only be performed on the engine that owns the original object.
      */
     ONLY_OWNER((agreement) -> {
         agreement.discardAll()
-                .acceptOwner()
-                .desireOwnerEngineToReturn();
+                .accept(OwnerEngine)
+                .setDesiredEngineReturn(OwnerEngine);
     }),
     /**
      * Invocation will only be performed on the engine that hosts the cache manager in which the object's
      * {@link fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache} is open.
-     * */
+     */
     ONLY_CACHE_OWNER((agreement) -> {
         agreement.discardAll()
-                .acceptCacheOwner()
-                .desireCacheOwnerEngineToReturn();
+                .accept(CacheOwnerEngine)
+                .setDesiredEngineReturn(CacheOwnerEngine);
     }),
     /**
      * The invocation will be performed on every remote machines, excluding the current machine.
@@ -55,8 +58,8 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * and the return value of the method will be taken from the local invocation result
      */
     NOT_CURRENT(((agreement) -> {
-        agreement.discardCurrent()
-                .desireOwnerEngineToReturn();
+        agreement.discard(CurrentEngine)
+                .setDesiredEngineReturn(OwnerEngine);
     })),
     /**
      * The invocation will be performed on the current machine <b>and</b> on every remote machines.
@@ -64,7 +67,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST(((agreement) -> {
         agreement.acceptAll()
-                .desireCurrentEngineToReturn();
+                .setDesiredEngineReturn(CurrentEngine);
     })),
 
     /**
@@ -75,8 +78,8 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
     BROADCAST_IF_OWNER((agreement) -> {
         agreement
                 .ifCurrentIsOwner(RMIRulesAgreementBuilder::acceptAll)
-                .acceptCurrent()
-                .desireCurrentEngineToReturn();
+                .accept(CurrentEngine)
+                .setDesiredEngineReturn(CurrentEngine);
     }),
 
 
@@ -87,8 +90,8 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST_IF_ROOT_OWNER((agreement ->
             agreement.ifCurrentIsRootOwner(RMIRulesAgreementBuilder::acceptAll)
-                    .acceptCurrent()
-                    .desireCurrentEngineToReturn())),
+                    .accept(CurrentEngine)
+                    .setDesiredEngineReturn(CurrentEngine))),
     /**
      * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.
      * If the current machine owns the wrapper object, the execution will be called only once.
@@ -96,9 +99,9 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     CURRENT_AND_OWNER(((agreement) -> {
         agreement.discardAll()
-                .acceptCurrent()
-                .acceptOwner()
-                .desireOwnerEngineToReturn();
+                .accept(CurrentEngine)
+                .accept(OwnerEngine)
+                .setDesiredEngineReturn(CurrentEngine);
     }));
 
     private final RemoteInvocationRule rule;

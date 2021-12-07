@@ -19,9 +19,7 @@ trait AgreementContext {
     val currentID   : String
     val cacheOwnerID: String
 
-    val currentIsCacheOwner: Boolean
-    val currentIsOwner     : Boolean
-    val currentIsRootOwner : Boolean
-
     def translate(tag: EngineTag): String
+
+    def currentIs(tag: EngineTag): Boolean = translate(tag) == currentID
 }
