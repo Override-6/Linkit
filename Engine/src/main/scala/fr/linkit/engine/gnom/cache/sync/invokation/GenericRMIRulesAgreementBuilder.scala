@@ -31,41 +31,12 @@ class GenericRMIRulesAgreementBuilder private(discarded: Seq[EngineTag], accepte
         this(other.discarded, other.accepted, other.conditions, other.acceptAllTargets, other.desiredEngineReturn)
     }
 
-
-    override def acceptRootOwner(): this.type = accept(RootOwnerEngine)
-
-    override def discardRootOwner(): this.type = discard(RootOwnerEngine)
-
-    override def desireCurrentEngineToReturn(): this.type = {
-        new GenericRMIRulesAgreementBuilder(discarded, accepted, conditions, acceptAllTargets, CurrentEngine)
-    }
-
-    override def desireRootOwnerEngineToReturn(): this.type = {
-        new GenericRMIRulesAgreementBuilder(discarded, accepted, conditions, acceptAllTargets, RootOwnerEngine)
-    }
-
-    override def desireCacheOwnerEngineToReturn(): this.type = {
-        new GenericRMIRulesAgreementBuilder(discarded, accepted, conditions, acceptAllTargets, CacheOwnerEngine)
-    }
-
-    private def discard(target: EngineTag): this.type = {
+    override def discard(target: EngineTag): this.type = {
         new GenericRMIRulesAgreementBuilder(discarded :+ target, accepted.filterNot(_ == target), conditions, acceptAllTargets, desiredEngineReturn)
     }
 
-    override def discard(target: String): this.type = {
-        discard(IdentifierTag(target))
-    }
-
-    private def accept(target: EngineTag): this.type = {
+    override def accept(target: EngineTag): this.type = {
         new GenericRMIRulesAgreementBuilder(discarded.filterNot(target.equals), accepted :+ target, conditions, acceptAllTargets, desiredEngineReturn)
-    }
-
-    override def accept(target: String): this.type = {
-        accept(IdentifierTag(target))
-    }
-
-    override def acceptOwner(): this.type = {
-        accept(OwnerEngine)
     }
 
     override def acceptAll(): this.type = {
@@ -76,26 +47,8 @@ class GenericRMIRulesAgreementBuilder private(discarded: Seq[EngineTag], accepte
         new GenericRMIRulesAgreementBuilder(Seq.empty, Seq.empty, conditions, false, desiredEngineReturn)
     }
 
-    override def acceptCurrent(): this.type = accept(CurrentEngine)
-
-    override def discardCurrent(): this.type = discard(CurrentEngine)
-
-    override def discardOwner(): this.type = discard(OwnerEngine)
-
-    override def acceptCacheOwner(): this.type = accept(CacheOwnerEngine)
-
-    override def discardCacheOwner(): this.type = discard(CacheOwnerEngine)
-
-    override def setDesiredEngineReturn(target: String): this.type = {
-        setDesiredEngineReturn(IdentifierTag(target))
-    }
-
-    private def setDesiredEngineReturn(target: EngineTag): this.type = {
+    override def setDesiredEngineReturn(target: EngineTag): this.type = {
         new GenericRMIRulesAgreementBuilder(Seq.empty, Seq.empty, conditions, acceptAllTargets, target)
-    }
-
-    override def desireOwnerEngineToReturn(): this.type = {
-        setDesiredEngineReturn(OwnerEngine)
     }
 
     private def addCondition(condition: AgreementCondition, action: AgreementConditionAction): GenericRMIRulesAgreementBuilder = {
