@@ -13,7 +13,7 @@
 
 package fr.linkit.client.network
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
+import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{CacheSearchBehavior, SharedCacheManager}
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
@@ -23,8 +23,8 @@ import fr.linkit.engine.gnom.packet.traffic.SocketPacketTraffic
 
 class ClientSideNetwork(traffic: SocketPacketTraffic) extends AbstractNetwork(traffic) {
 
-    override protected def retrieveDataTrunk(store: SynchronizedObjectContractFactory): NetworkDataTrunk = {
-        val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](store, this), CacheSearchBehavior.GET_OR_CRASH)
+    override protected def retrieveDataTrunk(contracts: ContractDescriptorData): NetworkDataTrunk = {
+        val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](contracts, this), CacheSearchBehavior.GET_OR_CRASH)
                 .findObject(0)
                 .getOrElse {
                     throw new NoSuchElementException("Engine Store not found.")
