@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, Met
 import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifier
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.MethodParameterContract
-import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractFactoryBuilder.{MethodBehaviorBuilder, Recognizable}
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractDescriptorDataBuilder.{MethodBehaviorBuilder, Recognizable}
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior}
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.{AnnotationBasedMemberBehaviorFactory, SyncObjectContractFactory}
 import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
@@ -31,7 +31,7 @@ import java.util.NoSuchElementException
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-abstract class ContractFactoryBuilder {
+abstract class ContractDescriptorDataBuilder {
 
     private val builders       = mutable.LinkedHashMap.empty[Any, ClassDescriptor[_]]
     private var defaultID: Int = 0
@@ -41,7 +41,7 @@ abstract class ContractFactoryBuilder {
         builders.put(tag, builder)
     }
 
-    def build(): SynchronizedObjectContractFactory = {
+    def build(): ContractDescriptorData = {
         var descriptions = builders.values.map(_.getResult).toArray
         if (!descriptions.exists(_.targetClass eq classOf[Object])) {
             descriptions :+= new ObjectBehaviorDescriptor[Object] {
@@ -54,7 +54,7 @@ abstract class ContractFactoryBuilder {
                 override val whenMethodReturnValue: Option[MethodCompModifier[Object]]           = None
             }
         }
-        new SyncObjectContractFactory(descriptions)
+        new ContractDescriptorData(descriptions)
     }
 
     private def nextDescriptorDefaultID: Int = {
@@ -169,7 +169,7 @@ abstract class ContractFactoryBuilder {
             }
         }
 
-        private[ContractFactoryBuilder] def getResult: ObjectBehaviorDescriptor[_] = {
+        private[ContractDescriptorDataBuilder] def getResult: ObjectBehaviorDescriptor[_] = {
             if (result != null)
                 return result
             val hierarchy = inheritedBehaviorsTags.map(tag => builders.getOrElse(tag, {
@@ -193,7 +193,7 @@ abstract class ContractFactoryBuilder {
 
 }
 
-object ContractFactoryBuilder {
+object ContractDescriptorDataBuilder {
 
     sealed trait Recognizable {
 
@@ -285,7 +285,7 @@ object ContractFactoryBuilder {
             }
         }
 
-        private[ContractFactoryBuilder] def build(): MethodContractDescriptor = {
+        private[ContractDescriptorDataBuilder] def build(): MethodContractDescriptor = {
             usedParams.foreach(_.concludeAllAssignements()) //will modify the paramBehaviors map
             val jMethod             = context.javaMethod
             val parameterBehaviors  = getParamContracts(jMethod)

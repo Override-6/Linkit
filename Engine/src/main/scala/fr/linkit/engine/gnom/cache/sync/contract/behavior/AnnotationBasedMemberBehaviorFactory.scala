@@ -53,7 +53,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         val returnValueBhv   = new MethodReturnValueBehavior[Any](control.synchronizeReturnValue())
 
         rule.apply(agreementBuilder)
-        val agreement = agreementBuilder.result
+        val agreement = agreementBuilder.result(conte)
         SyncMethodBehavior(
             isActivated, paramBehaviors, returnValueBhv, isHidden,
             innerInvocations, agreement

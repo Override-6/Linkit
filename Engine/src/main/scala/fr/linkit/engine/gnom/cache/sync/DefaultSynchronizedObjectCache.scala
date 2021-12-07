@@ -29,7 +29,7 @@ import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
-import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractFactoryBuilder
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractDescriptorDataBuilder
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip
@@ -40,8 +40,10 @@ import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.LinkitApplication
-
 import java.lang.reflect.Modifier
+
+import fr.linkit.engine.gnom.cache.sync.invokation.UsageAgreementContext
+
 import scala.reflect.ClassTag
 
 final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePacketChannel,
@@ -72,7 +74,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
     private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceCreator[A], behaviorFactory: SynchronizedObjectContractFactory = defaultBehaviorFactory): DefaultSynchronizedObjectTree[A] = {
         val nodeLocation = new SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
-        val context      = AgreementContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
+        val context      = UsageAgreementContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
         val rootContract = behaviorFactory.getObjectContract[A](creator.tpeClass, context)
         val root         = DefaultInstantiator.newWrapper[A](creator)
         val chip         = ObjectChip[A](rootContract, network, root)
@@ -105,8 +107,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val tree          = parent.tree
         val path          = parent.treePath :+ id
         val behaviorStore = tree.behaviorFactory
-        val rootOwnerID   = parent.tree.rootNode.ownerID
-        val context       = AgreementContext(ownerID, ownerID, currentIdentifier, cacheOwnerId)
+        val context       = UsageAgreementContext(ownerID, ownerID, currentIdentifier, cacheOwnerId)
         val contract      = behaviorStore.getObjectContract[B](syncObject.getSuperClass, context)
         val chip          = ObjectChip[B](contract, network, syncObject)
         val reference     = new SyncObjectReference(family, cacheID, ownerID, path)
@@ -245,7 +246,7 @@ object DefaultSynchronizedObjectCache {
     implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = apply()
 
     implicit def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
-        val treeView = new ContractFactoryBuilder {}.build()
+        val treeView = new ContractDescriptorDataBuilder {}.build()
         apply[A](treeView)
     }
 
@@ -257,7 +258,7 @@ object DefaultSynchronizedObjectCache {
 
     private[linkit] def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         channel => {
-            val treeView = new ContractFactoryBuilder {}.build()
+            val treeView = new ContractDescriptorDataBuilder {}.build()
             apply[A](channel, treeView, network)
         }
     }

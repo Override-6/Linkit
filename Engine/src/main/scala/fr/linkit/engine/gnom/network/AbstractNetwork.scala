@@ -24,7 +24,7 @@ import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, Remainin
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractFactoryBuilder
+import fr.linkit.engine.gnom.cache.sync.contract.builder.ContractDescriptorDataBuilder
 import fr.linkit.engine.gnom.cache.sync.contract.modification.{LambdaFieldModifier, LambdaMethodCompModifier}
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
@@ -116,7 +116,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     private def getEngineStoreBehaviors: SynchronizedObjectContractFactory = {
         import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.fromTag
-        new ContractFactoryBuilder {
+        new ContractDescriptorDataBuilder {
             describe(new ClassDescriptor[SharedCacheManager]() {
                 whenParameter = new LambdaMethodCompModifier[SharedCacheManager]() {
                     currentToRemote = (param, _, _) => param match {

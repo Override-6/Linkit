@@ -3,6 +3,3 @@ Here is where all diagrams that explains the main systems and architectures are 
 
 ### The General Network Object Management System
 [GNOM.drawio](GNOM.drawio)
-
-### The Synchronized Objects Behavior Arrangement
-[SOBT.drawio](SOBT.drawio)
