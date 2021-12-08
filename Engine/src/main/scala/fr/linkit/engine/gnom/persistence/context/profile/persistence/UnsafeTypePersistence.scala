@@ -20,7 +20,7 @@ import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 
 import java.lang.reflect.Field
 
-class UnsafeTypePersistence[T](clazz: Class[_]) extends TypePersistence[T]() {
+class UnsafeTypePersistence[T](private val clazz: Class[_]) extends TypePersistence[T]() {
 
     override      val structure: ClassObjectStructure = ClassObjectStructure(clazz)
     private final val fields   : Array[Field]         = structure.fields

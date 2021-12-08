@@ -124,10 +124,10 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         val m           = lambdaClass.getDeclaredMethod("writeReplace")
         m.setAccessible(true)
         val serializedLambda = m.invoke(lambdaObject).asInstanceOf[SerializedLambda]
-        val className = serializedLambda.getCapturingClass.replace('/', '.')
-        val enclosingClass = java.lang.Class.forName(className)
-        val slo = new SimpleLambdaObject(enclosingClass, lambdaObject, serializedLambda)
-        getChunkFromFlag(Lambda).add(slo)
+        val className        = serializedLambda.getCapturingClass.replace('/', '.')
+        val enclosingClass   = java.lang.Class.forName(className)
+        val slo              = new SimpleLambdaObject(enclosingClass, lambdaObject, serializedLambda)
+        getChunkFromFlag(Lambda).add(lambdaObject, slo)
         addObj(serializedLambda)
     }
 
@@ -170,7 +170,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
     }
 
     private def addObj0(ref: AnyRef): Unit = {
-        val clazz = ref.getClass
+        val clazz   = ref.getClass
         val profile = config.getProfile[AnyRef](clazz)
         val nrlOpt  = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
@@ -178,7 +178,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             val persistence = profile.getPersistence(ref)
             val decomposed  = persistence.toArray(ref)
             val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
-            objPool.add(new SimpleObject(ref, decomposed, profile))
+            objPool.add(ref, new SimpleObject(ref, decomposed, profile))
             addAll(decomposed)
             ref match {
                 case sync: SynchronizedObject[_] =>
@@ -193,13 +193,11 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             val pos = chunks(Object).size
             addObj(nrl)
             val rno = new ReferencedNetworkObject {
-                override val locationIdx: Int = pos
-
-                override val location: NetworkObjectReference = nrl
-
-                override def value: AnyRef = ref
+                override val locationIdx: Int                    = pos
+                override val location   : NetworkObjectReference = nrl
+                override val value      : AnyRef                 = ref
             }
-            chunk.add(rno)
+            chunk.add(ref, rno)
         }
     }
 

@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.utils
 
-case class Identity[A](obj: A) {
+class Identity[A](val obj: A) {
 
     override def hashCode(): Int = {
         System.identityHashCode(obj)
@@ -21,8 +21,14 @@ case class Identity[A](obj: A) {
 
     override def equals(obj: Any): Boolean = obj match {
         case id: Identity[A] => JavaUtils.sameInstance(id.obj, this.obj) //got an error "the result type of an implicit conversion must be more specific than AnyRef" if i put "obj eq this.obj"
-        case _            => false
+        case _            => JavaUtils.sameInstance(obj, this.obj)
     }
 
     override def toString: String = obj.toString
+}
+
+object Identity {
+
+    def apply[A](obj: A): Identity[A] = new Identity(obj)
+
 }
