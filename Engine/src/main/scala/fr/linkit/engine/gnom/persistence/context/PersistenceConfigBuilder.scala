@@ -13,6 +13,9 @@
 
 package fr.linkit.engine.gnom.persistence.context
 
+import java.lang.reflect.Modifier
+import java.net.URL
+
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
@@ -25,11 +28,9 @@ import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.gnom.reference.linker.WeakContextObjectLinker
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.script.ScriptExecutor
-import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
+import fr.linkit.engine.internal.utils.{ClassMap, Identity, ScalaUtils}
 import org.jetbrains.annotations.Nullable
 
-import java.lang.reflect.Modifier
-import java.net.URL
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -58,7 +59,9 @@ class PersistenceConfigBuilder {
         }
     }
 
-    private[gnom] def forEachRefs(action: (Int, AnyRef) => Unit): Unit = referenceStore.foreachEntry(action)
+    private[gnom] def forEachRefs(action: (Int, AnyRef) => Unit): Unit = {
+        referenceStore.foreachEntry(action)
+    }
 
     def transfer(other: PersistenceConfigBuilder): this.type = {
         persistors ++= other.persistors
@@ -72,8 +75,8 @@ class PersistenceConfigBuilder {
 
     def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A, procrastinator: => Procrastinator = null): this.type = {
         val fromClass = classTag[A].runtimeClass
-        val toClass   = classTag[B].runtimeClass
-        val persistor = new TypePersistence[A] {
+        val toClass                       = classTag[B].runtimeClass
+        val persistor: TypePersistence[A] = new TypePersistence[A] {
             private  val fields                     = ScalaUtils.retrieveAllFields(fromClass).filterNot(f => Modifier.isTransient(f.getModifiers))
             override val structure: ObjectStructure = new ArrayObjectStructure {
                 override val types: Array[Class[_]] = Array(toClass)
@@ -112,6 +115,10 @@ class PersistenceConfigBuilder {
     }
 
     def putContextReference(id: Int, ref: AnyRef): Unit = {
+        referenceStore put(id, ref)
+    }
+
+    def putContextReference(id: Int, ref: Identity[AnyRef]): Unit = {
         referenceStore put(id, ref)
     }
 

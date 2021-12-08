@@ -13,6 +13,10 @@
 
 package fr.linkit.engine.gnom.reference.linker
 
+import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
+import java.util
+import java.util.Map.Entry
+
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
@@ -20,15 +24,12 @@ import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManageme
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.packet.traffic.injection.EndOfInjectionChainException
 import fr.linkit.engine.gnom.reference.{AbstractNetworkPresenceHandler, ContextObject, ObjectAlreadyReferencedException}
+import fr.linkit.engine.internal.utils.Identity
 import org.jetbrains.annotations.Nullable
 
-import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
-import java.util
-import java.util.Map.Entry
-
 class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[ContextualObjectReference](omc)
-                with ContextObjectLinker {
+    extends AbstractNetworkPresenceHandler[ContextualObjectReference](omc)
+        with ContextObjectLinker {
 
     private val codeToRef = new util.HashMap[Int, WeakReference[AnyRef]]()
     private val refToCode = new util.WeakHashMap[AnyRef, Int]()
@@ -57,14 +58,20 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
         if (result == null && parent != null)
             return findObject(reference)
         if (result eq null) None
-        else Option(new ContextObject(result.get(), reference))
+        else {
+            val obj = result.get() match {
+                case id: Identity[AnyRef] => id.obj
+                case x                    => x
+            }
+            Option(new ContextObject(obj, reference))
+        }
     }
 
     override def transferTo(linker: ContextObjectLinker): this.type = {
         linker ++= codeToRef
-                .entrySet()
-                .toArray(new Array[(Int, WeakReference[AnyRef])](_))
-                .toMap
+            .entrySet()
+            .toArray(new Array[(Int, WeakReference[AnyRef])](_))
+            .toMap
         this
     }
 
@@ -95,10 +102,10 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     def ++=(other: WeakContextObjectLinker): this.type = {
         ++=(other.codeToRef
-                .entrySet()
-                .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
-                .map(p => (p.getKey, p.getValue.get()))
-                .toMap)
+            .entrySet()
+            .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
+            .map(p => (p.getKey, p.getValue.get()))
+            .toMap)
         this
     }
 
@@ -122,7 +129,7 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     override def -=(ref: AnyRef): this.type = {
         val code = refToCode.remove(ref)
-        if (code == null) {
+        if (code == null) { //²warn here is normal
             codeToRef.remove(code)
         }
         this

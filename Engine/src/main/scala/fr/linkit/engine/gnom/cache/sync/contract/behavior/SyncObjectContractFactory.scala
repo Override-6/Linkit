@@ -17,11 +17,11 @@ import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{SyncObjectContext, SynchronizedObjectContractFactory}
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 
-class SyncObjectContractFactory(descriptions: ContractDescriptorData) extends SynchronizedObjectContractFactory {
+class SyncObjectContractFactory(override val data: ContractDescriptorData) extends SynchronizedObjectContractFactory {
 
 
     override def getObjectContract[A <: AnyRef](clazz: Class[_], context: SyncObjectContext): SynchronizedStructureContract[A] = {
-        descriptions.getNode(clazz).getContract(clazz, context: SyncObjectContext).asInstanceOf[SynchronizedStructureContract[A]]
+        data.getNode(clazz).getContract(clazz, context: SyncObjectContext).asInstanceOf[SynchronizedStructureContract[A]]
     }
 
 

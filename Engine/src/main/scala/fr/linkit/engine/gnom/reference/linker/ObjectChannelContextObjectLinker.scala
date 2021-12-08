@@ -21,6 +21,7 @@ import fr.linkit.api.gnom.reference.traffic.LinkerRequestBundle
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
 import fr.linkit.engine.gnom.reference.{ContextObject, ObjectAlreadyReferencedException}
+import fr.linkit.engine.internal.utils.Identity
 
 import scala.collection.mutable
 

@@ -2,12 +2,14 @@ package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.SyntheticMod
-
 import java.lang.reflect.{Executable, Modifier}
+
+import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-class SyncObjectDescription[A <: AnyRef] private(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) {
+class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
 
     override protected def applyNotFilter(e: Executable): Boolean = {
         isNotOverridable(e) ||
@@ -20,6 +22,9 @@ class SyncObjectDescription[A <: AnyRef] private(clazz: Class[A]) extends Abstra
                 // Maybe making the GNOLinkage able to support multiple references to an object would help
                 (e.getName == "reference" && e.getParameterTypes.isEmpty)
     }
+
+
+    override def deconstruct(): Array[Any] = Array(clazz)
 
     private def isNotOverridable(e: Executable): Boolean = {
         val mods = e.getModifiers

@@ -50,7 +50,7 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
             if (opt.isDefined) {
                 opt.get.sendPacket(packet, attributes, path)
             } else {
-                throw NoSuchConnectionException(s"Attempted to send a packet to target $targetID, but this conection is missing or not connected.")
+                throw NoSuchConnectionException(s"Attempted to send a packet to target '$targetID', but this conection is missing or not connected.")
             }
         })
     }

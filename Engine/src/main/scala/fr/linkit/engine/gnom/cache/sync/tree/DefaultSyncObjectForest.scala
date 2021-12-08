@@ -13,14 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference, SynchronizedObjectForest, SynchronizedObjectTree}
-import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
+import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
+import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
 
@@ -60,7 +60,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {
             val node       = tree.rootNode
             val syncObject = node.synchronizedObject
-            ObjectTreeProfile[A](tree.id, syncObject, node.ownerID)
+            ObjectTreeProfile[A](tree.id, syncObject, node.ownerID, tree.behaviorFactory.data)
         }
 
         val array = trees.values.map(toProfile).toArray

@@ -4,6 +4,7 @@ import fr.linkit.engine.gnom.network.{NetworkDataBundle, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
 import fr.linkit.engine.gnom.persistence.defaults._
+import fr.linkit.engine.internal.utils.Identity
 
 //Start Of Context
 val builder: PersistenceConfigBuilder = null
@@ -16,7 +17,7 @@ import builder._
 
 val connection = traffic.connection
 putContextReference(1, EmptyPacket)
-putContextReference(2, Nil)
+putContextReference(2, Identity(Nil))
 putContextReference(3, None)
 putContextReference(4, app)
 putContextReference(5, traffic)

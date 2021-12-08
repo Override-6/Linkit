@@ -170,7 +170,8 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
     }
 
     private def addObj0(ref: AnyRef): Unit = {
-        val profile = config.getProfile[AnyRef](ref.getClass)
+        val clazz = ref.getClass
+        val profile = config.getProfile[AnyRef](clazz)
         val nrlOpt  = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
             addTypeOfIfAbsent(ref)

@@ -49,7 +49,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                                                                 generator: SyncClassCenter,
                                                                 override val defaultContracts: ContractDescriptorData,
                                                                 override val network: Network)
-        extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
+    extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
     private  val cacheOwnerId                                  = channel.manager.ownerID
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
@@ -61,11 +61,12 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     }
 
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A] = {
-        val tree = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], contracts)
+        val tree        = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], contracts)
+        val treeProfile = ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier, contracts)
         channel.makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(ObjectPacket(ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier)))
-                .putAllAttributes(this)
-                .submit()
+            .addPacket(ObjectPacket(treeProfile))
+            .putAllAttributes(this)
+            .submit()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
         wrapperNode.synchronizedObject
@@ -140,18 +141,21 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
         treeCenter
-                .findTree(path.head)
-                .flatMap(tree => {
-                    if (path.length == 1)
-                        Some(tree.rootNode)
-                    else
-                        tree.findNode[A](path)
-                })
+            .findTree(path.head)
+            .flatMap(tree => {
+                if (path.length == 1)
+                    Some(tree.rootNode)
+                else
+                    tree.findNode[A](path)
+            })
     }
 
-    private def handleRootObjectPacket(treeID: Int, rootObject: AnyRef with SynchronizedObject[AnyRef], owner: String): Unit = {
+    private def handleRootObjectPacket(treeID: Int,
+                                       rootObject: AnyRef with SynchronizedObject[AnyRef],
+                                       owner: String,
+                                       contracts: ContractDescriptorData): Unit = {
         if (!isRegistered(treeID)) {
-            createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]))
+            createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), contracts)
         }
     }
 
@@ -168,9 +172,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
             } catch {
                 case e: NoSuchMethodException =>
                     throw new NoSuchElementException(e.getMessage +
-                            s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
-                               | Try to regenerate the sync class of ${creator.tpeClass}.
-                               | """.stripMargin, e)
+                        s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
+                           | Try to regenerate the sync class of ${creator.tpeClass}.
+                           | """.stripMargin, e)
             }
         }
 
@@ -186,11 +190,11 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                     handleInvocationPacket(ip, bundle)
                 case ObjectPacket(location: SyncObjectReference) =>
                     bundle.responseSubmitter
-                            .addPacket(BooleanPacket(isObjectPresent(location)))
-                            .submit()
+                        .addPacket(BooleanPacket(isObjectPresent(location)))
+                        .submit()
 
-                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner)) =>
-                    handleRootObjectPacket(treeID, rootObject, owner)
+                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner, contracts)) =>
+                    handleRootObjectPacket(treeID, rootObject, owner, contracts)
             }
         }
 
@@ -278,6 +282,6 @@ object DefaultSynchronizedObjectCache {
         new DefaultSynchronizedObjectCache[A](channel, generator, contracts, network)
     }
 
-    case class ObjectTreeProfile[A <: AnyRef](treeID: Int, rootObject: A with SynchronizedObject[A], treeOwner: String) extends Serializable
+    case class ObjectTreeProfile[A <: AnyRef](treeID: Int, rootObject: A with SynchronizedObject[A], treeOwner: String, contracts: ContractDescriptorData) extends Serializable
 
 }
