@@ -15,15 +15,15 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.InstanceObject
-import fr.linkit.engine.internal.utils.JavaUtils
+import fr.linkit.engine.internal.utils.{Identity, JavaUtils}
 
 class SimpleObject(override val value: AnyRef,
                    val decomposed: Array[Any],
                    override val profile: TypeProfile[_]) extends InstanceObject[AnyRef] {
 
-    override def equals(obj: Any): Boolean = JavaUtils.sameInstance(obj, value)
-
     override def hashCode(): Int = value.hashCode()
+
+    override def equals(obj: Any): Boolean = value.equals(obj)
 
     override def toString: String = value.toString
 }
