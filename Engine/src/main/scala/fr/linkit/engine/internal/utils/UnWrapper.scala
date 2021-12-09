@@ -17,7 +17,7 @@ import java.lang
 
 object UnWrapper {
 
-    def unwrap[A <: AnyVal](value: Any, converter: PrimitiveWrapper => A): A = {
+    def unwrap[@specialized() A <: AnyVal](value: Any, converter: PrimitiveWrapper => A): A = {
         value match {
             case n: Number       => converter(new NumberWrapper(n))
             case b: lang.Boolean => converter(new BooleanNumber(b))
