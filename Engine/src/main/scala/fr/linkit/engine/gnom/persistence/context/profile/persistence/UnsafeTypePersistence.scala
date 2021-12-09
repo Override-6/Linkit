@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier
 import fr.linkit.engine.gnom.persistence.context.structure.ClassObjectStructure
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 

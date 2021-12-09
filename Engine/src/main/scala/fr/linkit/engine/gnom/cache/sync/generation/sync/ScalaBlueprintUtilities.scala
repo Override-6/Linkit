@@ -11,12 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation.bp
+package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 
 import java.lang.reflect.TypeVariable
-import scala.language.existentials
 
 object ScalaBlueprintUtilities {
 
@@ -39,7 +38,7 @@ object ScalaBlueprintUtilities {
             return s"Array[${toScalaString(clazz.componentType())}]"
         }
         val name = {
-            val fullName = clazz.getTypeName
+            val fullName   = clazz.getTypeName
             val simpleName = clazz.getSimpleName
             fullName.dropRight(simpleName.length).replace("$", ".") + simpleName
         }
@@ -49,12 +48,11 @@ object ScalaBlueprintUtilities {
                 case _      => name(0).toUpper + name.drop(1)
             }
         } else {
-            val tParams    = clazz.getTypeParameters
+            val tParams = clazz.getTypeParameters
             if (tParams.nonEmpty) name + tParams.map(_ => "Nothing").mkString("[", ",", "]")
             else name
         }
     }
-
 
     def getParameters(desc: MethodDescription, withTypes: Boolean): String = {
         desc.javaMethod.getParameterTypes

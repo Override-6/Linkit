@@ -11,11 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation
+package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.cache.sync.{InvalidPuppetDefException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{InvalidSyncClassRequestException, SynchronizedObject}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
@@ -24,7 +24,7 @@ import fr.linkit.engine.internal.mapping.ClassMappings
 class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends SyncClassCenter {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-    val requestFactory                  = new SyncClassCompilationRequestFactory
+    val requestFactory                  = new SyncClassCompilationRequestFactory(center)
 
     override def getSyncClass[S <: AnyRef](clazz: Class[_]): Class[S with SynchronizedObject[S]] = {
         getSyncClassFromDesc[S](SyncObjectDescription[S](clazz))
@@ -32,17 +32,21 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
 
     override def getSyncClassFromDesc[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
         val clazz = desc.clazz
-        if (clazz.isInterface)
-            throw new InvalidPuppetDefException("Provided class is abstract.")
         if (clazz.isArray)
-            throw new InvalidPuppetDefException("Provided class is an Array.")
+            throw new InvalidSyncClassRequestException(s"Provided class is Array. ($clazz)")
+        if (!isOverrideable(clazz.getModifiers))
+            throw new InvalidSyncClassRequestException(s"Provided class is not extensible. ($clazz)")
         getOrGenClass[S](desc)
+    }
+
+    private def isOverrideable(mods: Int): Boolean = {
+        import java.lang.reflect.Modifier._
+        !isFinal(mods) && isPublic(mods)
     }
 
     private def getOrGenClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = desc.clazz.synchronized {
         val clazz = desc.clazz
-        val opt   = resources
-                .findClass[S](clazz)
+        val opt   = resources.findClass[S](clazz)
         if (opt.isDefined)
             opt.get
         else {

@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
@@ -127,7 +127,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
         val className        = serializedLambda.getCapturingClass.replace('/', '.')
         val enclosingClass   = java.lang.Class.forName(className)
         val slo              = new SimpleLambdaObject(enclosingClass, lambdaObject, serializedLambda)
-        getChunkFromFlag(Lambda).add(lambdaObject, slo)
+        getChunkFromFlag(Lambda).add(slo)
         addObj(serializedLambda)
     }
 
@@ -178,12 +178,12 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             val persistence = profile.getPersistence(ref)
             val decomposed  = persistence.toArray(ref)
             val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
-            objPool.add(ref, new SimpleObject(ref, decomposed, profile))
+            objPool.add(new SimpleObject(ref, decomposed, profile))
             addAll(decomposed)
             ref match {
-                case sync: SynchronizedObject[_] =>
+                case sync: NetworkObject[_] =>
                     AppLogger.info(s"Missing synchronized object reference ${sync.reference} on targeted engine ${bundle.boundId}.")
-                case _                           =>
+                case _                      =>
             }
         } else {
             val chunk = getChunkFromFlag[ReferencedNetworkObject](RNO)
@@ -197,7 +197,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
                 override val location   : NetworkObjectReference = nrl
                 override val value      : AnyRef                 = ref
             }
-            chunk.add(ref, rno)
+            chunk.add(rno)
         }
     }
 

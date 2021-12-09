@@ -49,12 +49,12 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         for (contractDesc <- descriptor.withMethods) {
             val id = contractDesc.description.methodId
             if (!map.contains(id)) {
-                val behavior = contractDesc.behavior match {
+                val bhv = contractDesc.behavior match {
                     case behavior: GenericMethodBehavior => behavior.toUsage(context)
                     case behavior: UsageMethodBehavior   => behavior
                 }
                 map.put(id, new MethodContract {
-                    override val behavior           : UsageMethodBehavior           = behavior
+                    override val behavior           : UsageMethodBehavior           = bhv
                     override val description        : MethodDescription             = contractDesc.description
                     override val parameterContracts : Array[ParameterContract[Any]] = contractDesc.parameterContracts
                     override val returnValueModifier: MethodCompModifier[Any]       = contractDesc.returnValueModifier

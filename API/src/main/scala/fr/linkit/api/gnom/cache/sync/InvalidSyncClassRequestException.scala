@@ -11,18 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync
+package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource._
-package object generation {
+import fr.linkit.api.internal.system.AppException
 
-    def adaptClassName(wrappedClassName: String): String = {
-        var result = wrappedClassName
-        if (!wrappedClassName.startsWith(WrapperPackage))
-            result = WrapperPackage + result
-        if (!wrappedClassName.endsWith(WrapperSuffixName))
-            result = result + WrapperSuffixName
-        result
-    }
+class InvalidSyncClassRequestException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

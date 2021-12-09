@@ -11,28 +11,29 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation.bp
+package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
-import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaBlueprintUtilities._
+import ScalaBlueprintUtilities._
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
+
 import java.io.InputStream
 import java.lang.reflect.TypeVariable
 
-class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStructureDescription[_]](in) {
+class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStructureDescription[_]](in) {
 
     override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 
     override val rootScope: RootValueScope = new RootValueScope {
         bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
-        bindValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
+        bindValue("WrappedClassName" ~> (_.clazz.getTypeName))
         bindValue("TParamsIn" ~> (getGenericParams(_, typeToScalaDeclaration)))
         bindValue("TParamsOut" ~> (getGenericParams(_, _.getName)))
         bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))
 
-        bindSubScope(new ScalaSyncMethodBlueprint.ValueScope("INHERITED_METHODS", _, _), (desc, action: MethodDescription => Unit) => {
+        bindSubScope(new SyncMethodBlueprint.ValueScope("INHERITED_METHODS", _, _), (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
                     .toSeq
                     .distinctBy(_.methodId)
@@ -41,6 +42,7 @@ class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncSt
         })
 
     }
+
 
     private def typeToScalaDeclaration(tpe: TypeVariable[_]): String = {
         tpe.getName + " <: " + tpe.getBounds.map(_.getTypeName).mkString(" with ")

@@ -11,18 +11,16 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync
+package fr.linkit.api.gnom.cache.sync.tree
 
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource._
-package object generation {
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-    def adaptClassName(wrappedClassName: String): String = {
-        var result = wrappedClassName
-        if (!wrappedClassName.startsWith(WrapperPackage))
-            result = WrapperPackage + result
-        if (!wrappedClassName.endsWith(WrapperSuffixName))
-            result = result + WrapperSuffixName
-        result
-    }
+class UnionSyncObjectReference(family: String,
+                               cacheID: Int,
+                               owner: String,
+                               nodePath: Array[Int],
+                               union: NetworkObjectReference) extends SyncObjectReference(family, cacheID, owner, nodePath) {
+
+    override def toString: String = s"${super.toString} U ${union.toString}"
 
 }

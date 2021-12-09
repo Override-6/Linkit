@@ -79,6 +79,8 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     def countConnection: Int = engines.size
 
     protected def addEngine(@Synchronized engine: Engine): Engine = {
+        val clazz = engine.getClass
+        val ref = engine.reference
         engines.put(engine.identifier, engine)
         engine
     }

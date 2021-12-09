@@ -27,12 +27,13 @@ import java.nio.file.Path
 
 class ClassCompilationRequestFactory[I <: CompilationContext, C](blueprint: ClassBlueprint[I]) extends AbstractCompilationRequestFactory[I, Class[_ <: C]] {
 
+
     override def createMultiRequest(contexts: Seq[I], workingDir: Path): SourceCodeCompilationRequest[Seq[Class[_ <: C]]] = {
         new SourceCodeCompilationRequest[Seq[Class[_ <: C]]] { req =>
 
             override val workingDirectory: Path              = workingDir
             override val classPaths      : Seq[Path]         = defaultClassPaths :+ classDir
-            override val compilationOrder: Seq[CompilerType] = Seq(CommonCompilerTypes.Scalac, CommonCompilerTypes.Javac)
+            override val compilationOrder: Seq[CompilerType] = Seq(blueprint.compilerType)
             override var sourceCodes     : Seq[SourceCode]   = contexts.map(SourceCode(_, blueprint))
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_ <: C]]] = {
@@ -40,10 +41,9 @@ class ClassCompilationRequestFactory[I <: CompilationContext, C](blueprint: Clas
                     lazy val result: Option[Seq[Class[_ <: C]]] = {
                         Some(contexts
                                 .map { context =>
-                                    AppLogger.debug("Performing post compilation modifications in the class file...")
-                                    val wrapperClassName = context.classPackage + '.' + context.className
+                                    val syncClassName = context.classPackage + '.' + context.className
                                     val loader           = new GeneratedClassLoader(req.classDir, context.parentLoader, Seq(classOf[LinkitApplication].getClassLoader))
-                                    loadClass(req, context, wrapperClassName, loader).asInstanceOf[Class[_ <: C]]
+                                    loadClass(req, context, syncClassName, loader).asInstanceOf[Class[_ <: C]]
                                 })
                     }
 

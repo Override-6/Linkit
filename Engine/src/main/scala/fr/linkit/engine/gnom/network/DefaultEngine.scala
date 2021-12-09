@@ -13,8 +13,6 @@
 
 package fr.linkit.engine.gnom.network
 
-import java.sql.Timestamp
-
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{BasicInvocationRule, MethodControl}
 import fr.linkit.api.gnom.network._
@@ -24,11 +22,14 @@ import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.network.statics.SimpleStaticAccess
 import fr.linkit.engine.internal.system.StaticVersions
 
+import java.sql.Timestamp
+
 class DefaultEngine(override val identifier: String,
                     override val cache: SharedCacheManager) extends Engine {
 
-    override val network     : Network      = cache.network
-    override val staticAccess: StaticAccess = {
+    override val reference   : EngineReference = new EngineReference(identifier)
+    override val network     : Network         = cache.network
+    override val staticAccess: StaticAccess    = {
         val center = cache.attachToCache(5, DefaultSynchronizedObjectCache[ClassStaticAccessor[_ <: AnyRef]]())
         new SimpleStaticAccess(center)
     }

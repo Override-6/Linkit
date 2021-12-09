@@ -13,13 +13,11 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
-import java.lang.reflect._
-
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncStructureDescription}
-import fr.linkit.engine.gnom.cache.sync.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource._
 
+import java.lang.reflect._
 import scala.collection.mutable.ListBuffer
-
 abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz: Class[A]) extends SyncStructureDescription[A] {
 
     private val methodDescriptions: Map[Int, MethodDescription] = collectMethods()
