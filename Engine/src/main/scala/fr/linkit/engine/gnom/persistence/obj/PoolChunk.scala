@@ -56,6 +56,11 @@ class PoolChunk[@specialized() T](val tag: Byte,
         pos += 1
     }
 
+    def addIfAbsent(key: Any, t: T): Unit = {
+        if (indexOf(key) < 0)
+            add(key, t)
+    }
+
     def addIfAbsent(t: T): Unit = {
         if (indexOf(t) < 0)
             add(t)
