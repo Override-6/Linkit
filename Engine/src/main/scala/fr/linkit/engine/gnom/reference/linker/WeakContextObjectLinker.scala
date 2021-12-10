@@ -37,7 +37,8 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
     override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ContextualObjectReference]
 
     override def findReferenceID(obj: AnyRef): Option[Int] = {
-        val result = refToCode.get(obj)
+        var result = refToCode.get(obj)
+        if (result == 0) result = refToCode.get(Identity(obj))
         if (result == 0) {
             if (parent != null) parent.findReferenceID(obj)
             else None

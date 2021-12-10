@@ -26,3 +26,8 @@ class SyncObjectContractFactory(override val data: ContractDescriptorData) exten
 
 
 }
+
+object SyncObjectContractFactory {
+
+    def apply(data: ContractDescriptorData): SyncObjectContractFactory = new SyncObjectContractFactory(data)
+}

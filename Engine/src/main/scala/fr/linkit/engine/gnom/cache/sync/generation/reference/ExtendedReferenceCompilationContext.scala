@@ -11,18 +11,16 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync
+package fr.linkit.engine.gnom.cache.sync.generation.reference
 
+import fr.linkit.api.internal.generation.compilation.CompilationContext
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource._
-package object generation {
 
-    def adaptClassName(wrappedClassName: String): String = {
-        var result = wrappedClassName
-        if (!wrappedClassName.startsWith(WrapperPackage))
-            result = WrapperPackage + result
-        if (!wrappedClassName.endsWith(WrapperSuffixName))
-            result = result + WrapperSuffixName
-        result
-    }
+class ExtendedReferenceCompilationContext(val clazz: Class[_]) extends CompilationContext {
 
+    override def classPackage: String = WrapperPackage + clazz.getPackageName
+
+    override def className: String = clazz.getSimpleName + "Extended"
+
+    override def parentLoader: ClassLoader = clazz.getClassLoader
 }

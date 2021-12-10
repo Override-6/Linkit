@@ -11,10 +11,19 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync
+package fr.linkit.api.gnom.network
 
-import fr.linkit.api.internal.system.AppException
+class EngineReference(val identifier: String) extends NetworkReference {
 
-class InvalidPuppetDefException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+    override def toString: String = {
+        s"@network/$identifier"
+    }
+
+    override def hashCode(): Int = identifier.hashCode
+
+    override def equals(obj: Any): Boolean = obj match {
+        case that: EngineReference => that.identifier == identifier
+        case _ => false
+    }
 
 }

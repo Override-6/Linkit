@@ -11,13 +11,13 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation.bp
+package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaBlueprintUtilities._
+import ScalaBlueprintUtilities.{getParameters, getReturnType}
 import fr.linkit.engine.internal.language.cbp.AbstractValueScope
 
-object ScalaSyncMethodBlueprint {
+object SyncMethodBlueprint {
 
     class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, pos, blueprint) {
 
@@ -42,9 +42,8 @@ object ScalaSyncMethodBlueprint {
         val params = method.getParameterTypes
         method.getName match {
             case "toString" | "clone" | "hashCode" | "reference" | "finalize" if params.isEmpty => "override"
-            case "equals" if params.length == 1 && (params(0) eq classOf[Object])  => "override"
-            case _                                                                 => ""
+            case "equals" if params.length == 1 && (params(0) eq classOf[Object])               => "override"
+            case _                                                                              => ""
         }
     }
 }
-

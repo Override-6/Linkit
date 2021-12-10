@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 import java.util
 
@@ -42,4 +43,9 @@ class SyncObjectReference(family: String,
         case _ => false
     }
 
+}
+
+object SyncObjectReference {
+
+    def apply(family: String, cacheID: Int, owner: String, nodePath: Array[Int]): SyncObjectReference = new SyncObjectReference(family, cacheID, owner, nodePath)
 }

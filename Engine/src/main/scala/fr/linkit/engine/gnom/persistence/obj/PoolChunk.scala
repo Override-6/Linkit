@@ -14,19 +14,17 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.Freezable
-import fr.linkit.api.gnom.persistence.obj.PoolObject
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk.BuffSteps
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
 
-class PoolChunk[T](val tag: Byte,
-                   freezable: Freezable,
-                   maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
+class PoolChunk[@specialized() T](val tag: Byte,
+                                  freezable: Freezable,
+                                  maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
-    private final var buff    = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
-    private final val indexes = new java.util.HashMap[Any, Int]()
-    private final var pos     = 0
+    private final var buff = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
+    private final var pos  = 0
 
     private final var frozen = false
 
@@ -42,9 +40,7 @@ class PoolChunk[T](val tag: Byte,
 
     def array: Array[T] = buff
 
-    @inline def add(t: T): Unit = add(t, t)
-
-    def add(key: Any, t: T): Unit = {
+    def add(t: T): Unit = {
         if (t == null)
             throw new NullPointerException("Can't add null item")
         //if (isFrozen)
@@ -57,14 +53,9 @@ class PoolChunk[T](val tag: Byte,
             buff = extendedBuff
         }
         buff(pos) = t
-        indexes.put(key, pos + 1)
         pos += 1
     }
 
-    def addIfAbsent(key: Any, t: T): Unit = {
-        if (indexOf(key) < 0)
-            add(key, t)
-    }
 
     def addIfAbsent(t: T): Unit = {
         if (indexOf(t) < 0)
@@ -82,8 +73,15 @@ class PoolChunk[T](val tag: Byte,
     }
 
     def indexOf(t: Any): Int = {
-        if (t == null) return -1
-        indexes.get(t) - 1
+        if (t == null)
+            return -1
+        var i = 0
+        while (i < pos) {
+            if (buff(i) == t)
+                return i
+            i += 1
+        }
+        -1
     }
 
     def size: Int = pos

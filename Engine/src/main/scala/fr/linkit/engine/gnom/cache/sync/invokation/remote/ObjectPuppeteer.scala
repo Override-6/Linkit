@@ -116,3 +116,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     }
 
 }
+
+object ObjectPuppeteer {
+
+    def apply[S <: AnyRef](channel: RequestPacketChannel, cache: SynchronizedObjectCache[_], nodeLocation: SyncObjectReference): ObjectPuppeteer[S] = new ObjectPuppeteer(channel, cache, nodeLocation)
+}

@@ -11,20 +11,30 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation.rectifier
-
-import java.lang.reflect.{Method, Modifier}
+package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.{StringToPrimitiveID, SuperMethodModifiers, getMethodDescriptor}
-import javassist.bytecode.MethodInfo
+import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.internal.generation.compilation.CompilerCenter
+import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.cache.sync.generation.reference.{ExtendedReferenceClassBlueprint, ExtendedReferenceCompilationContext}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{ClassBlueprint, SuperMethodModifiers, getMethodDescriptor}
+import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import javassist._
+import javassist.bytecode.MethodInfo
 
+import java.lang.reflect.{Method, Modifier}
 import scala.collection.mutable.ListBuffer
 
-class SyncClassRectifier(desc: SyncStructureDescription[_], syncClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
+class SyncClassRectifier(desc: SyncStructureDescription[_],
+                         syncClassName: String,
+                         classLoader: GeneratedClassLoader,
+                         superClass: Class[_])(center: CompilerCenter) {
+
+    private lazy val extendedReferenceClassFactory = new ClassCompilationRequestFactory(ClassBlueprint)
 
     private val pool = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
@@ -33,7 +43,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_], syncClassName: Strin
     ctClass.setSuperclass(pool.get(superClass.getName))
     fixAllMethods()
     addAllConstructors()
-
+    fillComputeReferenceMethod()
 
     lazy val rectifiedClass: (Array[Byte], Class[SynchronizedObject[_]]) = {
         val bc = ctClass.toBytecode
@@ -41,21 +51,49 @@ class SyncClassRectifier(desc: SyncStructureDescription[_], syncClassName: Strin
         (bc, classLoader.defineClass(bc, ctClass.getName).asInstanceOf[Class[SynchronizedObject[_]]])
     }
 
+    private def fillComputeReferenceMethod(): Unit = {
+        /*if (classOf[NetworkObject[_]].isAssignableFrom(superClass)) {
+            val refClass = createExtendedReferenceClass()
+            val sorName = superClass.getMethod("reference").getReturnType.getName.replace('.', '/')
+            val method  = ctClass.getMethod("reference", s"()L$sorName;")
+            method.setBody(s"return new ${refClass.getName}(super.reference(), location());".stripMargin)
+        }*/
+    }
+
+    private def createExtendedReferenceClass(): Class[_ <: NetworkObjectReference] = {
+        val originReferenceType = superClass
+                .getMethod("reference")
+                .getReturnType
+                .asSubclass(classOf[NetworkObjectReference])
+
+        val t0 = System.currentTimeMillis()
+        val result = center.processRequest {
+            AppLogger.debug("The class already appears to extends NetworkObject. Compiling an Extended NetworkObjectReference in order to union the current references of the class instance and the references of the sync class instances...")
+            extendedReferenceClassFactory.makeRequest(new ExtendedReferenceCompilationContext(originReferenceType))
+        }
+        val t1 = System.currentTimeMillis()
+        AppLogger.debug(s"Compilation done. (${t1-t0} ms).")
+        result.getResult.get
+    }
+
     private def addAllConstructors(): Unit = {
         superClass.getDeclaredConstructors.foreach(constructor => if (!Modifier.isPrivate(constructor.getModifiers)) {
-            if (constructor.getParameterCount > 0)
-                addConstructor(constructor.getParameterTypes)
+            if (constructor.getParameterCount > 0) {
+                val params = constructor.getParameterTypes
+                val const  = addConstructor(ctClass, params)
+                const.setBody(
+                    s"""
+                       |super(${params.indices.map(i => s"$$${i + 1}").mkString(",")});
+                       |""".stripMargin)
+            }
         })
     }
 
-    private def addConstructor(params: Array[Class[_]]): Unit = {
-        val ctConstructor = new CtConstructor(Array.empty, ctClass)
+    private def addConstructor(target: CtClass, params: Array[Class[_]]): CtConstructor = {
+        val ctConstructor = new CtConstructor(Array.empty, target)
         params.foreach(param => ctConstructor.addParameter(pool.get(param.getName)))
-        ctConstructor.setBody(
-            s"""
-               |super(${params.indices.map(i => s"$$${i + 1}").mkString(",")});
-               |""".stripMargin)
-        ctClass.addConstructor(ctConstructor)
+        target.addConstructor(ctConstructor)
+        ctConstructor
     }
 
     private def fixAllMethods(): Unit = {
@@ -96,20 +134,19 @@ class SyncClassRectifier(desc: SyncStructureDescription[_], syncClassName: Strin
         val methodDesc       = getMethodDescriptor(javaMethod)
         val anonFunPrefix    = s"$$anonfun$$${javaMethod.getName}$$"
         val filtered         = ctClass.getDeclaredMethods
-            .filter(_.getName.startsWith(anonFunPrefix))
-            .filterNot(_.getName.endsWith("adapted"))
+                .filter(_.getName.startsWith(anonFunPrefix))
+                .filterNot(_.getName.endsWith("adapted"))
         val method           = filtered
-            .find { x =>
-                val params = x.getParameterTypes.drop(1).dropRight(1)
-                val desc   = getMethodDescriptor(params, methodReturnType)
-                desc == methodDesc
-            }
-            .getOrElse {
-                throw new NoSuchElementException(s"Could not find anonymous function '$anonFunPrefix'")
-            }
+                .find { x =>
+                    val params = x.getParameterTypes.drop(1).dropRight(1)
+                    val desc   = getMethodDescriptor(params, methodReturnType)
+                    desc == methodDesc
+                }
+                .getOrElse {
+                    throw new NoSuchElementException(s"Could not find anonymous function '$anonFunPrefix'")
+                }
         method
     }
-
 
     private def getAnonFunBody(javaMethod: Method, superFun: CtMethod): String = {
 
@@ -171,6 +208,10 @@ object SyncClassRectifier {
     val Access_Synthetic          = 0x00001000
     val SuperMethodModifiers: Int = Modifier.PRIVATE + Access_Synthetic
 
+    private final val ClassBlueprint = {
+        new ExtendedReferenceClassBlueprint(getClass.getResourceAsStream("/generation/sync_object_reference_extended.jcbp"))
+    }
+
     import java.{lang => l}
 
     val StringToPrimitiveClass =
@@ -199,7 +240,6 @@ object SyncClassRectifier {
             "byte" -> "B"
         )
 
-
     def getMethodDescriptor(method: Method): String = {
         getMethodDescriptor(method.getParameterTypes, method.getReturnType)
     }
@@ -211,7 +251,7 @@ object SyncClassRectifier {
             sb.append(typeStringClass(clazz))
         }
         sb.append(')')
-            .append(typeStringClass(returnType))
+                .append(typeStringClass(returnType))
         sb.toString()
     }
 
@@ -222,12 +262,12 @@ object SyncClassRectifier {
             sb.append(typeStringCtClass(clazz))
         }
         sb.append(')')
-            .append(typeStringClass(returnType))
+                .append(typeStringClass(returnType))
         sb.toString()
     }
 
     def typeStringCtClass(clazz: CtClass): String = {
-        var cl = clazz
+        var cl      = clazz
         val finalSB = new StringBuilder
         while (cl.isArray) {
             finalSB.append("[")
@@ -236,8 +276,8 @@ object SyncClassRectifier {
         val jvmTpe = StringToPrimitiveID.getOrElse(cl.getName, {
             val objSB = new StringBuilder()
             objSB.append("L")
-                .append(cl.getName.replace(".", "/"))
-                .append(";")
+                    .append(cl.getName.replace(".", "/"))
+                    .append(";")
             objSB.toString()
         })
         finalSB.append(jvmTpe)

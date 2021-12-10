@@ -22,8 +22,7 @@ import scala.collection.mutable
 
 class DefaultCompilerCenter extends CompilerCenter {
 
-    private val defaultAccess = ScalacCompilerAccess
-    private val accesses      = mutable.HashSet.from[CompilerAccess](Seq(defaultAccess, JavacCompilerAccess))
+    private val accesses      = mutable.HashSet.from[CompilerAccess](Seq(ScalacCompilerAccess, JavacCompilerAccess))
 
     override def addAccess(access: CompilerAccess): Unit = accesses += access
 

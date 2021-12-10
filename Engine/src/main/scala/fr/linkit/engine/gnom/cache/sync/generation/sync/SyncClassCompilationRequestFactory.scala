@@ -11,15 +11,14 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation
+package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
-import fr.linkit.api.internal.generation.compilation.CompilationRequest
-import fr.linkit.engine.gnom.cache.sync.generation.SyncClassCompilationRequestFactory.DefaultClassBlueprint
-import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaClassBlueprint
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier
+import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilerCenter}
+import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassCompilationRequestFactory.ClassBlueprint
 import fr.linkit.engine.internal.generation.compilation.RuntimeClassOperations
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.mapping.ClassMappings
@@ -27,13 +26,19 @@ import fr.linkit.engine.internal.mapping.ClassMappings
 import java.io.File
 import java.nio.file.{Files, NoSuchFileException}
 
-class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[SyncStructureDescription[_], SynchronizedObject[_]](DefaultClassBlueprint) {
+class SyncClassCompilationRequestFactory(center: CompilerCenter)
+        extends ClassCompilationRequestFactory[SyncStructureDescription[_], SynchronizedObject[_]](ClassBlueprint) {
 
-    override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]], context: SyncStructureDescription[_], className: String, loader: GeneratedClassLoader): Class[_] = {
+    override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]],
+                           context: SyncStructureDescription[_],
+                           className: String,
+                           loader: GeneratedClassLoader): Class[_] = {
         val wrapperClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
         if (Files.notExists(wrapperClassFile))
-            throw new NoSuchFileException(s"class file for class $className at ${req.classDir} not found.")
-        val (byteCode, wrapperClass) = new SyncClassRectifier(context, className, loader, context.clazz).rectifiedClass
+            throw new NoSuchFileException(s"Class file for class $className at ${req.classDir} not found.")
+
+        AppLogger.debug("Performing post compilation modifications in the class file...")
+        val (byteCode, wrapperClass) = new SyncClassRectifier(context, className, loader, context.clazz)(center).rectifiedClass
         Files.write(wrapperClassFile, byteCode)
         RuntimeClassOperations.prepareClass(wrapperClass)
         ClassMappings.putClass(wrapperClass)
@@ -43,5 +48,5 @@ class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[
 
 object SyncClassCompilationRequestFactory {
 
-    private val DefaultClassBlueprint = new ScalaClassBlueprint(getClass.getResourceAsStream("/generation/sync_object.scbp"))
+    private val ClassBlueprint = new SyncClassBlueprint(getClass.getResourceAsStream("/generation/sync_object.scbp"))
 }

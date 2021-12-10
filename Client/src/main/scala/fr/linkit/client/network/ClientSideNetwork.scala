@@ -13,6 +13,7 @@
 
 package fr.linkit.client.network
 
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{CacheSearchBehavior, SharedCacheManager}
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager

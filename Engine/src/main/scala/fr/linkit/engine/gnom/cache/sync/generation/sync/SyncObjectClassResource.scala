@@ -11,11 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation
+package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.application.resource.representation.ResourceRepresentationFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.engine.gnom.cache.sync.generation.adaptClassName
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
 
 class SyncObjectClassResource(resource: ResourceFolder) extends CachedClassFolderResource[SynchronizedObject[AnyRef]](resource) {

@@ -46,8 +46,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             throw new SyncObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
         //if (location != null && location != node.reference)
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
-        this.location = node.reference
         val puppeteer = node.puppeteer
+        this.location = node.reference
         this.behaviorFactory = node.tree.behaviorFactory
         this.puppeteer = node.puppeteer
         this.contract = node.contract
@@ -62,8 +62,6 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
     override def getBehaviorFactory: SynchronizedObjectContractFactory = behaviorFactory
-
-    override final def reference: SyncObjectReference = location
 
     override def presence: NetworkObjectPresence = presenceOnNetwork
 

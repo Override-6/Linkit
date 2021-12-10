@@ -31,7 +31,7 @@ import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
-import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageSyncObjectContext
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip
@@ -73,13 +73,15 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     }
 
     private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceCreator[A], contracts: ContractDescriptorData = defaultContracts): DefaultSynchronizedObjectTree[A] = {
-        val nodeLocation = new SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
+        val nodeLocation = SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
         val context      = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
-        val factory      = new SyncObjectContractFactory(contracts)
+        val factory      = SyncObjectContractFactory(contracts)
+
         val rootContract = factory.getObjectContract[A](creator.tpeClass, context)
         val root         = DefaultInstantiator.newWrapper[A](creator)
+
         val chip         = ObjectChip[A](rootContract, network, root)
-        val puppeteer    = new ObjectPuppeteer[A](channel, this, nodeLocation)
+        val puppeteer    = ObjectPuppeteer[A](channel, this, nodeLocation)
         val presence     = treeCenter.getPresence(nodeLocation)
         val origin       = creator.getOrigin.orNull
         val rootNode     = (tree: DefaultSynchronizedObjectTree[A]) => {

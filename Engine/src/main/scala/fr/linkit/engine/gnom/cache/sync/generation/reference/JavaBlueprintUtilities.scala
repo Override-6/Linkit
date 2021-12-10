@@ -11,18 +11,19 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync
+package fr.linkit.engine.gnom.cache.sync.generation.reference
 
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource._
-package object generation {
+import java.lang.reflect.TypeVariable
 
-    def adaptClassName(wrappedClassName: String): String = {
-        var result = wrappedClassName
-        if (!wrappedClassName.startsWith(WrapperPackage))
-            result = WrapperPackage + result
-        if (!wrappedClassName.endsWith(WrapperSuffixName))
-            result = result + WrapperSuffixName
-        result
+object JavaBlueprintUtilities {
+
+    def getGenericParams(clazz: Class[_], transform: TypeVariable[_] => Any): String = {
+        val result = clazz
+                .getTypeParameters
+                .map(transform)
+                .mkString(",")
+        if (result.isEmpty) ""
+        else s"<$result>"
     }
 
 }

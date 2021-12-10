@@ -11,18 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync
+package fr.linkit.engine.test;
 
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource._
-package object generation {
+import java.io.Serializable;
 
-    def adaptClassName(wrappedClassName: String): String = {
-        var result = wrappedClassName
-        if (!wrappedClassName.startsWith(WrapperPackage))
-            result = WrapperPackage + result
-        if (!wrappedClassName.endsWith(WrapperSuffixName))
-            result = result + WrapperSuffixName
-        result
-    }
+public class JavaTests {
+
 
 }

@@ -11,18 +11,23 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync
+package $ClassPackage$;
 
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource._
-package object generation {
+import $ReferenceClassName$;
+import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference;
 
-    def adaptClassName(wrappedClassName: String): String = {
-        var result = wrappedClassName
-        if (!wrappedClassName.startsWith(WrapperPackage))
-            result = WrapperPackage + result
-        if (!wrappedClassName.endsWith(WrapperSuffixName))
-            result = result + WrapperSuffixName
-        result
+public class $ClassName$$TParamsIn$ extends $ReferenceSimpleName$$TParamsOut$ {
+
+    private final SyncObjectReference syncObjectReference;
+
+    public $ClassName$($ReferenceSimpleName$ origin, SyncObjectReference syncObjectRef) {
+        super($ConstructorOut$);
+        this.syncObjectReference = syncObjectRef;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " U " + syncObjectReference;
     }
 
 }

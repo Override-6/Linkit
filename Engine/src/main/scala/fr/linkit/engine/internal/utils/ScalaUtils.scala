@@ -14,16 +14,14 @@
 package fr.linkit.engine.internal.utils
 
 import fr.linkit.api.gnom.packet.Packet
-import fr.linkit.engine.gnom.cache.sync.generation.rectifier.SyncClassRectifier.typeStringClass
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.typeStringClass
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
-import fr.linkit.engine.internal.manipulation.invokation.ObjectInvocator
+import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import sun.misc.Unsafe
+
 import java.io.File
 import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
 import java.nio.ByteBuffer
-
-import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
-
 import scala.annotation.switch
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
