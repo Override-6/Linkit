@@ -54,16 +54,20 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     private def fixNetworkObjectInherance(): Unit = {
         if (!classOf[NetworkObject[_]].isAssignableFrom(superClass))
             return
-        def slashDot(str: String): String = str.replace(".", "/")
+
+        def slashDot(cl: Class[_]): String = cl.getName.replace(".", "/")
+
         // Removes a potential 'reference' method that overrides the actual superClass's reference method and returns the wrong reference object
         val met = ctClass.getDeclaredMethods
             .find(m => m.getName == "reference" && m.getReturnType.getName != classOf[SyncObjectReference].getName)
             .get
         ctClass.removeMethod(met)
+        addMethod("reference", s"()L${slashDot(classOf[NetworkObjectReference])};")
+            .setBody("return location();")
     }
 
     private def addMethod(name: String, signature: String): CtMethod = {
-        val info = new MethodInfo(ctClass.getClassFile.getConstPool, name, signature)
+        val info   = new MethodInfo(ctClass.getClassFile.getConstPool, name, signature)
         val method = CtMethod.make(info, ctClass)
         method.setModifiers(Modifier.PUBLIC)
         ctClass.addMethod(method)

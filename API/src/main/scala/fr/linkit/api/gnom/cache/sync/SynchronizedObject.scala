@@ -32,6 +32,8 @@ import java.io.Serializable
  */
 trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectReference] with Serializable {
 
+    def reference: SyncObjectReference
+
     /**
      * Initialize the puppeteer of the synchronized object.
      *
@@ -77,4 +79,5 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
      * @return this class's super class.
      */
     def getSuperClass: Class[T]
+
 }
