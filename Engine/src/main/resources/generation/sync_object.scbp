@@ -28,7 +28,6 @@ class $ClassName$$TParamsIn$ extends AbstractSynchronizedObject[$WrappedClassSim
     override def wrappedClass: Class[_] = classOf[$WrappedClassSimpleName$$TParamsInBusted$]
 
 
-
 !!INHERITED_METHODS!! {
     $Override$ def $MethodName$($ParamsIn$): $ReturnType$ = {
         handleCall[$ReturnType$]($MethodID$)(Array($ParamsOut$))(args => Array(this: Any $ParamsOutLambda$): Any)

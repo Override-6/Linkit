@@ -181,9 +181,10 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             objPool.add(new SimpleObject(ref, decomposed, profile))
             addAll(decomposed)
             ref match {
-                case sync: NetworkObject[_] =>
-                    AppLogger.info(s"Missing synchronized object reference ${sync.reference} on targeted engine ${bundle.boundId}.")
-                case _                      =>
+                case no: NetworkObject[_] =>
+                    AppLogger.info(s"A network object ${no.reference} was missing on targeted engine ${bundle.boundId}.")
+                    selector.informObjectSent(no)
+                case _                    =>
             }
         } else {
             val chunk = getChunkFromFlag[ReferencedNetworkObject](RNO)
@@ -192,7 +193,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
                 return
             val pos = chunks(Object).size
             addObj(nrl)
-            val rno = new ReferencedNetworkObject {
+            val rno: ReferencedNetworkObject = new ReferencedNetworkObject {
                 override val locationIdx: Int                    = pos
                 override val location   : NetworkObjectReference = nrl
                 override val value      : AnyRef                 = ref

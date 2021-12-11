@@ -17,11 +17,15 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{MethodControl, Synchronized}
-import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
+import fr.linkit.api.gnom.network.{Engine, EngineReference, ExecutorEngine}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
 import java.sql.Timestamp
+
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 
 import scala.collection.mutable
 
@@ -79,8 +83,9 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     def countConnection: Int = engines.size
 
     protected def addEngine(@Synchronized engine: Engine): Engine = {
-        val clazz = engine.getClass
-        val ref = engine.reference
+        val a = engine.reference
+        val b = engine.asInstanceOf[SynchronizedObject[NetworkObjectReference]].reference
+        val c = engine.asInstanceOf[SynchronizedObject[DefaultEngine]].reference
         engines.put(engine.identifier, engine)
         engine
     }

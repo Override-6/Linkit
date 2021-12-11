@@ -21,6 +21,7 @@ import fr.linkit.api.gnom.cache.sync.invokation.local.CallableLocalMethodInvocat
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 
@@ -63,6 +64,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getBehaviorFactory: SynchronizedObjectContractFactory = behaviorFactory
 
+    override def reference: SyncObjectReference = location
+
     override def presence: NetworkObjectPresence = presenceOnNetwork
 
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
@@ -74,8 +77,6 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     override def getNode: SyncNode[A] = node
 
     override def getContract: SynchronizedStructureContract[A] = contract
-
-    //private def asAutoSync: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
     protected def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         if (!isInitialized) {

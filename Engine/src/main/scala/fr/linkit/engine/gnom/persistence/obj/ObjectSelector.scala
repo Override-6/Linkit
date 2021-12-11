@@ -16,8 +16,9 @@ package fr.linkit.engine.gnom.persistence.obj
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject}
+import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject, SystemNetworkObjectPresence}
 import fr.linkit.engine.gnom.reference.ContextObject
+import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, InternalNetworkObjectPresence}
 
 class ObjectSelector(bundle: PersistenceBundle) {
 
@@ -39,6 +40,35 @@ class ObjectSelector(bundle: PersistenceBundle) {
                 Some(obj.reference)
             case obj: NetworkObject[NetworkObjectReference]        =>
                 findNetworkObjectReference(obj)
+        }
+    }
+
+    def informObjectSent(no: NetworkObject[_]): Unit = {
+        no match {
+            case obj: DynamicNetworkObject[NetworkObjectReference] =>
+                informDynamicNetworkObjectSent(obj)
+            case _: StaticNetworkObject[NetworkObjectReference]    =>
+            //Static objects are supposed to be statically presents on engines.
+            //Thus Static Netowrk Objects are already presents on all engines.
+            case obj: NetworkObject[NetworkObjectReference] =>
+                informNetworkObjectSent(obj)
+        }
+    }
+
+    private def informDynamicNetworkObjectSent(obj: DynamicNetworkObject[NetworkObjectReference]): Unit = {
+        obj.presence match {
+            case presence: ExternalNetworkObjectPresence[_] => presence.onObjectSet(boundId)
+            case _                                          =>
+        }
+    }
+
+    private def informNetworkObjectSent(obj: NetworkObject[NetworkObjectReference]): Unit = {
+        gnol.findPresence(obj.reference) match {
+            case Some(presence) => presence match {
+                case presence: ExternalNetworkObjectPresence[_] => presence.onObjectSet(boundId)
+                case _                                          =>
+            }
+            case _              =>
         }
     }
 
