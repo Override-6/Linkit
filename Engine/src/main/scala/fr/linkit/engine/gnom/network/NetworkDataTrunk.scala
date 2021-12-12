@@ -83,11 +83,6 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     def countConnection: Int = engines.size
 
     protected def addEngine(@Synchronized engine: Engine): Engine = {
-        val a: EngineReference = engine.reference
-        val b: SyncObjectReference = engine.asInstanceOf[SynchronizedObject[NetworkObjectReference]].reference
-        val c: SyncObjectReference = engine.asInstanceOf[SynchronizedObject[DefaultEngine]].reference
-        val d: SyncObjectReference = engine.asInstanceOf[NetworkObject[NetworkObjectReference]].reference.asInstanceOf[SyncObjectReference]
-        val e: SyncObjectReference = engine.asInstanceOf[NetworkObject[SyncObjectReference]].reference
         engines.put(engine.identifier, engine)
         engine
     }

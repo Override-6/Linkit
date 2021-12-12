@@ -38,7 +38,7 @@ class SyncClassCompilationRequestFactory(center: CompilerCenter)
             throw new NoSuchFileException(s"Class file for class $className at ${req.classDir} not found.")
 
         AppLogger.debug("Performing post compilation modifications in the class file...")
-        val (byteCode, wrapperClass) = new SyncClassRectifier(context, className, loader, context.clazz)(center).rectifiedClass
+        val (byteCode, wrapperClass) = new SyncClassRectifier(context, className, loader, context.clazz).rectifiedClass
         Files.write(wrapperClassFile, byteCode)
         RuntimeClassOperations.prepareClass(wrapperClass)
         ClassMappings.putClass(wrapperClass)

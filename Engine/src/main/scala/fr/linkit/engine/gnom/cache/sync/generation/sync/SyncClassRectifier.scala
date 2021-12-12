@@ -20,10 +20,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, Sy
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
-import fr.linkit.engine.gnom.cache.sync.generation.reference.ExtendedReferenceClassBlueprint
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{ClassBlueprint, SuperMethodModifiers, getMethodDescriptor}
-import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{SuperMethodModifiers, getMethodDescriptor}
 import javassist._
 import javassist.bytecode.MethodInfo
 
@@ -32,9 +29,8 @@ import scala.collection.mutable.ListBuffer
 class SyncClassRectifier(desc: SyncStructureDescription[_],
                          syncClassName: String,
                          classLoader: GeneratedClassLoader,
-                         superClass: Class[_])(center: CompilerCenter) {
+                         superClass: Class[_]) {
 
-    private lazy val extendedReferenceClassFactory = new ClassCompilationRequestFactory(ClassBlueprint)
 
     private val pool = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
@@ -73,7 +69,6 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
         ctClass.addMethod(method)
         method
     }
-
 
     private def addAllConstructors(): Unit = {
         superClass.getDeclaredConstructors.foreach(constructor => if (!Modifier.isPrivate(constructor.getModifiers)) {
@@ -206,10 +201,6 @@ object SyncClassRectifier {
     //used AccessFlags that are not in the java's reflection public api
     val Access_Synthetic          = 0x00001000
     val SuperMethodModifiers: Int = Modifier.PRIVATE + Access_Synthetic
-
-    private final val ClassBlueprint = {
-        new ExtendedReferenceClassBlueprint(getClass.getResourceAsStream("/generation/sync_object_reference_extended.jcbp"))
-    }
 
     import java.{lang => l}
 

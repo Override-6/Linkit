@@ -15,7 +15,8 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.cache.sync.{InvalidSyncClassRequestException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, InvalidSyncClassRequestException, SynchronizedObject}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
@@ -47,19 +48,57 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     private def getOrGenClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = desc.clazz.synchronized {
         val clazz = desc.clazz
         val opt   = resources.findClass[S](clazz)
-        if (opt.isDefined)
-            opt.get
-        else {
-            val result = center.processRequest {
-                AppLogger.debug(s"Compiling Sync class for ${clazz.getName}...")
-                requestFactory.makeRequest(desc)
+        if (opt.isDefined) opt.get
+        else genClass[S](desc)
+    }
+
+    private def genClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
+        val clazz = desc.clazz
+        checkClassValidity(clazz)
+        val result = center.processRequest {
+            AppLogger.debug(s"Compiling Sync class for ${clazz.getName}...")
+            requestFactory.makeRequest(desc)
+        }
+        AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
+        val syncClass = result.getResult
+            .get
+            .asInstanceOf[Class[S with SynchronizedObject[S]]]
+        ClassMappings.putClass(syncClass)
+        syncClass
+    }
+
+    /**
+     * Ensures that, if the class extends [[NetworkObject]],
+     * it explicitly defines the `reference: T` method of the interface.
+     * @param clazz
+     */
+        //TODO explain this furtherly
+    private def checkClassValidity(clazz: Class[_]): Unit = {
+        if (!classOf[NetworkObject[_]].isAssignableFrom(clazz))
+            return
+
+            ensureClassValidity(clazz, Array())
+        def ensureClassValidity(cl: Class[_], path: Array[Class[_]]): Unit = {
+            val interfaces = cl.getInterfaces
+            if (!interfaces.contains(classOf[NetworkObject[_]]))
+                interfaces.foreach(ensureClassValidity(_, path :+ cl))
+            try {
+                cl.getDeclaredMethod("reference")
+            } catch {
+                case _: NoSuchMethodException =>
+                    val classHierarchyPath = (path :+ cl).map(_.getSimpleName).mkString(" extends ")
+                    throw new InvalidClassDefinitionError(
+                        s"""
+                           |
+                           |Error: $cl does not defines method `T reference()`.
+                           |It turns out that the Linkit object synchronization system met a class that it absolutely can't handle...
+                           |What turned wrong ? the class generation system, responsible for creating implementations of classes coming from objects that gets synchronized,
+                           |met the $clazz that extends $cl ($classHierarchyPath) which can cause serious problems in the object synchronization system, and in the GNOM.
+                           |$cl is directly implementing ${classOf[NetworkObject[_]]}, but does not explicitly defines method `T reference()`.
+                           |Please declare the requested method in `$cl`, recompile the project then retry compiling ${cl}Sync.
+                           |
+                           |""".stripMargin)
             }
-            AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
-            val syncClass = result.getResult
-                    .get
-                    .asInstanceOf[Class[S with SynchronizedObject[S]]]
-            ClassMappings.putClass(syncClass)
-            syncClass
         }
     }
 
