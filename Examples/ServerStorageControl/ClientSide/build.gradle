@@ -16,4 +16,5 @@ dependencies {
     implementation project(':API')
     implementation project(':Engine')
     implementation project(':Client')
+    implementation project(':Examples:ServerStorageControl:API')
 }
