@@ -1,7 +1,5 @@
-package fr.linkit.examples.ssc.api.transaction
+package fr.linkit.examples.ssc.api
 
 import java.sql.Timestamp
-
-import fr.linkit.examples.ssc.api.UserWallet
 
 case class WalletTransaction(id: Int, amount: Int, from: UserWallet, to: UserWallet, timestamp: Timestamp)
