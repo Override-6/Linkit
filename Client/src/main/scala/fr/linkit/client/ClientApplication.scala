@@ -94,11 +94,9 @@ class ClientApplication private(override val configuration: ClientApplicationCon
                 throw new ConnectionInitialisationException(s"Could not open connection with server $address : ${e.getMessage}", e)
         }
 
-        val serverIdentifier: String = connection.boundIdentifier
-        val port                     = config.remoteAddress.getPort
+        connectionCache.put(identifier, connection)
 
-        connectionCache.put(serverIdentifier, connection)
-        connectionCache.put(port, connection)
+        val serverIdentifier: String = connection.boundIdentifier
         AppLogger.info(s"Connection Sucessfully bound to $address ($serverIdentifier)")
         connection
     }

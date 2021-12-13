@@ -53,7 +53,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
     private  val cacheOwnerId                                  = channel.manager.ownerID
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
-    override val treeCenter       : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, network.objectManagementChannel)
+    override val forest           : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
 
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = {
@@ -82,14 +82,14 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
         val chip         = ObjectChip[A](rootContract, network, root)
         val puppeteer    = ObjectPuppeteer[A](channel, this, nodeLocation)
-        val presence     = treeCenter.getPresence(nodeLocation)
+        val presence     = forest.getPresence(nodeLocation)
         val origin       = creator.getOrigin.orNull
         val rootNode     = (tree: DefaultSynchronizedObjectTree[A]) => {
             val data = new ObjectNodeData[A](puppeteer, chip, tree, nodeLocation, presence, rootContract, root, currentIdentifier, origin)
             new RootObjectSyncNode[A](data)
         }
-        val tree         = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, treeCenter, id, DefaultInstantiator, this, factory)(rootNode)
-        treeCenter.addTree(id, tree)
+        val tree         = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
+        forest.addTree(id, tree)
         tree
     }
 
@@ -115,18 +115,18 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val chip          = ObjectChip[B](contract, network, syncObject)
         val reference     = new SyncObjectReference(family, cacheID, ownerID, path)
         val puppeteer     = new ObjectPuppeteer[B](channel, this, reference)
-        val presence      = treeCenter.getPresence(reference)
+        val presence      = forest.getPresence(reference)
         new ObjectNodeData[B](puppeteer, chip, tree, reference, presence, contract, syncObject, currentIdentifier, origin.orNull)
     }
 
     override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
-        treeCenter.findTree(id).map(_.rootNode.synchronizedObject)
+        forest.findTree(id).map(_.rootNode.synchronizedObject)
     }
 
     def isObjectPresent(location: SyncObjectReference): Boolean = {
         (location.cacheID == cacheID) && location.family == family && {
             val path = location.nodePath
-            treeCenter.findTree(path.head).exists(_.findNode(path).isDefined)
+            forest.findTree(path.head).exists(_.findNode(path).isDefined)
         }
     }
 
@@ -142,7 +142,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     }
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
-        treeCenter
+        forest
             .findTree(path.head)
             .flatMap(tree => {
                 if (path.length == 1)
@@ -162,7 +162,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     }
 
     override def isRegistered(id: Int): Boolean = {
-        treeCenter.findTree(id).isDefined
+        forest.findTree(id).isDefined
     }
 
     private object DefaultInstantiator extends SyncInstanceInstantiator {
@@ -223,7 +223,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
             })
         }
 
-        override def getContent: CacheRepoContent[A] = treeCenter.snapshotContent
+        override def getContent: CacheRepoContent[A] = forest.snapshotContent
 
         override def onEngineAttached(engine: Engine): Unit = {
             AppLogger.debug(s"Engine ${engine.identifier} attached to this synchronized object cache !")
@@ -240,7 +240,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
             AppLogger.debug(s"Engine ${engine.identifier} detached to this synchronized object cache !")
         }
 
-        override val objectLinker: Option[NetworkObjectLinker[_ <: SharedCacheReference] with TrafficInterestedNPH] = Some(treeCenter)
+        override val objectLinker: Option[NetworkObjectLinker[_ <: SharedCacheReference] with TrafficInterestedNPH] = Some(forest)
     }
 
 }

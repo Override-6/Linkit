@@ -60,7 +60,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * @see [[fr.linkit.api.gnom.cache.sync.tree.SyncNode]]
      * @see [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]]
      * */
-    val treeCenter: SynchronizedObjectForest[A]
+    val forest: SynchronizedObjectForest[A]
 
     /**
      * The default behavior tree for an [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]].

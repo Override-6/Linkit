@@ -30,7 +30,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val cache: SynchronizedObjectCache[_],
                                    override val nodeLocation: SyncObjectReference) extends Puppeteer[S] {
 
-    private lazy val tree                       = cache.treeCenter.findTree(nodeLocation.nodePath.head).get
+    private lazy val tree                       = cache.forest.findTree(nodeLocation.nodePath.head).get
     override     val network          : Network = cache.network
     private      val traffic                    = channel.traffic
     override     val currentIdentifier: String  = traffic.currentIdentifier
