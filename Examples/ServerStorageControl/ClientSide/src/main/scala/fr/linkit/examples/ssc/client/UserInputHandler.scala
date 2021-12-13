@@ -19,7 +19,7 @@ class UserInputHandler(accounts: UserAccountContainer) {
             fail("usage: open <wallet_name> <initial_amount>")
         val current       = accounts.getCurrentAccount
         val walletName    = args(0)
-        val initialAmount = args(1)
+        val initialAmount = args(1).toInt
         current.findWallet(walletName).fold(current.openWallet(walletName, initialAmount)) {
             fail(s"wallet '$walletName' already exists !")
         }

@@ -1,7 +1,5 @@
 package fr.linkit.examples.ssc.client
 
-import java.net.InetSocketAddress
-
 import fr.linkit.api.application.connection.ExternalConnection
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
@@ -9,9 +7,10 @@ import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnection
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.examples.ssc.api.UserAccountContainer
 
+import java.net.InetSocketAddress
 import scala.io.StdIn
 
-object ClientMain {
+object ClientSideMain {
 
     private final val Address = new InetSocketAddress("localhost", 48481)
 
@@ -21,8 +20,8 @@ object ClientMain {
         val handler = new UserInputHandler(accounts)
         do {
             val inputs = StdIn.readLine().split("\\s")
-            handler.performCommand(inputs.head, inputs.drop(1))(accounts)
-        } while (true);
+            handler.performCommand(inputs.head, inputs.drop(1))
+        } while (true)
     }
 
     private def connectToAccounts(): UserAccountContainer = {
@@ -33,7 +32,7 @@ object ClientMain {
         val connection = launchApp(username)
         val global     = connection.network.globalCache
         val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer]())
-        cache.findObject(0).getOrElse(throw new NoSuchElementException("could not find acounts DAO"))
+        cache.findObject(0).getOrElse(throw new NoSuchElementException("could not find accounts container DAO"))
     }
 
     private def launchApp(identifier0: String): ExternalConnection = {
@@ -41,7 +40,6 @@ object ClientMain {
             val resourcesFolder: String = "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\Linkit\\Home"
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {
-                    pluginFolder = None // Some(mainPluginFolder)
                     override val identifier   : String            = identifier0
                     override val remoteAddress: InetSocketAddress = Address
                 }

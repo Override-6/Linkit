@@ -5,6 +5,8 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.MethodControl
 
 trait CurrentUserWallet extends UserWallet {
 
+    val owner: CurrentUserAccount
+
     @MethodControl(ONLY_CACHE_OWNER)
     def getAmount: Int
 

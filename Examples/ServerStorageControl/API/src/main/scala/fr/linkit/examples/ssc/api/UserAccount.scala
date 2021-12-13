@@ -5,10 +5,12 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocatio
 
 trait UserAccount {
 
-    @MethodControl(ONLY_CACHE_OWNER, synchronizeReturnValue = true)
+    val name: String
+
+    @MethodControl(value = ONLY_CACHE_OWNER, synchronizeReturnValue = true)
     def getWallets: Seq[UserWallet]
 
-    @MethodControl(ONLY_CACHE_OWNER, synchronizeReturnValue = true)
+    @MethodControl(value = ONLY_CACHE_OWNER, synchronizeReturnValue = true)
     def findWallet(name: String): Option[UserWallet]
 
 }
