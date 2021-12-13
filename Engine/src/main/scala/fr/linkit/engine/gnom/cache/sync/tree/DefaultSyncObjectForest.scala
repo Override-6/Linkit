@@ -48,7 +48,6 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
     }
 
     override def registerReference(ref: SyncObjectReference): Unit = {
-        AppLogger.info(s"Registering reference $ref.")
         super.registerReference(ref)
     }
 

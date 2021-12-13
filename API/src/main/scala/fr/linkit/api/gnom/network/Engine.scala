@@ -34,6 +34,8 @@ trait Engine extends NetworkObject[EngineReference] with Updatable {
 
     val staticAccess: StaticAccess
 
+    def reference: EngineReference
+
     def isServer: Boolean = network.serverEngine eq this
 
     def getConnectionState: ExternalConnectionState

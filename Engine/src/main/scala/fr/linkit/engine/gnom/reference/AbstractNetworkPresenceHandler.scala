@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
 import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, NetworkPresenceHandler, ObjectPresenceType}
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.AnyRefPacket
@@ -77,7 +78,8 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         externalPresences.put(location, listener)
     }
 
-    protected def registerReference(ref: R): Unit = {
+    protected def registerReference(ref: R): Unit = ref.synchronized {
+        AppLogger.info(s"Registering Network Object reference $ref (${System.identityHashCode(ref)}).")
         var presence: InternalNetworkObjectPresence[R] = null
         if (!internalPresences.contains(ref)) {
             presence = new InternalNetworkObjectPresence[R](this, ref)

@@ -86,16 +86,19 @@ object DefaultMethodInvocationHandler extends MethodInvocationHandler {
         dispatcher.foreachEngines(engineID => {
             val engine = network.findEngine(engineID).get
             for (i <- args.indices) {
-                val param         = parameters(i)
-                val paramContract = parametersContracts(i)
-
-                val paramTpe = param.getType.asInstanceOf[Class[_ >: AnyRef]]
-                val modifier = paramContract.modifier.orNull
-
                 var finalRef = args(i)
-                if (modifier != null) {
-                    finalRef = modifier.toRemote(finalRef, invocation, engine)
-                    modifier.toRemoteEvent(finalRef, invocation, engine)
+
+                val param         = parameters(i)
+                val paramTpe = param.getType.asInstanceOf[Class[_ >: AnyRef]]
+                if (parametersContracts.nonEmpty) {
+                    val paramContract = parametersContracts(i)
+
+                    val modifier = paramContract.modifier.orNull
+
+                    if (modifier != null) {
+                        finalRef = modifier.toRemote(finalRef, invocation, engine)
+                        modifier.toRemoteEvent(finalRef, invocation, engine)
+                    }
                 }
                 finalRef = finalRef match {
                     case sync: SynchronizedObject[AnyRef] =>
