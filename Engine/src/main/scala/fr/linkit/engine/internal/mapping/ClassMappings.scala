@@ -21,14 +21,21 @@ import scala.collection.mutable
 
 object ClassMappings {
 
-    private val primitives = mapPrimitives()
-    private val classes    = new mutable.HashMap[Int, Class[_]]()
-    private val sources    = mutable.HashSet.empty[CodeSource]
+    type ClassMappings = ClassMappings.type
+
+    private val primitives     = mapPrimitives()
+    private val classes        = mutable.HashMap.empty[Int, (Class[_], MappedClassInfo)]
+    private val unknownClasses = mutable.HashMap.empty[Int, MappedClassInfo]
+    private val sources        = mutable.HashSet.empty[CodeSource]
 
     def putClass(className: String, loader: ClassLoader): Unit = {
         //println(s"Class put ! ($className) of hash code ${className.hashCode}")
         val clazz = Class.forName(className, false, loader)
-        classes.put(className.hashCode, clazz)
+        classes.put(className.hashCode, createMapValue(clazz))
+    }
+
+    def putUnknownClass(info: MappedClassInfo): Unit = {
+        unknownClasses.put(info.classCode, info)
     }
 
     def addClassPath(source: CodeSource): Unit = sources += source
@@ -36,14 +43,12 @@ object ClassMappings {
     def getClassPaths: List[CodeSource] = sources.toList
 
     def putClass(clazz: Class[_]): Unit = {
-        classes.put(clazz.getName.hashCode, clazz)
+        classes.put(clazz.getName.hashCode, (clazz, getClassInfo(clazz)))
     }
-
-    def getClassName(hashCode: Int): String = classes(hashCode).getName
 
     def findClass(hashCode: Int): Option[Class[_]] = {
         //println(s"Getting class from hashcode $hashCode")
-        classes.get(hashCode).orElse(primitives.get(hashCode))
+        classes.get(hashCode).map(_._1).orElse(primitives.get(hashCode))
     }
 
     def getClass(hashCode: Int): Class[_] = {
@@ -51,7 +56,7 @@ object ClassMappings {
         findClass(hashCode).orNull
     }
 
-    def getClassNameOpt(hashCode: Int): Option[String] = classes.get(hashCode).map(_.getName)
+    def getClassNameOpt(hashCode: Int): Option[String] = classes.get(hashCode).map(_._1.getName)
 
     def isRegistered(hashCode: Int): Boolean = classes.contains(hashCode)
 
@@ -66,6 +71,26 @@ object ClassMappings {
             putClass(clazz)
         }
         name.hashCode
+    }
+
+    def findUnknownClassInfo(code: Int): Option[MappedClassInfo] = {
+        unknownClasses.get(code)
+    }
+
+    def findKnownClassInfo(code: Int): Option[MappedClassInfo] = {
+        classes.get(code).map(_._2)
+    }
+
+    def getClassInfo(clazz: Class[_]): MappedClassInfo = {
+        if ((clazz eq classOf[Object]) || clazz == null)
+            return MappedClassInfo.Object
+        classes.getOrElseUpdate(clazz.getName.hashCode, createMapValue(clazz))._2
+    }
+
+    private def createMapValue(clazz: Class[_]): (Class[_], MappedClassInfo) = {
+        if ((clazz eq classOf[Object]) || clazz == null)
+            return (clazz, MappedClassInfo.Object)
+        (clazz, MappedClassInfo(clazz))
     }
 
     private def mapPrimitives(): Map[Int, Class[_]] = {

@@ -14,8 +14,7 @@ class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[
     }
 
     private def createNodes(descriptors: Array[StructureContractDescriptor[_]]): ClassMap[StructureBehaviorDescriptorNode[_]] = {
-        descriptors
-                .sortInPlace()((a, b) => {
+        descriptors.sortInPlace()((a, b) => {
                     getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
                 })
         val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()

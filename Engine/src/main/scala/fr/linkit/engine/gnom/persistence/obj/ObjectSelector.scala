@@ -17,8 +17,11 @@ import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject, SystemNetworkObjectPresence}
+import fr.linkit.engine.gnom.persistence.serializor.ClassNotMappedException
 import fr.linkit.engine.gnom.reference.ContextObject
 import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, InternalNetworkObjectPresence}
+import fr.linkit.engine.internal.mapping.ClassMappings.ClassMappings
+import fr.linkit.engine.internal.mapping.{ClassMappings, MappedClassInfo}
 
 class ObjectSelector(bundle: PersistenceBundle) {
 
