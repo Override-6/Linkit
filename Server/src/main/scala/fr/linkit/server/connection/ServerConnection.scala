@@ -110,7 +110,7 @@ class ServerConnection(applicationContext: ServerApplication,
             .filterNot(discarded.contains)
             .foreach(candidate => {
                 val coords = DedicatedPacketCoordinates(path, candidate, sender)
-                val result = translator.translate(SimpleTransferInfo(coords, attributes, packet, config, network.gnol))
+                val result = translator.translate(SimpleTransferInfo(coords, attributes, packet, config, network))
                 connectionsManager.broadcastPacket(result)
             })
 

@@ -68,7 +68,7 @@ class SocketPacketWriter(socket: DynamicSocket,
     }
 
     private def addToChoreographer(coords: DedicatedPacketCoordinates)(attributes: PacketAttributes, packet: Packet): Unit = {
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, network.gnol)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, network)
         choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 

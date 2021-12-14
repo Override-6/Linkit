@@ -49,11 +49,11 @@ object PacketTest {
     private val attributes = SimplePacketAttributes.empty
     private val traffic    = connection.traffic
     private val config     = traffic.defaultPersistenceConfig
-    private val gnol       = connection.network.gnol
+    private val network    = connection.network
 
     def serialAndDeserial(obj: AnyRef): Unit = {
         println(s"Serializing and deserializing object $obj")
-        val serialResult = translator.translate(SimpleTransferInfo(coords, attributes, ObjectPacket(obj), config, gnol))
+        val serialResult = translator.translate(SimpleTransferInfo(coords, attributes, ObjectPacket(obj), config, network))
         val buff         = serialResult.buff
         println("Packet bytes: " + ScalaUtils.toPresentableString(buff) + s" (size: ${buff.limit()} bytes)")
         buff.position(4)

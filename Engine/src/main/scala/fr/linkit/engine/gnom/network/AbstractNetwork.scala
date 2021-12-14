@@ -43,8 +43,10 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     private lazy       val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
     override lazy      val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, Some(rnol))
     override lazy      val globalCache            : SharedCacheManager         = createGlobalCache
-    protected lazy     val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreContracts)
+    protected lazy     val trunk                  : NetworkDataTrunk           = initDataTrunk(getEngineStoreContracts)
     private var engine0                           : Engine                     = _
+
+    private var trunkInitializing = false
 
     override def connectionEngine: Engine = engine0
 
@@ -89,6 +91,13 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         scnol.registerReference(manager.reference)
         trunk.addCacheManager(manager, trafficPath)
         (manager, trafficPath)
+    }
+
+    def initDataTrunk(factory: ContractDescriptorData): NetworkDataTrunk = {
+        trunkInitializing = true
+        val trunk = retrieveDataTrunk(factory)
+        trunkInitializing = false
+        trunk
     }
 
     protected def retrieveDataTrunk(factory: ContractDescriptorData): NetworkDataTrunk
@@ -137,6 +146,5 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 }
 
 object AbstractNetwork {
-
     final val GlobalCacheID = "Global Cache"
 }

@@ -23,8 +23,10 @@ import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter,
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
 import fr.linkit.engine.internal.LinkitApplication
-
 import java.nio.ByteBuffer
+
+import fr.linkit.api.gnom.network.statics.StaticAccess
+
 import scala.annotation.switch
 
 class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator {
@@ -104,12 +106,14 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         val coords  = readCoordinates(buffer)
         val conf    = traffic.getPersistenceConfig(coords.path)
         val network = traffic.connection.network
+        val statics = network.findEngine(coords.senderID).get.staticAccess
         val bundle  = new PersistenceBundle {
-            override val buff      : ByteBuffer                 = buffer
-            override val boundId   : String                     = coords.senderID
-            override val packetPath: Array[Int]                 = coords.path
-            override val config    : PersistenceConfig          = conf
-            override val gnol      : GeneralNetworkObjectLinker = network.gnol
+            override val buff        : ByteBuffer                 = buffer
+            override val boundId     : String                     = coords.senderID
+            override val packetPath  : Array[Int]                 = coords.path
+            override val config      : PersistenceConfig          = conf
+            override val gnol        : GeneralNetworkObjectLinker = network.gnol
+            override val boundStatics: StaticAccess               = statics
         }
         new LazyObjectDeserializationResult(buffer, coords)(serializer.deserializeObjects(bundle))
     }

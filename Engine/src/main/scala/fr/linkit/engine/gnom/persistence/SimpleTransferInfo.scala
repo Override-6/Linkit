@@ -13,37 +13,40 @@
 
 package fr.linkit.engine.gnom.persistence
 
-import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
-import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketCoordinates}
+import java.nio.ByteBuffer
+
+import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.statics.StaticAccess
+import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle, TransferInfo}
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 
-import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
 case class SimpleTransferInfo(override val coords: DedicatedPacketCoordinates,
                               override val attributes: PacketAttributes,
                               override val packet: Packet,
                               config: PersistenceConfig,
-                              gnol: GeneralNetworkObjectLinker) extends TransferInfo { info =>
+                              network: Network) extends TransferInfo {
+    info =>
 
-    override def makeSerial(serializer: ObjectPersistence, b: ByteBuffer): Unit = {
+    override def makeSerial(serializer: ObjectPersistence, buffer: ByteBuffer): Unit = {
         val packetBuff = ArrayBuffer.empty[AnyRef]
         if (attributes.nonEmpty)
             packetBuff += attributes
         if (packet != EmptyPacket)
             packetBuff += packet
         val content = packetBuff.toArray[AnyRef]
+        val statics = network.findEngine(coords.targetID).get.staticAccess
         serializer.serializeObjects(content)(new PersistenceBundle {
-            override val buff      : ByteBuffer                 = b
-            override val boundId   : String                     = coords.targetID
-            override val packetPath: Array[Int]                 = coords.path
-            override val config    : PersistenceConfig          = info.config
-            override val gnol      : GeneralNetworkObjectLinker = info.gnol
+            override val buff        : ByteBuffer                 = buffer
+            override val boundId     : String                     = coords.targetID
+            override val packetPath  : Array[Int]                 = coords.path
+            override val config      : PersistenceConfig          = info.config
+            override val gnol        : GeneralNetworkObjectLinker = network.gnol
+            override val boundStatics: StaticAccess               = statics
         })
     }
 }

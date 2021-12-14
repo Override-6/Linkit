@@ -19,6 +19,6 @@ class DefaultIncidentHandler(statics: StaticAccess) extends IncidentHandler {
     }
 
     protected def handleClass(clazz: MappedClassInfo): Class[_] = {
-        
+        ???
     }
 }
