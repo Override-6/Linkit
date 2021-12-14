@@ -23,6 +23,7 @@ import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder.MethodBehaviorBuilder
 import fr.linkit.engine.gnom.cache.sync.contract.modification.{LambdaFieldModifier, LambdaMethodCompModifier}
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID

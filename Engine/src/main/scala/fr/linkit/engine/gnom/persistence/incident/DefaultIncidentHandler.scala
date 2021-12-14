@@ -6,7 +6,7 @@ import fr.linkit.engine.gnom.persistence.serializor.ClassNotMappedException
 import fr.linkit.engine.internal.mapping.ClassMappings.ClassMappings
 import fr.linkit.engine.internal.mapping.{ClassMappings, MappedClassInfo}
 
-class DefaultIncidentHandler(statics: StaticAccess) extends IncidentHandler {
+class DefaultIncidentHandler(statics: StaticAccess, fixs: IncidentFixerContainer) extends IncidentHandler {
     override def handleUnknownClass(code: Int): Class[_] = {
         ClassMappings.findUnknownClassInfo(code) match {
             case Some(unknownClass) => handleClass(unknownClass)
@@ -18,7 +18,7 @@ class DefaultIncidentHandler(statics: StaticAccess) extends IncidentHandler {
         }
     }
 
-    protected def handleClass(clazz: MappedClassInfo): Class[_] = {
-        ???
+    protected def handleClass(classInfo: MappedClassInfo): Class[_] = {
+        fixs.getUnknownTypeFixer(classInfo).fix(classInfo.className)
     }
 }
