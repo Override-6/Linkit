@@ -23,7 +23,6 @@ import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder.MethodBehaviorBuilder
 import fr.linkit.engine.gnom.cache.sync.contract.modification.{LambdaFieldModifier, LambdaMethodCompModifier}
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
@@ -61,7 +60,11 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override def countConnections: Int = trunk.countConnection
 
-    override def findEngine(identifier: String): Option[Engine] = trunk.findEngine(identifier)
+    override def findEngine(identifier: String): Option[Engine] = {
+        if (trunkInitializing)
+            return None
+        trunk.findEngine(identifier)
+    }
 
     override def isConnected(identifier: String): Boolean = findEngine(identifier).isDefined
 
@@ -85,7 +88,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
 
     private[network] def newCacheManager(family: String): (SharedCacheManager, Array[Int]) = {
-        AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
+        AppLogger.vDebug(s" ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
         val store       = networkStore.createStore(family.hashCode)
         val manager     = new SharedCacheOriginManager(family, this, store)
         val trafficPath = store.trafficPath

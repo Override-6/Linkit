@@ -19,19 +19,20 @@ import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
+import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
 import fr.linkit.engine.internal.utils.ClassMap
 
-import java.util.Objects
 import scala.collection.mutable
 
 class SimplePersistenceConfig private[linkit](context: PersistenceContext,
-                                               customProfiles: ClassMap[TypeProfile[_]],
-                                               override val contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH,
-                                               override val autoContextObjects: Boolean,
-                                               override val useUnsafe: Boolean,
-                                               override val widePacket: Boolean) extends PersistenceConfig {
+                                              customProfiles: ClassMap[TypeProfile[_]],
+                                              override val contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH,
+                                              override val autoContextObjects: Boolean,
+                                              override val useUnsafe: Boolean,
+                                              override val widePacket: Boolean) extends PersistenceConfig {
 
     private val cachedProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
+
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
         var profile            = cachedProfiles.get(clazz).orNull
         val defaultProfileNull = profile == null
@@ -91,6 +92,5 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         }
         new ConstructorTypePersistence[T](clazz, constructor.get, deconstructor.get)
     }
-
 
 }

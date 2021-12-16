@@ -11,17 +11,20 @@
  * questions.
  */
 
-package fr.test
+package fr.linkit.engine.gnom.persistence.defaults.lambda
 
-import fr.linkit.macros.ClassStaticAccessorGenerator
+import fr.linkit.api.gnom.persistence.context.LambdaTypePersistence
 
-import java.nio.file.Files
+//TODO  https://stackoverflow.com/questions/23595136/get-a-list-of-classes-lambdas
+object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPRepresentation] {
 
-object Main {
-
-    def main(args: Array[String]): Unit = {
-        val accessor = ClassStaticAccessorGenerator.newStaticAccessor[String]
-        accessor.getClass.getDeclaredMethods.foreach(println)
+    override def toRepresentation(lambdaObject: AnyRef): JLTPRepresentation = {
+        ???
     }
 
+    override def toLambda(representation: JLTPRepresentation): AnyRef = {
+        ???
+    }
 }
+
+class JLTPRepresentation(enclosingClass: String, lambdaParameters: Array[Any])

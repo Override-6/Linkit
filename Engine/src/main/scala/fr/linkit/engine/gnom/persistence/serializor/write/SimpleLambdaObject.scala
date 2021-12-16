@@ -14,20 +14,19 @@
 package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.persistence.obj.LambdaObject
-import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 
-import java.lang.invoke.SerializedLambda
-import java.lang.reflect.Modifier
+class SimpleLambdaObject(lambdaObject: AnyRef,
+                         val representationDecomposed: Array[Any],
+                         val representation: AnyRef) extends LambdaObject {
 
-class SimpleLambdaObject(val enclosingClass: Class[_], lambdaObject: AnyRef, val value: SerializedLambda) extends LambdaObject {
-
-    val decomposed: Array[Any] = {
-        val fields = value.getClass.getDeclaredFields.filterNot(f => Modifier.isStatic(f.getModifiers))
-        ObjectCreator.getAllFields(value, fields).asInstanceOf[Array[Any]]
-    }
+    override def value: AnyRef = representation
 
     override def equals(obj: Any): Boolean = obj == lambdaObject
 
     override def hashCode(): Int = lambdaObject.hashCode()
+
+}
+
+object SimpleLambdaObject {
 
 }

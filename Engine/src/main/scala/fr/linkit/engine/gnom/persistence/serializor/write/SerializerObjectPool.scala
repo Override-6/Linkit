@@ -18,14 +18,14 @@ import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
 
-import java.lang.invoke.SerializedLambda
-
-class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends ObjectPool(sizes) {
+class SerializerObjectPool(bundle: PersistenceBundle,
+                           sizes: Array[Int]) extends ObjectPool(sizes) {
 
     private         val config          = bundle.config
     private         val selector        = new ObjectSelector(bundle)
@@ -120,15 +120,14 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
     }
 
     private def addLambda(lambdaObject: AnyRef): Unit = {
-        val lambdaClass = lambdaObject.getClass
-        val m           = lambdaClass.getDeclaredMethod("writeReplace")
-        m.setAccessible(true)
-        val serializedLambda = m.invoke(lambdaObject).asInstanceOf[SerializedLambda]
-        val className        = serializedLambda.getCapturingClass.replace('/', '.')
-        val enclosingClass   = java.lang.Class.forName(className)
-        val slo              = new SimpleLambdaObject(enclosingClass, lambdaObject, serializedLambda)
+        val ltp            = lambdaObject match {
+            case _: Serializable => SerializableLambdasTypePersistence
+            case _               => NotSerializableLambdasTypePersistence
+        }
+        val representation = ltp.toRepresentation(lambdaObject)
+        val decomposed     = addAndReturnDecomposed(representation)
+        val slo            = new SimpleLambdaObject(lambdaObject, decomposed, representation)
         getChunkFromFlag(Lambda).add(slo)
-        addObj(serializedLambda)
     }
 
     private def addObj(ref: AnyRef): Unit = {
@@ -158,28 +157,27 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
     @inline
     private def isLambdaObject(ref: AnyRef): Boolean = {
         val clazz = ref.getClass
-        clazz.getSimpleName.contains("$Lambda$") && {
-            try {
-                clazz.getDeclaredMethod("writeReplace")
-                true
-            } catch {
-                case _: NoSuchMethodException =>
-                    false
-            }
-        }
+        clazz.getSimpleName.contains("$$Lambda$")
+    }
+
+    private def addAndReturnDecomposed(ref: AnyRef): Array[Any] = {
+        addTypeOfIfAbsent(ref)
+        val profile     = config.getProfile[AnyRef](ref.getClass)
+        val persistence = profile.getPersistence(ref)
+        val decomposed  = persistence.toArray(ref)
+        val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
+
+        //do not swap those two lines
+        objPool.add(new SimpleObject(ref, decomposed, profile))
+        addAll(decomposed)
+        decomposed
     }
 
     private def addObj0(ref: AnyRef): Unit = {
-        val clazz   = ref.getClass
-        val profile = config.getProfile[AnyRef](clazz)
-        val nrlOpt  = selector.findObjectReference(ref)
+        //val clazz   = ref.getClass
+        val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
-            addTypeOfIfAbsent(ref)
-            val persistence = profile.getPersistence(ref)
-            val decomposed  = persistence.toArray(ref)
-            val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
-            objPool.add(new SimpleObject(ref, decomposed, profile))
-            addAll(decomposed)
+            addAndReturnDecomposed(ref)
             ref match {
                 case no: NetworkObject[_] =>
                     AppLogger.info(s"A network object ${no.reference} was missing on targeted engine ${bundle.boundId}.")
@@ -188,15 +186,15 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
             }
         } else {
             val chunk = getChunkFromFlag[ReferencedNetworkObject](RNO)
-            val nrl   = nrlOpt.get
-            if (chunks(Object).indexOf(nrl) >= 0)
+            if (chunk.indexOf(ref) >= 0)
                 return
             val pos = chunks(Object).size
+            val nrl = nrlOpt.get
             addObj(nrl)
             val rno: ReferencedNetworkObject = new ReferencedNetworkObject {
-                override val locationIdx: Int                    = pos
-                override val location   : NetworkObjectReference = nrl
-                override val value      : AnyRef                 = ref
+                override val referenceIdx: Int                    = pos
+                override val reference   : NetworkObjectReference = nrl
+                override val value       : AnyRef                 = ref
             }
             chunk.add(rno)
         }

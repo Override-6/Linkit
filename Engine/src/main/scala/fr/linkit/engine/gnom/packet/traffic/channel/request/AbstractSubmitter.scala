@@ -44,9 +44,9 @@ sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends
 
     override def submit(): P = {
         ensureNotSubmit()
-        AppLogger.vDebug(s"$currentTasksId <> Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
+        AppLogger.vDebug(s" Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
         val result = makeSubmit()
-        AppLogger.vDebug(s"$currentTasksId <> ${getClass.getSimpleName} ($id) submitted !")
+        AppLogger.vDebug(s" ${getClass.getSimpleName} ($id) submitted !")
         isSubmit = true
         result
     }

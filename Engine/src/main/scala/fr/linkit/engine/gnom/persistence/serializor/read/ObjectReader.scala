@@ -13,24 +13,22 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
-import java.lang.invoke.SerializedLambda
-import java.lang.reflect.{Array => RArray}
-import java.nio.ByteBuffer
-
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.persistence.context.ControlBox
+import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject, ReferencedNetworkObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.context.SimpleControlBox
-import fr.linkit.engine.gnom.persistence.incident.DefaultIncidentHandler
+import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
-import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
+import java.lang.reflect.{Array => RArray}
+import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
@@ -39,7 +37,6 @@ class ObjectReader(bundle: PersistenceBundle,
 
     final         val buff: ByteBuffer                   = bundle.buff
     private final val selector                           = new ObjectSelector(bundle)
-    private final val incidentHandlers                   = new DefaultIncidentHandler(bundle.boundStatics)
     private final val config                             = bundle.config
     private       val (widePacket: Boolean, sizes, pool) = readPoolStructure()
     private var isInit                                   = false
@@ -106,17 +103,18 @@ class ObjectReader(bundle: PersistenceBundle,
     private def readContextObject(): ReferencedNetworkObject = {
         val poolLoc = readNextRef
         new ReferencedNetworkObject {
-            override      val locationIdx: Int                    = poolLoc
-            override lazy val location   : NetworkObjectReference = pool
-                .getChunkFromFlag[InstanceObject[AnyRef]](Object)
-                .get(poolLoc)
-                .value match {
+            override      val referenceIdx: Int                    = poolLoc
+            override lazy val reference   : NetworkObjectReference = pool
+                    .getChunkFromFlag[InstanceObject[AnyRef]](Object)
+                    .get(poolLoc)
+                    .value match {
                 case l: NetworkObjectReference => l
-                case o                         => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
+                case o                         =>
+                    throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
             }
 
             override lazy val value: AnyRef = {
-                val loc = location
+                val loc = reference
                 loc.synchronized {
                     selector.findObject(loc).getOrElse {
                         throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
@@ -130,7 +128,7 @@ class ObjectReader(bundle: PersistenceBundle,
         val code  = buff.getInt
         val clazz = ClassMappings.getClass(code)
         if (clazz == null) {
-            return incidentHandlers.handleUnknownClass(code)
+            throw new ClassNotMappedException(s"No class is bound to code $code")
         }
         clazz
     }
@@ -153,8 +151,9 @@ class ObjectReader(bundle: PersistenceBundle,
     }
 
     private def readLambdaObject(): NotInstantiatedLambdaObject = {
-        val nio = readObject().asInstanceOf[NotInstantiatedObject[SerializedLambda]]
-        new NotInstantiatedLambdaObject(nio)
+        val isSerializable                             = buff.get() == 1
+        val persistence = if (isSerializable) SerializableLambdasTypePersistence else NotSerializableLambdasTypePersistence
+        new NotInstantiatedLambdaObject(readObject(), persistence.asInstanceOf[LambdaTypePersistence[AnyRef]])
     }
 
     private def readObject(): NotInstantiatedObject[AnyRef] = {

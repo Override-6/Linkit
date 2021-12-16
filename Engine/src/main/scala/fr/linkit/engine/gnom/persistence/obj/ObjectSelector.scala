@@ -16,12 +16,9 @@ package fr.linkit.engine.gnom.persistence.obj
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject, SystemNetworkObjectPresence}
-import fr.linkit.engine.gnom.persistence.serializor.ClassNotMappedException
+import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject}
 import fr.linkit.engine.gnom.reference.ContextObject
-import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, InternalNetworkObjectPresence}
-import fr.linkit.engine.internal.mapping.ClassMappings.ClassMappings
-import fr.linkit.engine.internal.mapping.{ClassMappings, MappedClassInfo}
+import fr.linkit.engine.gnom.reference.presence.ExternalNetworkObjectPresence
 
 class ObjectSelector(bundle: PersistenceBundle) {
 
@@ -92,7 +89,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
         else {
             if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
                 rnol.get.save(obj)
-            None
+            findNonNetworkObjectReference(obj) //send a reference to the object we want to synchronize
         }
     }
 
@@ -103,7 +100,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
         else {
             if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
                 rnol.get.save(obj)
-            None
+            findNonNetworkObjectReference(obj) //send a reference to the object we want to synchronize
         }
     }
 

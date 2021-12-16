@@ -17,4 +17,5 @@ trait TypeProfileStore {
 
     def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T]
 
+
 }

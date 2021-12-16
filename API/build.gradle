@@ -33,6 +33,8 @@ dependencies {
     api group: 'org.scala-lang', name: 'scala-compiler', version: '2.13.7'
 
     implementation group: 'log4j', name: 'log4j', version: '1.2.17'
+    implementation 'org.apache.logging.log4j:log4j:2.13.3'
+
     implementation group: 'com.jcabi', name: 'jcabi-log', version: '0.19.0'
 }
 

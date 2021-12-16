@@ -63,7 +63,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
     override def canInjectFrom(identifier: String): Boolean = scope.areAuthorised(Array(identifier))
 
     override def storeBundle(bundle: ChannelPacketBundle): Unit = {
-        AppLogger.vDebug(s"$currentTasksId <> STORING BUNDLE $bundle INTO $storedBundles")
+        AppLogger.vDebug(s" STORING BUNDLE $bundle INTO $storedBundles")
         if (bundle.getChannel ne this) {
             throw new IllegalArgumentException("The stored bundle's channel is not this.")
         }
@@ -76,7 +76,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
     override def injectStoredBundles(): Unit = {
         var clone: Array[ChannelPacketBundle] = null
         storedBundles.synchronized {
-            AppLogger.vDebug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedBundles")
+            AppLogger.vDebug(s" REINJECTING STORED PACKETS $storedBundles")
             clone = Array.from(storedBundles)
             storedBundles.clear()
         }
@@ -86,7 +86,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
         val injected = builder.result()
 
         clone.foreach(stored => {
-            AppLogger.vDebug(s"$currentTasksId <> Reinjecting stored = $stored")
+            AppLogger.vDebug(s" Reinjecting stored = $stored")
             if (injected.contains(stored))
                 throw new Error("Double instance packet in storage.")
 

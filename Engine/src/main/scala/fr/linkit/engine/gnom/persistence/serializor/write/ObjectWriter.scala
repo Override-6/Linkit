@@ -121,7 +121,7 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             case Array             => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
             case Object            => foreach[SimpleObject](writeObject)
             case Lambda            => foreach[SimpleLambdaObject](writeLambdaObject)
-            case RNO               => foreach[ReferencedNetworkObject](obj => putRef(obj.locationIdx))
+            case RNO               => foreach[ReferencedNetworkObject](obj => putRef(obj.referenceIdx))
         }
     }
 
@@ -138,7 +138,8 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     @inline
     private def writeLambdaObject(poolObj: SimpleLambdaObject): Unit = {
-        writeObject(poolObj.value, poolObj.decomposed)
+        putString(poolObj.deserializationOperatingMethodName)
+        writeObject(poolObj.representation, poolObj.representationDecomposed)
     }
 
     @inline

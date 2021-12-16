@@ -56,7 +56,7 @@ class SimpleWorkerController extends WorkerController {
 
     @workerExecution
     override def wakeupAnyTask(): Unit = this.synchronized {
-        AppLogger.vError(s"$currentTasksId <> entertainedThreads = " + workingThreads)
+        AppLogger.vError(s" entertainedThreads = " + workingThreads)
         val opt = workingThreads.find(entry => entry._2.isConditionFalse)
         if (opt.isEmpty)
             return
@@ -71,7 +71,7 @@ class SimpleWorkerController extends WorkerController {
 
     @workerExecution
     override def wakeupTasks(taskIds: Seq[Int]): Unit = this.synchronized {
-        AppLogger.vError(s"$currentTasksId <> entertainedThreads = " + workingThreads)
+        AppLogger.vError(s" entertainedThreads = " + workingThreads)
 
         if (workingThreads.isEmpty) {
             AppLogger.vError("THREADS ARE EMPTY !")

@@ -15,7 +15,6 @@ package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context._
-import fr.linkit.api.gnom.persistence.incident.fix.UnknownTypeFixer
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
@@ -23,7 +22,6 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
-import fr.linkit.engine.gnom.persistence.incident.IncidentFixerContainer
 import fr.linkit.engine.gnom.reference.linker.WeakContextObjectLinker
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.script.ScriptExecutor
@@ -32,7 +30,6 @@ import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.Modifier
 import java.net.URL
-import java.util.regex.Pattern
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -40,7 +37,6 @@ class PersistenceConfigBuilder {
 
     private val persistors     = new ClassMap[TypePersistence[_ <: AnyRef]]
     private val referenceStore = mutable.HashMap.empty[Int, AnyRef]
-    private val incidentFixers = new IncidentFixerContainer()
 
     protected var unsafeUse           = true
     protected var referenceAllObjects = false
@@ -149,7 +145,10 @@ class PersistenceConfigBuilder {
         val profiles                  = collectProfiles(store)
         val refStore                  = new WeakContextObjectLinker(storeParent, omc)
         refStore ++= referenceStore.toMap
-        config = new SimplePersistenceConfig(context, profiles, refStore, unsafeUse, referenceAllObjects, wide)
+        config = new SimplePersistenceConfig(
+            context, profiles,  refStore,
+            unsafeUse, referenceAllObjects, wide
+        )
         config
     }
 
@@ -180,39 +179,6 @@ class PersistenceConfigBuilder {
             depth += 1
         }
         depth
-    }
-
-    def on: AlternativeCreator.type = AlternativeCreator
-
-    on unknownType "test.x.y.*" λ ((x, y) => null)
-
-    object AlternativeCreator {
-
-        def unknownType(pattern: String): IncidentAlternativeLambda[UnknownTypeFixer] = {
-            val p = Pattern.compile(pattern)
-            lambda(incidentFixers.addUnknownTypeFixer(_) {
-                info => p.matcher(info.className).matches()
-            })
-        }
-
-        def unknownImplementation[A: ClassTag]: IncidentAlternativeLambda[UnknownTypeFixer] = {
-            val className = classTag[A].runtimeClass.getName
-            lambda(incidentFixers.addUnknownTypeFixer(_) {
-                _.extendsFrom(className)
-            })
-        }
-
-        private def lambda[A](register: A => Unit): IncidentAlternativeLambda[A] = new IncidentAlternativeLambda(register)
-
-    }
-
-    class IncidentAlternativeLambda[A](register: A => Unit) {
-
-        def λ(f: A): Unit = $(f)
-
-        def $(f: A): Unit = {
-            register(f)
-        }
     }
 
 }

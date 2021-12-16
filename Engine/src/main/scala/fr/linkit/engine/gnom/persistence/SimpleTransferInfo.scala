@@ -39,14 +39,12 @@ case class SimpleTransferInfo(override val coords: DedicatedPacketCoordinates,
         if (packet != EmptyPacket)
             packetBuff += packet
         val content = packetBuff.toArray[AnyRef]
-        val statics = network.findEngine(coords.targetID).get.staticAccess
         serializer.serializeObjects(content)(new PersistenceBundle {
             override val buff        : ByteBuffer                 = buffer
             override val boundId     : String                     = coords.targetID
             override val packetPath  : Array[Int]                 = coords.path
             override val config      : PersistenceConfig          = info.config
             override val gnol        : GeneralNetworkObjectLinker = network.gnol
-            override val boundStatics: StaticAccess               = statics
         })
     }
 }

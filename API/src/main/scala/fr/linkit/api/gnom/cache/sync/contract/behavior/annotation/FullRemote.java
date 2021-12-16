@@ -11,9 +11,15 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.incident.fix
+package fr.linkit.api.gnom.cache.sync.contract.behavior.annotation;
 
-trait UnknownObjectFixer[X] {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    def fix(className: String): X
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface FullRemote {
+
 }

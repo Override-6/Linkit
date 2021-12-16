@@ -134,7 +134,10 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     private def createObjectManagementChannel(): TrafficNode[ObjectManagementChannel] = {
         val objectChannelConfig = {
             val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
-            new SimplePersistenceConfig(context, new ClassMap(), linker, false, true, false)
+            new SimplePersistenceConfig(
+                context, new ClassMap(), linker,
+                false, true, false
+            )
         }
         val objectChannel       = {
             val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)

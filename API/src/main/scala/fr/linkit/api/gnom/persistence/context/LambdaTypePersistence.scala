@@ -11,10 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.mapping
+package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.internal.system.AppException
+trait LambdaTypePersistence[X] {
 
-class ClassNotMappedException(msg: String = null, cause: Throwable = null) extends AppException(msg, cause) {
+    def toRepresentation(lambdaObject: AnyRef): X
+
+    def toLambda(representation: X): AnyRef
 
 }

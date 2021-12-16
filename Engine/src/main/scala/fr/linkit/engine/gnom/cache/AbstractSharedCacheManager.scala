@@ -256,7 +256,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
     }
 
     protected def println(msg: => String): Unit = {
-        AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
+        AppLogger.trace(s" <$family, $ownerID> $msg")
     }
 
     private def postInit(): Unit = {

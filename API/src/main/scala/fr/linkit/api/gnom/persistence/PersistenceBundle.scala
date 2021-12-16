@@ -26,6 +26,5 @@ trait PersistenceBundle {
     val packetPath  : Array[Int]
     val config      : PersistenceConfig
     val gnol        : GeneralNetworkObjectLinker
-    val boundStatics: StaticAccess
 
 }

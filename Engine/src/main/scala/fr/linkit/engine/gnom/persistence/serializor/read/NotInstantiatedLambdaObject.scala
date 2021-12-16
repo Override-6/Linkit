@@ -13,13 +13,14 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
+import fr.linkit.api.gnom.persistence.context.LambdaTypePersistence
 import fr.linkit.api.gnom.persistence.obj.LambdaObject
 import fr.linkit.engine.gnom.persistence.serializor.ObjectDeserializationException
 
-import java.lang.invoke.SerializedLambda
 import scala.util.control.NonFatal
 
-class NotInstantiatedLambdaObject(nio: NotInstantiatedObject[SerializedLambda]) extends LambdaObject {
+class NotInstantiatedLambdaObject(nio: NotInstantiatedObject[AnyRef],
+                                  persistence: LambdaTypePersistence[AnyRef]) extends LambdaObject {
 
     private var lambdaObject: AnyRef  = _
     private var isInit      : Boolean = false
@@ -33,12 +34,8 @@ class NotInstantiatedLambdaObject(nio: NotInstantiatedObject[SerializedLambda]) 
     private def initLambda(): Unit = {
         isInit = true
         try {
-            val serializedLambda = nio.value
-            val capturingClassName = serializedLambda.getCapturingClass.replace('/', '.')
-            val enclosingClass   = Class.forName(capturingClassName)
-            val m                = enclosingClass.getDeclaredMethod("$deserializeLambda$", classOf[SerializedLambda])
-            m.setAccessible(true)
-            lambdaObject = m.invoke(null, serializedLambda)
+            val representation = nio.value
+            lambdaObject = persistence.toLambda(representation)
         } catch {
             case e: NoSuchMethodException =>
                 throw new ObjectDeserializationException(s"Could not deserialize lambda object: Could not find any (valid?) static method '$$deserializeLambda$$' in lambda capturing class.", e)
@@ -46,5 +43,4 @@ class NotInstantiatedLambdaObject(nio: NotInstantiatedObject[SerializedLambda]) 
                 throw new ObjectDeserializationException(s"Could not deserialize lambda object: ${e.getMessage}", e)
         }
     }
-
 }
