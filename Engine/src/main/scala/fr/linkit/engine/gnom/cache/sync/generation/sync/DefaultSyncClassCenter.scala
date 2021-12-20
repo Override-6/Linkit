@@ -61,10 +61,10 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         val clazz = desc.clazz
         checkClassValidity(clazz)
         val result = center.processRequest {
-            AppLogger.debug(s"Compiling Sync class for ${clazz.getName}...")
+            AppLogger.info(s"Compiling Sync class for ${clazz.getName}...")
             requestFactory.makeRequest(desc)
         }
-        AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
+        AppLogger.info(s"Compilation done. (${result.getCompileTime} ms).")
         val syncClass = result.getResult
                 .get
                 .asInstanceOf[Class[S with SynchronizedObject[S]]]
@@ -117,10 +117,10 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         if (toCompile.isEmpty)
             return
         val ct = center.processRequest {
-            AppLogger.debug(s"Compiling Wrapper Classes for ${toCompile.map(_.clazz.getSimpleName).mkString(", ")}...")
+            AppLogger.info(s"Compiling Sync Classes for ${toCompile.map(_.clazz.getSimpleName).mkString(", ")}...")
             requestFactory.makeMultiRequest(toCompile)
         }.getCompileTime
-        AppLogger.debug(s"Compilation done in $ct ms.")
+        AppLogger.info(s"Compilation done in $ct ms.")
     }
 
     override def isWrapperClassGenerated(clazz: Class[_]): Boolean = {

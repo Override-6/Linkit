@@ -75,7 +75,7 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz:
 
     private def getFiltered: Iterable[Method] = {
         getAllMethods
-            .distinctBy(m => (m.getName, m.getParameterTypes))
+            .distinctBy(m => (m.getName, m.getParameterTypes, m.getReturnType.getName))
             .filterNot(applyNotFilter)
     }
 

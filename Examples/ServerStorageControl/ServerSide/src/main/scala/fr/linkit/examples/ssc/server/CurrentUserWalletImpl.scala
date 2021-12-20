@@ -3,12 +3,14 @@ package fr.linkit.examples.ssc.server
 
 import java.sql.Timestamp
 import java.util.Random
-import fr.linkit.examples.ssc.api.{CurrentUserAccount, CurrentUserWallet, UserWallet, WalletTransaction}
+import fr.linkit.examples.ssc.api.{CurrentUserAccount, CurrentUserWallet, UserAccount, UserWallet, WalletTransaction}
 
 import scala.collection.mutable.ListBuffer
 
-class CurrentUserWalletImpl(override val owner: CurrentUserAccount,
+class CurrentUserWalletImpl(override val ownerCurrent: CurrentUserAccount,
                             override val name: String) extends CurrentUserWallet {
+
+    override val owner: UserAccount = ownerCurrent
 
     private var amount  = 0
     private val history = ListBuffer.empty[WalletTransaction]

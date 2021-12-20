@@ -27,7 +27,7 @@ case class MethodDescription(javaMethod: Method,
     val params: Array[Parameter] = javaMethod.getParameters
     val methodId: Int = {
         val parameters: Array[Class[_]] = javaMethod.getParameterTypes
-        javaMethod.getName.hashCode + hashCode(parameters)
+        javaMethod.getName.hashCode + hashCode(parameters) + javaMethod.getReturnType.getName.hashCode
     }
 
     def getName: String = javaMethod.getName

@@ -9,7 +9,8 @@ trait CurrentUserAccount extends UserAccount {
     @MethodControl(value = ONLY_CACHE_OWNER, synchronizeReturnValue = true)
     def openWallet(name: String, initialAmount: Int): CurrentUserWallet
 
+    //FIXME method with same name parameter and same return is not supported by scbp class generation
     @MethodControl(value = ONLY_CACHE_OWNER, synchronizeReturnValue = true)
-    override def findWallet(name: String): CurrentUserWallet
+    def findCurrentWallet(name: String): CurrentUserWallet
 
 }

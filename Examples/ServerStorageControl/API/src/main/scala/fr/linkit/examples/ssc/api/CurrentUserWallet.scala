@@ -6,7 +6,7 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{FullRemote, M
 @FullRemote(ONLY_CACHE_OWNER)
 trait CurrentUserWallet extends UserWallet {
 
-    val owner: CurrentUserAccount
+    val ownerCurrent: CurrentUserAccount
 
     @MethodControl(ONLY_CACHE_OWNER)
     def getAmount: Int

@@ -55,6 +55,8 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         //fixme quick wobbly fix
         if (traffic != null && traffic.currentIdentifier == engineId)
             return isLocationReferenced(location)
+
+        AppLogger.warn(s"Asking to '$engineId' if location $location is present")
         channel
             .makeRequest(ChannelScopes.include(engineId))
             .addPacket(EmptyPacket)
@@ -110,14 +112,17 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         val reference: R      = bundle.linkerReference.asInstanceOf[R]
         val pct = request.nextPacket[Packet]
         val senderId = bundle.coords.senderID
+        AppLogger.warn(s"handling bundle, request from $senderId. packet : $pct")
         pct match {
             case EmptyPacket =>
                 val isPresent = isLocationReferenced(reference)
+                AppLogger.warn(s"is $reference present in this engine : $isPresent")
                 responseSubmitter
                     .addPacket(BooleanPacket(isPresent))
                     .submit()
                 val presence = internalPresences(reference)
                 presence.setPresenceFor(senderId, if (isPresent) PRESENT else NOT_PRESENT)
+                AppLogger.warn(s"presence information sent and modified for '$senderId' to ${if (isPresent) PRESENT else NOT_PRESENT}")
 
             case AnyRefPacket(presence: ObjectPresenceType) =>
                 val listener = externalPresences(reference)

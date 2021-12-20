@@ -13,7 +13,6 @@ class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) ext
 
     val (nonOriginalObjectsImplClass, fullRemoteDefaultRule) = computeImplementationLevel(clazz)
 
-
     override protected def applyNotFilter(e: Executable): Boolean = {
         isNotOverridable(e) ||
                 //FIXME Weird bug due to scala's Any and AnyRef stuff...
@@ -44,9 +43,9 @@ class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) ext
         val interfaces = clazz.getInterfaces
         if (interfaces.nonEmpty) {
             for (itf <- interfaces) {
-                val result = computeImplementationLevel(itf)
-                if (result != itf || itf.isAnnotationPresent(classOf[FullRemote]))
-                    return result
+                val (clazz, rule) = computeImplementationLevel(itf)
+                if (clazz != itf || rule.nonEmpty)
+                    return (clazz, rule)
             }
         }
         (clazz, None)

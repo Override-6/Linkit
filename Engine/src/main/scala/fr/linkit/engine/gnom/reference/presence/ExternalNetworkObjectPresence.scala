@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.reference.presence
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
 import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
@@ -32,6 +33,7 @@ class ExternalNetworkObjectPresence[L <: NetworkObjectReference](handler: Abstra
             throw new NullPointerException("engineId is null.")
         presences.getOrElseUpdate(engineId, {
             val present = handler.askIfPresent(engineId, location)
+            AppLogger.warn(s"is present : $present")
             if (present) PRESENT
             else NOT_PRESENT
         })

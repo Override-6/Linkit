@@ -106,15 +106,13 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
 
     private def makeMemberInvocation(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
         Try(chip.callMethod(packet.methodID, packet.params, senderID)) match {
-            case Success(value)     => value match {
-                case anyRef: AnyRef => handleInvocationResult(anyRef, packet, response)
-                case _              => //do not synchronize primitives (note: this is impossible to get an unwrapped primitive but this match is for the scalac logic)
-            }
+            case Success(value)     => handleInvocationResult(value.asInstanceOf[AnyRef], packet, response)
             case Failure(exception) => exception match {
                 case NonFatal(e) =>
                     e.printStackTrace()
                     if (packet.expectedEngineIDReturn == currentIdentifier)
                         response.addPacket(RMIExceptionString(e.toString)).submit()
+                case o           => throw o
             }
         }
     }
