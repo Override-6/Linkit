@@ -20,6 +20,8 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescripti
 
 trait SynchronizedStructureBehavior[A <: AnyRef] {
 
+    val isFullRemote: Boolean
+
     def listMethods(): Iterable[UsageMethodBehavior]
 
     def getMethodBehavior(id: Int): Option[UsageMethodBehavior]

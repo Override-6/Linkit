@@ -46,7 +46,7 @@ object ServerBankLauncher {
 
     private def launchApp(): ServerConnection = {
         val config = new ServerApplicationConfigBuilder {
-            val resourceFolder: String = "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\Linkit\\Home"
+            val resourceFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = ServerIdentifier
@@ -54,7 +54,7 @@ object ServerBankLauncher {
                 }
             }
         }
-        ServerApplication.launch(config, getClass)
+        ServerApplication.launch(config, classOf[UserAccountContainer])
                 .findConnection(ServerIdentifier)
                 .get
     }

@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, ResponseHolder}
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
@@ -35,8 +36,11 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     private      val traffic                    = channel.traffic
     override     val currentIdentifier: String  = traffic.currentIdentifier
     private      val writer                     = traffic.newWriter(channel.trafficPath)
+    private      val channelNode                = traffic.findNode(channel.trafficPath).get
 
     override def isCurrentEngineOwner: Boolean = ownerID == currentIdentifier
+
+    private def isPerformant = channelNode.preferPerformances()
 
     override def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R = {
         val agreement = invocation.agreement
@@ -80,9 +84,11 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val desc     = invocation.methodContract.description
         val methodId = desc.methodId
 
-        val scope      = new AgreementScope(writer, network, agreement)
-        val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
-        invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
+        runLaterIfPerformant {
+            val scope      = new AgreementScope(writer, network, agreement)
+            val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
+            invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
+        }
     }
 
     override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with SynchronizedObject[AnyRef] = {
@@ -105,7 +111,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
 
         override def foreachEngines(action: String => Array[Any]): Unit = {
-            scope.foreachAcceptedEngines(engineID => {
+            scope.foreachAcceptedEngines(engineID => runLaterIfPerformant {
                 //return engine is processed at last, don't send a request to the current engine
                 if (engineID != returnEngine && engineID != currentIdentifier)
                     makeRequest(ChannelScopes.include(engineID)(writer), action(engineID))
@@ -113,6 +119,12 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             if (returnEngine != null && returnEngine != currentIdentifier)
                 handleResponseHolder(makeRequest(ChannelScopes.include(returnEngine)(writer), action(returnEngine)))
         }
+    }
+
+    private val procrastinator: Procrastinator = network.connection
+    private def runLaterIfPerformant(action: => Unit): Unit = {
+        if (isPerformant) procrastinator.runLater(action)
+        else action
     }
 
 }

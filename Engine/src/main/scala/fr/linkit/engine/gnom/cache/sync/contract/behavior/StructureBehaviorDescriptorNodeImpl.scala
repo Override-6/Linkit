@@ -13,7 +13,6 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.MethodControl
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{GenericMethodBehavior, MethodBehavior, UsageMethodBehavior}
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{SyncObjectContext, SynchronizedStructureBehavior}
@@ -23,12 +22,11 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.{MethodCompModifier, 
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ParameterContract, StructureContractDescriptor, SynchronizedStructureContract}
 import fr.linkit.api.gnom.cache.sync.invokation.remote.MethodInvocationHandler
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.MethodParameterBehavior
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contract.modification.DefaultValueMultiModifier
 import fr.linkit.engine.gnom.cache.sync.contract.{AbstractSynchronizedStructure, MethodParameterContract}
-import fr.linkit.engine.gnom.cache.sync.invokation.{DefaultMethodInvocationHandler, GenericRMIRulesAgreementBuilder}
+import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -130,8 +128,9 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         fillWithAnnotatedBehaviors(classDesc, methodMap, fieldMap, context)
 
         val bhv = new AbstractSynchronizedStructure[UsageMethodBehavior, FieldBehavior[Any]] with SynchronizedStructureBehavior[A] {
-            override protected val methods: Map[Int, UsageMethodBehavior] = methodMap.view.mapValues(_.behavior).toMap
-            override protected val fields : Map[Int, FieldBehavior[Any]]  = fieldMap.toMap
+            override           val isFullRemote: Boolean                       = classDesc.fullRemoteDefaultRule.nonEmpty
+            override protected val methods     : Map[Int, UsageMethodBehavior] = methodMap.view.mapValues(_.behavior).toMap
+            override protected val fields      : Map[Int, FieldBehavior[Any]]  = fieldMap.toMap
 
             override def getFieldBehavior(id: Int): Option[FieldBehavior[Any]] = getField(id)
 

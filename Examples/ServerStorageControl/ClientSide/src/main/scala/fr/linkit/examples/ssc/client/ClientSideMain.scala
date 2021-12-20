@@ -16,7 +16,7 @@ object ClientSideMain {
 
     def main(args: Array[String]): Unit = {
         val accounts = connectToAccounts()
-
+        println("Successfully connected !")
         val handler = new UserInputHandler(accounts)
         do {
             val inputs = StdIn.readLine().split("\\s")
@@ -37,7 +37,7 @@ object ClientSideMain {
 
     private def launchApp(identifier0: String): ExternalConnection = {
         val config = new ClientApplicationConfigBuilder {
-            val resourcesFolder: String = "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\Linkit\\Home"
+            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {
                     override val identifier   : String            = identifier0
@@ -45,7 +45,7 @@ object ClientSideMain {
                 }
             }
         }
-        ClientApplication.launch(config, getClass)
+        ClientApplication.launch(config, getClass, classOf[UserAccountContainer])
             .findConnection(identifier0)
             .get
     }

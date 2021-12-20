@@ -8,5 +8,5 @@ class UserAccountImpl(val current: CurrentUserAccount) extends UserAccount {
 
     override def getWallets: Seq[UserWallet] = current.getWallets
 
-    override def findWallet(name: String): Option[UserWallet] = current.findWallet(name)
+    override def findWallet(name: String): UserWallet = current.findWallet(name)
 }

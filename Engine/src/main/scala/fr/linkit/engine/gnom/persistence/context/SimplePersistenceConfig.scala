@@ -15,11 +15,14 @@ package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.context._
+import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
+import fr.linkit.engine.gnom.persistence.context.SimplePersistenceConfig.FullRemoteObjectPersistence
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
-import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
+import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ClassMap
 
 import scala.collection.mutable
@@ -50,7 +53,12 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     }
 
     private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: TypeProfile[T]): DefaultTypeProfile[T] = {
-        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](persist))
+        val desc                                    = SyncObjectDescription(clazz.getSuperclass)
+        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map {
+            persist =>
+                val p = if (desc.fullRemoteDefaultRule.nonEmpty) FullRemoteObjectPersistence else persist
+                new SynchronizedObjectsPersistence[T](p)
+        }
         new DefaultTypeProfile[T](clazz, this, persistences)
     }
 
@@ -93,4 +101,16 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         new ConstructorTypePersistence[T](clazz, constructor.get, deconstructor.get)
     }
 
+}
+
+object SimplePersistenceConfig {
+
+    //Used for Remote Synchronized Objects
+    private final val FullRemoteObjectPersistence = new TypePersistence[AnyRef] {
+        override val structure: ObjectStructure = ArrayObjectStructure()
+
+        override def initInstance(allocatedObject: AnyRef, args: Array[Any], box: ControlBox): Unit = ()
+
+        override def toArray(t: AnyRef): Array[Any] = Array.empty
+    }
 }

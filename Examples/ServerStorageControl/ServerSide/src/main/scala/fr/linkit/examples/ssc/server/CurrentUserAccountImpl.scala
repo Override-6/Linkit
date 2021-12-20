@@ -14,7 +14,7 @@ class CurrentUserAccountImpl(override val name: String) extends CurrentUserAccou
         wallets.getOrElseUpdate(name, new CurrentUserWalletImpl(this, name))
     }
 
-    override def findWallet(name: String): Option[CurrentUserWallet] = wallets.get(name)
+    override def findWallet(name: String): CurrentUserWallet = wallets.get(name).orNull
 
     override def getWallets: Seq[UserWallet] = wallets.values.toSeq
 }

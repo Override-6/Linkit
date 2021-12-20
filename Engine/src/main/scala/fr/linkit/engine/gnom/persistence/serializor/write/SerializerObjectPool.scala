@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
@@ -125,7 +126,7 @@ class SerializerObjectPool(bundle: PersistenceBundle,
             case _               => NotSerializableLambdasTypePersistence
         }
         val representation = ltp.toRepresentation(lambdaObject)
-        val decomposed     = addAndReturnDecomposed(representation)
+        val decomposed     = addObjectAndReturnDecomposed(representation)
         val slo            = new SimpleLambdaObject(lambdaObject, decomposed, representation)
         getChunkFromFlag(Lambda).add(slo)
     }
@@ -160,15 +161,15 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         clazz.getSimpleName.contains("$$Lambda$")
     }
 
-    private def addAndReturnDecomposed(ref: AnyRef): Array[Any] = {
-        addTypeOfIfAbsent(ref)
+    private def addObjectAndReturnDecomposed(ref: AnyRef): Array[Any] = {
+        val selectedRefType = addTypeOfIfAbsent(ref)
         val profile     = config.getProfile[AnyRef](ref.getClass)
         val persistence = profile.getPersistence(ref)
         val decomposed  = persistence.toArray(ref)
         val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
 
         //do not swap those two lines
-        objPool.add(new SimpleObject(ref, decomposed, profile))
+        objPool.add(new SimpleObject(ref, selectedRefType, decomposed, profile))
         addAll(decomposed)
         decomposed
     }
@@ -177,7 +178,7 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         //val clazz   = ref.getClass
         val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
-            addAndReturnDecomposed(ref)
+            addObjectAndReturnDecomposed(ref)
             ref match {
                 case no: NetworkObject[_] =>
                     AppLogger.info(s"A network object ${no.reference} was missing on targeted engine ${bundle.boundId}.")
@@ -200,9 +201,19 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         }
     }
 
-    private def addTypeOfIfAbsent(ref: AnyRef): Unit = ref match {
-        case sync: SynchronizedObject[_] => getChunkFromFlag(SyncClass).addIfAbsent(sync.getSuperClass)
-        case _                           => getChunkFromFlag(Class).addIfAbsent(ref.getClass)
+    private def addTypeOfIfAbsent(ref: AnyRef): Class[_] = ref match {
+        case sync: SynchronizedObject[_] =>
+            val desc = sync.getNode.contract.description
+            val implClass = desc match {
+                case s: SyncObjectDescription[_] => s.nonOriginalObjectsImplClass
+                case o => o.clazz
+            }
+            getChunkFromFlag(SyncClass).addIfAbsent(implClass)
+            implClass
+        case _                           =>
+            val clazz = ref.getClass
+            getChunkFromFlag(Class).addIfAbsent(clazz)
+            clazz
     }
 
     private def addAll(objects: Array[Any]): Unit = {

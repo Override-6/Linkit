@@ -16,11 +16,13 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, InvalidSyncClassRequestException, SynchronizedObject}
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.internal.mapping.ClassMappings
+
+import scala.util.Try
 
 class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends SyncClassCenter {
 
@@ -49,7 +51,10 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         val clazz = desc.clazz
         val opt   = resources.findClass[S](clazz)
         if (opt.isDefined) opt.get
-        else genClass[S](desc)
+        else {
+            Try(Class.forName(desc.classPackage + '.' + desc.className)).getOrElse(genClass[S](desc))
+                    .asInstanceOf[Class[S with SynchronizedObject[S]]]
+        }
     }
 
     private def genClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
@@ -61,8 +66,8 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         }
         AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
         val syncClass = result.getResult
-            .get
-            .asInstanceOf[Class[S with SynchronizedObject[S]]]
+                .get
+                .asInstanceOf[Class[S with SynchronizedObject[S]]]
         ClassMappings.putClass(syncClass)
         syncClass
     }
@@ -72,12 +77,13 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
      * it explicitly defines the `reference: T` method of the interface.
      * @param clazz
      */
-        //TODO explain this furtherly
+    //TODO explain this furtherly
     private def checkClassValidity(clazz: Class[_]): Unit = {
         if (!classOf[NetworkObject[_]].isAssignableFrom(clazz))
             return
 
-            ensureClassValidity(clazz, Array())
+        ensureClassValidity(clazz, Array())
+
         def ensureClassValidity(cl: Class[_], path: Array[Class[_]]): Unit = {
             val interfaces = cl.getInterfaces
             if (!interfaces.contains(classOf[NetworkObject[_]]))

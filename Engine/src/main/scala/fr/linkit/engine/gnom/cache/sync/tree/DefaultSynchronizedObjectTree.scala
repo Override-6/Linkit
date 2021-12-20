@@ -117,7 +117,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             case Some(value: SyncNode[B]) =>
                 value
             case None                     =>
-                val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](source))
+                val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))
                 val node       = initSynchronizedObject[B](parent, id, syncObject, source, ownerID)
                 node
         }

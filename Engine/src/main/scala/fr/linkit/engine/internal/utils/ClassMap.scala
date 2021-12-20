@@ -36,7 +36,7 @@ class ClassMap[V] extends mutable.HashMap[Class[_], V]() {
 
     private def getFirstSuper(key: Class[_]): Option[V] = {
         if (key == null)
-            return None
+            return super.get(classOf[Object])
 
         val interfaces = key.getInterfaces
         for (interface <- interfaces) {

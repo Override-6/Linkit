@@ -38,7 +38,6 @@ public class JavaObject {
     }
 
     public void test(long a, int b, char c, byte d, float f, double g, boolean z, float ff, double dd){
-
     }
 
 }

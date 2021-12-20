@@ -68,7 +68,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def presence: NetworkObjectPresence = presenceOnNetwork
 
-    override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
+    override def getOriginClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
 
     override def getChoreographer: InvocationChoreographer = choreographer
 

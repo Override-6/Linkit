@@ -76,8 +76,8 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
     def isOwnedByCurrent: Boolean
 
     /**
-     * @return this class's super class.
+     * @return the original type of the synchronized object
      */
-    def getSuperClass: Class[T]
+    def getOriginClass: Class[T]
 
 }

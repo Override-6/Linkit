@@ -34,6 +34,8 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
     private val controller = new SimpleWorkerController()
 
     override def add(e: A): Boolean = {
+        if (e == null)
+            throw new NullPointerException("attempted to add a null item.")
         content.synchronized {
             content.add(e)
             AppLogger.vError(s"Added ${e} in content $this (${System.identityHashCode(this)})")
@@ -53,7 +55,10 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
     }
 
     override def poll(): A = content.synchronized {
-        content.pollFirst()
+        val x = content.pollFirst()
+        if (x == null)
+            throw new NullPointerException("poll returned null")
+        x
     }
 
     @workerExecution

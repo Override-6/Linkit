@@ -151,9 +151,9 @@ class ObjectReader(bundle: PersistenceBundle,
     }
 
     private def readLambdaObject(): NotInstantiatedLambdaObject = {
-        val isSerializable                             = buff.get() == 1
-        val persistence = if (isSerializable) SerializableLambdasTypePersistence else NotSerializableLambdasTypePersistence
-        new NotInstantiatedLambdaObject(readObject(), persistence.asInstanceOf[LambdaTypePersistence[AnyRef]])
+        //val isSerializable                             = buff.get() == 1
+        //val persistence = if (isSerializable) SerializableLambdasTypePersistence else NotSerializableLambdasTypePersistence
+        new NotInstantiatedLambdaObject(readObject(), SerializableLambdasTypePersistence.asInstanceOf[LambdaTypePersistence[AnyRef]])
     }
 
     private def readObject(): NotInstantiatedObject[AnyRef] = {

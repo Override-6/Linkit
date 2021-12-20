@@ -13,10 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.instantiation
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.SyncObjectException
 
-trait SyncInstanceInstantiator {
-
-    def newSynchronizedInstance[A <: AnyRef](creator: SyncInstanceCreator[A]): A with SynchronizedObject[A]
+class SyncObjectInstantiationException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
 
 }

@@ -13,17 +13,17 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import java.lang.reflect.{Method, Modifier}
-
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
+import fr.linkit.api.gnom.cache.sync.invokation.local.AbstractMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{SuperMethodModifiers, getMethodDescriptor}
 import javassist._
 import javassist.bytecode.MethodInfo
 
+import java.lang.reflect.{Method, Modifier}
 import scala.collection.mutable.ListBuffer
 
 class SyncClassRectifier(desc: SyncStructureDescription[_],
@@ -31,12 +31,11 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
                          classLoader: GeneratedClassLoader,
                          superClass: Class[_]) {
 
-
     private val pool = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
     private val ctClass = pool.get(syncClassName)
 
-    ctClass.setSuperclass(pool.get(superClass.getName))
+    makeExtend()
     fixAllMethods()
     addAllConstructors()
     fixNetworkObjectInherance()
@@ -47,6 +46,14 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
         (bc, classLoader.defineClass(bc, ctClass.getName).asInstanceOf[Class[SynchronizedObject[_]]])
     }
 
+    private def makeExtend(): Unit = {
+        val ctSuperClass = pool.get(superClass.getName)
+        if (superClass.isInterface)
+            ctClass.addInterface(ctSuperClass)
+        else
+            ctClass.setSuperclass(ctSuperClass)
+    }
+
     private def fixNetworkObjectInherance(): Unit = {
         if (!classOf[NetworkObject[_]].isAssignableFrom(superClass))
             return
@@ -55,11 +62,11 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
 
         // Removes a potential 'reference' method that overrides the actual superClass's reference method and returns the wrong reference object
         val met = ctClass.getDeclaredMethods
-            .find(m => m.getName == "reference" && m.getReturnType.getName != classOf[SyncObjectReference].getName)
-            .get
+                .find(m => m.getName == "reference" && m.getReturnType.getName != classOf[SyncObjectReference].getName)
+                .get
         ctClass.removeMethod(met)
         addMethod("reference", s"()L${slashDot(classOf[NetworkObjectReference])};")
-            .setBody("return location();")
+                .setBody("return location();")
     }
 
     private def addMethod(name: String, signature: String): CtMethod = {
@@ -128,17 +135,17 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
         val methodDesc       = getMethodDescriptor(javaMethod)
         val anonFunPrefix    = s"$$anonfun$$${javaMethod.getName}$$"
         val filtered         = ctClass.getDeclaredMethods
-            .filter(_.getName.startsWith(anonFunPrefix))
-            .filterNot(_.getName.endsWith("adapted"))
+                .filter(_.getName.startsWith(anonFunPrefix))
+                .filterNot(_.getName.endsWith("adapted"))
         val method           = filtered
-            .find { x =>
-                val params = x.getParameterTypes.drop(1).dropRight(1)
-                val desc   = getMethodDescriptor(params, methodReturnType)
-                desc == methodDesc
-            }
-            .getOrElse {
-                throw new NoSuchElementException(s"Could not find anonymous function '$anonFunPrefix'")
-            }
+                .find { x =>
+                    val params = x.getParameterTypes.drop(1).dropRight(1)
+                    val desc   = getMethodDescriptor(params, methodReturnType)
+                    desc == methodDesc
+                }
+                .getOrElse {
+                    throw new NoSuchElementException(s"Could not find anonymous function '$anonFunPrefix'")
+                }
         method
     }
 
@@ -185,13 +192,19 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     }
 
     private def getSuperFunBody(javaMethod: Method): String = {
-        val str =
-            s"""
-               |super.${javaMethod.getName}(${(1 to javaMethod.getParameterCount).map(i => s"$$$i").mkString(",")});
+        if (Modifier.isAbstract(javaMethod.getModifiers)) {
+            s"""{
+               |Throwable x = new ${classOf[AbstractMethodInvocationException].getName}(\"Attempted to call an abstract method on this object. (${javaMethod.getName} in ${superClass} is abstract.)\", null);
+               |throw x;
+               |}
                |""".stripMargin
-        if (javaMethod.getReturnType == Void.TYPE)
-            str
-        else s"return $str"
+        } else {
+            val str = {
+                s"super.${javaMethod.getName}(${(1 to javaMethod.getParameterCount).map(i => s"$$$i").mkString(",")});".stripMargin
+            }
+            if (javaMethod.getReturnType == Void.TYPE) str
+            else s"return $str"
+        }
     }
 
 }
@@ -241,7 +254,7 @@ object SyncClassRectifier {
             sb.append(typeStringClass(clazz))
         }
         sb.append(')')
-            .append(typeStringClass(returnType))
+                .append(typeStringClass(returnType))
         sb.toString()
     }
 
@@ -252,7 +265,7 @@ object SyncClassRectifier {
             sb.append(typeStringCtClass(clazz))
         }
         sb.append(')')
-            .append(typeStringClass(returnType))
+                .append(typeStringClass(returnType))
         sb.toString()
     }
 
@@ -266,8 +279,8 @@ object SyncClassRectifier {
         val jvmTpe = StringToPrimitiveID.getOrElse(cl.getName, {
             val objSB = new StringBuilder()
             objSB.append("L")
-                .append(cl.getName.replace(".", "/"))
-                .append(";")
+                    .append(cl.getName.replace(".", "/"))
+                    .append(";")
             objSB.toString()
         })
         finalSB.append(jvmTpe)

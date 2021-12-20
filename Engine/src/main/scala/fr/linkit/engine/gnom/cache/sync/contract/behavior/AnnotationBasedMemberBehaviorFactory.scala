@@ -20,10 +20,12 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{GenericMet
 import fr.linkit.api.gnom.cache.sync.contract.description._
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior}
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.DefaultGenericMethodBehavior
 import fr.linkit.engine.gnom.cache.sync.invokation.GenericRMIRulesAgreementBuilder
 
 import java.lang.reflect.{Method, Parameter}
+import scala.util.{Success, Try}
 
 object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
@@ -42,13 +44,57 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         new MethodParameterBehavior[Any](isSynchronized)
     }
 
+    private def getRule(isActivated: Boolean, control: MethodControl, classDec: SyncStructureDescription[_]): BasicInvocationRule = {
+        if (isActivated) control.value() else {
+            classDec match {
+                case desc: SyncObjectDescription[_] if desc.fullRemoteDefaultRule.nonEmpty =>
+                    desc.fullRemoteDefaultRule.get
+                case _                                                                     =>
+                    control.value()
+            }
+        }
+    }
+
     override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): GenericMethodBehavior = {
-        val javaMethod                 = desc.javaMethod
-        val controlOpt                 = Option(javaMethod.getAnnotation(classOf[MethodControl]))
-        val control                    = controlOpt.getOrElse(DefaultMethodControl)
-        val isActivated                = controlOpt.isDefined
+        val controlOpt = findMethodControl(desc)
+        extractMethodControlBehavior(controlOpt.isDefined, desc, controlOpt.getOrElse(DefaultMethodControl))
+    }
+
+    private def findMethodControl(desc: MethodDescription): Option[MethodControl] = {
+        var method = desc.javaMethod
+        while (method ne null) {
+            if (method.isAnnotationPresent(classOf[MethodControl])) {
+                return Some(method.getAnnotation(classOf[MethodControl]))
+            }
+
+            def overridingMethod(clazz: Class[_]) = Try(clazz.getMethod(method.getName, method.getParameterTypes: _*))
+
+            val declaringClass = method.getDeclaringClass
+
+            def nextOverridingMethod(): Method = {
+                Option(declaringClass.getSuperclass)
+                        .map(overridingMethod) match {
+                    case Some(Success(value)) => value
+                    case _                    =>
+                        val interfaces = declaringClass.getInterfaces
+                        for (itf <- interfaces) {
+                            overridingMethod(itf) match {
+                                case Success(value) => return value
+                                case _              =>
+                            }
+                        }
+                        null
+                }
+            }
+
+            method = nextOverridingMethod()
+        }
+        None
+    }
+
+    private def extractMethodControlBehavior(isActivated: Boolean, desc: MethodDescription, control: MethodControl): GenericMethodBehavior = {
         val paramBehaviors             = getParamBehaviors(desc.javaMethod)
-        val rule                       = control.value()
+        val rule                       = getRule(isActivated, control, desc.classDesc)
         val agreementBuilder           = rule.apply(new GenericRMIRulesAgreementBuilder())
         val isHidden                   = control.hide
         val forceLocalInnerInvocations = control.forceLocalInnerInvocations()

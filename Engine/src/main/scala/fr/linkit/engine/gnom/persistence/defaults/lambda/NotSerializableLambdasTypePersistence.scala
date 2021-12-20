@@ -14,17 +14,30 @@
 package fr.linkit.engine.gnom.persistence.defaults.lambda
 
 import fr.linkit.api.gnom.persistence.context.LambdaTypePersistence
+import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
+
+import java.lang.invoke.MethodHandles
 
 //TODO  https://stackoverflow.com/questions/23595136/get-a-list-of-classes-lambdas
 object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPRepresentation] {
 
+    private val lookup = MethodHandles.lookup()
+
     override def toRepresentation(lambdaObject: AnyRef): JLTPRepresentation = {
-        ???
+        throw new UnsupportedOperationException("Can't serialize not serializable lambdas")
+        val clazz = lambdaObject.getClass
+        val name = clazz.getName
+        val enclosingClass = name.take(name.indexOf("$$Lambda$"))
+        val decomposed = ObjectCreator.getAllFields(lambdaObject, clazz.getDeclaredFields)
+        JLTPRepresentation(enclosingClass, decomposed.asInstanceOf[Array[Any]])
     }
 
     override def toLambda(representation: JLTPRepresentation): AnyRef = {
+        val args = representation.lambdaParameters
+        val enclosing = Class.forName(representation.enclosingClass)
+        //val mtype = MethodType.methodType()
         ???
     }
 }
 
-class JLTPRepresentation(enclosingClass: String, lambdaParameters: Array[Any])
+case class JLTPRepresentation(enclosingClass: String, lambdaParameters: Array[Any])

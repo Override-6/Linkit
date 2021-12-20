@@ -2,6 +2,8 @@ package fr.linkit.examples.ssc.client
 
 import fr.linkit.examples.ssc.api.UserAccountContainer
 
+import scala.util.control.NonFatal
+
 class UserInputHandler(accounts: UserAccountContainer) {
 
     def performCommand(cmd: String, args: Array[String]): Unit = try {
@@ -9,19 +11,22 @@ class UserInputHandler(accounts: UserAccountContainer) {
             case "open"       => openWallet(args)
             case "send"       => sendMoney(args)
             case "getHistory" => printHistory(args)
+            case _ => Console.err.println("usage: open|send|getHistory")
         }
     } catch {
         case e: CmdException => Console.err.println(e.getMessage)
+        case NonFatal(e) => e.printStackTrace()
     }
 
     private def openWallet(args: Array[String]): Unit = {
         if (args.length != 2)
             fail("usage: open <wallet_name> <initial_amount>")
         val current       = accounts.getCurrentAccount
+        val clazz = current.getClass
         val walletName    = args(0)
         val initialAmount = args(1).toInt
-        current.findWallet(walletName).fold(current.openWallet(walletName, initialAmount)) {
-            fail(s"wallet '$walletName' already exists !")
+        Option(current.findWallet(walletName)).fold(current.openWallet(walletName, initialAmount)) {
+            fail(s"Wallet '$walletName' already exists !")
         }
     }
 
@@ -29,8 +34,8 @@ class UserInputHandler(accounts: UserAccountContainer) {
         if (args.length != 1)
             fail("usage: getHistory <wallet_name>")
         val walletName = args.head
-        accounts.getCurrentAccount
-            .findWallet(walletName)
+        Option(accounts.getCurrentAccount
+            .findWallet(walletName))
             .getOrElse(fail(s"could not find wallet '$walletName'"))
             .getHistory
             .foreach(println)
@@ -46,9 +51,9 @@ class UserInputHandler(accounts: UserAccountContainer) {
         val targetUserWalletName = args(3)
 
         val current      = accounts.getCurrentAccount
-        val wallet       = current.findWallet(currentWalletName).getOrElse(fail(s"could not find wallet '$currentWalletName'"))
+        val wallet       = Option(current.findWallet(currentWalletName)).getOrElse(fail(s"could not find wallet '$currentWalletName'"))
         val target       = accounts.getAccount(targetUserName)
-        val targetWallet = target.findWallet(targetUserName).getOrElse(fail(s"could not find wallet '$targetUserWalletName'"))
+        val targetWallet = Option(target.findWallet(targetUserName)).getOrElse(fail(s"could not find wallet '$targetUserWalletName'"))
         wallet.sendMoney(amount, targetWallet)
         println("Money sent !")
         println(s"Current amount for wallet $currentWalletName : ${wallet.getAmount}")

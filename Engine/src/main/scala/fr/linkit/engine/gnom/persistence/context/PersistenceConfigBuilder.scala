@@ -114,6 +114,8 @@ class PersistenceConfigBuilder {
     }
 
     def putContextReference(id: Int, ref: AnyRef): Unit = {
+        //if (ref == null)
+        //    throw new NullPointerException("can't bind null objects to references")
         referenceStore put(id, ref)
     }
 

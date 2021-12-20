@@ -106,7 +106,8 @@ class ObjectSelector(bundle: PersistenceBundle) {
 
     def findObject(reference: NetworkObjectReference): Option[AnyRef] = {
         gnol.findObject(reference) match {
-            case Some(value: ContextObject) => Some(value.obj)
+            case Some(value: ContextObject) =>
+                Some(value.obj)
             case o                          => o
         }
     }

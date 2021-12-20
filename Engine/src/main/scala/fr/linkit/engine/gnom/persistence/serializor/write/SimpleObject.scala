@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.persistence.obj.InstanceObject
 import fr.linkit.engine.internal.utils.{Identity, JavaUtils}
 
 class SimpleObject(override val value: AnyRef,
+                   val valueClass: Class[_],
                    val decomposed: Array[Any],
                    override val profile: TypeProfile[_]) extends InstanceObject[AnyRef] {
 

@@ -138,18 +138,17 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     @inline
     private def writeLambdaObject(poolObj: SimpleLambdaObject): Unit = {
-        putString(poolObj.deserializationOperatingMethodName)
-        writeObject(poolObj.representation, poolObj.representationDecomposed)
+        writeObject(poolObj.representation.getClass, poolObj.representationDecomposed)
     }
 
     @inline
     private def writeObject(poolObj: SimpleObject): Unit = {
-        writeObject(poolObj.value, poolObj.decomposed)
+        writeObject(poolObj.valueClass, poolObj.decomposed)
     }
 
-    private def writeObject(obj: AnyRef, decomposed: Array[Any]): Unit = {
-        //writing object class
-        putTypeRef(obj)
+    private def writeObject(objectType: Class[_], decomposed: Array[Any]): Unit = {
+        //writing object's class
+        putTypeRef(objectType)
         //writing object content
         ArrayPersistence.writeArrayContent(this, decomposed)
     }
@@ -162,6 +161,8 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     @inline
     def putRef(ref: Int): Unit = {
+        if (ref < 0)
+            throw new IndexOutOfBoundsException(s"Could not write negative reference into buffer.")
         if (widePacket) buff.putInt(ref)
         else buff.putChar(ref.toChar)
     }
@@ -174,13 +175,18 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     def putTypeRef(obj: AnyRef): Unit = {
         obj match {
-            case sync: SynchronizedObject[_] => putGeneratedTypeRef(sync.getSuperClass)
+            case sync: SynchronizedObject[_] => putGeneratedTypeRef(sync.getOriginClass)
             case _                           => putTypeRef(obj.getClass)
         }
     }
 
     def putTypeRef(tpe: Class[_]): Unit = {
-        putRef(pool.getChunkFromFlag(Class).indexOf(tpe))
+        val idx = pool.getChunkFromFlag(Class).indexOf(tpe)
+        if (idx == -1) {
+            putGeneratedTypeRef(tpe)
+            return
+        }
+        putRef(idx)
     }
 
     private def putGeneratedTypeRef(clazz: Class[_]): Unit = {

@@ -11,12 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.instantiation
+package fr.linkit.api.gnom.cache.sync.invokation.local
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.SyncObjectException
 
-trait SyncInstanceInstantiator {
-
-    def newSynchronizedInstance[A <: AnyRef](creator: SyncInstanceCreator[A]): A with SynchronizedObject[A]
-
-}
+class AbstractMethodInvocationException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause)

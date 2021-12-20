@@ -43,7 +43,6 @@ object DefaultMethodInvocationHandler extends MethodInvocationHandler {
             val argsString = args.mkString("(", ", ", ")")
             val className  = desc.classDesc.clazz
             AppLogger.debug(s"$name: Performing rmi call for ${className.getSimpleName}.$name$argsString (id: $methodID)")
-            AppLogger.debug(s"MethodBehavior = $behavior")
         }
         // From here we are sure that we want to perform a remote
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).

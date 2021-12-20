@@ -18,8 +18,21 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Determines that the synchronised instances of the annotated class
+ * are to be controlled remotely by engines that retrieves the synchronized object.
+ * <p>
+ * a Remote object works exactly the same as a synchronized object,
+ * excepted that any method invocation on an object which is not the original object will throw an exception.
+ * <p>
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FullRemote {
+
+    /**
+     * The default behavior applied on all methods
+     * */
+    BasicInvocationRule value() default BasicInvocationRule.ONLY_OWNER;
 
 }
