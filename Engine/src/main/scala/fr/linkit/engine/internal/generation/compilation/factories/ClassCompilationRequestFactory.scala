@@ -18,12 +18,12 @@ import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.api.internal.generation.compilation.{CompilationContext, CompilationRequest, CompilationResult}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.internal.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
-
 import java.nio.file.Path
+
+import fr.linkit.engine.application.LinkitApplication
 
 class ClassCompilationRequestFactory[I <: CompilationContext, C](blueprint: ClassBlueprint[I]) extends AbstractCompilationRequestFactory[I, Class[_ <: C]] {
 

@@ -62,7 +62,7 @@ object SyncObjectDescription {
 
     def apply[A <: AnyRef](clazz: Class[_]): SyncObjectDescription[A] = cache.getOrElseUpdate(clazz, {
         if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
-            throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
+            throw new IllegalArgumentException(s"Provided class already extends from SynchronizedObject ($clazz)")
         val AClass = clazz.asInstanceOf[Class[A]]
         new SyncObjectDescription[A](AClass)
     }).asInstanceOf[SyncObjectDescription[A]]

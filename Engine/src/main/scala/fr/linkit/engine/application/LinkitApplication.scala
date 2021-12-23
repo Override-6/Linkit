@@ -11,7 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal
+package fr.linkit.engine.application
+
+import java.nio.file.{Files, Path}
+import java.util.{Objects, Properties}
 
 import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.application.plugin.PluginManager
@@ -20,16 +23,14 @@ import fr.linkit.api.application.{ApplicationContext, ApplicationReference}
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.{ApiConstants, AppException, AppLogger, Version}
+import fr.linkit.engine.application.LinkitApplication.setInstance
 import fr.linkit.engine.application.plugin.LinkitPluginManager
 import fr.linkit.engine.application.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
-import fr.linkit.engine.internal.LinkitApplication.setInstance
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.mapping.ClassMapEngine
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
-import java.nio.file.{Files, Path}
-import java.util.{Objects, Properties}
 
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
@@ -114,7 +115,6 @@ object LinkitApplication {
     @volatile private var instance  : LinkitApplication = _
     @volatile private var isPrepared: Boolean           = false
 
-    //TODO Private this, public for tests purposes
     private def setInstance(instance: LinkitApplication): Unit = this.synchronized {
         if (this.instance != null)
             throw new IllegalAccessException("Only one LinkitApplication per JVM process is permitted.")
@@ -159,11 +159,11 @@ object LinkitApplication {
 
         val appResources        = prepareAppResources(configuration)
         val propertiesResources = appResources.find[LocalResourceFile](AppPropertiesName)
-                .getOrElse {
-                    val res = appResources.openResource(AppPropertiesName, LocalResourceFile)
-                    Files.write(res.getPath, getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes())
-                    res
-                }
+            .getOrElse {
+                val res = appResources.openResource(AppPropertiesName, LocalResourceFile)
+                Files.write(res.getPath, getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes())
+                res
+            }
         properties.load(Files.newInputStream(propertiesResources.getPath))
         AppLogger.info("Loading Native Libraries...")
         InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
@@ -173,7 +173,6 @@ object LinkitApplication {
     }
 
     def mapEnvironment(otherSources: Seq[Class[_]]): Unit = {
-
         ClassMapEngine.mapAllSourcesOfClasses(Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
         ClassMapEngine.mapJDK()
         ClassMapEngine.mapAllSourcesOfClasses(otherSources)

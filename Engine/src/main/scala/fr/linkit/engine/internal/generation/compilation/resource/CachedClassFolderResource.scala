@@ -17,10 +17,11 @@ import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.application.resource.representation.ResourceRepresentationFactory
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.resource.ClassFolderResource
-import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.mapping.ClassMappings
 import java.io.File
 import java.nio.file.{Files, Path}
+
+import fr.linkit.engine.application.LinkitApplication
 
 import scala.collection.mutable
 

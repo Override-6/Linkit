@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.packet.traffic
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.reference.DynamicNetworkObject
 
-trait TrafficObject[R <: TrafficReference] extends DynamicNetworkObject[R] {
+trait TrafficObject[+R <: TrafficReference] extends DynamicNetworkObject[R] {
 
     val trafficPath: Array[Int]
 

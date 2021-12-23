@@ -20,7 +20,7 @@ import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.internal.system
 import fr.linkit.api.internal.system._
 import fr.linkit.api.internal.system.security.ConnectionSecurityException
-import fr.linkit.engine.internal.LinkitApplication
+import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}

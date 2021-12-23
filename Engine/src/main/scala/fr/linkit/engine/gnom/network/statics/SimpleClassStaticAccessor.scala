@@ -8,7 +8,7 @@ import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
 
-abstract class SimpleClassStaticAccessor[A <: AnyRef] @Persist()(desc: SyncStructureDescription[A]) extends ClassStaticAccessor[A] with Deconstructible with SynchronizedObject[SimpleClassStaticAccessor[A]] {
+abstract class SimpleClassStaticAccessor[A <: AnyRef] @Persist()(desc: SyncStructureDescription[A]) extends ClassStaticAccessor[A] with Deconstructible {
     //override val behavior: SynchronizedStructureBehavior[A] = _
 
     private val methods = desc.listMethods()

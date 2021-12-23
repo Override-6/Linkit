@@ -61,6 +61,10 @@ trait TrafficNode[+C <: TrafficObject[TrafficReference]] {
 
     def chainIPU(reference: TrafficObjectReference): this.type = chainIPU(reference.trafficPath)
 
+    def chainIPU(trafficNode: TrafficNode[TrafficObject[TrafficReference]]): Unit = {
+        chainIPU(trafficNode.injectable.trafficPath)
+    }
+
     def chainIPU(path: Array[Int]): this.type
 
     /**

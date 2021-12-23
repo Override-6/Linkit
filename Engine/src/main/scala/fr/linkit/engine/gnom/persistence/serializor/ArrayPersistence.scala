@@ -83,7 +83,7 @@ object ArrayPersistence {
             buff.put(Object)
             val (absoluteComp, depth) = getAbsoluteCompType(array)
             buff.put(depth)
-            writer.putTypeRef(absoluteComp)
+            writer.putTypeRef(absoluteComp, false)
         }
         writeArrayContent(writer, array)
     }

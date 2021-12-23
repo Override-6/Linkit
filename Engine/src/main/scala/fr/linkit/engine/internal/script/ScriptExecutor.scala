@@ -18,12 +18,13 @@ import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile, ScriptHandler, ScriptInstantiator}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
 import fr.linkit.engine.application.resource.external.LocalResourceFolder
-
 import java.net.URL
+
+import fr.linkit.engine.application.LinkitApplication
+
 import scala.reflect.ClassTag
 
 object ScriptExecutor {

@@ -13,13 +13,13 @@
 
 package fr.linkit.api.gnom.network
 
+import java.sql.Timestamp
+
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.api.gnom.reference.StaticNetworkObject
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference, StaticNetworkObject}
-
-import java.sql.Timestamp
 
 trait Network extends StaticNetworkObject[NetworkReference] {
 

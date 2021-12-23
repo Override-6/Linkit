@@ -13,19 +13,19 @@
 
 package fr.linkit.engine.gnom.persistence
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
+import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
-import fr.linkit.engine.internal.LinkitApplication
-import java.nio.ByteBuffer
-
-import fr.linkit.api.gnom.network.statics.StaticAccess
 
 import scala.annotation.switch
 

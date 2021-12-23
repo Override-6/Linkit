@@ -25,6 +25,8 @@ trait PacketInjectableStore extends TrafficObject[TrafficReference] {
 
     val defaultPersistenceConfig: PersistenceConfig
 
+    override def reference: TrafficReference
+
     def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): TrafficNode[C] = {
         getInjectable[C](injectableID, defaultPersistenceConfig, factory, scopeFactory)
     }
@@ -41,7 +43,7 @@ trait PacketInjectableStore extends TrafficObject[TrafficReference] {
 
     def findStore(id: Int): Option[PacketInjectableStore]
 
-    def findInjectable[C <: PacketInjectable: ClassTag](id: Int): Option[C]
+    def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C]
 
     def createStore(id: Int): PacketInjectableStore = createStore(id, defaultPersistenceConfig)
 

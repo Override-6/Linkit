@@ -163,13 +163,14 @@ class SerializerObjectPool(bundle: PersistenceBundle,
 
     private def addObjectAndReturnDecomposed(ref: AnyRef): Array[Any] = {
         val selectedRefType = addTypeOfIfAbsent(ref)
-        val profile     = config.getProfile[AnyRef](ref.getClass)
-        val persistence = profile.getPersistence(ref)
-        val decomposed  = persistence.toArray(ref)
-        val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
+        val profile         = config.getProfile[AnyRef](ref.getClass)
+        val persistence     = profile.getPersistence(ref)
+        val decomposed      = persistence.toArray(ref)
+        val objPool         = getChunkFromFlag[InstanceObject[AnyRef]](Object)
 
         //do not swap those two lines
-        objPool.add(new SimpleObject(ref, selectedRefType, decomposed, profile))
+        val obj = new SimpleObject(ref, selectedRefType, ref.isInstanceOf[SynchronizedObject[_]], decomposed, profile)
+        objPool.add(obj)
         addAll(decomposed)
         decomposed
     }
@@ -203,10 +204,10 @@ class SerializerObjectPool(bundle: PersistenceBundle,
 
     private def addTypeOfIfAbsent(ref: AnyRef): Class[_] = ref match {
         case sync: SynchronizedObject[_] =>
-            val desc = sync.getNode.contract.description
+            val desc      = sync.getNode.contract.description
             val implClass = desc match {
                 case s: SyncObjectDescription[_] => s.nonOriginalObjectsImplClass
-                case o => o.clazz
+                case o                           => o.clazz
             }
             getChunkFromFlag(SyncClass).addIfAbsent(implClass)
             implClass

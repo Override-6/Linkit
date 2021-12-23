@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 
 trait PersistenceConfig extends TypeProfileStore {
 
+
     def contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH
 
     def widePacket: Boolean

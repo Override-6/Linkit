@@ -13,11 +13,13 @@
 
 package fr.linkit.server.test
 
+import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.gnom.cache.CacheSearchBehavior
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
+import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.utils.ScalaUtils
 import fr.linkit.server.test.PacketTest.{connection, serialAndDeserial}
 import org.junit.jupiter.api.TestInstance.Lifecycle
@@ -26,6 +28,13 @@ import org.junit.jupiter.api.{Test, TestInstance}
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTest {
     PacketTest // Load statics
+
+    @Test
+    def test(): Unit = {
+        val x = ObjectCreator.allocate(classOf[ApplicationConfiguration])
+        println(x)
+    }
+
 
     @Test
     def serialAndDeserialObject(): Unit = {

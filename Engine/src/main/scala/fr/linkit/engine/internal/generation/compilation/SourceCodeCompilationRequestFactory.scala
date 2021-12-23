@@ -15,10 +15,10 @@ package fr.linkit.engine.internal.generation.compilation
 
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.compilation.CompilationResult
-import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.SourceCodeCompilationRequest.SourceCode
-
 import java.nio.file.Path
+
+import fr.linkit.engine.application.LinkitApplication
 
 object SourceCodeCompilationRequestFactory extends AbstractCompilationRequestFactory[(SourceCode, ClassLoader), Class[_]] {
 

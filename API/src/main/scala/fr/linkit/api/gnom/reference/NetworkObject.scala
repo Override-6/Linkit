@@ -112,7 +112,7 @@ import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
  *  <p>
  *  @tparam R the type of reference of the network object
  * */
-trait NetworkObject[R <: NetworkObjectReference] {
+trait NetworkObject[+R <: NetworkObjectReference] {
 
     /**
      * The reference of this Network Object.

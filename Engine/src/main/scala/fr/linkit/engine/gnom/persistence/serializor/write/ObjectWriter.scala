@@ -128,7 +128,7 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     def getPool: SerializerObjectPool = pool
 
     private def putEnum(enum: Enum[_]): Unit = {
-        putTypeRef(enum.getClass)
+        putTypeRef(enum.getClass, forceSyncClass = false)
         putString(enum.name())
     }
 
@@ -138,17 +138,18 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     @inline
     private def writeLambdaObject(poolObj: SimpleLambdaObject): Unit = {
-        writeObject(poolObj.representation.getClass, poolObj.representationDecomposed)
+        val rep = poolObj.representation
+        writeObject(rep.getClass, rep.isInstanceOf[SynchronizedObject[_]], poolObj.representationDecomposed)
     }
 
     @inline
     private def writeObject(poolObj: SimpleObject): Unit = {
-        writeObject(poolObj.valueClass, poolObj.decomposed)
+        writeObject(poolObj.valueClass, poolObj.isSync, poolObj.decomposed)
     }
 
-    private def writeObject(objectType: Class[_], decomposed: Array[Any]): Unit = {
+    private def writeObject(objectType: Class[_], isSyncClass: Boolean, decomposed: Array[Any]): Unit = {
         //writing object's class
-        putTypeRef(objectType)
+        putTypeRef(objectType, isSyncClass)
         //writing object content
         ArrayPersistence.writeArrayContent(this, decomposed)
     }
@@ -173,14 +174,11 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         putRef(idx)
     }
 
-    def putTypeRef(obj: AnyRef): Unit = {
-        obj match {
-            case sync: SynchronizedObject[_] => putGeneratedTypeRef(sync.getOriginClass)
-            case _                           => putTypeRef(obj.getClass)
+    def putTypeRef(tpe: Class[_], forceSyncClass: Boolean): Unit = {
+        if (forceSyncClass) {
+            putGeneratedTypeRef(tpe)
+            return
         }
-    }
-
-    def putTypeRef(tpe: Class[_]): Unit = {
         val idx = pool.getChunkFromFlag(Class).indexOf(tpe)
         if (idx == -1) {
             putGeneratedTypeRef(tpe)

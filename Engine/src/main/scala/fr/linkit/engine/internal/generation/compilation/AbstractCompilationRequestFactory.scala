@@ -14,9 +14,9 @@
 package fr.linkit.engine.internal.generation.compilation
 
 import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilationRequestFactory, CompilationResult}
-import fr.linkit.engine.internal.LinkitApplication
-
 import java.nio.file.Path
+
+import fr.linkit.engine.application.LinkitApplication
 
 abstract class AbstractCompilationRequestFactory[I, O] extends CompilationRequestFactory[I, O] {
 

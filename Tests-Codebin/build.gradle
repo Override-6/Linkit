@@ -37,7 +37,7 @@ dependencies {
 }
 
 tasks.withType(AbstractCompile) {
-    options.compilerArgs += ["--module-path", "C:\\Users\\maxim\\.gradle\\caches\\modules-2\\files-2.1\\org.scala-lang\\scala-library\\2.13.6\\ed7a2f528c7389ea65746c22a01031613d98ab3d\\scala-library-2.13.6.jar"]
+    options.compilerArgs += ["--module-path", "C:\\Users\\Maxime\\.gradle\\caches\\modules-2\\files-2.1\\org.scala-lang\\scala-library\\2.13.6\\ed7a2f528c7389ea65746c22a01031613d98ab3d\\scala-library-2.13.6.jar"]
 }
 
 tasks.withType(Test) {

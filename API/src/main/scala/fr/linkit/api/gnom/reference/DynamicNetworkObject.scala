@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.reference
 
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 
-trait DynamicNetworkObject[R <: NetworkObjectReference] extends NetworkObject[R] {
+trait DynamicNetworkObject[+R <: NetworkObjectReference] extends NetworkObject[R] {
 
     def presence: NetworkObjectPresence
     /*

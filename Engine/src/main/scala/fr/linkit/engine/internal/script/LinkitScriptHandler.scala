@@ -15,9 +15,9 @@ package fr.linkit.engine.internal.script
 
 import fr.linkit.api.internal.generation.resource.ClassFolderResource
 import fr.linkit.api.internal.script.{ScriptFile, ScriptHandler, ScriptInstantiator}
-import fr.linkit.engine.internal.LinkitApplication
-
 import java.io.InputStream
+
+import fr.linkit.engine.application.LinkitApplication
 
 abstract class LinkitScriptHandler[S <: ScriptFile] extends ScriptHandler[S] {
 

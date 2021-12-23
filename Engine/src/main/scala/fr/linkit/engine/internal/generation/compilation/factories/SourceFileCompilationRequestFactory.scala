@@ -15,12 +15,12 @@ package fr.linkit.engine.internal.generation.compilation.factories
 
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilationRequestFactory, CompilationResult}
-import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.AbstractCompilationResult
 import fr.linkit.engine.internal.generation.compilation.factories.SourceFileCompilationRequestFactory.AbstractRequest
 import fr.linkit.engine.internal.mapping.ClassMappings
-
 import java.nio.file.Path
+
+import fr.linkit.engine.application.LinkitApplication
 
 class SourceFileCompilationRequestFactory extends CompilationRequestFactory[Path, Path] {
     override val defaultWorkingDirectory: Path = LinkitApplication.getPathProperty("compilation.working_dir")

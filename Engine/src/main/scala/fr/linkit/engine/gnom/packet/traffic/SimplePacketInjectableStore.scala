@@ -13,6 +13,8 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
+import java.io.Closeable
+
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
@@ -20,7 +22,6 @@ import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficRefere
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 
-import java.io.Closeable
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 

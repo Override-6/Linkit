@@ -37,7 +37,7 @@ object ClientSideMain {
 
     private def launchApp(identifier0: String): ExternalConnection = {
         val config = new ClientApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = "C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {
                     override val identifier   : String            = identifier0

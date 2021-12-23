@@ -15,12 +15,12 @@ package fr.linkit.engine.internal.system
 
 import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.internal.system.AppInitialisationException
-import fr.linkit.engine.internal.LinkitApplication
-
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
 import java.util.zip.{ZipEntry, ZipFile}
+
+import fr.linkit.engine.application.LinkitApplication
 
 private[linkit] object InternalLibrariesLoader {
 

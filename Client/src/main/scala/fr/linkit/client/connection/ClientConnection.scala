@@ -148,7 +148,6 @@ object ClientConnection {
 
         //WelcomePacket informational fields
         val identifier = configuration.identifier
-        //val hasherSignature = configuration.hasher.signature
 
         //Aliases
         val IDbytes   = identifier.getBytes()

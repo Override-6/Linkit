@@ -45,7 +45,8 @@ final class SharedCacheDistantManager @Persist()(family: String,
         try {
             val response = request.nextResponse
             response.nextPacket[Packet] match {
-                case StringPacket(errorMsg)               => throw new CacheOpenException(errorMsg + s"(this = $ownerID)")
+                case StringPacket(errorMsg)               =>
+                    throw new CacheOpenException(s"Could not open cache '$cacheID' in shared cache manager <$family, $ownerID>. Received error message from '$ownerID': $errorMsg")
                 case ref: RefPacket[Option[CacheContent]] =>
                     val content = ref.value
                     //println(s"Content '$cacheID' received ! ($content)")
