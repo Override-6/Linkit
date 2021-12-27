@@ -1,5 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: fr.linkit.client.Main
-Class-Path: scala-library-2.13.4.jar scala-reflect-2.13.4.jar scala-libr
- ary-2.13.4-sources.jar gson-2.8.5.jar annotations-16.0.2.jar
-

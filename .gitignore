@@ -7,6 +7,10 @@
 .gradle
 .idea
 */.vs
+/Examples/src
+/Examples/RemoteFileSystemControl/src
+/Examples/RemoteAPIImplementationControl/src
+/src
 CMakeSettings.json
 .idea_modules
 *.class
