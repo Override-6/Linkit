@@ -13,10 +13,7 @@
 
 package fr.linkit.server.test
 
-import fr.linkit.api.application.plugin.Plugin
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugPlugin
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
@@ -55,14 +52,6 @@ object ServerLauncher {
         }
         val serverApp = ServerApplication.launch(config, getClass)
         AppLogger.trace(s"Build complete: $serverApp")
-
-        serverApp.runLaterControl {
-            val pluginManager = serverApp.pluginManager
-            pluginManager.loadAllClass(Array(
-                classOf[ControllerExtension]: Class[_ <: Plugin],
-                classOf[DebugPlugin]: Class[_ <: Plugin],
-            ))
-        }.throwNextThrowable()
         AppLogger.info("Server Application launched.")
         serverApp
     }

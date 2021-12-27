@@ -13,18 +13,13 @@
 
 package fr.linkit.engine.application
 
-import java.nio.file.{Files, Path}
-import java.util.{Objects, Properties}
-
 import fr.linkit.api.application.config.ApplicationConfiguration
-import fr.linkit.api.application.plugin.PluginManager
 import fr.linkit.api.application.resource.external.{LocalFolder, ResourceFolder}
 import fr.linkit.api.application.{ApplicationContext, ApplicationReference}
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.{ApiConstants, AppException, AppLogger, Version}
 import fr.linkit.engine.application.LinkitApplication.setInstance
-import fr.linkit.engine.application.plugin.LinkitPluginManager
 import fr.linkit.engine.application.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
@@ -32,12 +27,13 @@ import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCe
 import fr.linkit.engine.internal.mapping.ClassMapEngine
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
 
+import java.nio.file.{Files, Path}
+import java.util.{Objects, Properties}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 abstract class LinkitApplication(configuration: ApplicationConfiguration, appResources: ResourceFolder) extends ApplicationContext {
 
-    override val pluginManager   : PluginManager  = new LinkitPluginManager(this)
     override val compilerCenter  : CompilerCenter = new DefaultCompilerCenter
     @volatile protected var alive: Boolean        = false
     protected val appPool: AbstractWorkerPool
@@ -59,9 +55,6 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
     override def isAlive: Boolean = alive
 
     protected def preShutdown(): Unit = {
-        wrapCloseAction("Plugin management") {
-            pluginManager.close()
-        }
         wrapCloseAction("Resource listener") {
             AppLogger.error("REMEMBER TO CLOSE RESOURCE LISTENER IN A FUTURE UPDATE WIH A DEDICATED CLASS FOR APP RESOURCES ROOT")
             //resourceListener.close()

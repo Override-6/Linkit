@@ -25,12 +25,9 @@ package fr.linkit.server.test
  *  questions.
  */
 
-import fr.linkit.api.application.plugin.Plugin
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.test.HierarchyRaiserOrderer
 import fr.linkit.api.test.TestUtils._
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugPlugin
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
@@ -73,21 +70,6 @@ object ServerTests {
         Assertions.assertAll("App launch conclusion",
             Assertions.assertNotNull(application)
         )
-    }
-
-    @Test
-    def plugins(): Unit = {
-        Assertions.assertNotNull(application)
-
-        application.runLaterControl {
-            val pluginManager = application.pluginManager
-            pluginManager.loadAllClass(Array(
-                classOf[ControllerExtension]: Class[_ <: Plugin],
-                classOf[DebugPlugin]: Class[_ <: Plugin],
-            ))
-        }.join()
-
-        AppLogger.info("Server Application ready to use.")
     }
 
     @AfterAll

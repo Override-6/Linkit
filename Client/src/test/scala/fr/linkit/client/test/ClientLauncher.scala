@@ -13,13 +13,10 @@
 
 package fr.linkit.client.test
 
-import fr.linkit.api.application.plugin.Plugin
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugPlugin
 import org.jetbrains.annotations.NotNull
 
 import java.io.File
@@ -136,13 +133,6 @@ object ClientLauncher {
         }
         val clientApp = ClientApplication.launch(config, getClass)
         AppLogger.trace(s"Build completed: $clientApp")
-        clientApp.runLaterControl {
-            val pluginManager = clientApp.pluginManager
-            pluginManager.loadAllClass(Array(
-                classOf[ControllerExtension]: Class[_ <: Plugin],
-                classOf[DebugPlugin]: Class[_ <: Plugin],
-            ))
-        }.throwNextThrowable()
         AppLogger.info("Client Application launched.")
         clientApp
     }
