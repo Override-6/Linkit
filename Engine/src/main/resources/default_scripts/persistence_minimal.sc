@@ -1,0 +1,33 @@
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.engine.gnom.network.{NetworkDataBundle, NetworkDataTrunk}
+import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
+import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
+import fr.linkit.engine.gnom.persistence.defaults._
+import fr.linkit.engine.internal.utils.Identity
+
+//Start Of Context
+val builder: PersistenceConfigBuilder = null
+val app    : ApplicationContext       = null
+val traffic: PacketTraffic            = null
+
+import builder._
+
+//ENd Of Context
+
+val connection = traffic.connection
+putContextReference(1, EmptyPacket)
+putContextReference(2, Identity(Nil))
+putContextReference(3, None)
+putContextReference(4, app)
+putContextReference(5, traffic)
+//FIXME connection is null -> putContextReference(6, connection)
+setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.fromData)
+//putPersistence(new ScalaIterableTypePersistence)
+//putPersistence(new ScalaMapTypePersistence)
+putPersistence(new JavaArrayListTypePersistence)
+putPersistence(new JavaHashMapTypePersistence)
+putPersistence(new JavaHashSetTypePersistence)
+//setTConverter[File, String](_.getAbsolutePath)(new File(_))
+//setTConverter[Date, Long](_.getTime)(new Date(_))
+//setTConverter[Timestamp, Long](_.getTime)(new Timestamp(_))

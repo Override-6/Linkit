@@ -1,0 +1,128 @@
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
+ *
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
+ */
+
+package fr.linkit.engine.application.plugin
+
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.plugin.{Plugin, PluginLoader, PluginManager}
+import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
+import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.application.plugin.fragment.SimpleFragmentManager
+import fr.linkit.engine.internal.mapping.ClassMapEngine
+
+import java.nio.file.{Files, NoSuchFileException, NotDirectoryException, Path}
+import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
+
+class LinkitPluginManager(context: ApplicationContext) extends PluginManager {
+
+    private val bridge  = new PluginClassLoaderBridge
+    private val plugins = ListBuffer.empty[Plugin]
+
+    override val fragmentManager: SimpleFragmentManager = new SimpleFragmentManager
+
+    @workerExecution
+    override def load(file: String): Plugin = {
+        WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
+        AppLogger.debug(s"Plugin $file is preparing to be loaded.")
+
+        val path = Path.of(file)
+
+        if (Files.notExists(path))
+            throw new NoSuchFileException(file)
+
+        val classLoader  = bridge.newClassLoader(Array(path))
+        val pluginLoader = new URLPluginLoader(context, classLoader)
+        enablePlugins(pluginLoader).head
+    }
+
+    @workerExecution
+    override def loadAll(folder: String): Array[Plugin] = {
+        WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
+        AppLogger.debug(s"Plugins into folder '$folder' are preparing to be loaded.")
+
+        val path = Path.of(folder)
+        if (Files.notExists(path))
+            throw new NoSuchFileException(folder)
+        if (Files.isDirectory(path))
+            throw new NotDirectoryException(folder)
+
+        val classLoader  = bridge.newClassLoader(Files.list(path).toArray(new Array(_)))
+        val pluginLoader = new URLPluginLoader(context, classLoader)
+        enablePlugins(pluginLoader)
+    }
+
+    @workerExecution
+    override def loadClass(clazz: Class[_ <: Plugin]): Plugin = {
+        loadAllClass(Array(clazz): Array[Class[_ <: Plugin]]).head
+    }
+
+    @workerExecution
+    override def loadAllClass(classes: Array[Class[_ <: Plugin]]): Array[Plugin] = {
+        if (classes.isEmpty)
+            return Array()
+
+        ClassMapEngine.mapAllSourcesOfClasses(classes)
+        WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
+        val pluginLoader = new DirectPluginLoader(context, classes)
+        enablePlugins(pluginLoader)
+    }
+
+    override def countPlugins: Int = plugins.length
+
+    private def enablePlugins(loader: PluginLoader): Array[Plugin] = {
+        val buffer = new Array[Plugin](loader.length)
+        for (i <- buffer.indices) {
+            buffer(i) = loader.nextPlugin()
+        }
+
+        def pluginName(implicit plugin: Plugin): String = plugin.name
+
+        def perform(action: Plugin => Unit): Unit = buffer.foreach(implicit plugin => {
+            try {
+                action(plugin)
+            } catch {
+                case NonFatal(e) =>
+                    AppLogger.error(s"Could not load '${pluginName}' : " + e.getMessage)
+                    throw e
+            }
+        })
+
+        AppLogger.trace(s"Loading plugins...")
+        perform(implicit plugin => {
+            AppLogger.trace(s"Loading ${pluginName}...")
+            plugin.onLoad()
+        })
+
+        AppLogger.trace(s"Enabling plugins...")
+        perform(implicit plugin => {
+            AppLogger.trace(s"Enabling ${pluginName}...")
+            plugin.onEnable()
+        })
+
+        plugins ++= buffer
+        buffer
+    }
+
+    override def close(): Unit = {
+        AppLogger.trace(s"Disabling plugins...")
+        plugins.foreach { plugin =>
+            AppLogger.trace(s"Disabling plugin ${plugin.name}...")
+            plugin.onDisable()
+            fragmentManager.destroyFragments(plugin.getClass)
+        }
+        plugins.clear()
+        fragmentManager.destroyAllFragments()
+    }
+
+}

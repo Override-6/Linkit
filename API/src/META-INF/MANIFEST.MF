@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: 
+Class-Path: annotations-16.0.2.jar scala-library-2.13.4.jar scala-reflec
+ t-2.13.4.jar scala-library-2.13.4-sources.jar
+
