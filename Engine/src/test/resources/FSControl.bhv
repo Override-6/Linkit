@@ -1,0 +1,19 @@
+import java.nio.file.Path
+import java.nio.file.Files
+import java.lang.String
+
+describe class Path as @full_remote {
+    forall methods enable as only_cache_owner
+}
+describe static class Path {
+    enable method of(String, String[]) {
+        modify 1 & 2 {
+            distant_to_current -> ${(param, _, remote) => remote.getProperty("FS_HOME") + s"/$param"}
+        }
+        synchronized returnvalue
+    }
+    hide method of(URI) "Please use method of(String, String[]) instead."
+}
+describe static class Files {
+    forall methods enable as only_cache_owner
+}
