@@ -4,6 +4,7 @@ import java.util.Scanner
 
 class BhvFileReader(scanner: Scanner) {
 
-
+    private var currentLineNumber: Int = 0
+    private var
 
 }
