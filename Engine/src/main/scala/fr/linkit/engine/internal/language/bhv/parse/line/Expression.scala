@@ -4,6 +4,8 @@ import org.jetbrains.annotations.Nullable
 
 trait Expression {
 
+    val kind: String
+
     @Nullable val clojure: Clojure
 
 }

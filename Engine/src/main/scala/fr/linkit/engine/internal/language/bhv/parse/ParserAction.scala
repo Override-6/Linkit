@@ -1,7 +1,7 @@
 package fr.linkit.engine.internal.language.bhv.parse
 
-trait ParserAction {
+trait ParserAction[X] {
 
-    def parse(reader: BhvFileReader): Unit
+    def parse(reader: BhvFileReader): X
 
 }
