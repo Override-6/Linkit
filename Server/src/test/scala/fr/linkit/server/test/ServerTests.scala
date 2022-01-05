@@ -49,7 +49,7 @@ object ServerTests {
         val resourcesFolder = getDefaultLinkitHome
 
         val config = new ServerApplicationConfigBuilder {
-            override val resourceFolder: String = resourcesFolder
+            override val resourcesFolder: String = resourcesFolder
             pluginFolder = None //userDefinedPluginFolder
             mainPoolThreadCount = 2
             loadSchematic = new ScalaServerAppSchematic {

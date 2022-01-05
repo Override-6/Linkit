@@ -21,7 +21,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 
 abstract class ServerApplicationConfigBuilder {
 
-    @NotNull val resourceFolder: String
+    @NotNull val resourcesFolder: String
               var mainPoolThreadCount: Int                             = 2
     @Nullable var pluginFolder       : Option[String]                  = Some("/Plugins")
     @NotNull  var securityManager    : ApplicationSecurityManager      = ApplicationSecurityManager.none
@@ -32,7 +32,7 @@ abstract class ServerApplicationConfigBuilder {
         val builder = this
         new ServerApplicationConfiguration {
             override val pluginFolder       : Option[String]                  = builder.pluginFolder
-            override val resourceFolder     : String                          = builder.resourceFolder
+            override val resourceFolder     : String                          = builder.resourcesFolder
             override val securityManager    : ApplicationSecurityManager      = builder.securityManager
             override val mainPoolThreadCount: Int                             = builder.mainPoolThreadCount
             override var loadSchematic      : AppSchematic[ServerApplication] = builder.loadSchematic
