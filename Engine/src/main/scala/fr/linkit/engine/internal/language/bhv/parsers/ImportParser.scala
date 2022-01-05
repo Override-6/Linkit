@@ -19,8 +19,8 @@ object ImportParser extends RegexParsers {
         var next: Input = new CharSequenceReader(file)
         val map         = mutable.HashMap.empty[String, Class[_]]
         while (!next.atEnd) {
-            parse(importExp, next) match {
-                case Failure(msg, _) => throw new BHVLanguageException("Failure: " + msg)
+            parseAll(importExp, file) match {
+                  case Failure(msg, _) => throw new BHVLanguageException("Failure: " + msg)
                 case Error(msg, _)   => throw new BHVLanguageException("Error: " + msg)
                 case Success(_ ~ cl, n)  =>
                     next = n

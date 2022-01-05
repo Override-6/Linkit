@@ -26,8 +26,7 @@ import scala.util.Try
 
 class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends SyncClassCenter {
 
-    val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-    val requestFactory                  = new SyncClassCompilationRequestFactory(center)
+    private val requestFactory                  = new SyncClassCompilationRequestFactory(center)
 
     override def getSyncClass[S <: AnyRef](clazz: Class[_]): Class[S with SynchronizedObject[S]] = {
         getSyncClassFromDesc[S](SyncObjectDescription[S](clazz))
@@ -77,7 +76,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
      * it explicitly defines the `reference: T` method of the interface.
      * @param clazz
      */
-    //TODO explain this furtherly
+    //TODO explain this further
     private def checkClassValidity(clazz: Class[_]): Unit = {
         if (!classOf[NetworkObject[_]].isAssignableFrom(clazz))
             return
@@ -97,9 +96,9 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
                         s"""
                            |
                            |Error: $cl does not defines method `T reference()`.
-                           |It turns out that the Linkit object synchronization system met a class that it absolutely can't handle...
-                           |What turned wrong ? the class generation system, responsible for creating implementations of classes coming from objects that gets synchronized,
-                           |met the $clazz that extends $cl ($classHierarchyPath) which can cause serious problems in the object synchronization system, and in the GNOM.
+                           |It turns out that the Linkit object synchronization system met a class that cannot be handled<...
+                           |What turned wrong ?
+                           |$clazz extends $cl ($classHierarchyPath):
                            |$cl is directly implementing ${classOf[NetworkObject[_]]}, but does not explicitly defines method `T reference()`.
                            |Please declare the requested method in `$cl`, recompile the project then retry compiling ${cl}Sync.
                            |
