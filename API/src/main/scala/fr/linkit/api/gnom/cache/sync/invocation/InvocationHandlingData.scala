@@ -11,10 +11,16 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation
+package fr.linkit.api.gnom.cache.sync.invocation
 
-import fr.linkit.api.gnom.cache.sync.SyncObjectException
+import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 
-class RemoteInvocationFailedException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
+trait InvocationHandlingData {
+
+    val methodId: Int
+    val operatingNode: ObjectSyncNode[_]
+    val synchronizedArguments: Array[Any]
+
+    def doSuperCall(): Any
 
 }

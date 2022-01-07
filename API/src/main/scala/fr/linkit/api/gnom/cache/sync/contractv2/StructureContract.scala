@@ -11,8 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
+package fr.linkit.api.gnom.cache.sync.contractv2
 
-import fr.linkit.api.gnom.cache.sync.SyncObjectException
+sealed trait StructureContract[A <: AnyRef] {
 
-class AbstractMethodInvocationException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause)
+    val clazz: Class[_]
+
+    def getMethodContract[R](id: Int): MethodContract[R]
+
+    //def getFieldContract(id: Int): FieldContract
+
+}
+
+trait ObjectStructureContract[A <: AnyRef] extends StructureContract[A]
+trait StaticsStructureContract[A <: AnyRef] extends StructureContract[A]

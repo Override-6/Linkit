@@ -11,13 +11,15 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.remote
+package fr.linkit.api.gnom.cache.sync.invocation.local
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
-import fr.linkit.api.gnom.cache.sync.invokation.MethodInvocation
+import fr.linkit.api.gnom.cache.sync.invocation.MethodInvocation
 
-trait RemoteMethodInvocation[R] extends MethodInvocation[R] {
+trait LocalMethodInvocation[R] extends MethodInvocation[R] {
 
-    val agreement: RMIRulesAgreement
+    /**
+     * The final argument array for the method invocation.
+     * */
+    val methodArguments: Array[Any]
 
 }

@@ -13,13 +13,11 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import java.lang.reflect.InvocationTargetException
-
-import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
-import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
-import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
-import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, ObjectSyncNode, SyncNode, SyncObjectReference, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.contractv2.ObjectStructureContract
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
+import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
+import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
+import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
@@ -28,11 +26,9 @@ import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import org.jetbrains.annotations.Nullable
+
+import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.ThreadLocalRandom
-
-import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.packet.traffic.channel.request.ResponseSubmitter
-
 import scala.collection.mutable
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
@@ -40,31 +36,30 @@ import scala.util.{Failure, Success, Try}
 class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
                                       data: ObjectNodeData[A]) extends TrafficInterestedSyncNode[A] with MutableSyncNode[A] with ObjectSyncNode[A] {
 
-    override  val reference         : SyncObjectReference              = data.reference
-    override  val contract          : SynchronizedStructureContract[A] = data.contract
-    override  val id                : Int                              = reference.nodePath.last
-    override  val chip              : Chip[A]                          = data.chip
-    override  val puppeteer         : Puppeteer[A]                     = data.puppeteer
-    override  val tree              : SynchronizedObjectTree[_]        = data.tree
-    override  val synchronizedObject: A with SynchronizedObject[A]     = data.synchronizedObject
+    override  val reference         : SyncObjectReference          = data.reference
+    override  val contract          : ObjectStructureContract[A]   = data.contract
+    override  val id                : Int                          = reference.nodePath.last
+    override  val chip              : Chip[A]                      = data.chip
+    override  val puppeteer         : Puppeteer[A]                 = data.puppeteer
+    override  val tree              : SynchronizedObjectTree[_]    = data.tree
+    override  val synchronizedObject: A with SynchronizedObject[A] = data.synchronizedObject
     /**
      * The identifier of the engine that posted this object.
      */
-    override  val ownerID           : String                           = puppeteer.ownerID
+    override  val ownerID           : String                       = puppeteer.ownerID
     /**
      * This map contains all the synchronized object of the parent object
      * including method return values and parameters and class fields
      * */
-    protected val childs                                               = new mutable.HashMap[Int, MutableSyncNode[_]]
-    private   val currentIdentifier : String                           = data.currentIdentifier
+    protected val childs                                           = new mutable.HashMap[Int, MutableSyncNode[_]]
+    private   val currentIdentifier : String                       = data.currentIdentifier
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    override  val objectPresence    : NetworkObjectPresence            = data.presence
-    private   val origin                                               = data.origin
+    override  val objectPresence    : NetworkObjectPresence        = data.presence
+    private   val origin                                           = data.origin
 
     synchronizedObject.initialize(this)
-
 
     override def parent: SyncNode[_] = parent0
 
@@ -80,12 +75,13 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
             throw new CanNotSynchronizeException("Attempted to add a child to this node that does not define this node as its parent.")
         if (node eq this)
             throw new IllegalArgumentException("can't add self as child")
+
         def put(): Unit = childs.put(node.id, node)
 
         childs.get(node.id) match {
             case Some(value) => value match {
                 case _: UnknownObjectSyncNode => put()
-                case _: ObjectSyncNodeImpl[_]    =>
+                case _: ObjectSyncNodeImpl[_] =>
                     throw new IllegalStateException(s"A Synchronized Object Node already exists at ${puppeteer.nodeLocation.nodePath.mkString("/") + s"/$id"}")
             }
             case None        => put()
@@ -120,10 +116,10 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
                 throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ${packetPath.mkString("/")}.")
 
             tree.findNode[AnyRef](packetPath.drop(treePath.length))
-                .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
-                    case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, senderID, response)
-                    case _                                  =>
-                }
+                    .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
+                        case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, senderID, response)
+                        case _                                  =>
+                    }
         }
         makeMemberInvocation(packet, senderID, response)
     }
@@ -147,8 +143,8 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
         val sb = new StringBuilder(ex.toString).append("\n")
         while (ex != null && (ex.getCause ne ex)) {
             sb.append("caused by: ")
-                .append(ex.toString)
-                .append("\n")
+                    .append(ex.toString)
+                    .append("\n")
             ex = ex.getCause
         }
         response.addPacket(RMIExceptionString(sb.toString)).submit()
@@ -168,8 +164,8 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
                 result = tree.insertObject(this, id, result, ownerID).synchronizedObject
             }
             response
-                .addPacket(RefPacket[Any](result))
-                .submit()
+                    .addPacket(RefPacket[Any](result))
+                    .submit()
         }
     }
 

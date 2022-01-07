@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence
 
-import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId

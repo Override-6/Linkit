@@ -13,20 +13,15 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.contract.MethodContract
-import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.api.gnom.cache.sync.invokation.MethodInvocation
-import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode}
+import fr.linkit.api.gnom.cache.sync.invocation.MethodInvocation
+import fr.linkit.api.gnom.cache.sync.invocation.local.LocalMethodInvocation
+import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 
-abstract class AbstractMethodInvocation[R](override val methodContract: MethodContract,
+abstract class AbstractMethodInvocation[R](override val methodID: Int,
                                            override val objectNode: ObjectSyncNode[_]) extends MethodInvocation[R] {
 
-    override val methodDescription: MethodDescription = methodContract.description
-    override val methodID         : Int               = methodDescription.methodId
-
     def this(local: LocalMethodInvocation[R]) = {
-        this(local.methodContract, local.objectNode)
+        this(local.methodID, local.objectNode)
     }
 
 }

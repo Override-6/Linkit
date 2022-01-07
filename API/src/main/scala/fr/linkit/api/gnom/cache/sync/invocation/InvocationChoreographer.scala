@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation
+package fr.linkit.api.gnom.cache.sync.invocation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 

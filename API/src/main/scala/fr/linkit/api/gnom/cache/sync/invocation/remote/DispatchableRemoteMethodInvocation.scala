@@ -11,16 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior
+package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldModifier
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
-
-trait ValueBehavior[A <: AnyRef] {
-
-    def whenField: Option[FieldModifier[A]]
-
-    def whenParameter: Option[ValueModifier[A]]
-
-    def whenMethodReturnValue: Option[ValueModifier[A]]
+trait DispatchableRemoteMethodInvocation[R] extends RemoteMethodInvocation[R] {
+    def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit
 }

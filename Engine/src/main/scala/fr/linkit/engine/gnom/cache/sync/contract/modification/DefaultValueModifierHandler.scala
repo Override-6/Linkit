@@ -16,12 +16,12 @@ package fr.linkit.engine.gnom.cache.sync.contract.modification
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldModifier
-import fr.linkit.api.gnom.cache.sync.contract.modification.{MethodCompModifier, MethodCompModifierKind, ValueMultiModifier}
-import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
+import fr.linkit.api.gnom.cache.sync.contractv2.modification.{ValueModifier, ValueModifierKind, ValueModifierHandler}
+import fr.linkit.api.gnom.cache.sync.invocation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.StructureBehaviorDescriptorNodeImpl
 
-class DefaultValueMultiModifier[A <: AnyRef](node: StructureBehaviorDescriptorNodeImpl[A]) extends ValueMultiModifier[A] {
+class DefaultValueModifierHandler[A <: AnyRef](node: StructureBehaviorDescriptorNodeImpl[A]) extends ValueModifierHandler[A] {
 
     override def modifyForField(obj: A, abstractionLimit: Class[_ >: A])(containingObject: SynchronizedObject[_], causeEngine: Engine): A = {
         handleModify[FieldModifier[_ >: A]](obj, abstractionLimit)(
@@ -30,34 +30,33 @@ class DefaultValueMultiModifier[A <: AnyRef](node: StructureBehaviorDescriptorNo
             _.receivedFromRemoteEvent(obj, containingObject, causeEngine))
     }
 
-    override def modifyForParameter(obj: A, abstractionLimit: Class[_ >: A])(invocation: LocalMethodInvocation[_], targetEngine: Engine, kind: MethodCompModifierKind): A = {
+    override def modifyForParameter(obj: A, abstractionLimit: Class[_ >: A])(targetEngine: Engine, kind: ValueModifierKind): A = {
         handleMethodCompModify(obj, abstractionLimit)(
             _.whenParameter,
             kind
-        )(invocation, targetEngine)
+        )(targetEngine)
     }
 
-    override def modifyForMethodReturnValue(obj: A, abstractionLimit: Class[_ >: A])(invocation: LocalMethodInvocation[_], targetEngine: Engine, kind: MethodCompModifierKind): A = {
+    override def modifyForMethodReturnValue(obj: A, abstractionLimit: Class[_ >: A])(targetEngine: Engine, kind: ValueModifierKind): A = {
         handleMethodCompModify(obj, abstractionLimit)(
             _.whenMethodReturnValue,
             kind
-        )(invocation, targetEngine)
+        )(targetEngine)
     }
 
     private def handleMethodCompModify(@inline obj: A, @inline abstractionLimit: Class[_ >: A])
-                                      (@inline getModifier: StructureContractDescriptor[_ >: A] => Option[MethodCompModifier[_ >: A]],
-                                       @inline kind: MethodCompModifierKind)
-                                      (@inline invocation: LocalMethodInvocation[_],
+                                      (@inline getModifier: StructureContractDescriptor[_ >: A] => Option[ValueModifier[_ >: A]],
+                                       @inline kind: ValueModifierKind)(
                                        @inline targetEngine: Engine): A = {
-        type M = MethodCompModifier[_ >: A] => Any
-        type E = MethodCompModifier[_ >: A] => Unit
+        type M = ValueModifier[_ >: A] => Any
+        type E = ValueModifier[_ >: A] => Unit
         val (modify: M, event: E) = kind match {
-            case MethodCompModifierKind.TO_REMOTE   =>
-                Tuple2[M, E](_.toRemote(obj, invocation, targetEngine), _.toRemoteEvent(obj, invocation, targetEngine))
-            case MethodCompModifierKind.FROM_REMOTE =>
-                Tuple2[M, E](_.fromRemote(obj, invocation, targetEngine), _.fromRemoteEvent(obj, invocation, targetEngine))
+            case ValueModifierKind.TO_REMOTE   =>
+                Tuple2[M, E](_.toRemote(obj, targetEngine), _.toRemoteEvent(obj, targetEngine))
+            case ValueModifierKind.FROM_REMOTE =>
+                Tuple2[M, E](_.fromRemote(obj, targetEngine), _.fromRemoteEvent(obj, targetEngine))
         }
-        handleModify[MethodCompModifier[_ >: A]](obj, abstractionLimit)(
+        handleModify[ValueModifier[_ >: A]](obj, abstractionLimit)(
             getModifier,
             modify,
             event)

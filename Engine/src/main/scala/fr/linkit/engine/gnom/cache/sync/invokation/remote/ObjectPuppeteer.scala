@@ -14,15 +14,14 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.invokation.RemoteInvocationFailedException
-import fr.linkit.api.gnom.cache.sync.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
+import fr.linkit.api.gnom.cache.sync.invocation.RemoteInvocationFailedException
+import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, ResponseHolder}
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
@@ -34,7 +33,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val nodeLocation: SyncObjectReference) extends Puppeteer[S] {
 
     private lazy val tree                       = cache.forest.findTree(nodeLocation.nodePath.head).get
-    override     val network          : Network = cache.network
+    private      val network          : Network = cache.network
     private      val traffic                    = channel.traffic
     override     val currentIdentifier: String  = traffic.currentIdentifier
     private      val writer                     = traffic.newWriter(channel.trafficPath)
@@ -53,18 +52,15 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         if (desiredEngineReturn == currentIdentifier)
             throw new IllegalArgumentException("invocation's desired engine return is this engine.")
 
-        val contract = invocation.methodContract
-        val desc     = contract.description
-        val methodId = desc.methodId
-        AppLogger.debug(s"Remotely invoking method ${desc.javaMethod.getName}")
+        val methodId         = invocation.methodID
         val scope            = new AgreementScope(writer, network, agreement)
         var requestResult: R = JavaUtils.nl()
         var isResultSet      = false
         val dispatcher       = new ObjectRMIDispatcher(scope, methodId, desiredEngineReturn) {
             override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
                 holder
-                    .nextResponse
-                    .nextPacket[Packet] match {
+                        .nextResponse
+                        .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
                         throw new RemoteInvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeLocation, executed by engine '$desiredEngineReturn' failed :\n $exceptionString")
                     case p: RefPacket[R]                     =>
@@ -84,8 +80,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
 
-        val desc     = invocation.methodContract.description
-        val methodId = desc.methodId
+        val methodId = invocation.methodID
 
         runLaterIfPerformant {
             val scope      = new AgreementScope(writer, network, agreement)
@@ -94,12 +89,14 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         }
     }
 
-    override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with SynchronizedObject[AnyRef] = {
+    override def synchronizedObj(obj: AnyRef, id: Int): SynchronizedObject[AnyRef] = {
         val currentPath = nodeLocation.nodePath
         tree.insertObject(currentPath, id, obj, currentIdentifier).synchronizedObject
     }
 
     class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {
+
+        override val network: Network = ObjectPuppeteer.this.network
 
         override def broadcast(args: Array[Any]): Unit = {
             handleResponseHolder(makeRequest(scope, args))
@@ -107,8 +104,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)
-                .addPacket(InvocationPacket(nodeLocation.nodePath, methodID, args, returnEngine))
-                .submit()
+                    .addPacket(InvocationPacket(nodeLocation.nodePath, methodID, args, returnEngine))
+                    .submit()
         }
 
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()

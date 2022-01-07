@@ -11,9 +11,9 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.remote
+package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
+import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 
@@ -65,12 +65,11 @@ trait Puppeteer[S <: AnyRef] {
      */
     def sendInvoke(invocation: DispatchableRemoteMethodInvocation[_]): Unit
 
-    val network: Network //Keep an access to Network
-
     //TODO make this for internal use only
-    def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
+    def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): SynchronizedObject[AnyRef]
 
     trait RMIDispatcher {
+        val network: Network //Keep an access to Network
 
         def broadcast(args: Array[Any]): Unit
 

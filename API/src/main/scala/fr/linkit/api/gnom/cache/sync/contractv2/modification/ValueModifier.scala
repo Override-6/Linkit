@@ -11,19 +11,18 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.modification
+package fr.linkit.api.gnom.cache.sync.contractv2.modification
 
-import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
 
-trait MethodCompModifier[T] {
+trait ValueModifier[T] {
 
-    def fromRemote(receivedParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = receivedParam
+    def fromRemote(receivedParam: T, remote: Engine): T = receivedParam
 
-    def fromRemoteEvent(receivedParam: T, invocation: LocalMethodInvocation[_], remote: Engine): Unit = ()
+    def fromRemoteEvent(receivedParam: T, remote: Engine): Unit = ()
 
-    def toRemote(localParam: T, invocation: LocalMethodInvocation[_], remote: Engine): T = localParam
+    def toRemote(localParam: T, remote: Engine): T = localParam
 
-    def toRemoteEvent(localParam: T, invocation: LocalMethodInvocation[_], remote: Engine): Unit = ()
+    def toRemoteEvent(localParam: T, remote: Engine): Unit = ()
 
 }

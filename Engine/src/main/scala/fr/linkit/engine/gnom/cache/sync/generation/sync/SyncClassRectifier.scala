@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
-import fr.linkit.api.gnom.cache.sync.invokation.local.AbstractMethodInvocationException
+import fr.linkit.api.gnom.cache.sync.invocation.local.AbstractMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{SuperMethodModifiers, getMethodDescriptor}

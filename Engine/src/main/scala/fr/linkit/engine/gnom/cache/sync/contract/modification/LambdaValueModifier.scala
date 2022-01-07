@@ -13,11 +13,11 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.modification
 
-import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifier
-import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
+import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.invocation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.network.Engine
 
-abstract class LambdaMethodCompModifier[A <: AnyRef] extends MethodCompModifier[A] {
+abstract class LambdaValueModifier[A <: AnyRef] extends ValueModifier[A] {
 
     protected var remoteToCurrent     : (A, LocalMethodInvocation[_], Engine) => A    = (receivedParam, _, _) => receivedParam
     protected var currentToRemote     : (A, LocalMethodInvocation[_], Engine) => A    = (localParam, _, _) => localParam

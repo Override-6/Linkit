@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.UsageMethodBehavior
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueMultiModifier
+import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifierHandler
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 
 trait SynchronizedStructureBehavior[A <: AnyRef] {

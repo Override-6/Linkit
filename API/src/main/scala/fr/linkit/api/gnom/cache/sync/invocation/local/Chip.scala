@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
+package fr.linkit.api.gnom.cache.sync.invocation.local
 
 /**
  * The Chip is a class that controls an object of type [[S]]

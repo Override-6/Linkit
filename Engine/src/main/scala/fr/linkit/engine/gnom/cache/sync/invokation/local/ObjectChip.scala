@@ -14,9 +14,9 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.local
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.modification.MethodCompModifierKind
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, SynchronizedStructureContract}
-import fr.linkit.api.gnom.cache.sync.invokation.local.{Chip, LocalMethodInvocation}
+import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifierKind
+import fr.linkit.api.gnom.cache.sync.invocation.local.{Chip, LocalMethodInvocation}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.api.internal.system.AppLogger
@@ -73,12 +73,6 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
         val paramsContracts = contract.parameterContracts
         if (paramsContracts.isEmpty)
             return
-        val invocation = new AbstractMethodInvocation[Any](contract, syncObject.getNode) with LocalMethodInvocation[Any] {
-            /**
-             * The final argument array for the method invocation.
-             * */
-            override val methodArguments: Array[Any] = params
-        }
         for (i <- params.indices) {
             val contract = paramsContracts(i)
             val paramTpe = contract.param.getType
@@ -86,15 +80,8 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
             val modifier = contract.modifier.orNull
             var result   = params(i)
             if (modifier != null) {
-                result = modifier.fromRemote(result, invocation, engine)
-                modifier.fromRemoteEvent(result, invocation, engine)
-            }
-            result = result match {
-                case sync: SynchronizedObject[AnyRef] =>
-                    val modifier = sync.getContract.modifier
-                    if (modifier.isDefined)
-                        modifier.get.modifyForParameter(sync, cast(paramTpe))(invocation, engine, MethodCompModifierKind.FROM_REMOTE)
-                case x                                => x
+                result = modifier.fromRemote(result,  engine)
+                modifier.fromRemoteEvent(result,  engine)
             }
             params(i) = result
         }

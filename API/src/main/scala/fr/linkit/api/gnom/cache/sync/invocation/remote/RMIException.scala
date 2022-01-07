@@ -11,17 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.local
-import fr.linkit.api.gnom.cache.sync.contract.MethodContract
+package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
+import fr.linkit.api.gnom.cache.sync.SyncObjectException
 
-    //override val methodContract: MethodContract
-
-    /**
-     * Calls the local method of the object.
-     * @return the method's call result.
-     * */
-    def callSuper(): R
+class RMIException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
 
 }

@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId

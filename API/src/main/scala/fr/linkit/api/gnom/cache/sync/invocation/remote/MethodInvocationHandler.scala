@@ -11,16 +11,12 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior
+package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldModifier
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.invocation.local.CallableLocalMethodInvocation
 
-trait ValueBehavior[A <: AnyRef] {
+trait MethodInvocationHandler {
 
-    def whenField: Option[FieldModifier[A]]
+    def handleRMI[R](invocation: CallableLocalMethodInvocation[R]): R
 
-    def whenParameter: Option[ValueModifier[A]]
-
-    def whenMethodReturnValue: Option[ValueModifier[A]]
 }

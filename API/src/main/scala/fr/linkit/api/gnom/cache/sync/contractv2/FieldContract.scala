@@ -11,10 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.remote
+package fr.linkit.api.gnom.cache.sync.contractv2
 
-import fr.linkit.api.gnom.cache.sync.SyncObjectException
-
-class RMIException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
+trait FieldContract {
 
 }

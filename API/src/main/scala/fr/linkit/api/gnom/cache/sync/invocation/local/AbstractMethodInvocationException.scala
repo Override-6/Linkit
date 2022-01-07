@@ -11,16 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior
+package fr.linkit.api.gnom.cache.sync.invocation.local
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldModifier
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.SyncObjectException
 
-trait ValueBehavior[A <: AnyRef] {
-
-    def whenField: Option[FieldModifier[A]]
-
-    def whenParameter: Option[ValueModifier[A]]
-
-    def whenMethodReturnValue: Option[ValueModifier[A]]
-}
+class AbstractMethodInvocationException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause)

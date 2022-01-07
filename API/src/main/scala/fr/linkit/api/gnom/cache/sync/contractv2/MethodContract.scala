@@ -11,12 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation.remote
+package fr.linkit.api.gnom.cache.sync.contractv2
 
-import fr.linkit.api.gnom.cache.sync.invokation.local.CallableLocalMethodInvocation
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingData
 
-trait MethodInvocationHandler {
+trait MethodContract[R] {
 
-    def handleRMI[R](invocation: CallableLocalMethodInvocation[R]): R
+    val isRMIActivated: Boolean
+
+    def synchronizeArguments(args: Array[Any], syncAction: AnyRef => SynchronizedObject[AnyRef]): Array[Any]
+
+    def handleRMI(data: InvocationHandlingData): R
 
 }

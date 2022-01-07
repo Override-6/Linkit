@@ -18,15 +18,14 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{GenericMet
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{SyncObjectContext, SynchronizedStructureBehavior}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.StructureBehaviorDescriptorNode
-import fr.linkit.api.gnom.cache.sync.contract.modification.{MethodCompModifier, ValueMultiModifier}
+import fr.linkit.api.gnom.cache.sync.contractv2.modification.{ValueModifier, ValueModifierHandler}
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ParameterContract, StructureContractDescriptor, SynchronizedStructureContract}
-import fr.linkit.api.gnom.cache.sync.invokation.remote.MethodInvocationHandler
+import fr.linkit.api.gnom.cache.sync.invocation.remote.MethodInvocationHandler
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.MethodParameterBehavior
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.modification.DefaultValueMultiModifier
+import fr.linkit.engine.gnom.cache.sync.contract.modification.DefaultValueModifierHandler
 import fr.linkit.engine.gnom.cache.sync.contract.{AbstractSynchronizedStructure, MethodParameterContract}
-import fr.linkit.engine.gnom.cache.sync.invokation.DefaultMethodInvocationHandler
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -55,7 +54,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
                     override val behavior           : UsageMethodBehavior           = bhv
                     override val description        : MethodDescription             = contractDesc.description
                     override val parameterContracts : Array[ParameterContract[Any]] = contractDesc.parameterContracts
-                    override val returnValueModifier: MethodCompModifier[Any]       = contractDesc.returnValueModifier
+                    override val returnValueModifier: ValueModifier[Any]            = contractDesc.returnValueModifier
                     override val procrastinator     : Procrastinator                = contractDesc.procrastinator
                     override val handler            : MethodInvocationHandler       = contractDesc.handler
                 })
@@ -103,7 +102,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
                     override val description        : MethodDescription             = methodDesc
                     override val behavior           : UsageMethodBehavior           = bhv
                     override val parameterContracts : Array[ParameterContract[Any]] = parameterContracts0
-                    override val returnValueModifier: MethodCompModifier[Any]       = null
+                    override val returnValueModifier: ValueModifier[Any]            = null
                     override val procrastinator     : Procrastinator                = null
                     override val handler            : MethodInvocationHandler       = DefaultMethodInvocationHandler
                 })
@@ -143,7 +142,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
             override val description: SyncStructureDescription[A]      = SyncObjectDescription(clazz)
             override val behavior   : SynchronizedStructureBehavior[A] = bhv
-            override val modifier   : Option[ValueMultiModifier[A]]    = Some(new DefaultValueMultiModifier[A](StructureBehaviorDescriptorNodeImpl.this))
+            override val modifier   : Option[ValueModifierHandler[A]]  = Some(new DefaultValueModifierHandler[A](StructureBehaviorDescriptorNodeImpl.this))
 
             override def getMethodContract(id: Int): Option[MethodContract] = getMethod(id)
         }

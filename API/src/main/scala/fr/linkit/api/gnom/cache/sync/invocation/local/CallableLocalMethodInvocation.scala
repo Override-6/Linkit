@@ -11,16 +11,16 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior
+package fr.linkit.api.gnom.cache.sync.invocation.local
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldModifier
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
+trait CallableLocalMethodInvocation[R] extends LocalMethodInvocation[R] {
 
-trait ValueBehavior[A <: AnyRef] {
+    //override val methodContract: MethodContract
 
-    def whenField: Option[FieldModifier[A]]
+    /**
+     * Calls the local method of the object.
+     * @return the method's call result.
+     * */
+    def callSuper(): R
 
-    def whenParameter: Option[ValueModifier[A]]
-
-    def whenMethodReturnValue: Option[ValueModifier[A]]
 }

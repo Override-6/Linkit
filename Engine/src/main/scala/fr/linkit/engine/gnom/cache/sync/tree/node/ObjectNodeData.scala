@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
-import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
-import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
+import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
+import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference, SynchronizedObjectTree}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable

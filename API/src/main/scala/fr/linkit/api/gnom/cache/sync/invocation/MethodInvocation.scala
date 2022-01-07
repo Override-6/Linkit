@@ -11,11 +11,9 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invokation
+package fr.linkit.api.gnom.cache.sync.invocation
 
-import fr.linkit.api.gnom.cache.sync.contract.MethodContract
-import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode}
+import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 
 /**
  * The invocation information for a synchronized object's method.
@@ -33,16 +31,6 @@ trait MethodInvocation[R] {
      * The method's identifier.
      * */
     val methodID: Int
-
-    /**
-     * The method's behavior
-     */
-    val methodContract: MethodContract
-
-    /**
-     * The method's description
-     * */
-    val methodDescription: MethodDescription
 
     var debug: Boolean = true
 
