@@ -37,7 +37,7 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
         ScalaUtils.pasteAllFields(syncObject, obj)
     }
 
-    override def callMethod(methodID: Int, params: Array[Any], origin: String): Any = {
+    override def callMethod(methodID: Int, params: Array[Any], origin: Engine): Any = {
         val methodContractOpt = contract.getMethodContract(methodID)
         if (methodContractOpt.forall(_.behavior.isHidden)) {
             throw new BadRMIRequestException(s"Attempted to invoke ${methodContractOpt.fold("unknown")(_ => "hidden")} method '${
@@ -57,11 +57,10 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
         }
     }
 
-    @inline private def callMethod(contract: MethodContract, params: Array[Any], origin: String): Any = {
+    @inline private def callMethod(contract: MethodContract, params: Array[Any], origin: Engine): Any = {
         syncObject.getChoreographer.forceLocalInvocation {
-            val engine = network.findEngine(origin).orNull
-            modifyParameters(contract, engine, params)
-            ExecutorEngine.setCurrentEngine(engine)
+            modifyParameters(contract, origin, params)
+            ExecutorEngine.setCurrentEngine(origin)
             val result = contract.description.javaMethod.invoke(syncObject, params: _*)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
             result
@@ -75,7 +74,6 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
             return
         for (i <- params.indices) {
             val contract = paramsContracts(i)
-            val paramTpe = contract.param.getType
 
             val modifier = contract.modifier.orNull
             var result   = params(i)
@@ -87,9 +85,7 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
         }
     }
 
-    private def cast[X](y: Any): X = y.asInstanceOf[X]
-
-    @inline private def callMethodProcrastinator(contract: MethodContract, params: Array[Any], origin: String): Any = {
+    @inline private def callMethodProcrastinator(contract: MethodContract, params: Array[Any], origin: Engine): Any = {
         @volatile var result: Any = NoResult
         val worker                = WorkerPools.currentWorker
         val task                  = WorkerPools.currentTask.get

@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.network.Engine
 
 abstract class LambdaFieldModifier[F <: AnyRef] extends FieldModifier[F] {
     protected var fromRemote     : (F, SynchronizedObject[_], Engine) => F    = (f, _, _) => f
-    protected var fromRemoteEvent: (F, SynchronizedObject[_], Engine) => Unit = (f, _, _) => ()
+    protected var fromRemoteEvent: (F, SynchronizedObject[_], Engine) => Unit = (_, _, _) => ()
 
     override final def receivedFromRemote(receivedField: F, containingObject: SynchronizedObject[_], remote: Engine): F = {
         fromRemote(receivedField, containingObject, remote)

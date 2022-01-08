@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
+import fr.linkit.api.gnom.cache.sync.contractv2.ObjectStructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference, SynchronizedObjectTree}
@@ -23,7 +24,7 @@ import org.jetbrains.annotations.Nullable
 
 class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocations
                                   val chip: Chip[A], //Reflective invocations
-                                  val contract: SynchronizedStructureContract[A],
+                                  val contract: ObjectStructureContract[A],
                                   val synchronizedObject: A with SynchronizedObject[A], //the sync object
                                   @Nullable val origin: AnyRef) //The synchronized object's origin (the same object before it was converted to its synchronized version, if any).
                                  (reference: SyncObjectReference, //The sync object reference

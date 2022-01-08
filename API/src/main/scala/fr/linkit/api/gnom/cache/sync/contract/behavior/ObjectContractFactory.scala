@@ -13,13 +13,15 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
+import fr.linkit.api.gnom.cache.sync.contractv2.{ObjectStructureContract, StaticsStructureContract}
 
-trait SynchronizedObjectContractFactory {
+trait ObjectContractFactory {
 
     val data: ContractDescriptorData
 
-    def getObjectContract[A <: AnyRef](clazz: Class[_], context: SyncObjectContext): SynchronizedStructureContract[A]
+    def getObjectContract[A <: AnyRef](clazz: Class[_], context: SyncObjectContext): ObjectStructureContract[A]
+
+    def getStaticContract[A <: AnyRef](clazz: Class[_]): StaticsStructureContract[A]
 
 }

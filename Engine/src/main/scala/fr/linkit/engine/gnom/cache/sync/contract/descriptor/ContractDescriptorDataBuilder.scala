@@ -96,7 +96,7 @@ abstract class ContractDescriptorDataBuilder {
 
             def method(name: String): Unit = {
                 val mDesc              = desc.findMethodDescription(name).get
-                val contractDescriptor = MethodContractDescriptorImpl(mDesc, null, null, null, Array.empty, DefaultUsageMethodBehavior.Disabled)
+                val contractDescriptor = MethodContractDescriptorImpl(mDesc, null, null, Array.empty, DefaultUsageMethodBehavior.Disabled)
                 methodBehaviors.put(mDesc.javaMethod, contractDescriptor)
             }
         }
@@ -130,7 +130,7 @@ abstract class ContractDescriptorDataBuilder {
                         val builder = new GenericRMIRulesAgreementBuilder()
                         rule(builder)
                         val behavior = new DefaultGenericMethodBehavior(true, false, false, Array.empty, null, builder)
-                        MethodContractDescriptorImpl(desc, null, DefaultMethodInvocationHandler, null, Array.empty, behavior)
+                        MethodContractDescriptorImpl(desc, null, null, Array.empty, behavior)
                     })
                 }
 
@@ -298,7 +298,7 @@ object ContractDescriptorDataBuilder {
             val builder             = new GenericRMIRulesAgreementBuilder()
             rule(builder)
             val behavior = new DefaultGenericMethodBehavior(true, false, forceLocalInvocation, parameterBehaviors, returnValueBehavior, builder)
-            MethodContractDescriptorImpl(context, procrastinator, DefaultMethodInvocationHandler, returnValueModifier, Array.empty, behavior)
+            MethodContractDescriptorImpl(context, procrastinator, returnValueModifier, Array.empty, behavior)
         }
 
         private def getParamContracts(jMethod: Method): Array[ParameterContract[Any]] = {

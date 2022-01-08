@@ -11,17 +11,18 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.parsers
+package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import scala.util.parsing.combinator.RegexParsers
+import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
+import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
+import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode}
 
-object ClassParser extends RegexParsers {
+sealed trait InternalSyncNode[A <: AnyRef] extends MutableSyncNode[A] with TrafficInterestedSyncNode[A] with SyncNode[A] {
 
-    override val whiteSpace = "[ \t\r\f]+".r
-    override def skipWhitespace = true
-/*
-    import fr.linkit.engine.internal.language.bhv.Tokens._
-    val methodBody: P[_] = modify ~ rep1(number | and)
-    val methodParser: P[_] = method ~ signature ~ (bracketOpen | Tokens.literal)*/
+}
 
+trait InternalObjectSyncNode[A <: AnyRef] extends InternalSyncNode[A] with ObjectSyncNode[A] {
+    val puppeteer: Puppeteer[A]
+
+    val chip: Chip[A]
 }

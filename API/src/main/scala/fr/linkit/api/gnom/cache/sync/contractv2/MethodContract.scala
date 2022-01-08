@@ -15,10 +15,13 @@ package fr.linkit.api.gnom.cache.sync.contractv2
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingData
+import fr.linkit.api.gnom.network.Engine
 
 trait MethodContract[R] {
 
     val isRMIActivated: Boolean
+
+    def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: AnyRef => SynchronizedObject[AnyRef]): Any
 
     def synchronizeArguments(args: Array[Any], syncAction: AnyRef => SynchronizedObject[AnyRef]): Array[Any]
 

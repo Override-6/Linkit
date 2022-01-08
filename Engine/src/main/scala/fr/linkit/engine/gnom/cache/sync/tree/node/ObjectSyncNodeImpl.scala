@@ -19,9 +19,10 @@ import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
+import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
-import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
+import fr.linkit.engine.gnom.cache.sync.{AbstractSynchronizedObject, IllegalSynchronizedObjectException, RMIExceptionString}
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
@@ -34,7 +35,7 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
-                                      data: ObjectNodeData[A]) extends TrafficInterestedSyncNode[A] with MutableSyncNode[A] with ObjectSyncNode[A] {
+                                      data: ObjectNodeData[A]) extends InternalObjectSyncNode[A] {
 
     override  val reference         : SyncObjectReference          = data.reference
     override  val contract          : ObjectStructureContract[A]   = data.contract
@@ -59,7 +60,7 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
     override  val objectPresence    : NetworkObjectPresence        = data.presence
     private   val origin                                           = data.origin
 
-    synchronizedObject.initialize(this)
+    initSyncObject()
 
     override def parent: SyncNode[_] = parent0
 
@@ -125,8 +126,9 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
     }
 
     private def makeMemberInvocation(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
-        Try(chip.callMethod(packet.methodID, packet.params, senderID)) match {
-            case Success(value)     => handleInvocationResult(value.asInstanceOf[AnyRef], packet, response)
+        val origin = puppeteer.network.findEngine(senderID).get //TODO or else throw
+        Try(chip.callMethod(packet.methodID, packet.params, origin)) match {
+            case Success(value)     => handleInvocationResult(value.asInstanceOf[AnyRef], origin, packet, response)
             case Failure(exception) => exception match {
                 case NonFatal(e) =>
                     val ex = if (e.isInstanceOf[InvocationTargetException]) e.getCause else e
@@ -150,23 +152,29 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
         response.addPacket(RMIExceptionString(sb.toString)).submit()
     }
 
-    private def handleInvocationResult(initialResult: AnyRef, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
-        var result   = initialResult
-        val behavior = contract.behavior
+    private def handleInvocationResult(initialResult: AnyRef, engine: Engine, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
+        var result: Any = initialResult
         if (packet.expectedEngineIDReturn == currentIdentifier) {
-            val methodBehavior      = behavior.getMethodBehavior(packet.methodID).get
-            val returnValueBehavior = methodBehavior.returnValueBehavior
-            if (result != null && returnValueBehavior.isActivated && !result.isInstanceOf[SynchronizedObject[_]]) {
+            val methodContract = contract.getMethodContract(packet.methodID)
+            result = methodContract.handleInvocationResult(initialResult, engine)(ref => {
                 val id = ThreadLocalRandom.current().nextInt()
-                //TODO modifier for RMI return value
-                //val modifier = returnValueBehavior.modifier
-                //result = modifier.toRemote(result, invocation)
-                result = tree.insertObject(this, id, result, ownerID).synchronizedObject
-            }
+                tree.insertObject(this, id, ref, ownerID)
+                        .synchronizedObject
+            })
             response
                     .addPacket(RefPacket[Any](result))
                     .submit()
         }
     }
+
+    private def initSyncObject(): Unit = {
+        synchronizedObject match {
+            case sync: AbstractSynchronizedObject[A] => sync.initialize(this)
+            case _ => throw new IllegalSynchronizedObjectException(
+                "Received unknown kind of synchronized object: " +
+                        "could not initialize synchronized object because received object does not extends AbstractSynchronizedObject.")
+        }
+    }
+
 
 }

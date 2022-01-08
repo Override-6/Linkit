@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.contractv2
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
+import fr.linkit.api.gnom.cache.sync.contract.descriptors.MethodContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contractv2.{MethodContract, ValueContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingData
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
@@ -46,6 +47,16 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
         })
     }
 
+    override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: AnyRef => SynchronizedObject[AnyRef]): Any = {
+        var result = initialResult
+        if (result != null && returnValueContract.isSynchronized && !result.isInstanceOf[SynchronizedObject[_]]) {
+            val modifier = returnValueContract.modifier.orNull
+            if (modifier != null)
+                result = modifier.toRemote(result, remote)
+            return syncAction(result.asInstanceOf[AnyRef])
+        }
+    }
+
     override def handleRMI(data: InvocationHandlingData): R = {
         val id                                                = data.methodId
         val node                                              = data.operatingNode
@@ -62,13 +73,12 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
                 }
             }
         }
-        handleRMI(localInvocation)
+        handleRMI(data.puppeteer, localInvocation)
     }
 
-    private def handleRMI(localInvocation: CallableLocalMethodInvocation[R]): R = {
+    private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {
         // From here we are sure that we want to perform a remote
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
-        val puppeteer         = localInvocation.objectNode.puppeteer
         val currentIdentifier = puppeteer.currentIdentifier
         var result     : Any  = null
         var localResult: Any  = result
@@ -99,7 +109,7 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
                              dispatcher: Puppeteer[AnyRef]#RMIDispatcher,
                              invocation: LocalMethodInvocation[_]): Unit = {
         val args    = invocation.methodArguments
-        val network = dispatcher.network
+        val network = puppeteer.network
         if (parameterContracts.isEmpty) {
             dispatcher.broadcast(args)
             return

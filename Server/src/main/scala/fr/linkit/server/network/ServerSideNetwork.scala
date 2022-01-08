@@ -14,7 +14,7 @@
 package fr.linkit.server.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache

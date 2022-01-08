@@ -11,17 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.parsers
+package fr.linkit.engine.gnom.cache.sync
 
-import scala.util.parsing.combinator.RegexParsers
+import fr.linkit.api.gnom.cache.sync.SyncObjectException
 
-object ClassParser extends RegexParsers {
-
-    override val whiteSpace = "[ \t\r\f]+".r
-    override def skipWhitespace = true
-/*
-    import fr.linkit.engine.internal.language.bhv.Tokens._
-    val methodBody: P[_] = modify ~ rep1(number | and)
-    val methodParser: P[_] = method ~ signature ~ (bracketOpen | Tokens.literal)*/
+class IllegalSynchronizedObjectException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause){
 
 }

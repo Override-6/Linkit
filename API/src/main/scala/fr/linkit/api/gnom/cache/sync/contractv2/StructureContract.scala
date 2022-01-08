@@ -19,7 +19,7 @@ sealed trait StructureContract[A <: AnyRef] {
 
     def getMethodContract[R](id: Int): MethodContract[R]
 
-    //def getFieldContract(id: Int): FieldContract
+    def applyFieldsContracts(obj: A, manip: SyncObjectFieldManipulation): Unit
 
 }
 

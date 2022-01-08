@@ -17,12 +17,12 @@ import fr.linkit.api.gnom.network.Engine
 
 trait ValueModifier[T] {
 
-    def fromRemote(receivedParam: T, remote: Engine): T = receivedParam
+    def fromRemote(value: T, remote: Engine): T = value
 
-    def fromRemoteEvent(receivedParam: T, remote: Engine): Unit = ()
+    def fromRemoteEvent(value: T, remote: Engine): Unit = ()
 
-    def toRemote(localParam: T, remote: Engine): T = localParam
+    def toRemote(value: T, remote: Engine): T = value
 
-    def toRemoteEvent(localParam: T, remote: Engine): Unit = ()
+    def toRemoteEvent(value: T, remote: Engine): Unit = ()
 
 }

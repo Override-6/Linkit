@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedObjectContractFactory
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode, SyncObjectReference}
@@ -32,13 +32,6 @@ import java.io.Serializable
 trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectReference] with Serializable {
 
     def reference: SyncObjectReference
-
-    /**
-     * Initialize the puppeteer of the synchronized object.
-     *
-     * @throws SyncObjectAlreadyInitialisedException if this object is already initialized.
-     */
-    def initialize(node: ObjectSyncNode[T]): Unit //TODO pass in internal
 
     /**
      * @return The used [[Puppeteer]] of this object.

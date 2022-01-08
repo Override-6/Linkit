@@ -13,19 +13,21 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation.local
 
+import fr.linkit.api.gnom.network.Engine
+
 /**
  * The Chip is a class that controls an object of type [[S]]
  * The controlled object is then considered as chipped and its chip
  * can invoke any of its methods and set his fields values.
  * */
 trait Chip[S] {
-
+/*
     /**
      * this method will transfer to the chipped object every fields
      * values of the given object.
      * @param obj the obj in where fields values will be pasted to the chipped object.
      * */
-    def updateObject(obj: S): Unit
+    def updateObject(obj: S): Unit*/
 
     /**
      * Invokes the method of the chipped object.
@@ -34,5 +36,5 @@ trait Chip[S] {
      * @param params the parameters for the method call
      * @see [[fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription]]
      * */
-    def callMethod(methodID: Int, params: Array[Any], origin: String): Any
+    def callMethod(methodID: Int, params: Array[Any], origin: Engine): Any
 }

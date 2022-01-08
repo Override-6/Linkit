@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, Invoca
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
@@ -35,7 +36,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     def wrappedClass: Class[_]
 
-    override def initialize(node: ObjectSyncNode[A]): Unit = {
+    def initialize(node: ObjectSyncNodeImpl[A]): Unit = {
         if (this.node != null)
             throw new SyncObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
         //if (location != null && location != node.reference)
@@ -81,6 +82,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             override val methodId             : Int               = id
             override val operatingNode        : ObjectSyncNode[_] = node
             override val synchronizedArguments: Array[Any]        = synchronizedArgs
+            override val puppeteer            : Puppeteer[_]      = AbstractSynchronizedObject.this.puppeteer
 
             override def doSuperCall(): Unit = superCall(synchronizedArgs)
         }

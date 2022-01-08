@@ -11,12 +11,19 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invocation.remote
+package fr.linkit.api.gnom.cache.sync.contractv2
 
-import fr.linkit.api.gnom.cache.sync.invocation.local.CallableLocalMethodInvocation
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.network.Engine
 
-trait MethodInvocationHandler {
+trait SyncObjectFieldManipulation {
 
-    def handleRMI[R](invocation: CallableLocalMethodInvocation[R]): R
+    val engine: Engine
+
+    def findSynchronizedVersion(origin: Any): Option[SynchronizedObject[AnyRef]]
+
+    def initSyncObject(sync: SynchronizedObject[AnyRef]): Unit
+
+    def syncObject(obj: AnyRef): SynchronizedObject[AnyRef]
 
 }

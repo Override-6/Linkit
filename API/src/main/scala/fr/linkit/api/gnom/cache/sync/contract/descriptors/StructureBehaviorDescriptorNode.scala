@@ -13,8 +13,9 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptors
 
+import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
-import fr.linkit.api.gnom.cache.sync.contract.{StructureContractDescriptor, SynchronizedStructureContract}
+import fr.linkit.api.gnom.cache.sync.contractv2.{ObjectStructureContract, StaticsStructureContract}
 
 trait StructureBehaviorDescriptorNode[A <: AnyRef] {
 
@@ -22,5 +23,7 @@ trait StructureBehaviorDescriptorNode[A <: AnyRef] {
 
     def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit
 
-    def getContract(clazz: Class[_], context: SyncObjectContext): SynchronizedStructureContract[A]
+    def getStaticContract(clazz: Class[_], context: SyncObjectContext): StaticsStructureContract[A]
+
+    def getObjectContract(clazz: Class[_], context: SyncObjectContext): ObjectStructureContract[A]
 }

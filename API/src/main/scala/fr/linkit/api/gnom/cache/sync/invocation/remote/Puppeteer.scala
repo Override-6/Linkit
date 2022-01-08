@@ -42,7 +42,7 @@ trait Puppeteer[S <: AnyRef] {
      * The identifier of the current engine.
      * */
     val currentIdentifier: String
-
+    val network: Network //Keep an access to Network
     /**
      * @return true if the current engine have created the synchronized object.
      * */
@@ -69,8 +69,6 @@ trait Puppeteer[S <: AnyRef] {
     def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): SynchronizedObject[AnyRef]
 
     trait RMIDispatcher {
-        val network: Network //Keep an access to Network
-
         def broadcast(args: Array[Any]): Unit
 
         def foreachEngines(action: String => Array[Any]): Unit

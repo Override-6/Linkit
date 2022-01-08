@@ -131,7 +131,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         new ContractDescriptorDataBuilder {
             describe(new ClassDescriptor[SharedCacheManager]() {
                 whenParameter = new LambdaValueModifier[SharedCacheManager]() {
-                    currentToRemote = (param, _, _) => param match {
+                    currentToRemote = (param, _) => param match {
                         case origin: SharedCacheOriginManager => transformToDistant(origin)
                         case _                                => param
                     }

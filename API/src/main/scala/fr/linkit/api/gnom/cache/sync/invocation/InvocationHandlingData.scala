@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation
 
+import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 
 trait InvocationHandlingData {
@@ -20,6 +21,7 @@ trait InvocationHandlingData {
     val methodId: Int
     val operatingNode: ObjectSyncNode[_]
     val synchronizedArguments: Array[Any]
+    val puppeteer: Puppeteer[_]
 
     def doSuperCall(): Any
 

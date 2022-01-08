@@ -15,4 +15,6 @@ package fr.linkit.api.gnom.cache.sync.contractv2
 
 trait FieldContract {
 
+    def applyContract(obj: AnyRef, manipulation: SyncObjectFieldManipulation): Unit
+
 }
