@@ -21,7 +21,8 @@ import fr.linkit.api.gnom.network.Engine
  * can invoke any of its methods and set his fields values.
  * */
 trait Chip[S] {
-/*
+
+    /*
     /**
      * this method will transfer to the chipped object every fields
      * values of the given object.
@@ -37,4 +38,6 @@ trait Chip[S] {
      * @see [[fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription]]
      * */
     def callMethod(methodID: Int, params: Array[Any], origin: Engine): Any
+
+    def updateObject(obj: S): Unit
 }

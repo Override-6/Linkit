@@ -11,11 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior.member.method
+package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
+import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription}
+import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract}
+import fr.linkit.api.internal.concurrency.Procrastinator
 
-trait GenericMethodBehavior extends MethodBehavior {
+trait MemberContractFactory {
 
-    def toUsage(context: SyncObjectContext): UsageMethodBehavior
+    def genMethodContract(procrastinator: Option[Procrastinator],
+                          desc: MethodDescription): SyncObjectContext => MethodContract[Any]
+
+    def genFieldContract(desc: FieldDescription): FieldContract[Any]
+
 }

@@ -13,23 +13,23 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.ParameterContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.MethodBehavior
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.MethodContractDescriptor
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contractv2.ValueContract
 import fr.linkit.api.internal.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 
-case class MethodContractDescriptorImpl(override val description: MethodDescription,
-                                        override val forceLocalInvocations: Boolean,
-                                        @Nullable override val procrastinator: Procrastinator,
-                                        @Nullable returnValueModifier: ValueModifier[Any],
-                                        override val parameterContracts : Array[ParameterContract[Any]],
-                                        override val behavior: MethodBehavior) extends MethodContractDescriptor {
+case class MethodContractDescriptorImpl(description: MethodDescription,
+                                        @Nullable procrastinator: Procrastinator,
+                                        @Nullable returnValueContract: ValueContract[Any],
+                                        parameterContracts: Array[ValueContract[Any]],
+                                        isHidden: Boolean,
+                                        forceLocalInnerInvocations: Boolean,
+                                        agreement: RMIRulesAgreementBuilder) extends MethodContractDescriptor {
 
     def this(description: MethodDescription, other: MethodContractDescriptor) {
-        this(description, other.forceLocalInvocations, other.procrastinator, other.returnValueModifier, other.parameterContracts, other.behavior)
+        this(description, other.procrastinator, other.returnValueContract, other.parameterContracts, other.isHidden, other.forceLocalInnerInvocations, other.agreement)
     }
 
 }

@@ -13,15 +13,13 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.ValueBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.MethodContractDescriptor
+import fr.linkit.api.gnom.cache.sync.contractv2.FieldContract
 
-trait StructureContractDescriptor[T <: AnyRef] extends ValueBehavior[T] {
+trait StructureContractDescriptor[T <: AnyRef] {
 
     val targetClass: Class[T]
 
-    val usingHierarchy: Array[StructureContractDescriptor[_ >: T]] //FIXME Not used
-    val withMethods   : Array[MethodContractDescriptor]
-    val withFields    : Array[FieldBehavior[Any]]
+    val methods: Array[MethodContractDescriptor]
+    val fields : Array[(Int, FieldContract[Any])]
 }

@@ -15,15 +15,13 @@ package fr.linkit.api.gnom.cache.sync.contract.descriptors
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
-import fr.linkit.api.gnom.cache.sync.contractv2.{ObjectStructureContract, StaticsStructureContract}
+import fr.linkit.api.gnom.cache.sync.contractv2.StructureContract
 
 trait StructureBehaviorDescriptorNode[A <: AnyRef] {
 
-    val descriptor: StructureContractDescriptor[A]
+    val instanceDescriptor: StructureContractDescriptor[A]
 
     def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit
 
-    def getStaticContract(clazz: Class[_], context: SyncObjectContext): StaticsStructureContract[A]
-
-    def getObjectContract(clazz: Class[_], context: SyncObjectContext): ObjectStructureContract[A]
+    def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A]
 }

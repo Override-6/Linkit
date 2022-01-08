@@ -13,15 +13,14 @@
 
 package fr.linkit.api.gnom.cache.sync.contractv2
 
-sealed trait StructureContract[A <: AnyRef] {
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+
+trait StructureContract[A <: AnyRef] {
 
     val clazz: Class[_]
 
     def getMethodContract[R](id: Int): MethodContract[R]
 
-    def applyFieldsContracts(obj: A, manip: SyncObjectFieldManipulation): Unit
+    def applyFieldsContracts(obj: A with SynchronizedObject[A], manip: SyncObjectFieldManipulation): Unit
 
 }
-
-trait ObjectStructureContract[A <: AnyRef] extends StructureContract[A]
-trait StaticsStructureContract[A <: AnyRef] extends StructureContract[A]

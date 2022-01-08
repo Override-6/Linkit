@@ -14,10 +14,16 @@
 package fr.linkit.api.gnom.cache.sync.contractv2
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingData
+import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
+import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.internal.concurrency.Procrastinator
 
 trait MethodContract[R] {
+
+    val procrastinator: Procrastinator
+
+    val isHidden: Boolean
 
     val isRMIActivated: Boolean
 
@@ -25,6 +31,18 @@ trait MethodContract[R] {
 
     def synchronizeArguments(args: Array[Any], syncAction: AnyRef => SynchronizedObject[AnyRef]): Array[Any]
 
-    def handleRMI(data: InvocationHandlingData): R
+    def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R
+
+    def executeMethodInvocation(sender: Engine, data: InvocationExecution)
+
+    trait InvocationExecution {
+        val operatingNode: ObjectSyncNode[_]
+        val arguments    : Array[Any]
+    }
+    trait RemoteInvocationExecution extends InvocationExecution {
+        val puppeteer    : Puppeteer[_]
+        def doSuperCall(): Any
+    }
+
 
 }

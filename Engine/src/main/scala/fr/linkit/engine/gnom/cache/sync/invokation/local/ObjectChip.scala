@@ -14,42 +14,27 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.local
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, SynchronizedStructureContract}
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifierKind
-import fr.linkit.api.gnom.cache.sync.invocation.local.{Chip, LocalMethodInvocation}
+import fr.linkit.api.gnom.cache.sync.contractv2.{MethodContract, StructureContract}
+import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
+import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools
-import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.BadRMIRequestException
-import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.lang.reflect.Modifier
 
-class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S],
+class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
                                       syncObject: SynchronizedObject[S],
                                       network: Network) extends Chip[S] {
-
-    private val behavior = contract.behavior
 
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(syncObject, obj)
     }
 
     override def callMethod(methodID: Int, params: Array[Any], origin: Engine): Any = {
-        val methodContractOpt = contract.getMethodContract(methodID)
-        if (methodContractOpt.forall(_.behavior.isHidden)) {
-            throw new BadRMIRequestException(s"Attempted to invoke ${methodContractOpt.fold("unknown")(_ => "hidden")} method '${
-                methodContractOpt.map(_.description.javaMethod.getName).getOrElse(s"(unknown method id '$methodID')")
-            }(${params.mkString(", ")}) in ${methodContractOpt.map(_.description.classDesc.clazz).getOrElse("Unknown class")}'")
-        }
-        val methodContract = methodContractOpt.get
+        val methodContract = contract.getMethodContract[Any](methodID)
         val procrastinator = methodContract.procrastinator
-        AppLogger.debug {
-            val name = methodContract.description.javaMethod.getName
-            s"RMI - Calling method $methodID $name(${params.mkString(", ")})"
-        }
         if (procrastinator != null) {
             callMethodProcrastinator(methodContract, params, origin)
         } else {
@@ -57,35 +42,20 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
         }
     }
 
-    @inline private def callMethod(contract: MethodContract, params: Array[Any], origin: Engine): Any = {
+    @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], origin: Engine): Any = {
         syncObject.getChoreographer.forceLocalInvocation {
-            modifyParameters(contract, origin, params)
             ExecutorEngine.setCurrentEngine(origin)
-            val result = contract.description.javaMethod.invoke(syncObject, params: _*)
+            val data   = new contract.InvocationExecution {
+                override val operatingNode        : ObjectSyncNode[_] = syncObject.getNode
+                override val arguments            : Array[Any]        = params
+            }
+            val result = contract.executeMethodInvocation(origin, data)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
             result
         }
     }
 
-    @inline
-    private def modifyParameters(contract: MethodContract, engine: Engine, params: Array[Any]): Unit = {
-        val paramsContracts = contract.parameterContracts
-        if (paramsContracts.isEmpty)
-            return
-        for (i <- params.indices) {
-            val contract = paramsContracts(i)
-
-            val modifier = contract.modifier.orNull
-            var result   = params(i)
-            if (modifier != null) {
-                result = modifier.fromRemote(result,  engine)
-                modifier.fromRemoteEvent(result,  engine)
-            }
-            params(i) = result
-        }
-    }
-
-    @inline private def callMethodProcrastinator(contract: MethodContract, params: Array[Any], origin: Engine): Any = {
+    @inline private def callMethodProcrastinator(contract: MethodContract[Any], params: Array[Any], origin: Engine): Any = {
         @volatile var result: Any = NoResult
         val worker                = WorkerPools.currentWorker
         val task                  = WorkerPools.currentTask.get
@@ -102,7 +72,7 @@ class ObjectChip[S <: AnyRef] private(contract: SynchronizedStructureContract[S]
 
 object ObjectChip {
 
-    def apply[S <: AnyRef](contract: SynchronizedStructureContract[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
+    def apply[S <: AnyRef](contract: StructureContract[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
             throw new NullPointerException("puppet is null !")
         val clazz = wrapper.getClass

@@ -33,7 +33,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val nodeLocation: SyncObjectReference) extends Puppeteer[S] {
 
     private lazy val tree                       = cache.forest.findTree(nodeLocation.nodePath.head).get
-    private      val network          : Network = cache.network
+    override     val network          : Network = cache.network
     private      val traffic                    = channel.traffic
     override     val currentIdentifier: String  = traffic.currentIdentifier
     private      val writer                     = traffic.newWriter(channel.trafficPath)
@@ -95,8 +95,6 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     }
 
     class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {
-
-        override val network: Network = ObjectPuppeteer.this.network
 
         override def broadcast(args: Array[Any]): Unit = {
             handleResponseHolder(makeRequest(scope, args))

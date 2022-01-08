@@ -1,14 +1,11 @@
 package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.SynchronizedStructureContract
-import fr.linkit.api.gnom.cache.sync.contractv2.ObjectStructureContract
-import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
-import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
+import fr.linkit.api.gnom.cache.sync.contractv2.StructureContract
 
 trait ObjectSyncNode[A <: AnyRef] extends SyncNode[A] {
 
-    val contract : ObjectStructureContract[A]
+    val contract : StructureContract[A]
 
     /**
      * The synchronized object.

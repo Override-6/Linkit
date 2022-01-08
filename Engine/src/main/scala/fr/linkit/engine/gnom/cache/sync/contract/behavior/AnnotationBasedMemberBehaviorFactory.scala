@@ -14,34 +14,35 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{GenericMethodBehavior, ParameterBehavior}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{MemberContractFactory, SyncObjectContext}
 import fr.linkit.api.gnom.cache.sync.contract.description._
+import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract, ValueContract}
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior}
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.DefaultGenericMethodBehavior
+import fr.linkit.engine.gnom.cache.sync.contractv2.{FieldContractImpl, MethodContractImpl, SimpleValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.GenericRMIRulesAgreementBuilder
 
 import java.lang.reflect.{Method, Parameter}
 import scala.util.{Success, Try}
 
-object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
+object AnnotationBasedMemberBehaviorFactory extends MemberContractFactory {
 
-    def getParamBehaviors(method: Method): Array[ParameterBehavior[Any]] = {
+    def genParamContracts(method: Method): Array[ValueContract[Any]] = {
         val params = method.getParameters
-                .map(genParameterBehavior)
-        if (params.exists(_.isActivated))
+                .map(genParameterContract)
+        if (params.exists(_.isSynchronized))
             params
         //no behavior specified with annotation,
         //the invocation part of the system makes some optimisations for methods behaviors with empty parameter behaviors.
         else Array.empty
     }
 
-    def genParameterBehavior(param: Parameter): ParameterBehavior[Any] = {
-        val isSynchronized = param.isAnnotationPresent(classOf[Synchronized])
-        new MethodParameterBehavior[Any](isSynchronized)
+    def genParameterContract(param: Parameter): ValueContract[Any] = {
+        new ValueContract[Any] {
+            override val isSynchronized: Boolean                    = param.isAnnotationPresent(classOf[Synchronized])
+            override val modifier      : Option[ValueModifier[Any]] = None
+        }
     }
 
     private def getRule(isActivated: Boolean, control: MethodControl, classDec: SyncStructureDescription[_]): BasicInvocationRule = {
@@ -55,9 +56,9 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         }
     }
 
-    override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): GenericMethodBehavior = {
+    override def genMethodContract(procrastinator: Option[Procrastinator], desc: MethodDescription): SyncObjectContext => MethodContract[Any] = {
         val controlOpt = findMethodControl(desc)
-        extractMethodControlBehavior(controlOpt.isDefined, desc, controlOpt.getOrElse(DefaultMethodControl))
+        extractMethodControlContract(controlOpt.isDefined, desc, controlOpt.getOrElse(DefaultMethodControl))
     }
 
     private def findMethodControl(desc: MethodDescription): Option[MethodControl] = {
@@ -92,24 +93,26 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         None
     }
 
-    private def extractMethodControlBehavior(isActivated: Boolean, desc: MethodDescription, control: MethodControl): GenericMethodBehavior = {
-        val paramBehaviors             = getParamBehaviors(desc.javaMethod)
+    private def extractMethodControlContract(isActivated: Boolean, desc: MethodDescription, control: MethodControl): SyncObjectContext => MethodContract[Any] = {
+        val paramContracts             = genParamContracts(desc.javaMethod)
         val rule                       = getRule(isActivated, control, desc.classDesc)
         val agreementBuilder           = rule.apply(new GenericRMIRulesAgreementBuilder())
         val isHidden                   = control.hide
         val forceLocalInnerInvocations = control.forceLocalInnerInvocations()
-        val returnValueBhv             = new MethodReturnValueBehavior[Any](control.synchronizeReturnValue())
+        val returnValueContract        = new SimpleValueContract[Any](control.synchronizeReturnValue())
 
-        new DefaultGenericMethodBehavior(
-            isActivated, isHidden,
-            forceLocalInnerInvocations, paramBehaviors, returnValueBhv, agreementBuilder
-        )
+        context => {
+            val agreement = agreementBuilder.result(context)
+            new MethodContractImpl[Any](
+                forceLocalInnerInvocations, agreement, paramContracts,
+                returnValueContract, desc, null, isHidden)
+        }
     }
 
-    override def genFieldBehavior(desc: FieldDescription): FieldBehavior[Any] = {
+    override def genFieldContract(desc: FieldDescription): FieldContract[Any] = {
         val control        = Option(desc.javaField.getAnnotation(classOf[Synchronized]))
         val isSynchronized = control.isDefined
-        SyncFieldBehavior(desc, isSynchronized, null)
+        new FieldContractImpl[Any](desc, None, isSynchronized)
     }
 
     val DefaultMethodControl: MethodControl = {

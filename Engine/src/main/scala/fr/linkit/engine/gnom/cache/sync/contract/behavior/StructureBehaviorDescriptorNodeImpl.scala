@@ -13,25 +13,18 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.FieldBehavior
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.{GenericMethodBehavior, MethodBehavior, UsageMethodBehavior}
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{SyncObjectContext, SynchronizedStructureBehavior}
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
+import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.StructureBehaviorDescriptorNode
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.{ValueModifier, ValueModifierHandler}
-import fr.linkit.api.gnom.cache.sync.contract.{ParameterContract, StructureContractDescriptor, SynchronizedStructureContract}
-import fr.linkit.api.gnom.cache.sync.contractv2.{MethodContract, ObjectStructureContract}
-import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.MethodParameterBehavior
+import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract, StructureContract}
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.modification.DefaultValueModifierHandler
-import fr.linkit.engine.gnom.cache.sync.contract.{AbstractSynchronizedStructure, MethodParameterContract}
-import fr.linkit.engine.gnom.cache.sync.contractv2.MethodContractImpl
+import fr.linkit.engine.gnom.cache.sync.contractv2.{MethodContractImpl, StructureContractImpl}
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 
-class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: StructureContractDescriptor[A],
+class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDescriptor: StructureContractDescriptor[A],
                                                        @Nullable val superClass: StructureBehaviorDescriptorNodeImpl[_ >: A],
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
 
@@ -43,15 +36,15 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         interfaces.foreach(f)
     }
 
-    private def putMethods(map: mutable.HashMap[Int, MethodContract[_]], context: SyncObjectContext): Unit = {
-        for (contractDesc <- descriptor.withMethods) {
-            val id = contractDesc.description.methodId
+    private def putMethods(map: mutable.HashMap[Int, MethodContract[Any]], context: SyncObjectContext): Unit = {
+        for (desc <- instanceDescriptor.methods) {
+            val id = desc.description.methodId
             if (!map.contains(id)) {
-                val bhv = contractDesc.behavior match {
-                    case behavior: GenericMethodBehavior => behavior.toUsage(context)
-                    case behavior: UsageMethodBehavior   => behavior
-                }
-                map.put(id, new MethodContractImpl(bhv.forceLocalInnerInvocations, bhv.agreement, bhv.parameterBehaviors))
+                val agreement = desc.agreement.result(context)
+                val contract  = new MethodContractImpl[Any](
+                    desc.forceLocalInnerInvocations, agreement, desc.parameterContracts,
+                    desc.returnValueContract, desc.description, desc.procrastinator, desc.isHidden)
+                map.put(id, contract)
             }
         }
         if (superClass != null)
@@ -59,9 +52,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         interfaces.foreach(_.putMethods(map, context))
     }
 
-    private def putFields(map: mutable.HashMap[Int, FieldBehavior[Any]]): Unit = {
-        for (field <- descriptor.withFields) {
-            val id = field.desc.fieldId
+    private def putFields(map: mutable.HashMap[Int, FieldContract[Any]]): Unit = {
+        for ((id, field) <- instanceDescriptor.fields) {
             if (!map.contains(id))
                 map.put(id, field)
         }
@@ -70,75 +62,37 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         interfaces.foreach(_.putFields(map))
     }
 
-    private def getParameterContracts(methodDesc: MethodDescription, methodBehavior: MethodBehavior): Array[ParameterContract[Any]] = {
-        val params         = methodDesc.params
-        val paramBehaviors = methodBehavior.parameterBehaviors
-        val paramBhvCount  = paramBehaviors.length
-        (for (i <- methodDesc.params.indices) yield {
-            val param         = params(i)
-            val paramBehavior = if (i < paramBhvCount) paramBehaviors(i) else MethodParameterBehavior[Any](false)
-
-            MethodParameterContract[Any](param, Some(paramBehavior), None)
-        }).toArray
-    }
-
     private def fillWithAnnotatedBehaviors(desc: SyncStructureDescription[A],
-                                           methodMap: mutable.HashMap[Int, MethodContract],
-                                           fieldMap: mutable.HashMap[Int, FieldBehavior[Any]],
+                                           methodMap: mutable.HashMap[Int, MethodContract[Any]],
+                                           fieldMap: mutable.HashMap[Int, FieldContract[Any]],
                                            context: SyncObjectContext): Unit = {
         desc.listMethods().foreach(methodDesc => {
             val id = methodDesc.methodId
             if (!methodMap.contains(id)) {
                 //TODO maybe add a default procrastinator in this node's descriptor.
-                val bhv                 = AnnotationBasedMemberBehaviorFactory.genMethodBehavior(None, methodDesc).toUsage(context)
-                val parameterContracts0 = getParameterContracts(methodDesc, bhv)
-                methodMap.put(id, new MethodContract {
-                    override val description        : MethodDescription             = methodDesc
-                    override val behavior           : UsageMethodBehavior           = bhv
-                    override val parameterContracts : Array[ParameterContract[Any]] = parameterContracts0
-                    override val returnValueModifier: ValueModifier[Any]            = null
-                    override val procrastinator     : Procrastinator                = null
-                    override val handler            : MethodInvocationHandler       = DefaultMethodInvocationHandler
-                })
+                val contract = AnnotationBasedMemberBehaviorFactory.genMethodContract(None, methodDesc)(context)
+                methodMap.put(id, contract)
             }
         })
         desc.listFields().foreach(field => {
             val id = field.fieldId
             if (!fieldMap.contains(id)) {
-                val bhv = AnnotationBasedMemberBehaviorFactory.genFieldBehavior(field)
+                val bhv = AnnotationBasedMemberBehaviorFactory.genFieldContract(field)
                 fieldMap.put(id, bhv)
             }
         })
     }
 
-    override def getContract(clazz: Class[_], context: SyncObjectContext): ObjectStructureContract[A] = {
+    override def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A] = {
         val classDesc = SyncObjectDescription[A](clazz)
-        val methodMap = mutable.HashMap.empty[Int, MethodContract]
-        val fieldMap  = mutable.HashMap.empty[Int, FieldBehavior[Any]]
+        val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
+        val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
 
         putMethods(methodMap, context)
         putFields(fieldMap)
         fillWithAnnotatedBehaviors(classDesc, methodMap, fieldMap, context)
 
-        val bhv = new AbstractSynchronizedStructure[UsageMethodBehavior, FieldBehavior[Any]] with SynchronizedStructureBehavior[A] {
-            override           val isFullRemote: Boolean                       = classDesc.fullRemoteDefaultRule.nonEmpty
-            override protected val methods     : Map[Int, UsageMethodBehavior] = methodMap.view.mapValues(_.behavior).toMap
-            override protected val fields      : Map[Int, FieldBehavior[Any]]  = fieldMap.toMap
-
-            override def getFieldBehavior(id: Int): Option[FieldBehavior[Any]] = getField(id)
-
-            override def getMethodBehavior(id: Int): Option[UsageMethodBehavior] = getMethod(id)
-        }
-
-        new AbstractSynchronizedStructure[MethodContract, FieldBehavior[Any]]() with SynchronizedStructureContract[A] {
-            override protected val methods: Map[Int, MethodContract]     = methodMap.toMap
-            override protected val fields : Map[Int, FieldBehavior[Any]] = fieldMap.toMap
-
-            override val description: SyncStructureDescription[A]      = SyncObjectDescription(clazz)
-            override val behavior   : SynchronizedStructureBehavior[A] = bhv
-            override val modifier   : Option[ValueModifierHandler[A]]  = Some(new DefaultValueModifierHandler[A](StructureBehaviorDescriptorNodeImpl.this))
-
-            override def getMethodContract(id: Int): Option[MethodContract] = getMethod(id)
-        }
+        new StructureContractImpl(clazz, methodMap.toMap, fieldMap.values.toArray)
     }
+
 }

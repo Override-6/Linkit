@@ -13,11 +13,12 @@
 
 package fr.linkit.engine.gnom.cache.sync.contractv2
 
-import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract, ObjectStructureContract, SyncObjectFieldManipulation}
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract, StructureContract, SyncObjectFieldManipulation}
 
-class ObjectStructureContractImpl[A <: AnyRef](override val clazz: Class[_],
-                                               val methodContracts: Map[Int, MethodContract[_]],
-                                               val fieldContracts: Array[FieldContract]) extends ObjectStructureContract[A] {
+class StructureContractImpl[A <: AnyRef](override val clazz: Class[_],
+                                         val methodContracts: Map[Int, MethodContract[Any]],
+                                         val fieldContracts: Array[FieldContract[Any]]) extends StructureContract[A] {
 
     override def getMethodContract[R](id: Int): MethodContract[R] = {
         val x = methodContracts.getOrElse(id,
@@ -25,9 +26,9 @@ class ObjectStructureContractImpl[A <: AnyRef](override val clazz: Class[_],
         x.asInstanceOf[MethodContract[R]]
     }
 
-    override def applyFieldsContracts(obj: A, manip: SyncObjectFieldManipulation): Unit = {
+    override def applyFieldsContracts(obj: A with SynchronizedObject[A], manip: SyncObjectFieldManipulation): Unit = {
         for (contract <- fieldContracts) {
-            contract.applyContract(obj, manip)
+            contract.applyContract(obj.asInstanceOf[AnyRef with SynchronizedObject[AnyRef]], manip)
         }
     }
 }

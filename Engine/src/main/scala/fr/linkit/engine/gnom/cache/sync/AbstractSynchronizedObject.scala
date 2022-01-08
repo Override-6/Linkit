@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.contractv2.ObjectStructureContract
+import fr.linkit.api.gnom.cache.sync.contractv2.StructureContract
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, InvocationHandlingData}
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
@@ -23,12 +23,12 @@ import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    protected final          var location         : SyncObjectReference        = _
-    @transient final         var puppeteer        : Puppeteer[A]               = _
-    @transient final         var contract         : ObjectStructureContract[A] = _
-    @transient final         var choreographer    : InvocationChoreographer    = _
-    @transient private final var presenceOnNetwork: NetworkObjectPresence      = _
-    @transient private final var node             : ObjectSyncNode[A]          = _
+    protected final          var location         : SyncObjectReference     = _
+    @transient final         var puppeteer        : Puppeteer[A]            = _
+    @transient final         var contract         : StructureContract[A]    = _
+    @transient final         var choreographer    : InvocationChoreographer = _
+    @transient private final var presenceOnNetwork: NetworkObjectPresence   = _
+    @transient private final var node             : ObjectSyncNode[A]       = _
 
     //cached for handleCall
     @transient private final var currentIdentifier: String = _
@@ -78,15 +78,14 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         if (!methodContract.isRMIActivated || choreographer.isMethodExecutionForcedToLocal) {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
-        val data = new InvocationHandlingData {
-            override val methodId             : Int               = id
-            override val operatingNode        : ObjectSyncNode[_] = node
-            override val synchronizedArguments: Array[Any]        = synchronizedArgs
-            override val puppeteer            : Puppeteer[_]      = AbstractSynchronizedObject.this.puppeteer
+        val data = new methodContract.RemoteInvocationExecution {
+            override val operatingNode: ObjectSyncNode[_] = node
+            override val arguments    : Array[Any]        = synchronizedArgs
+            override val puppeteer    : Puppeteer[_]      = AbstractSynchronizedObject.this.puppeteer
 
             override def doSuperCall(): Unit = superCall(synchronizedArgs)
         }
-        methodContract.handleRMI(data)
+        methodContract.executeRemoteMethodInvocation(data)
     }
 
     @inline override def isInitialized: Boolean = puppeteer != null

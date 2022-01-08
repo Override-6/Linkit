@@ -20,18 +20,18 @@ import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, SyncObjectFieldM
 import fr.linkit.engine.internal.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
-class FieldContractImpl(desc: FieldDescription,
-                        @Nullable modifier: ValueModifier[Any],
-                        isSynchronized: Boolean) extends FieldContract {
+class FieldContractImpl[A](val desc: FieldDescription,
+                           val modifier: Option[ValueModifier[A]],
+                           val isSynchronized: Boolean) extends FieldContract[A] {
 
-    override def applyContract(obj: AnyRef, manip: SyncObjectFieldManipulation): Unit = {
+    override def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manip: SyncObjectFieldManipulation): Unit = {
         val field      = desc.javaField
         val engine     = manip.engine
         var fieldValue = ScalaUtils.getValue(obj, field)
         //As the given object is being synchronized,
         fieldValue = manip.findSynchronizedVersion(fieldValue).getOrElse(fieldValue)
-        if (modifier != null) {
-            fieldValue = modifier.fromRemote(fieldValue, engine)
+        if (modifier.isDefined) {
+            fieldValue = modifier.get.fromRemote(fieldValue.asInstanceOf[A], engine)
         }
         if (isSynchronized && fieldValue != null) {
             fieldValue = fieldValue match {

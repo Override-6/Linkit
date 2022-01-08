@@ -13,8 +13,10 @@
 
 package fr.linkit.api.gnom.cache.sync.contractv2
 
-trait FieldContract {
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 
-    def applyContract(obj: AnyRef, manipulation: SyncObjectFieldManipulation): Unit
+trait FieldContract[A] extends ValueContract[A] {
+
+    def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manipulation: SyncObjectFieldManipulation): Unit
 
 }

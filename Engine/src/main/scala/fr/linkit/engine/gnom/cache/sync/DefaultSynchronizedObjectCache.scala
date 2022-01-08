@@ -223,7 +223,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                 val treeID     = profile.treeID
                 //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
                 if (isRegistered(treeID)) {
-                    forest.findTree(treeID).map(_.rootNode).fold {
+                    forest.findTreeInternal(treeID).map(_.getRoot).fold {
                         throw new NoSuchSyncNodeException(s"Could not find root object's chip ${rootObject.reference}")
                     }(_.chip.updateObject(rootObject))
                 }

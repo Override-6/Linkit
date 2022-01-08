@@ -11,14 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract
+package fr.linkit.engine.gnom.cache.sync.contractv2
 
-import fr.linkit.api.gnom.cache.sync.contract.ParameterContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.method.ParameterBehavior
+import fr.linkit.api.gnom.cache.sync.contractv2.ValueContract
 import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
 
-import java.lang.reflect.Parameter
-
-case class MethodParameterContract[A](override val param: Parameter,
-                                 override val behavior: Option[ParameterBehavior[A]],
-                                 override val modifier: Option[ValueModifier[A]]) extends ParameterContract[A]
+class SimpleValueContract[A](override val isSynchronized: Boolean,
+                             override val modifier: Option[ValueModifier[A]] = None) extends ValueContract[A]

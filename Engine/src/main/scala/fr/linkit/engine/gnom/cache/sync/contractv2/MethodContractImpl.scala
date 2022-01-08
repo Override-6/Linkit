@@ -15,20 +15,22 @@ package fr.linkit.engine.gnom.cache.sync.contractv2
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
-import fr.linkit.api.gnom.cache.sync.contract.descriptors.MethodContractDescriptor
+import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.contractv2.{MethodContract, ValueContract}
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingData
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 
 class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
                             val agreement: RMIRulesAgreement,
                             val parameterContracts: Array[ValueContract[Any]],
                             val returnValueContract: ValueContract[Any],
-                            val procrastinator: Procrastinator) extends MethodContract[R] {
+                            val description: MethodDescription,
+                            override val procrastinator: Procrastinator,
+                            override val isHidden: Boolean) extends MethodContract[R] {
 
     override val isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
 
@@ -57,10 +59,10 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
         }
     }
 
-    override def handleRMI(data: InvocationHandlingData): R = {
-        val id                                                = data.methodId
+    override def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R = {
+        val id                                                = description.methodId
         val node                                              = data.operatingNode
-        val args                                              = data.synchronizedArguments
+        val args                                              = data.arguments
         val choreographer                                     = node.synchronizedObject.getChoreographer
         val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, node) with CallableLocalMethodInvocation[R] {
             override val methodArguments: Array[Any] = args
@@ -74,6 +76,34 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
             }
         }
         handleRMI(data.puppeteer, localInvocation)
+    }
+
+    override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Unit = {
+        val args = data.arguments
+        modifyParameters(origin, args)
+        AppLogger.debug {
+            val name     = description.javaMethod.getName
+            val methodID = description.methodId
+            s"RMI - Calling method $methodID $name(${args.mkString(", ")})"
+        }
+        description.javaMethod.invoke(origin, args: _*)
+    }
+
+    @inline
+    private def modifyParameters(engine: Engine, params: Array[Any]): Unit = {
+        if (parameterContracts.isEmpty)
+            return
+        for (i <- params.indices) {
+            val contract = parameterContracts(i)
+
+            val modifier = contract.modifier.orNull
+            var result   = params(i)
+            if (modifier != null) {
+                result = modifier.fromRemote(result, engine)
+                modifier.fromRemoteEvent(result, engine)
+            }
+            params(i) = result
+        }
     }
 
     private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {

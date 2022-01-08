@@ -13,18 +13,17 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
+import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule
-import fr.linkit.api.gnom.cache.sync.contract.behavior.member.field.{FieldBehavior, FieldModifier}
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.{ContractDescriptorData, MethodContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{ParameterContract, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, ValueContract}
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.MethodParameterContract
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.member.{DefaultUsageMethodBehavior, MethodParameterBehavior, MethodReturnValueBehavior, SyncFieldBehavior}
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder.{MethodBehaviorBuilder, Recognizable}
+import fr.linkit.engine.gnom.cache.sync.contractv2.{FieldContractImpl, SimpleValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.GenericRMIRulesAgreementBuilder
 
 import java.lang.reflect.{Field, Method, Parameter}
@@ -46,13 +45,9 @@ abstract class ContractDescriptorDataBuilder {
         var descriptions = builders.values.map(_.getResult).toArray
         if (!descriptions.exists(_.targetClass eq classOf[Object])) {
             descriptions :+= new StructureContractDescriptor[Object] {
-                override val targetClass          : Class[Object]                                   = classOf[Object]
-                override val usingHierarchy       : Array[StructureContractDescriptor[_ >: Object]] = Array.empty
-                override val withMethods          : Array[MethodContractDescriptor]                 = Array.empty
-                override val withFields           : Array[FieldBehavior[Any]]                       = Array.empty
-                override val whenField            : Option[FieldModifier[Object]] = None
-                override val whenParameter        : Option[ValueModifier[Object]] = None
-                override val whenMethodReturnValue: Option[ValueModifier[Object]] = None
+                override val targetClass: Class[Object]                    = classOf[Object]
+                override val methods    : Array[MethodContractDescriptor]  = Array.empty
+                override val fields     : Array[(Int, FieldContract[Any])] = Array.empty
             }
         }
         new ContractDescriptorDataImpl(descriptions)
@@ -69,19 +64,11 @@ abstract class ContractDescriptorDataBuilder {
             this(None)(desc)
         }
 
-        private val clazz                  = desc.clazz
-        private val methodBehaviors        = mutable.HashMap.empty[Method, MethodContractDescriptorImpl]
-        private val fieldBehaviors         = mutable.HashMap.empty[Field, SyncFieldBehavior[Any]]
-        private val inheritedBehaviorsTags = ListBuffer.empty[Any]
+        private val clazz           = desc.clazz
+        private val methodContracts = mutable.HashMap.empty[Method, MethodContractDescriptor]
+        private val fieldContracts  = mutable.HashMap.empty[Field, FieldContractImpl[Any]]
 
-        protected var whenField            : FieldModifier[T]               = _
-        protected var whenParameter        : ValueModifier[T]               = _
-        protected var whenMethodReturnValue: ValueModifier[T]               = _
-        private   var result               : StructureContractDescriptor[_] = _
-
-        def inherit(tags: Any*): Unit = {
-            inheritedBehaviorsTags ++= tags
-        }
+        private var result: StructureContractDescriptor[_] = _
 
         def enable: MemberEnable = new MemberEnable
 
@@ -91,13 +78,13 @@ abstract class ContractDescriptorDataBuilder {
 
             def field(name: String): Unit = {
                 val fDesc = desc.findFieldDescription(name).get
-                fieldBehaviors.put(fDesc.javaField, SyncFieldBehavior(fDesc, false, null))
+                fieldContracts.put(fDesc.javaField, new FieldContractImpl[Any](fDesc, None, false))
             }
 
             def method(name: String): Unit = {
                 val mDesc              = desc.findMethodDescription(name).get
-                val contractDescriptor = MethodContractDescriptorImpl(mDesc, null, null, Array.empty, DefaultUsageMethodBehavior.Disabled)
-                methodBehaviors.put(mDesc.javaMethod, contractDescriptor)
+                val contractDescriptor = MethodContractDescriptorImpl(mDesc, null, null, Array.empty, false, false, new GenericRMIRulesAgreementBuilder())
+                methodContracts.put(mDesc.javaMethod, contractDescriptor)
             }
         }
 
@@ -112,7 +99,7 @@ abstract class ContractDescriptorDataBuilder {
                 }
 
                 def as(methodName: String): Unit = conclude {
-                    val bhv = methodBehaviors.getOrElse(getMethod(methodName).javaMethod, {
+                    val bhv = methodContracts.getOrElse(getMethod(methodName).javaMethod, {
                         throw new NoSuchElementException(s"Method '$methodName' not described. its behavior must be described before.")
                     })
                     descs.map(new MethodContractDescriptorImpl(_, bhv))
@@ -127,10 +114,8 @@ abstract class ContractDescriptorDataBuilder {
 
                 def withRule(rule: RemoteInvocationRule): Unit = conclude {
                     descs.map(desc => {
-                        val builder = new GenericRMIRulesAgreementBuilder()
-                        rule(builder)
-                        val behavior = new DefaultGenericMethodBehavior(true, false, false, Array.empty, null, builder)
-                        MethodContractDescriptorImpl(desc, null, null, Array.empty, behavior)
+                        val builder = rule(new GenericRMIRulesAgreementBuilder())
+                        MethodContractDescriptorImpl(desc, null, null, Array.empty, false, false, builder)
                     })
                 }
 
@@ -138,7 +123,7 @@ abstract class ContractDescriptorDataBuilder {
                     if (concluded)
                         throw new IllegalStateException("This method was already described.")
                     conclusion.foreach { contractDescriptor =>
-                        methodBehaviors.put(contractDescriptor.description.javaMethod, contractDescriptor)
+                        methodContracts.put(contractDescriptor.description.javaMethod, contractDescriptor)
                     }
                     concluded = true
                 }
@@ -166,30 +151,21 @@ abstract class ContractDescriptorDataBuilder {
                 new MethodBehaviorDescriptorBuilderIntroduction(Array(mDesc))
             }
 
-            def field[F <: AnyRef](name: String)(modifier: FieldModifier[F]): Unit = {
-                val fDesc = getField(name)
-                val bhv   = new SyncFieldBehavior[F](fDesc, true, modifier)
-                fieldBehaviors.put(fDesc.javaField, bhv.asInstanceOf[SyncFieldBehavior[Any]])
+            def field[F <: AnyRef](name: String)(modifier: ValueModifier[F]): Unit = {
+                val fDesc    = getField(name)
+                val contract = new FieldContractImpl[F](fDesc, Some(modifier), true)
+                fieldContracts.put(fDesc.javaField, contract.asInstanceOf[FieldContractImpl[Any]])
             }
         }
 
         private[ContractDescriptorDataBuilder] def getResult: StructureContractDescriptor[_] = {
             if (result != null)
                 return result
-            val hierarchy = inheritedBehaviorsTags.map(tag => builders.getOrElse(tag, {
-                throw new NoSuchElementException(s"Could not find behavior descriptor with tag '$tag'.")
-            }).getResult).toArray.asInstanceOf[Array[StructureContractDescriptor[_ >: T]]]
-
-            val builder = this
             result = new StructureContractDescriptor[T] {
-                override val targetClass   : Class[T]                                   = desc.clazz
-                override val usingHierarchy: Array[StructureContractDescriptor[_ >: T]] = hierarchy
-                override val withMethods   : Array[MethodContractDescriptor]            = methodBehaviors.values.toArray
-                override val withFields    : Array[FieldBehavior[Any]]                  = fieldBehaviors.values.toArray
+                override val targetClass: Class[T]                         = desc.clazz
+                override val methods    : Array[MethodContractDescriptor]  = methodContracts.values.toArray
+                override val fields     : Array[(Int, FieldContract[Any])] = fieldContracts.values.map(x => (x.desc.fieldId, x)).toArray
 
-                override val whenField            : Option[FieldModifier[T]] = Option(builder.whenField)
-                override val whenParameter        : Option[ValueModifier[T]] = Option(builder.whenParameter)
-                override val whenMethodReturnValue: Option[ValueModifier[T]] = Option(builder.whenMethodReturnValue)
             }
             result
         }
@@ -206,7 +182,7 @@ object ContractDescriptorDataBuilder {
 
     abstract class MethodBehaviorBuilder(rule: RemoteInvocationRule = BasicInvocationRule.ONLY_CURRENT) extends AbstractBehaviorBuilder[MethodDescription] {
 
-        private val paramContract              = mutable.HashMap.empty[Parameter, ParameterContract[Any]]
+        private val paramContract              = mutable.HashMap.empty[Parameter, ValueContract[Any]]
         private var usedParams: Option[params] = None
 
         private var forceLocalInvocation: Boolean        = false
@@ -223,12 +199,12 @@ object ContractDescriptorDataBuilder {
         object returnvalue {
 
             var enabled = true
-            private[MethodBehaviorBuilder] var modifier: ValueModifier[_] = _
+            private[MethodBehaviorBuilder] var modifier: ValueModifier[Any] = _
 
-            def withModifier[R <: AnyRef](modifier: ValueModifier[R]): Unit = {
+            def withModifier[R](modifier: ValueModifier[R]): Unit = {
                 if (this.modifier != null)
                     throw new IllegalStateException("Return Value modifier already set !")
-                this.modifier = modifier
+                this.modifier = modifier.asInstanceOf[ValueModifier[Any]]
             }
         }
 
@@ -242,7 +218,7 @@ object ContractDescriptorDataBuilder {
 
             class As(override val tag: Option[Any]) extends Recognizable {
 
-                private[params] var assignedBehavior: ParameterContract[Any] = _
+                private[params] var assignedBehavior: ValueContract[Any] = _
 
                 def as(paramName: String): Unit = {
                     assignedBehavior = getParamBehavior(paramName)(s"Parameter '$paramName' not described. Its behavior must be described before.")
@@ -255,14 +231,14 @@ object ContractDescriptorDataBuilder {
 
             def enable[P <: AnyRef](paramName: String)(paramModifier: ValueModifier[P]): Unit = callOnceContextSet {
                 val param = getParam(paramName)
-                val bhv   = new MethodParameterContract[P](param, Some(MethodParameterBehavior(true)), Option(paramModifier))
-                paramContract.put(param, bhv.asInstanceOf[ParameterContract[Any]])
+                val bhv   = new SimpleValueContract[P](true, Option(paramModifier))
+                paramContract.put(param, bhv.asInstanceOf[ValueContract[Any]])
             }
 
             def enable[P <: AnyRef](idx: Int, paramModifier: ValueModifier[P]): Unit = callOnceContextSet {
                 val param = getParam(idx)
-                val bhv   = new MethodParameterContract[P](param, Some(MethodParameterBehavior(true)), Option(paramModifier))
-                paramContract.put(param, bhv.asInstanceOf[ParameterContract[Any]])
+                val bhv   = new SimpleValueContract[P](true, Option(paramModifier))
+                paramContract.put(param, bhv.asInstanceOf[ValueContract[Any]])
             }
 
             def enable(paramName: String): As = {
@@ -292,25 +268,28 @@ object ContractDescriptorDataBuilder {
         private[ContractDescriptorDataBuilder] def build(): MethodContractDescriptorImpl = {
             usedParams.foreach(_.concludeAllAssignements()) //will modify the paramBehaviors map
             val jMethod             = context.javaMethod
-            val parameterBehaviors  = getParamContracts(jMethod).map(_.behavior.orNull)
-            val returnValueBehavior = new MethodReturnValueBehavior[Any](returnvalue.enabled)
-            val returnValueModifier = returnvalue.modifier.asInstanceOf[ValueModifier[Any]]
+            val parameterContracts  = getParamContracts(jMethod)
+            val returnValueContract = new ValueContract[Any] {
+                override val isSynchronized: Boolean                    = returnvalue.enabled
+                override val modifier      : Option[ValueModifier[Any]] = Option(returnvalue.modifier)
+            }
             val builder             = new GenericRMIRulesAgreementBuilder()
             rule(builder)
-            val behavior = new DefaultGenericMethodBehavior(true, false, forceLocalInvocation, parameterBehaviors, returnValueBehavior, builder)
-            MethodContractDescriptorImpl(context, procrastinator, returnValueModifier, Array.empty, behavior)
+            MethodContractDescriptorImpl(context, procrastinator, returnValueContract, parameterContracts, false, forceLocalInvocation, builder)
         }
 
-        private def getParamContracts(jMethod: Method): Array[ParameterContract[Any]] = {
+        private def getParamContracts(jMethod: Method): Array[ValueContract[Any]] = {
             val base = jMethod.getParameters.map(getOrDefaultContract)
-            if (base.exists(pb => pb.modifier != null || pb.behavior.exists(_.isActivated)))
+            if (base.exists(pb => pb.modifier != null || pb.isSynchronized))
                 base
             else Array.empty
         }
 
-        private def getOrDefaultContract(parameter: Parameter): ParameterContract[Any] = {
-            val bhv = AnnotationBasedMemberBehaviorFactory.genParameterBehavior(parameter)
-            paramContract.getOrElse(parameter, MethodParameterContract(parameter, Some(bhv), None))
+        private def getOrDefaultContract(parameter: Parameter): ValueContract[Any] = {
+            paramContract.getOrElse(parameter, {
+                val bhv = AnnotationBasedMemberBehaviorFactory.genParameterContract(parameter)
+                new SimpleValueContract(bhv.isSynchronized, bhv.modifier)
+            })
         }
 
         private def getParam(paramName: String): Parameter = {
@@ -325,7 +304,7 @@ object ContractDescriptorDataBuilder {
             context.javaMethod.getParameters()(idx)
         }
 
-        private def getParamBehavior(name: String)(noSuchMsg: String): ParameterContract[Any] = {
+        private def getParamBehavior(name: String)(noSuchMsg: String): ValueContract[Any] = {
             val param = getParam(name)
             if (param.getType.isPrimitive)
                 throw new UnsupportedOperationException("can't synchronize or apply modifiers on primitive values.")
@@ -334,7 +313,7 @@ object ContractDescriptorDataBuilder {
             })
         }
 
-        private def getParamBehavior(idx: Int)(noSuchMsg: String): ParameterContract[Any] = {
+        private def getParamBehavior(idx: Int)(noSuchMsg: String): ValueContract[Any] = {
             val param = getParam(idx)
             if (param.getType.isPrimitive)
                 throw new UnsupportedOperationException("can't synchronize or apply modifiers on primitive values.")

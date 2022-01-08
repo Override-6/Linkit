@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.contractv2.ObjectStructureContract
+import fr.linkit.api.gnom.cache.sync.contractv2.StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
@@ -22,8 +22,8 @@ import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedOb
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
-import fr.linkit.engine.gnom.cache.sync.{AbstractSynchronizedObject, IllegalSynchronizedObjectException, RMIExceptionString}
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
+import fr.linkit.engine.gnom.cache.sync.{AbstractSynchronizedObject, IllegalSynchronizedObjectException, RMIExceptionString}
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import org.jetbrains.annotations.Nullable
@@ -38,7 +38,7 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
                                       data: ObjectNodeData[A]) extends InternalObjectSyncNode[A] {
 
     override  val reference         : SyncObjectReference          = data.reference
-    override  val contract          : ObjectStructureContract[A]   = data.contract
+    override  val contract          : StructureContract[A]         = data.contract
     override  val id                : Int                          = reference.nodePath.last
     override  val chip              : Chip[A]                      = data.chip
     override  val puppeteer         : Puppeteer[A]                 = data.puppeteer
@@ -170,11 +170,10 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
     private def initSyncObject(): Unit = {
         synchronizedObject match {
             case sync: AbstractSynchronizedObject[A] => sync.initialize(this)
-            case _ => throw new IllegalSynchronizedObjectException(
+            case _                                   => throw new IllegalSynchronizedObjectException(
                 "Received unknown kind of synchronized object: " +
                         "could not initialize synchronized object because received object does not extends AbstractSynchronizedObject.")
         }
     }
-
 
 }
