@@ -15,5 +15,5 @@ package fr.linkit.api.gnom.cache.sync.contract.descriptors
 
 trait ContractDescriptorData {
 
-    def getNode(clazz: Class[_]): StructureBehaviorDescriptorNode[_]
+    def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A]
 }

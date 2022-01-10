@@ -17,7 +17,9 @@ import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.StructureBehaviorDescriptorNode
+import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract, StructureContract}
+import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contractv2.{MethodContractImpl, StructureContractImpl}
 import org.jetbrains.annotations.Nullable
@@ -25,8 +27,11 @@ import org.jetbrains.annotations.Nullable
 import scala.collection.mutable
 
 class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDescriptor: StructureContractDescriptor[A],
+                                                       @Nullable val modifier: ValueModifier[A],
                                                        @Nullable val superClass: StructureBehaviorDescriptorNodeImpl[_ >: A],
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
+
+    private val clazz = instanceDescriptor.targetClass
 
     override def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit = {
         if (superClass != null) {
@@ -95,4 +100,56 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDesc
         new StructureContractImpl(clazz, methodMap.toMap, fieldMap.values.toArray)
     }
 
+    override def getInstanceModifier[L >: A](limit: Class[L]): ValueModifier[A] = {
+        new HeritageValueModifier(limit)
+    }
+
+    class HeritageValueModifier[L >: A](limit: Class[L]) extends ValueModifier[A] {
+
+        lazy val superClassModifier  = if (superClass.clazz == limit) None else Some(superClass.getInstanceModifier(limit))
+        lazy val interfacesModifiers = computeInterfacesModifiers()
+
+        override def fromRemote(value: A, remote: Engine): A = {
+            transform(value)((m, a) => m.fromRemote(a, remote))
+        }
+
+        override def toRemote(value: A, remote: Engine): A = {
+            transform(value)((m, a) => m.toRemote(a, remote))
+        }
+
+        override def fromRemoteEvent(value: A, remote: Engine): Unit = {
+            iterate(_.fromRemoteEvent(value, remote))
+        }
+
+        override def toRemoteEvent(value: A, remote: Engine): Unit = {
+            iterate(_.toRemoteEvent(value, remote))
+        }
+
+        def iterate(f: ValueModifier[A] => Unit): Unit = {
+            f(modifier)
+            if (limit.isInterface) {
+                for (interfaceModifier <- interfacesModifiers)
+                    f(interfaceModifier)
+            } else if (superClass != null) superClassModifier match {
+                case Some(modifier: HeritageValueModifier[A]) => f(modifier)
+                case None                                     =>
+            }
+        }
+
+        def transform(start: A)(f: (ValueModifier[A], A) => A): A = {
+            var a = f(modifier, start)
+            if (limit.isInterface) {
+                for (interfaceModifier <- interfacesModifiers)
+                    a = f(interfaceModifier, a)
+            } else if (superClass != null) superClassModifier match {
+                case Some(modifier: HeritageValueModifier[A]) => a = f(modifier, a)
+                case None                                     =>
+            }
+            a
+        }
+
+        private def computeInterfacesModifiers(): Array[ValueModifier[A]] = {
+            interfaces.filter(n => limit.isAssignableFrom(n.clazz)).map(_.getInstanceModifier(limit))
+        }
+    }
 }

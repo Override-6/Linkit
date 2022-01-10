@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.contract.modification
 import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
 import fr.linkit.api.gnom.network.Engine
 
-abstract class LambdaFieldModifier[F <: AnyRef] extends ValueModifier[F] {
+abstract class LambdaFieldModifier[F <: AnyRef] extends ValueModifier[F, F] {
 
     private var fromRemote0     : (F, Engine) => F    = (f, _) => f
     private var fromRemoteEvent0: (F, Engine) => Unit = (_, _) => ()

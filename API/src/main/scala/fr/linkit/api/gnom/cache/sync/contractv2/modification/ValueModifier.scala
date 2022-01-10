@@ -15,14 +15,14 @@ package fr.linkit.api.gnom.cache.sync.contractv2.modification
 
 import fr.linkit.api.gnom.network.Engine
 
-trait ValueModifier[T] {
+trait ValueModifier[A] {
 
-    def fromRemote(value: T, remote: Engine): T = value
+    def fromRemote(value: A, remote: Engine): A = value
 
-    def fromRemoteEvent(value: T, remote: Engine): Unit = ()
+    def fromRemoteEvent(value: A, remote: Engine): Unit = ()
 
-    def toRemote(value: T, remote: Engine): T = value
+    def toRemote(value: A, remote: Engine): A = value
 
-    def toRemoteEvent(value: T, remote: Engine): Unit = ()
+    def toRemoteEvent(value: A, remote: Engine): Unit = ()
 
 }

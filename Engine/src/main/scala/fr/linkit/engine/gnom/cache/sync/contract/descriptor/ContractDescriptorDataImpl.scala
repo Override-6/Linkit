@@ -7,16 +7,16 @@ import fr.linkit.engine.internal.utils.ClassMap
 
 class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[_]]) extends ContractDescriptorData {
 
-    private val nodeMap = createNodes(descriptors)
+    private val nodeMap = computeNodes(descriptors)
 
-    override def getNode(clazz: Class[_]): StructureBehaviorDescriptorNode[_] = {
-        nodeMap.get(clazz).get
+    override def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A] = {
+        nodeMap.get(clazz).get.asInstanceOf[StructureBehaviorDescriptorNode[A]]
     }
 
-    private def createNodes(descriptors: Array[StructureContractDescriptor[_]]): ClassMap[StructureBehaviorDescriptorNode[_]] = {
+    private def computeNodes(descriptors: Array[StructureContractDescriptor[_]]): ClassMap[StructureBehaviorDescriptorNode[_]] = {
         descriptors.sortInPlace()((a, b) => {
-                    getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
-                })
+            getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
+        })
         val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()
         val objectDescriptor = descriptors.head
         if (objectDescriptor.targetClass != classOf[Object])

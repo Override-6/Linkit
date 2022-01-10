@@ -46,7 +46,7 @@ object ServerTests {
         //AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
 
         //val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
-        val resourcesFolder = getDefaultLinkitHome
+        //val resourcesFolder = getDefaultLinkitHome
 
         val config = new ServerApplicationConfigBuilder {
             override val resourcesFolder: String = resourcesFolder
