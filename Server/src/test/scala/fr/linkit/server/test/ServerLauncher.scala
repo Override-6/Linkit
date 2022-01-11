@@ -34,10 +34,10 @@ object ServerLauncher {
         AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
 
         //val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
-        val resourcesFolder = getOrElse(Array(args:_*), "--home-path", getDefaultLinkitHome)
+        val resourcesFolder0 = getOrElse(Array(args:_*), "--home-path", getDefaultLinkitHome)
 
         val config    = new ServerApplicationConfigBuilder {
-            override val resourcesFolder: String = resourcesFolder
+            override val resourcesFolder: String = resourcesFolder0
             pluginFolder = None //userDefinedPluginFolder
             mainPoolThreadCount = 2
             loadSchematic = new ScalaServerAppSchematic {

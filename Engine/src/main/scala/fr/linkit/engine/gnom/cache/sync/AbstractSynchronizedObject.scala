@@ -83,7 +83,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             override val arguments    : Array[Any]        = synchronizedArgs
             override val puppeteer    : Puppeteer[_]      = AbstractSynchronizedObject.this.puppeteer
 
-            override def doSuperCall(): Unit = superCall(synchronizedArgs)
+            override def doSuperCall(): Any = superCall(synchronizedArgs)
         }
         methodContract.executeRemoteMethodInvocation(data)
     }

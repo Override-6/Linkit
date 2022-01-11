@@ -15,11 +15,13 @@ package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.MethodContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contractv2.FieldContract
+import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
 
-trait StructureContractDescriptor[T <: AnyRef] {
+trait StructureContractDescriptor[A <: AnyRef] {
 
-    val targetClass: Class[T]
+    val targetClass: Class[A]
 
     val methods: Array[MethodContractDescriptor]
     val fields : Array[(Int, FieldContract[Any])]
+    val modifier: Option[ValueModifier[A]]
 }

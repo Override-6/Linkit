@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.StructureBehaviorDescriptorNode
 import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
@@ -100,21 +100,21 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDesc
         new StructureContractImpl(clazz, methodMap.toMap, fieldMap.values.toArray)
     }
 
-    override def getInstanceModifier[L >: A](limit: Class[L]): ValueModifier[A] = {
-        new HeritageValueModifier(limit)
+    override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {
+        new HeritageValueModifier(factory, limit)
     }
 
-    class HeritageValueModifier[L >: A](limit: Class[L]) extends ValueModifier[A] {
+    class HeritageValueModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]) extends ValueModifier[A] {
 
-        lazy val superClassModifier  = if (superClass.clazz == limit) None else Some(superClass.getInstanceModifier(limit))
-        lazy val interfacesModifiers = computeInterfacesModifiers()
+        lazy val superClassModifier: Option[ValueModifier[A]] = computeSuperClassModifier()
+        lazy val interfacesModifiers                          = computeInterfacesModifiers()
 
         override def fromRemote(value: A, remote: Engine): A = {
-            transform(value)((m, a) => m.fromRemote(a, remote))
+            transform(value)(_.fromRemote(_, remote))
         }
 
         override def toRemote(value: A, remote: Engine): A = {
-            transform(value)((m, a) => m.toRemote(a, remote))
+            transform(value)(_.toRemote(_, remote))
         }
 
         override def fromRemoteEvent(value: A, remote: Engine): Unit = {
@@ -126,30 +126,59 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDesc
         }
 
         def iterate(f: ValueModifier[A] => Unit): Unit = {
-            f(modifier)
             if (limit.isInterface) {
-                for (interfaceModifier <- interfacesModifiers)
+                for (interfaceModifier <- interfacesModifiers) {
                     f(interfaceModifier)
+                }
             } else if (superClass != null) superClassModifier match {
-                case Some(modifier: HeritageValueModifier[A]) => f(modifier)
-                case None                                     =>
+                case Some(modifier) => f(modifier)
+                case None           =>
             }
+            f(modifier)
         }
 
         def transform(start: A)(f: (ValueModifier[A], A) => A): A = {
-            var a = f(modifier, start)
-            if (limit.isInterface) {
-                for (interfaceModifier <- interfacesModifiers)
-                    a = f(interfaceModifier, a)
-            } else if (superClass != null) superClassModifier match {
-                case Some(modifier: HeritageValueModifier[A]) => a = f(modifier, a)
-                case None                                     =>
+            var a = start
+            if (a == null) {
+                return a
+            }
+            val clazz = a.getClass
+            if (clazz.isInterface) {
+                for (modifier <- interfacesModifiers) {
+                    handleExternalTransformation(a, modifier)(f)
+                }
+            } else superClassModifier match {
+                case None           =>
+                    a = f(modifier, a)
+                case Some(superMod) =>
+                    handleExternalTransformation(a, superMod)(f)
             }
             a
         }
 
+        private def handleExternalTransformation(initial: A, externalModifier: ValueModifier[A])(f: (ValueModifier[A], A) => A): A = {
+            var a = f(externalModifier, initial)
+            if (a == null) {
+                return a
+            }
+            //if the modified object is not the same type as the input object
+            //we get the node associated with the new object's type then continue
+            //the modification algorithm with the limit set to the initial class of the input object.
+            if (a.getClass != clazz)
+                a = f(factory.getInstanceModifier[A](a.getClass.asInstanceOf[Class[A]], clazz), a)
+            else a = f(modifier, a)
+            a
+        }
+
         private def computeInterfacesModifiers(): Array[ValueModifier[A]] = {
-            interfaces.filter(n => limit.isAssignableFrom(n.clazz)).map(_.getInstanceModifier(limit))
+            interfaces.asInstanceOf[Array[StructureBehaviorDescriptorNodeImpl[A]]]
+                    .filter(n => limit.isAssignableFrom(n.clazz))
+                    .map(_.getInstanceModifier(factory, limit))
+        }
+
+        private def computeSuperClassModifier(): Option[ValueModifier[A]] = {
+            if (!limit.isAssignableFrom(superClass.clazz)) None
+            else Some(superClass.asInstanceOf[StructureBehaviorDescriptorNodeImpl[A]].getInstanceModifier(factory, limit))
         }
     }
 }

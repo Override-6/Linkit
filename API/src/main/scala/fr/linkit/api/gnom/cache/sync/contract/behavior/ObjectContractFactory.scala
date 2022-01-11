@@ -21,10 +21,10 @@ trait ObjectContractFactory {
 
     val data: ContractDescriptorData
 
-    def getObjectContract[A <: AnyRef](clazz: Class[_], context: SyncObjectContext): StructureContract[A]
+    def getObjectContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext): StructureContract[A]
 
-    def getStaticContract[A <: AnyRef](clazz: Class[_]): StructureContract[A]
+    def getStaticContract[A <: AnyRef](clazz: Class[A]): StructureContract[A]
 
-    def getInstanceModifier[A <: AnyRef](clazz: Class[_]): ValueModifier[A]
+    def getInstanceModifier[A <: AnyRef](clazz: Class[A], limit: Class[_ >: A]): ValueModifier[A]
 
 }

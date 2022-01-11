@@ -20,10 +20,9 @@ import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkRefer
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
-import fr.linkit.engine.gnom.cache.sync.contract.modification.{LambdaFieldModifier, LambdaValueModifier}
+import fr.linkit.engine.gnom.cache.sync.contract.modification.LambdaValueModifier
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
@@ -130,17 +129,17 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.fromTag
         new ContractDescriptorDataBuilder {
             describe(new ClassDescriptor[SharedCacheManager]() {
-                whenParameter = new LambdaValueModifier[SharedCacheManager]() {
-                    currentToRemote = (param, _) => param match {
+                modifier = new LambdaValueModifier[SharedCacheManager]() {
+                    toRemote = (param, _) => param match {
                         case origin: SharedCacheOriginManager => transformToDistant(origin)
                         case _                                => param
                     }
                 }
             })
             describe(new ClassDescriptor[DefaultEngine]() {
-                whenField = new LambdaFieldModifier[DefaultEngine] {
-                    fromRemote = (field, _, _) => {
-                        val identifier = field.identifier
+                modifier = new LambdaValueModifier[DefaultEngine] {
+                    fromRemote = (e, _) => {
+                        val identifier = e.identifier
                         new DefaultEngine(identifier, findCacheManager(identifier).get)
                     }
                 }

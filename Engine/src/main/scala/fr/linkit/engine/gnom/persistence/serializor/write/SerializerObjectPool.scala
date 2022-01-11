@@ -205,14 +205,13 @@ class SerializerObjectPool(bundle: PersistenceBundle,
 
     private def addTypeOfIfAbsent(ref: AnyRef): Class[_] = ref match {
         case sync: SynchronizedObject[_] =>
-            ???
-            /*val desc      = sync.getNode.contract.description
+            val desc      = sync.getNode.contract.description
             val implClass = desc match {
                 case s: SyncObjectDescription[_] => s.nonOriginalObjectsImplClass
                 case o                           => o.clazz
             }
             getChunkFromFlag(SyncClass).addIfAbsent(implClass)
-            implClass*/
+            implClass
         case _                           =>
             val clazz = ref.getClass
             getChunkFromFlag(Class).addIfAbsent(clazz)

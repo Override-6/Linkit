@@ -21,11 +21,11 @@ import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 import java.lang.reflect.{Modifier, Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}
 
-class Constructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends SyncInstanceCreator[T] {
+class Constructor[A <: AnyRef] private(clazz: Class[A], arguments: Array[Any]) extends SyncInstanceCreator[A] {
 
-    override val tpeClass: Class[_] = clazz
+    override val tpeClass: Class[A] = clazz
 
-    override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
+    override def getInstance(syncClass: Class[A with SynchronizedObject[A]]): A with SynchronizedObject[A] = {
         val constructor = getAssignableConstructor(syncClass, arguments)
         constructor.newInstance(arguments: _*)
     }
@@ -36,7 +36,7 @@ class Constructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends S
 object Constructor {
 
     def apply[T <: AnyRef : ClassTag](params: Any*): Constructor[T] = {
-        val clazz        = classTag[T].runtimeClass
+        val clazz        = classTag[T].runtimeClass.asInstanceOf[Class[T]]
         val objectsArray = params.toArray
         new Constructor[T](clazz, objectsArray)
     }

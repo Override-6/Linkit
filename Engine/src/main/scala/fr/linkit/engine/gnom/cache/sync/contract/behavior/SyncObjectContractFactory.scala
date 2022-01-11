@@ -21,17 +21,17 @@ import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
 class SyncObjectContractFactory(override val data: ContractDescriptorData) extends ObjectContractFactory {
 
 
-    override def getObjectContract[A <: AnyRef](clazz: Class[_], context: SyncObjectContext): StructureContract[A] = {
+    override def getObjectContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext): StructureContract[A] = {
         data.getNode[A](clazz).getObjectContract(clazz, context: SyncObjectContext)
     }
 
-    override def getStaticContract[A <: AnyRef](clazz: Class[_]): StructureContract[A] = {
+    override def getStaticContract[A <: AnyRef](clazz: Class[A]): StructureContract[A] = {
         ???
         ///data.getNode(clazz).getStaticContract()
     }
 
-    override def getInstanceModifier[A <: AnyRef](clazz: Class[_]): ValueModifier[A] = {
-        data.getNode[A](clazz).getInstanceModifier(clazz)
+    override def getInstanceModifier[A <: AnyRef](clazz: Class[A], limit: Class[_ >: A]): ValueModifier[A] = {
+        data.getNode[A](clazz).getInstanceModifier(this, limit)
     }
 }
 

@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.contract.descriptors
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
 import fr.linkit.api.gnom.cache.sync.contractv2.StructureContract
 import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
 
@@ -26,5 +26,5 @@ trait StructureBehaviorDescriptorNode[A <: AnyRef] {
 
     def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A]
 
-    def getInstanceModifier[L >: A](limit: Class[L]): ValueModifier[A]
+    def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A]
 }

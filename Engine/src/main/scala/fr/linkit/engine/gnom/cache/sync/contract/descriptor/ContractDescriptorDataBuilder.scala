@@ -44,10 +44,12 @@ abstract class ContractDescriptorDataBuilder {
     def build(): ContractDescriptorData = {
         var descriptions = builders.values.map(_.getResult).toArray
         if (!descriptions.exists(_.targetClass eq classOf[Object])) {
+            //Adding descriptor for the object class that is essential.
             descriptions :+= new StructureContractDescriptor[Object] {
                 override val targetClass: Class[Object]                    = classOf[Object]
                 override val methods    : Array[MethodContractDescriptor]  = Array.empty
                 override val fields     : Array[(Int, FieldContract[Any])] = Array.empty
+                override val modifier   : Option[ValueModifier[Object]]    = None
             }
         }
         new ContractDescriptorDataImpl(descriptions)
@@ -58,15 +60,16 @@ abstract class ContractDescriptorDataBuilder {
         defaultID
     }
 
-    abstract class ClassDescriptor[T <: AnyRef](override val tag: Option[Any])(implicit desc: SyncStructureDescription[T]) extends Recognizable {
+    abstract class ClassDescriptor[A <: AnyRef](override val tag: Option[Any])(implicit desc: SyncStructureDescription[A]) extends Recognizable {
 
-        def this()(implicit desc: SyncStructureDescription[T]) {
+        def this()(implicit desc: SyncStructureDescription[A]) {
             this(None)(desc)
         }
 
-        private val clazz           = desc.clazz
-        private val methodContracts = mutable.HashMap.empty[Method, MethodContractDescriptor]
-        private val fieldContracts  = mutable.HashMap.empty[Field, FieldContractImpl[Any]]
+        private val clazz                        = desc.clazz
+        private val methodContracts              = mutable.HashMap.empty[Method, MethodContractDescriptor]
+        private val fieldContracts               = mutable.HashMap.empty[Field, FieldContractImpl[Any]]
+        protected var modifier: ValueModifier[A] = _
 
         private var result: StructureContractDescriptor[_] = _
 
@@ -161,10 +164,11 @@ abstract class ContractDescriptorDataBuilder {
         private[ContractDescriptorDataBuilder] def getResult: StructureContractDescriptor[_] = {
             if (result != null)
                 return result
-            result = new StructureContractDescriptor[T] {
-                override val targetClass: Class[T]                         = desc.clazz
+            result = new StructureContractDescriptor[A] {
+                override val targetClass: Class[A]                         = desc.clazz
                 override val methods    : Array[MethodContractDescriptor]  = methodContracts.values.toArray
                 override val fields     : Array[(Int, FieldContract[Any])] = fieldContracts.values.map(x => (x.desc.fieldId, x)).toArray
+                override val modifier   : Option[ValueModifier[A]]         = Option(ClassDescriptor.this.modifier)
 
             }
             result

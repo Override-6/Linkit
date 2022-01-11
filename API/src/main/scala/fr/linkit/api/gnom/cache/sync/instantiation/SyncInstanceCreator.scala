@@ -15,11 +15,11 @@ package fr.linkit.api.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 
-trait SyncInstanceCreator[T <: AnyRef] {
+trait SyncInstanceCreator[A <: AnyRef] {
 
-    val tpeClass: Class[_]
+    val tpeClass: Class[A]
 
-    def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T]
+    def getInstance(syncClass: Class[A with SynchronizedObject[A]]): A with SynchronizedObject[A]
 
     def getOrigin: Option[AnyRef]
 

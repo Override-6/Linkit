@@ -17,8 +17,10 @@ import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 
 import scala.collection.mutable.ListBuffer
 
-class SyncObjectClassRelation[A <: AnyRef](descriptor: StructureContractDescriptor[A], nextSuperRelation: SyncObjectClassRelation[_ >: A]) {
+class SyncObjectClassRelation[A <: AnyRef](descriptor: StructureContractDescriptor[A],
+                                           nextSuperRelation: SyncObjectClassRelation[_ >: A]) {
 
+    val modifier              = descriptor.modifier.orNull
     val targetClass: Class[A] = descriptor.targetClass
     private val interfaceRelation = ListBuffer.empty[SyncObjectClassRelation[_ >: A]]
 
@@ -29,7 +31,7 @@ class SyncObjectClassRelation[A <: AnyRef](descriptor: StructureContractDescript
 
     def toNode: StructureBehaviorDescriptorNodeImpl[A] = {
         val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.toNode
-        new StructureBehaviorDescriptorNodeImpl[A](descriptor, nextSuperNode, interfaceRelation.map(_.toNode).toArray)
+        new StructureBehaviorDescriptorNodeImpl[A](descriptor, modifier, nextSuperNode, interfaceRelation.map(_.toNode).toArray)
     }
 
 }
