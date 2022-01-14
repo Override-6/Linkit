@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.traffic
 
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.CacheHandler
-import fr.linkit.api.gnom.cache.{CacheContent, CacheSearchBehavior, NoSuchCacheException, SharedCacheManager}
+import fr.linkit.api.gnom.cache.{CacheContent, CacheSearchMethod, NoSuchCacheException, SharedCacheManager}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
@@ -26,12 +26,6 @@ class DefaultCachePacketChannel(scope: ChannelScope,
                                 override val cacheID: Int) extends SimpleRequestPacketChannel(store, scope) with CachePacketChannel {
 
     private var handler: Option[CacheHandler] = None
-
-    override def getCacheOfOwner: CacheContent = {
-        manager.retrieveCacheContent(cacheID, CacheSearchBehavior.GET_OR_CRASH).getOrElse {
-            throw new NoSuchCacheException(s"No content was found for cache $cacheID.")
-        }
-    }
 
     override def setHandler(handler: CacheHandler): Unit = {
         if (this.handler.isDefined)

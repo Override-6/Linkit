@@ -59,7 +59,7 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
         bundle.linkerReference match {
             case ref: SharedCacheReference      =>
                 network.findCacheManager(ref.family)
-                        .fold(throw new NoSuchElementException(s"Could not find cache manager '${ref.family}'"))
+                        .fold(throw new NoSuchElementException(s"Could not find cache manager '${ref.family} located at $ref"))
                 { manager =>
                     manager.getCachesLinker.injectRequest(bundle)
                 }

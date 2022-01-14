@@ -17,24 +17,22 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{MethodControl, Synchronized}
-import fr.linkit.api.gnom.network.{Engine, EngineReference, ExecutorEngine}
+import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
+
 import java.sql.Timestamp
-
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-
 import scala.collection.mutable
-
 //FIXME OriginManagers and DistantManagers can be bypassed
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
-    private val traffic = network.connection.traffic
-    private val engines = mutable.HashMap.empty[String, Engine]
-    private val caches  = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
+    private val engineMutationChannel = network.networkStore.getInjectable(4, SimpleRequestPacketChannel, ChannelScopes.broadcast)
+    private val engines               = mutable.HashMap.empty[String, Engine]
+    private val caches                = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
 
     def this(network: AbstractNetwork) {
         this(network, new Timestamp(System.currentTimeMillis()))
@@ -58,8 +56,11 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
             if (network.connectionEngine ne current) getDistantCache(engineIdentifier)
             else network.newCacheManager(engineIdentifier)._1
         }
-        val engine       = new DefaultEngine(engineIdentifier, cacheManager)
-        addEngine(engine)
+        val engine       = addEngine(new DefaultEngine(engineIdentifier, cacheManager))
+        engineMutationChannel.makeRequest(ChannelScopes.broadcast)
+            .addPacket(RefPacket(engine))
+            .submit()
+        engine
     }
 
     @MethodControl(value = BROADCAST_IF_ROOT_OWNER)
@@ -69,7 +70,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         caches.get(family).map(_._1)
     }
 
-    //@MethodControl(value = BROADCAST)
+    @MethodControl(value = BROADCAST)
     def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
         if (caches.contains(manager.family))
             throw new Exception("Cache Manager already exists")
@@ -86,6 +87,11 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         engines.put(engine.identifier, engine)
         engine
     }
+
+    engineMutationChannel.addRequestListener(req => {
+        val engine = req.packet.nextPacket[RefPacket[Engine]].value
+        engines.put(engine.identifier, engine)
+    })
 
     private def getDistantCache(engineIdentifier: String): SharedCacheManager = caches.getOrElseUpdate(engineIdentifier, {
         val code  = engineIdentifier.hashCode

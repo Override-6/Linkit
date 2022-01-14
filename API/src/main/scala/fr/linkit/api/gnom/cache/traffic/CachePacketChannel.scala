@@ -48,12 +48,6 @@ trait CachePacketChannel extends RequestPacketChannel {
      * @throws IllegalStateException if the handler is already set.
      */
     def setHandler(handler: CacheHandler): Unit
-
-    /**
-     * @return the original content of the cache.
-     */
-    def getCacheOfOwner: CacheContent
-
     /**
      *
      * @return Some(CacheHandler) if the handler is set, None instead

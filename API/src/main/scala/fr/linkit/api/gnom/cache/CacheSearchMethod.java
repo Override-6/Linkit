@@ -18,7 +18,7 @@ package fr.linkit.api.gnom.cache;
  *
  * @see SharedCacheManager#attachToCache  
  */
-public enum CacheSearchBehavior {
+public enum CacheSearchMethod {
     /**
      * Retrieves the cache content or wait until the cache get opened
      * by another machine or from another call of the {@link SharedCacheManager#attachToCache} with a method that let the cache be created.

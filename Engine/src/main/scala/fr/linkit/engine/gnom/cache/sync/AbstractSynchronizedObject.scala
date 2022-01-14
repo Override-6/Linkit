@@ -24,9 +24,9 @@ import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     protected final          var location         : SyncObjectReference     = _
-    @transient final         var puppeteer        : Puppeteer[A]            = _
-    @transient final         var contract         : StructureContract[A]    = _
-    @transient final         var choreographer    : InvocationChoreographer = _
+    @transient private final var puppeteer        : Puppeteer[A]            = _
+    @transient private final var contract         : StructureContract[A]    = _
+    @transient private final var choreographer    : InvocationChoreographer = _
     @transient private final var presenceOnNetwork: NetworkObjectPresence   = _
     @transient private final var node             : ObjectSyncNode[A]       = _
 

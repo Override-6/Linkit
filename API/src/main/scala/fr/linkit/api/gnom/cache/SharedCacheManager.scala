@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache
 
-import fr.linkit.api.gnom.network.{Network, Updatable}
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.{TrafficNode, TrafficObject}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
@@ -49,7 +49,7 @@ trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] with
     def getCachesLinker: InitialisableNetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH
 
     def attachToCache[A <: SharedCache : ClassTag](cacheID: Int)(implicit factory: SharedCacheFactory[A]): A = {
-        attachToCache[A](cacheID, CacheSearchBehavior.GET_OR_OPEN)
+        attachToCache[A](cacheID, CacheSearchMethod.GET_OR_OPEN)
     }
 
     /**
@@ -69,13 +69,13 @@ trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] with
      * @return the cache instance.
      * @see [[SharedCache]]
      * @see [[SharedCacheFactory]]
-     * @see [[CacheSearchBehavior]]
+     * @see [[CacheSearchMethod]]
      * */
-    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, behavior: CacheSearchBehavior)(implicit factory: SharedCacheFactory[A]): A = {
+    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, behavior: CacheSearchMethod)(implicit factory: SharedCacheFactory[A]): A = {
         attachToCache[A](cacheID, factory, behavior)
     }
 
-    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
+    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchMethod = CacheSearchMethod.GET_OR_OPEN): A
 
     /**
      * Get cache that is already opened and registered in the local cache.
@@ -86,17 +86,6 @@ trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] with
      * @return the cache instance.
      */
     def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A
-
-    /**
-     * Retrieves the cache content of a given cache identifier.
-     *
-     * @param cacheID the identifier of a cache content that needs to be retrieved.
-     * @param behavior the kind of behavior to adopt when retrieving a cache content
-     * @return Some(content) if the cache content was retrieved, None if no cache has been found.
-     * @throws CacheOpenException if something went wrong during the cache content retrieval (can be affected by behavior parameter)
-     * @see [[CacheContent]]
-     * */
-    def retrieveCacheContent(cacheID: Int, behavior: CacheSearchBehavior): Option[CacheContent]
 
     def getCacheTrafficNode(cacheID: Int): TrafficNode[TrafficObject[TrafficReference]]
 

@@ -46,8 +46,4 @@ class DefaultEngine(override val identifier: String,
 
     override def getConnectionState: ExternalConnectionState = connectionState
 
-    override def update(): this.type = {
-        cache.update()
-        this
-    }
 }

@@ -14,8 +14,7 @@
 package fr.linkit.engine.gnom.cache
 
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
-import fr.linkit.api.gnom.cache.traffic.handler.ContentHandler
-import fr.linkit.api.gnom.cache.{CacheContent, SharedCache, SharedCacheReference}
+import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheReference}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 
@@ -27,20 +26,5 @@ abstract class AbstractSharedCache(channel: CachePacketChannel) extends Abstract
     override val cacheID  : Int                   = channel.cacheID
     override val reference: SharedCacheReference  = new SharedCacheReference(family, cacheID)
     override val presence : NetworkObjectPresence = manager.getCachesLinker.findPresence(reference).get
-
-    override def update(): this.type = {
-        if (manager == null)
-            return this
-
-        val content = channel.getCacheOfOwner
-        val handler = channel.getHandler
-        if (handler.isDefined) {
-            handler.get match { //TODO ensure that the content cache is the expected type.
-                case c: ContentHandler[CacheContent] => c.initializeContent(content)
-                case _                               => //simply do nothing
-            }
-        }
-        this
-    }
 
 }

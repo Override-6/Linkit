@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache
 
-import fr.linkit.api.gnom.cache.{CacheContent, CacheNotAcceptedException, CacheOpenException, CacheSearchBehavior}
+import fr.linkit.api.gnom.cache.{CacheContent, CacheNotAcceptedException, CacheOpenException, CacheSearchMethod}
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
@@ -34,7 +34,7 @@ final class SharedCacheDistantManager @Persist()(family: String,
 
     override def deconstruct(): Array[Any] = Array(family, ownerID, network, store)
 
-    override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchBehavior): Option[CacheContent] = {
+    override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
         println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
         val request = channel
                 .makeRequest(ownerScope)
@@ -42,8 +42,7 @@ final class SharedCacheDistantManager @Persist()(family: String,
                 .addPacket(IntPacket(cacheID))
                 .submit()
 
-        try {
-            val response = request.nextResponse
+        val response = request.nextResponse
             response.nextPacket[Packet] match {
                 case StringPacket(errorMsg)               =>
                     throw new CacheOpenException(s"Could not open cache '$cacheID' in shared cache manager <$family, $ownerID>. Received error message from '$ownerID': $errorMsg")
@@ -52,13 +51,6 @@ final class SharedCacheDistantManager @Persist()(family: String,
                     //println(s"Content '$cacheID' received ! ($content)")
                     content
             }
-        } catch {
-            case e: Throwable =>
-                AppLogger.fatal(s"Was executing request (${request.id}) for cache ID '$cacheID'.")
-                AppLogger.printStackTrace(e)
-                System.exit(1)
-                throw null
-        }
     }
 
     override protected def preCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {

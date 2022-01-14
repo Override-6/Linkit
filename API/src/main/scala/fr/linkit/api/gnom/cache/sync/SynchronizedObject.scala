@@ -13,11 +13,11 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode, SyncObjectReference}
+import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.reference.DynamicNetworkObject
+
 import java.io.Serializable
 
 /**

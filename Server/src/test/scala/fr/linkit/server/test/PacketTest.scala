@@ -14,7 +14,7 @@
 package fr.linkit.server.test
 
 import fr.linkit.api.application.config.ApplicationConfiguration
-import fr.linkit.api.gnom.cache.CacheSearchBehavior
+import fr.linkit.api.gnom.cache.CacheSearchMethod
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
@@ -39,7 +39,7 @@ class PacketTest {
     @Test
     def serialAndDeserialObject(): Unit = {
         val gc      = connection.network.globalCache
-        val content = gc.retrieveCacheContent(0, CacheSearchBehavior.GET_OR_CRASH)
+        val content = gc.retrieveCacheContent(0, CacheSearchMethod.GET_OR_CRASH)
         for (_ <- 0 to 100) {
             serialAndDeserial(content)
         }

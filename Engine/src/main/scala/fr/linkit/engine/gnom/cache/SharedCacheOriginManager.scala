@@ -14,8 +14,8 @@
 package fr.linkit.engine.gnom.cache
 
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, ContentHandler}
-import fr.linkit.api.gnom.cache.{CacheContent, CacheOpenException, CacheSearchBehavior}
-import fr.linkit.api.gnom.cache.CacheSearchBehavior._
+import fr.linkit.api.gnom.cache.{CacheContent, CacheOpenException, CacheSearchMethod}
+import CacheSearchMethod._
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
@@ -62,7 +62,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
      * @throws CacheOpenException if something went wrong during the cache content retrieval (can be affected by behavior parameter)
      * @see [[CacheContent]]
      * */
-    override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchBehavior): Option[CacheContent] = {
+    override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
         LocalCachesStore.getContent(cacheID)
     }
 
@@ -106,7 +106,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
         val response = requestBundle.responseSubmitter
 
         val senderID: String = coords.senderID
-        val behavior         = request.getAttribute[CacheSearchBehavior]("behavior").get //TODO orElse throw an exception
+        val behavior         = request.getAttribute[CacheSearchMethod]("behavior").get //TODO orElse throw an exception
         println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
         println(s"Behavior = $behavior")
 
