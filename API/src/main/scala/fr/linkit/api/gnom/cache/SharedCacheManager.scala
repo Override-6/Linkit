@@ -28,7 +28,7 @@ import scala.reflect.ClassTag
  * For example, you can synchronise a list between engine A and engine B, in which each modification will be send to the other engine
  * in order to have the same list with the same items in the same orders.
  * */
-trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] with Updatable {
+trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] {
 
     /**
      * Each Cache manager have a family string, it's in fact the identifier of the cache manager.

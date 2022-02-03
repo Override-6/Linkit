@@ -21,26 +21,26 @@ import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
-class ExternalNetworkObjectPresence[L <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[L], val location: L)
+class ExternalNetworkObjectPresence[R <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[R], val reference: R)
         extends NetworkObjectPresence {
 
     private val presences = mutable.HashMap.empty[String, ObjectPresenceType]
 
-    handler.bindListener(location, this)
+    handler.bindListener(reference, this)
 
     override def getPresenceFor(engineId: String): ObjectPresenceType = {
         if (engineId == null)
             throw new NullPointerException("engineId is null.")
         presences.getOrElseUpdate(engineId, {
-            val present = handler.askIfPresent(engineId, location)
-            AppLogger.warn(s"is present : $present")
+            val present = handler.askIfPresent(engineId, reference)
+            AppLogger.warn(s"$reference is present : $present")
             if (present) PRESENT
             else NOT_PRESENT
         })
     }
 
     def onObjectSet(engineId: String): Unit = {
-        AppLogger.warn(s"Presence set to present for engine $engineId, for location $location")
+        AppLogger.warn(s"Presence set to present for engine $engineId, for location $reference")
         presences(engineId) = PRESENT
     }
 

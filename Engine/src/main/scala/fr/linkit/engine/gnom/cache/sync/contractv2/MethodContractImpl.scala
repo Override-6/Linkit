@@ -86,7 +86,7 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
             val methodID = description.methodId
             s"RMI - Calling method $methodID $name(${args.mkString(", ")})"
         }
-        description.javaMethod.invoke(origin, args: _*)
+        description.javaMethod.invoke(data.operatingNode.synchronizedObject, args: _*)
     }
 
     @inline

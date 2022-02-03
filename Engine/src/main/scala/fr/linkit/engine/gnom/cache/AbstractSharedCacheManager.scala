@@ -93,7 +93,6 @@ abstract class AbstractSharedCacheManager(override val family: String,
      * */
     protected def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent]
 
-    protected def openCache
 
     protected def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {
         val traffic = channel.traffic
@@ -241,7 +240,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
         channel.addRequestListener(handleRequest)
     }
 
-    private def createCache[A <: SharedCache](cacheID: Int, factory: SharedCacheFactory[A], method: CacheSearchMethod): A = {
+    private def createCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], method: CacheSearchMethod): A = {
         preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
         val channel = store.getInjectable(cacheID, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
         chainWithTrunkIPU(channel)

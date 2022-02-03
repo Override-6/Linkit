@@ -82,7 +82,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         val methodId = invocation.methodID
 
-        runLaterIfPerformant {
+        runLaterIfPerformantChannelElseRun {
             val scope      = new AgreementScope(writer, network, agreement)
             val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
             invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
@@ -109,7 +109,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
 
         override def foreachEngines(action: String => Array[Any]): Unit = {
-            scope.foreachAcceptedEngines(engineID => runLaterIfPerformant {
+            scope.foreachAcceptedEngines(engineID => runLaterIfPerformantChannelElseRun {
                 //return engine is processed at last, don't send a request to the current engine
                 if (engineID != returnEngine && engineID != currentIdentifier)
                     makeRequest(ChannelScopes.include(engineID)(writer), action(engineID))
@@ -121,7 +121,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
     private val procrastinator: Procrastinator = network.connection
 
-    private def runLaterIfPerformant(action: => Unit): Unit = {
+    private def runLaterIfPerformantChannelElseRun(action: => Unit): Unit = {
         if (isPerformant) procrastinator.runLater(action)
         else action
     }

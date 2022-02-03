@@ -30,7 +30,6 @@ import scala.collection.mutable
 //FIXME OriginManagers and DistantManagers can be bypassed
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
-    private val engineMutationChannel = network.networkStore.getInjectable(4, SimpleRequestPacketChannel, ChannelScopes.broadcast)
     private val engines               = mutable.HashMap.empty[String, Engine]
     private val caches                = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
 
@@ -54,13 +53,9 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         val current      = ExecutorEngine.currentEngine
         val cacheManager = {
             if (network.connectionEngine ne current) getDistantCache(engineIdentifier)
-            else network.newCacheManager(engineIdentifier)._1
+            else network.newCacheManager(engineIdentifier)
         }
-        val engine       = addEngine(new DefaultEngine(engineIdentifier, cacheManager))
-        engineMutationChannel.makeRequest(ChannelScopes.broadcast)
-            .addPacket(RefPacket(engine))
-            .submit()
-        engine
+        addEngine(new DefaultEngine(engineIdentifier, cacheManager))
     }
 
     @MethodControl(value = BROADCAST_IF_ROOT_OWNER)
@@ -70,8 +65,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         caches.get(family).map(_._1)
     }
 
-    @MethodControl(value = BROADCAST)
-    def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
+    private[network] def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
         if (caches.contains(manager.family))
             throw new Exception("Cache Manager already exists")
         caches.put(manager.family, (manager, storePath))
@@ -87,11 +81,6 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         engines.put(engine.identifier, engine)
         engine
     }
-
-    engineMutationChannel.addRequestListener(req => {
-        val engine = req.packet.nextPacket[RefPacket[Engine]].value
-        engines.put(engine.identifier, engine)
-    })
 
     private def getDistantCache(engineIdentifier: String): SharedCacheManager = caches.getOrElseUpdate(engineIdentifier, {
         val code  = engineIdentifier.hashCode

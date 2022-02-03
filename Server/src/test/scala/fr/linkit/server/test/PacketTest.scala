@@ -36,16 +36,6 @@ class PacketTest {
     }
 
 
-    @Test
-    def serialAndDeserialObject(): Unit = {
-        val gc      = connection.network.globalCache
-        val content = gc.retrieveCacheContent(0, CacheSearchMethod.GET_OR_CRASH)
-        for (_ <- 0 to 100) {
-            serialAndDeserial(content)
-        }
-    }
-
-
 }
 
 object PacketTest {

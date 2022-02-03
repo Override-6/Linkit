@@ -26,7 +26,7 @@ import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 class ServerSideNetwork(traffic: AbstractPacketTraffic)
         extends AbstractNetwork(traffic) {
 
-    trunk.addCacheManager(globalCache, networkStore.trafficPath :+ globalCache.family.hashCode)
+    addCacheManager(globalCache, networkStore.trafficPath :+ globalCache.family.hashCode)
 
     override def serverIdentifier: String = traffic.currentIdentifier
 

@@ -113,7 +113,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         if (state == ExternalConnectionState.CONNECTED && socket.isOpen) runLater {
             socket.write(welcomePacket) //The welcome packet will let the server continue its socket handling
             systemChannel.nextPacket[BooleanPacket]
-            sideNetwork.connectionEngine.update()
         }
     }
 

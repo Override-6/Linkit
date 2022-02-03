@@ -80,20 +80,22 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override def declareNewCacheManager(family: String): SharedCacheManager = {
         if (trunk.findCache(family).isDefined)
             throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
-
-        val (manager, storePath) = newCacheManager(family)
-        trunk.addCacheManager(manager, storePath)
-        manager
+        newCacheManager(family)
     }
 
-    private[network] def newCacheManager(family: String): (SharedCacheManager, Array[Int]) = {
+    protected def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
+        trunk.addCacheManager(manager, storePath)
+    }
+
+    //TODO creating cache manager does not get synchronized
+    private[network] def newCacheManager(family: String): SharedCacheManager = {
         AppLogger.vDebug(s" ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
         val store       = networkStore.createStore(family.hashCode)
         val manager     = new SharedCacheOriginManager(family, this, store)
         val trafficPath = store.trafficPath
         scnol.registerReference(manager.reference)
-        trunk.addCacheManager(manager, trafficPath)
-        (manager, trafficPath)
+        addCacheManager(manager, trafficPath)
+        manager
     }
 
     def initDataTrunk(factory: ContractDescriptorData): NetworkDataTrunk = {
@@ -116,7 +118,6 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         ExecutorEngine.initDefaultEngine(connectionEngine)
         engine0.staticAccess //lazy val
         this
-        //cacheManagerChannel.addRequestListener(handleRequest)
     }
 
     private def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {

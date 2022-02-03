@@ -19,7 +19,7 @@ import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
 
-class PoolChunk[@specialized() T](val tag: Byte,
+class PoolChunk[T](val tag: Byte,
                                   freezable: Freezable,
                                   maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 

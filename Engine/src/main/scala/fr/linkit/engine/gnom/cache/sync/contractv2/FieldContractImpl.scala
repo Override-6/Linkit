@@ -39,6 +39,7 @@ class FieldContractImpl[A](val desc: FieldDescription,
                     if (!sync.isInitialized) {
                         manip.initSyncObject(sync)
                     }
+                    sync
                 case fieldValue: AnyRef               =>
                     manip.syncObject(fieldValue)
             }
