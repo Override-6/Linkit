@@ -13,15 +13,21 @@
 
 package fr.linkit.engine.internal.language.bhv.parsers
 
+import fr.linkit.engine.internal.language.bhv.results.FileImports
+
 import scala.util.parsing.combinator.RegexParsers
 
-object ClassParser extends RegexParsers {
+class ClassParser(imports: FileImports) extends RegexParsers {
 
     override val whiteSpace = "[ \t\r\f]+".r
+
     override def skipWhitespace = true
-/*
-    import fr.linkit.engine.internal.language.bhv.Tokens._
-    val methodBody: P[_] = modify ~ rep1(number | and)
-    val methodParser: P[_] = method ~ signature ~ (bracketOpen | Tokens.literal)*/
+
+    private val head = "describe" ~ ("static class" | "class") ~
+            ("[^\\s]+".r ^^ imports.find) ~ "{"
+    private val methodSignature = "(\\w+\\()([\\w,.\\s\\[\\]]+)\\)".r
+    private val disableMethod = "(disable)|(disable method)".r ~ methodSignature
+    private val enableMethod = "(enable)|(enable method)".r ~ methodSignature ~ "{"
+
 
 }

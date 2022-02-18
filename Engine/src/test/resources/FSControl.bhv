@@ -5,6 +5,9 @@ import java.lang.String
 describe class Path as @full_remote {
     forall methods enable as only_cache_owner
 }
+
+import java.lang.Module
+
 describe static class Path {
     enable method of(String, String[]) {
         modify 1 & 2 {

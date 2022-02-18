@@ -160,7 +160,6 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             }
         }
         node.contract.applyFieldsContracts(syncObject, manipulation)
-
     }
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]

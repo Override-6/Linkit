@@ -129,7 +129,7 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
         } else if (mayPerformRMI) {
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
         }
-        if (returnValueContract.isSynchronized && !result.isInstanceOf[SynchronizedObject[AnyRef]]) {
+        if (result != null && returnValueContract.isSynchronized && !result.isInstanceOf[SynchronizedObject[AnyRef]]) {
             result = puppeteer.synchronizedObj(result.asInstanceOf[AnyRef])
         }
         result.asInstanceOf[R]
