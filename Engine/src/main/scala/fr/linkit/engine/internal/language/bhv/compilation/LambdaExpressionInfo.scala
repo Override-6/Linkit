@@ -11,10 +11,6 @@
  * questions.
  */
 
-package fr.linkit.api.internal.language.cbp
+package fr.linkit.engine.internal.language.bhv.compilation
 
-trait ContextIterator[C, I] {
-
-    def foreach(context: C, action: I => Unit): Unit
-
-}
+case class LambdaExpressionInfo(id: Int, expression: String, paramTypes: Array[Class[_]])

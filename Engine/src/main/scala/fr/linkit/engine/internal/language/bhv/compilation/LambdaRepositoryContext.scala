@@ -11,10 +11,18 @@
  * questions.
  */
 
-package fr.linkit.api.internal.language.cbp
+package fr.linkit.engine.internal.language.bhv.compilation
 
-trait ContextIterator[C, I] {
+import fr.linkit.api.internal.generation.compilation.CompilationContext
 
-    def foreach(context: C, action: I => Unit): Unit
+import java.io.File
+
+case class LambdaRepositoryContext(fileName: String,
+                                   expressions: Array[LambdaExpressionInfo],
+                                   parentLoader: ClassLoader) extends CompilationContext {
+
+    override def className: String = s"LambdaRepository_${fileName.replace(File.separator, "$")}"
+
+    override def classPackage: String = "gen.scala.bhv.expression"
 
 }

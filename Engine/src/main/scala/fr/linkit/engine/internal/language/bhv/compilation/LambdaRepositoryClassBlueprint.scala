@@ -11,21 +11,29 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.script
+package fr.linkit.engine.internal.language.bhv.compilation
 
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
-import fr.linkit.api.internal.script.ScriptContext
+import fr.linkit.engine.gnom.cache.sync.generation.sync.ScalaBlueprintUtilities.getParameters
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
-import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
+import fr.linkit.engine.internal.language.cbp.{AbstractClassBlueprint, AbstractValueScope}
 
 import java.io.InputStream
 
-class ScalaScriptBlueprint(bpIn: InputStream) extends AbstractClassBlueprint[ScriptContext](bpIn) {
+class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBlueprint[LambdaRepositoryContext](bp) {
 
     override val compilerType: CompilerType   = CommonCompilerType.Scalac
     override val rootScope   : RootValueScope = new RootValueScope {
-        bindValue("ScriptCode" ~> (_.scriptSourceCode))
-        bindValue("ScriptArguments" ~> (_.scriptArguments.map(p => s"${p._1}: ${p._2.getName}").mkString(", ")))
-        bindValue("ScriptClass" ~> (_.scriptSuperClass.getName))
+        bindSubScope(new LambdaMethodScope(_, _), _.expressions.foreach(_))
     }
+
+    private class LambdaMethodScope(bp: String, pos: Int)
+            extends AbstractValueScope[LambdaExpressionInfo]("LAMBDA_METHODS", pos, bp) {
+
+        bindValue("MethodID" ~> (_.id.toString))
+        bindValue("ParamsIn" ~> (e => getParameters(e.paramTypes, true)))
+        bindValue("LambdaExpression" ~> (_.expression))
+        bindValue("ParamsOut" ~> (_.paramTypes.zipWithIndex.map { case (_, i) => s"args($i)" }.mkString(",")))
+    }
+
 }

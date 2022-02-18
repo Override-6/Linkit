@@ -55,8 +55,11 @@ object ScalaBlueprintUtilities {
     }
 
     def getParameters(desc: MethodDescription, withTypes: Boolean): String = {
-        desc.javaMethod.getParameterTypes
-                .zipWithIndex
+        getParameters(desc.javaMethod.getParameterTypes, withTypes)
+    }
+
+    def getParameters(params: Array[Class[_]], withTypes: Boolean): String = {
+        params.zipWithIndex
                 .map(pair => s"arg${
                     pair._2 + 1
                 }" + (if (withTypes) ": " + toScalaString(pair._1) else ""))

@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.generation.compilation.access.common
 
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
-import fr.linkit.engine.internal.generation.compilation.access.{AbstractCompilerAccess, CommonCompilerTypes}
+import fr.linkit.engine.internal.generation.compilation.access.{AbstractCompilerAccess, CommonCompilerType}
 
 import java.nio.file.Path
 import scala.tools.nsc.{Global, Settings}
@@ -35,7 +35,7 @@ object ScalacCompilerAccess extends AbstractCompilerAccess {
                 .toSeq
     }
 
-    override def getType: CompilerType = CommonCompilerTypes.Scalac
+    override def getType: CompilerType = CommonCompilerType.Scalac
 
     override def canCompileFile(file: Path): Boolean = {
         file.toString.endsWith(ScalaFileExtension)

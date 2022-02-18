@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import ScalaBlueprintUtilities._
-import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerTypes
+import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
 
 import java.io.InputStream
@@ -24,7 +24,7 @@ import java.lang.reflect.TypeVariable
 
 class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStructureDescription[_]](in) {
 
-    override val compilerType: CompilerType = CommonCompilerTypes.Scalac
+    override val compilerType: CompilerType = CommonCompilerType.Scalac
 
     override val rootScope: RootValueScope = new RootValueScope {
         bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))

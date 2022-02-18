@@ -15,7 +15,7 @@ package fr.linkit.engine.internal.generation.compilation.access;
 
 import fr.linkit.api.internal.generation.compilation.access.CompilerType;
 
-public enum CommonCompilerTypes implements CompilerType {
+public enum CommonCompilerType implements CompilerType {
 
     //TODO add Kotlin compiler support.
     Javac("Java", ".java"), Scalac("Scala", ".scala");
@@ -23,7 +23,7 @@ public enum CommonCompilerTypes implements CompilerType {
     private final String langName;
     private final String extension;
 
-    CommonCompilerTypes(String langName, String extension) {
+    CommonCompilerType(String langName, String extension) {
         this.langName = langName;
         this.extension = extension;
     }

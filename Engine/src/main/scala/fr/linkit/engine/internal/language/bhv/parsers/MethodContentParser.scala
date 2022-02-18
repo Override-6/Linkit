@@ -13,7 +13,8 @@
 
 package fr.linkit.engine.internal.language.bhv.parsers
 
-import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ScalaCodeRepository}
+import fr.linkit.engine.internal.language.bhv.BHVLanguageException
+import fr.linkit.engine.internal.language.bhv.compilation.ScalaCodeRepository
 
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.CharSequenceReader

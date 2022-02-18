@@ -11,18 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv
+package fr.linkit.engine.internal.language.bhv.compilation
 
-import scala.collection.mutable
+trait LambdaRepository {
 
-class ScalaCodeRepository() {
-
-    private val expressions = mutable.HashMap.empty[Int, String]
-
-    def submitLambda[X](expression: String): Array[Any] => X = {
-        val id = expression.hashCode
-        expressions += expression
-        ()
-    }
+    def call(id: Int, args: Array[Any]): Any
 
 }

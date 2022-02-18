@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.generation.compilation.access.common
 
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
-import fr.linkit.engine.internal.generation.compilation.access.{AbstractCompilerAccess, CommonCompilerTypes}
+import fr.linkit.engine.internal.generation.compilation.access.{AbstractCompilerAccess, CommonCompilerType}
 
 import java.nio.file.Path
 import javax.tools.ToolProvider
@@ -23,7 +23,7 @@ object JavacCompilerAccess extends AbstractCompilerAccess {
 
     val JavaFileExtension = ".java"
 
-    override def getType: CompilerType = CommonCompilerTypes.Javac
+    override def getType: CompilerType = CommonCompilerType.Javac
 
     override def canCompileFile(filePath: Path): Boolean = filePath.toString.endsWith(JavaFileExtension)
 
