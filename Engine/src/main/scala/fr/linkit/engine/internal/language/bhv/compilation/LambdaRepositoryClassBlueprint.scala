@@ -24,7 +24,7 @@ class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBluep
 
     override val compilerType: CompilerType   = CommonCompilerType.Scalac
     override val rootScope   : RootValueScope = new RootValueScope {
-        bindSubScope(new LambdaMethodScope(_, _), _.expressions.foreach(_))
+        bindSubScope(new LambdaMethodScope(_, _), (context, action: LambdaExpressionInfo => Unit) => context.expressions.foreach(action))
     }
 
     private class LambdaMethodScope(bp: String, pos: Int)

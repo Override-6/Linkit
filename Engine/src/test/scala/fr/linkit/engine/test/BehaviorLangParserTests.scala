@@ -1,5 +1,6 @@
 package fr.linkit.engine.test
 
+import fr.linkit.engine.internal.language.bhv.Contract
 import org.junit.jupiter.api.Test
 
 class BehaviorLangParserTests {
@@ -7,8 +8,7 @@ class BehaviorLangParserTests {
     @Test
     def parse(): Unit = {
         val behaviorSource = new String(getClass.getResourceAsStream("/FSControl.bhv").readAllBytes())
-        val imports = ImportParser.retrieveImports(behaviorSource)
-        println(s"imports = ${imports}")
+        Contract(behaviorSource)
     }
 
 }

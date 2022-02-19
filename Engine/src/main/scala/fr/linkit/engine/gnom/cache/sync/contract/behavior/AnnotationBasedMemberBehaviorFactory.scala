@@ -105,7 +105,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberContractFactory {
             val agreement = agreementBuilder.result(context)
             new MethodContractImpl[Any](
                 forceLocalInnerInvocations, agreement, paramContracts,
-                returnValueContract, desc, null, isHidden)
+                returnValueContract, desc, None, null, isHidden)
         }
     }
 

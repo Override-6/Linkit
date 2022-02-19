@@ -11,18 +11,6 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv
+package fr.linkit.api.gnom.cache.sync.invocation
 
-import fr.linkit.engine.internal.language.bhv.parsers.BehaviorLanguageParser
-
-import scala.util.parsing.input.CharSequenceReader
-
-object Contract {
-
-    def apply(file: String): Unit = {
-        val ast = BehaviorLanguageParser.parse(new CharSequenceReader(file))
-        println(ast)
-    }
-
-
-}
+class HiddenMethodInvocationException(msg: String) extends RemoteInvocationFailedException(msg)

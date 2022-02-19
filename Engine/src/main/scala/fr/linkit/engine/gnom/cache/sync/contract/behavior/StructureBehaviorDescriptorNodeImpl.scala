@@ -48,7 +48,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDesc
                 val agreement = desc.agreement.result(context)
                 val contract  = new MethodContractImpl[Any](
                     desc.forceLocalInnerInvocations, agreement, desc.parameterContracts,
-                    desc.returnValueContract, desc.description, desc.procrastinator, desc.isHidden)
+                    desc.returnValueContract, desc.description, None, desc.procrastinator, desc.isHidden)
                 map.put(id, contract)
             }
         }

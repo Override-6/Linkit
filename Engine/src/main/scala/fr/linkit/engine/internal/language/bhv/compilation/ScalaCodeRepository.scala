@@ -30,7 +30,7 @@ class ScalaCodeRepository(fileName: String, center: CompilerCenter) {
      * */
     def submitLambda[X](expression: String, lambdaParams: Array[Class[_]]): Array[Any] => X = {
         val id = expression.hashCode
-        expressions += LambdaExpressionInfo(id, expression, lambdaParams)
+        expressions.put(id, LambdaExpressionInfo(id, expression, lambdaParams))
         args => {
             val repo = this.repo.getOrElse(throw new UnsupportedOperationException("Lambda Repository not yet compiled."))
             repo.call(id, args).asInstanceOf[X]
@@ -39,7 +39,7 @@ class ScalaCodeRepository(fileName: String, center: CompilerCenter) {
 
     def compileLambdas(): Unit = {
         val context = LambdaRepositoryContext(fileName, expressions.values.toArray, Thread.currentThread().getContextClassLoader)
-        val clazz = center.processRequest(factory.makeRequest(context))
+        val clazz   = center.processRequest(factory.makeRequest(context))
                 .getResult.get
         repo = Some(clazz.getConstructor().newInstance())
     }

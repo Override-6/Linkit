@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.contractv2.{MethodContract, ValueContract}
+import fr.linkit.api.gnom.cache.sync.invocation.HiddenMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.network.Engine
@@ -29,6 +30,7 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
                             val parameterContracts: Array[ValueContract[Any]],
                             val returnValueContract: ValueContract[Any],
                             val description: MethodDescription,
+                            val hiddenExceptionMessage: Option[String],
                             override val procrastinator: Procrastinator,
                             override val isHidden: Boolean) extends MethodContract[R] {
 
@@ -116,6 +118,17 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
         if (agreement.mayCallSuper) {
             localResult = localInvocation.callSuper()
         }
+
+        def syncValue(v: Any) = {
+            if (v != null && returnValueContract.isSynchronized && !v.isInstanceOf[SynchronizedObject[AnyRef]]) {
+                puppeteer.synchronizedObj(v.asInstanceOf[AnyRef])
+            } else v
+        }
+
+        val currentMustReturn = agreement.getDesiredEngineReturn == currentIdentifier
+        if (!mayPerformRMI) {
+            return (if (currentMustReturn) syncValue(localResult) else null).asInstanceOf[R]
+        }
         val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with DispatchableRemoteMethodInvocation[R] {
             override val agreement: RMIRulesAgreement = MethodContractImpl.this.agreement
 
@@ -123,16 +136,13 @@ class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
                 makeDispatch(puppeteer, dispatcher, localInvocation)
             }
         }
-        if (agreement.getDesiredEngineReturn == currentIdentifier) {
-            if (mayPerformRMI) puppeteer.sendInvoke(remoteInvocation)
-            result = localResult
-        } else if (mayPerformRMI) {
+        if (currentMustReturn) {
+            puppeteer.sendInvoke(remoteInvocation)
+        } else {
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
         }
-        if (result != null && returnValueContract.isSynchronized && !result.isInstanceOf[SynchronizedObject[AnyRef]]) {
-            result = puppeteer.synchronizedObj(result.asInstanceOf[AnyRef])
-        }
-        result.asInstanceOf[R]
+
+        syncValue(result).asInstanceOf[R]
     }
 
     private def makeDispatch(puppeteer: Puppeteer[_],

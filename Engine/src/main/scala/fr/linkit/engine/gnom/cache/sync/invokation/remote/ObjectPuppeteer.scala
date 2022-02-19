@@ -46,11 +46,11 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     override def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R = {
         val agreement = invocation.agreement
         if (!agreement.mayPerformRemoteInvocation)
-            throw new IllegalAccessException("agreement may not perform remote invocation")
+            throw new IllegalAccessException("the agreement states that the method should not be called on a remote engine")
         val desiredEngineReturn = agreement.getDesiredEngineReturn
 
         if (desiredEngineReturn == currentIdentifier)
-            throw new IllegalArgumentException("invocation's desired engine return is this engine.")
+            throw new UnsupportedOperationException("invocation's desired engine return is this engine.")
 
         val methodId         = invocation.methodID
         val scope            = new AgreementScope(writer, network, agreement)
