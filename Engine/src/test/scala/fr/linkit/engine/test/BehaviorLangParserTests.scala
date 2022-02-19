@@ -1,6 +1,5 @@
 package fr.linkit.engine.test
 
-import fr.linkit.engine.internal.language.bhv.parsers.ImportParser
 import org.junit.jupiter.api.Test
 
 class BehaviorLangParserTests {

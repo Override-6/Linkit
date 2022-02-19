@@ -13,8 +13,6 @@
 
 package fr.linkit.engine.internal.language.bhv
 
-import fr.linkit.engine.internal.language.bhv.parsers.ImportParser
-
 import scala.util.parsing.input.CharSequenceReader
 
 object Contract {
