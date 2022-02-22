@@ -28,7 +28,7 @@ trait SynchronizedObjectTree[A <: AnyRef] {
     /**
      * The behavior store of this object's tree
      */
-    val behaviorFactory: ObjectContractFactory
+    val contractFactory: ObjectContractFactory
 
     /**
      *

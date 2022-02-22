@@ -60,7 +60,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {
             val node       = tree.rootNode
             val syncObject = node.synchronizedObject
-            ObjectTreeProfile[A](tree.id, syncObject, node.ownerID, tree.behaviorFactory.data)
+            ObjectTreeProfile[A](tree.id, syncObject, node.ownerID, tree.contractFactory.data)
         }
 
         val array = trees.values.map(toProfile).toArray

@@ -7,8 +7,7 @@ class BehaviorLangParserTests {
 
     @Test
     def parse(): Unit = {
-        val behaviorSource = new String(getClass.getResourceAsStream("/FSControl.bhv").readAllBytes())
-        Contract(behaviorSource)
+        Contract("/FSControl.bhv")
     }
 
 }

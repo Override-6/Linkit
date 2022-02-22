@@ -1,15 +1,14 @@
 import java.nio.file.Path
 import java.nio.file.Files
 import java.lang.String
-
-
-
 import java.lang.Module
-//test
+describe class Path [full_remote] {
+    foreach method enable as only_cache_owner
+}
 describe static class Path {
     enable method of(String, synchronize String[]) {
         modify 1 & 2 & returnvalue {
-            distant_to_current -> ${(param, _, remote) => remote.getProperty("FS_HOME") + s"/$param"}
+            distant_to_current -> ${(param, _, remote) => {remote.getProperty("FS_HOME") + s"/$param"}}
         }
         !synchronize returnvalue
     }
@@ -22,5 +21,13 @@ describe static class Path {
 import java.lang.Module
 
 describe static class Files {
-    forall methods enable as only_cache_owner
+    foreach method enable as @only_cache_owner {
+        modify 1 & 2 {
+            current_to_distant -> ${}
+        }
+        synchronize returnvalue
+    }
+    foreach method hide "damn !"
+    foreach field synchronize
+    foreach field !synchronize
 }

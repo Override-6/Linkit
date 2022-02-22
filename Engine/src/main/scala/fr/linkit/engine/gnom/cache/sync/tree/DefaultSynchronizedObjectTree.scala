@@ -31,7 +31,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                                                                val instantiator: SyncInstanceInstantiator,
                                                                val dataFactory: SyncNodeDataFactory,
                                                                override val id: Int,
-                                                               override val behaviorFactory: ObjectContractFactory) extends SynchronizedObjectTree[A] {
+                                                               override val contractFactory: ObjectContractFactory) extends SynchronizedObjectTree[A] {
 
     private var root: RootObjectSyncNodeImpl[A] = _
 

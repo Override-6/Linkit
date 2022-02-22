@@ -33,16 +33,15 @@ import scala.collection.mutable.ListBuffer
 
 abstract class ContractDescriptorDataBuilder {
 
-    private val builders       = mutable.LinkedHashMap.empty[Any, ClassDescriptor[_]]
-    private var defaultID: Int = 0
+    private val builders       = mutable.ListBuffer.empty[ClassDescriptor[_]]
 
     def describe[C <: AnyRef](builder: ClassDescriptor[C]): Unit = {
-        val tag = builder.tag.getOrElse(nextDescriptorDefaultID)
-        builders.put(tag, builder)
+        builders += builder
     }
 
+
     def build(): ContractDescriptorData = {
-        var descriptions = builders.values.map(_.getResult).toArray
+        var descriptions = builders.map(_.getResult).toArray
         if (!descriptions.exists(_.targetClass eq classOf[Object])) {
             //Adding descriptor for the object class that is essential.
             descriptions :+= new StructureContractDescriptor[Object] {
@@ -55,10 +54,6 @@ abstract class ContractDescriptorDataBuilder {
         new ContractDescriptorDataImpl(descriptions)
     }
 
-    private def nextDescriptorDefaultID: Int = {
-        defaultID += 1
-        defaultID
-    }
 
     abstract class ClassDescriptor[A <: AnyRef](override val tag: Option[Any])(implicit desc: SyncStructureDescription[A]) extends Recognizable {
 
@@ -84,8 +79,8 @@ abstract class ContractDescriptorDataBuilder {
                 fieldContracts.put(fDesc.javaField, new FieldContractImpl[Any](fDesc, None, false))
             }
 
-            def method(name: String): Unit = {
-                val mDesc              = desc.findMethodDescription(name).get
+            def method(name: String)(params: Class[_]*): Unit = {
+                val mDesc              = desc.findMethodDescription(name, params).get
                 val contractDescriptor = MethodContractDescriptorImpl(mDesc, null, null, Array.empty, false, false, new GenericRMIRulesAgreementBuilder())
                 methodContracts.put(mDesc.javaMethod, contractDescriptor)
             }

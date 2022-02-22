@@ -21,19 +21,17 @@ object BehaviorLanguageTokens {
 
     case class SynchronizeState(forced: Boolean, value: Boolean)
 
-    case class ClassReference(className: String) extends BHVLangToken
-    case class ClassDescriptionHead(static: Boolean, ref: ClassReference) extends BHVLangToken
+    case class ClassDescriptionHead(static: Boolean, className: String, referent: Option[ValueReference]) extends BHVLangToken
     case class ClassDescription(head: ClassDescriptionHead, methods: Seq[MethodDescription], fields: Seq[FieldDescription]) extends BHVLangToken
 
-    case class MethodReference(referencedMethod: String) extends BHVLangToken
     case class MethodSignature(methodName: String, signature: String, synchronisedParams: Seq[Int]) extends BHVLangToken
     case class MethodComponentsModifier(paramsModifiers: Map[Int, Seq[LambdaExpression]], returnvalueModifiers: Seq[LambdaExpression]) extends BHVLangToken
-    case class FieldDescription(state: SynchronizeState, fieldName: String) extends BHVLangToken
+    case class FieldDescription(state: SynchronizeState, fieldName: Option[String]) extends BHVLangToken
 
     trait MethodDescription extends BHVLangToken
-    case class DisabledMethodDescription(signature: MethodSignature) extends MethodDescription
-    case class HiddenMethodDescription(signature: MethodSignature, errorMessage: String) extends MethodDescription
-    case class EnabledMethodDescription(referentMethod: Option[MethodReference], signature: MethodSignature,
+    case class DisabledMethodDescription(signature: Option[MethodSignature]) extends MethodDescription
+    case class HiddenMethodDescription(signature: Option[MethodSignature], errorMessage: String) extends MethodDescription
+    case class EnabledMethodDescription(referent: Option[ValueReference], signature: Option[MethodSignature],
                                         syncReturnValue: SynchronizeState, modifiers: Seq[MethodComponentsModifier]) extends MethodDescription
 
     trait LambdaKind
@@ -42,4 +40,11 @@ object BehaviorLanguageTokens {
     case object CurrentToRemoteEvent extends LambdaKind
     case object RemoteToCurrentEvent extends LambdaKind
     case class LambdaExpression(expression: String, kind: LambdaKind) extends BHVLangToken
+
+    trait ValueReference extends BHVLangToken
+    //Internal reference points a reference to a method/class/field that is declared into the file
+    case class InternalReference(referencedMethod: String) extends ValueReference
+    //External reference points a reference that is external from the file, it's a value that is contained into a property class.
+    case class ExternalReference(name: String) extends ValueReference
+
 }

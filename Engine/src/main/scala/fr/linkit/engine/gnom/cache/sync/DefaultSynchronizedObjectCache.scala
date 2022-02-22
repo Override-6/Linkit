@@ -114,7 +114,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                                             ownerID: String): ObjectNodeData[B] = {
         val tree          = parent.tree
         val path          = parent.treePath :+ id
-        val behaviorStore = tree.behaviorFactory
+        val behaviorStore = tree.contractFactory
         val context       = UsageSyncObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId)
         val contract      = behaviorStore.getObjectContract[B](syncObject.getOriginClass, context)
         val chip          = ObjectChip[B](contract, network, syncObject)

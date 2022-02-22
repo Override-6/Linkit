@@ -41,7 +41,7 @@ trait SyncStructureDescription[A <: AnyRef] extends CompilationContext {
      * */
     def findMethodDescription(methodID: Int): Option[MethodDescription]
 
-    def findMethodDescription(methodName: String): Option[MethodDescription]
+    def findMethodDescription(methodName: String, params: Seq[Class[_]]): Option[MethodDescription]
 
     /**
      * @return A list of [[FieldDescription]]

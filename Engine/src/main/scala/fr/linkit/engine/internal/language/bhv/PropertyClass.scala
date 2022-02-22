@@ -13,17 +13,10 @@
 
 package fr.linkit.engine.internal.language.bhv
 
-import fr.linkit.engine.internal.language.bhv.parsers.BehaviorLanguageParser
+import fr.linkit.engine.internal.language.bhv.parsers.BehaviorLanguageTokens.ExternalReference
 
-import scala.util.parsing.input.CharSequenceReader
+trait PropertyClass {
 
-object Contract {
-
-    def apply(file: String): Unit = {
-        val source = new String(getClass.getResourceAsStream(file).readAllBytes())
-        val ast = BehaviorLanguageParser.parse(new CharSequenceReader(source))
-        println(ast)
-    }
-
+    def get(ref: ExternalReference): AnyRef
 
 }

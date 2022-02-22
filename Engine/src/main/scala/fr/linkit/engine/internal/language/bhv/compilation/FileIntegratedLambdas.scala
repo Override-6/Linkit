@@ -15,11 +15,11 @@ package fr.linkit.engine.internal.language.bhv.compilation
 
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
-import fr.linkit.engine.internal.language.bhv.compilation.ScalaCodeRepository.factory
+import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas.factory
 
 import scala.collection.mutable
 
-class ScalaCodeRepository(fileName: String, center: CompilerCenter) {
+class FileIntegratedLambdas(fileName: String, center: CompilerCenter) {
 
     private val expressions                    = mutable.HashMap.empty[Int, LambdaExpressionInfo]
     private var repo: Option[LambdaRepository] = None
@@ -46,7 +46,7 @@ class ScalaCodeRepository(fileName: String, center: CompilerCenter) {
 
 }
 
-object ScalaCodeRepository {
+object FileIntegratedLambdas {
 
     private final val Blueprint = new LambdaRepositoryClassBlueprint(getClass.getResourceAsStream("generation/scala_lambda_repository.scbp"))
     private final val factory   = new ClassCompilationRequestFactory[LambdaRepositoryContext, LambdaRepository](Blueprint)

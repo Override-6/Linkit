@@ -38,8 +38,8 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz:
         methodDescriptions.get(methodID)
     }
 
-    override def findMethodDescription(methodName: String): Option[MethodDescription] = {
-        methodDescriptions.values.find(_.javaMethod.getName == methodName)
+    override def findMethodDescription(methodName: String, params: Seq[Class[_]]): Option[MethodDescription] = {
+        methodDescriptions.values.find(m => m.javaMethod.getName == methodName && m.javaMethod.getParameterTypes.toSeq == params)
     }
 
     override def findFieldDescription(fieldName: String): Option[FieldDescription] = {
