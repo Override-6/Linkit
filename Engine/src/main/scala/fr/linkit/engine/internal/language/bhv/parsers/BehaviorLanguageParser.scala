@@ -41,7 +41,7 @@ object BehaviorLanguageParser extends RegexParsers {
         val classHead        = "describe" ~> ((("static class" ^^^ true | "class" ^^^ false) ~ "[^\\s]+".r ~ reference)
                 ^^ { case isStatic ~ ref ~ referent => ClassDescriptionHead(isStatic, ref, referent) })
         val methodSignature  = "\\w+\\(".r ~ "([\\w,.\\s\\[\\]]+)\\)".r ^^ { case name ~ signature =>
-            MethodSignature(name.dropRight(1), '(' + signature, parseSyncParams(signature))
+            MethodSignature(name.dropRight(1), '(' + signature, null, parseSyncParams(signature))
         }
         val disableMethod    = ("disable" ||| "disable" ~ "method") ~> methodSignature ^^ (x => DisabledMethodDescription(Some(x)))
         val enableMethodHead = ("enable" ||| "enable" ~ "method") ~> methodSignature

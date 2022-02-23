@@ -2,7 +2,7 @@ import java.nio.file.Path
 import java.nio.file.Files
 import java.lang.String
 import java.lang.Module
-describe class Path [full_remote] {
+describe class Path {
     foreach method enable as only_cache_owner
 }
 describe static class Path {

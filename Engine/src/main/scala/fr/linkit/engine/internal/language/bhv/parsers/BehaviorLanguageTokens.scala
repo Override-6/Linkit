@@ -24,7 +24,7 @@ object BehaviorLanguageTokens {
     case class ClassDescriptionHead(static: Boolean, className: String, referent: Option[ValueReference]) extends BHVLangToken
     case class ClassDescription(head: ClassDescriptionHead, methods: Seq[MethodDescription], fields: Seq[FieldDescription]) extends BHVLangToken
 
-    case class MethodSignature(methodName: String, signature: String, synchronisedParams: Seq[Int]) extends BHVLangToken
+    case class MethodSignature(methodName: String, signature: String, params: Seq[String], synchronisedParams: Seq[Int]) extends BHVLangToken
     case class MethodComponentsModifier(paramsModifiers: Map[Int, Seq[LambdaExpression]], returnvalueModifiers: Seq[LambdaExpression]) extends BHVLangToken
     case class FieldDescription(state: SynchronizeState, fieldName: Option[String]) extends BHVLangToken
 

@@ -1,4 +1,4 @@
-package fr.linkit.api.gnom.cache.sync.contractv2.modification;
+package fr.linkit.api.gnom.cache.sync.contract.modification;
 
 public enum ValueModifierKind {
 

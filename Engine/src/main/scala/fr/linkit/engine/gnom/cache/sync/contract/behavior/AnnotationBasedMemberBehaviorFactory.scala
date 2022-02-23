@@ -16,10 +16,9 @@ package fr.linkit.engine.gnom.cache.sync.contract.behavior
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{MemberContractFactory, SyncObjectContext}
 import fr.linkit.api.gnom.cache.sync.contract.description._
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract, ValueContract}
+import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, ValueContract}
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contractv2.{FieldContractImpl, MethodContractImpl, SimpleValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.GenericRMIRulesAgreementBuilder
 

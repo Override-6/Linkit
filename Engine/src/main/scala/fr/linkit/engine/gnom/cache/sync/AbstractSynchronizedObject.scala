@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.contractv2.StructureContract
+import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncObjectReference}

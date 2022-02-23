@@ -11,7 +11,6 @@ import scala.reflect.{ClassTag, classTag}
 
 class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
 
-    val (nonOriginalObjectsImplClass, fullRemoteDefaultRule) = computeImplementationLevel(clazz)
 
     override protected def applyNotFilter(e: Executable): Boolean = {
         isNotOverridable(e) ||
@@ -31,24 +30,6 @@ class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) ext
         val mods = e.getModifiers
         import Modifier._
         isPrivate(mods) || isStatic(mods) || isFinal(mods) || isNative(mods) || (mods & SyntheticMod) != 0
-    }
-
-    private def computeImplementationLevel(clazz: Class[_]): (Class[_], Option[BasicInvocationRule]) = {
-        var cl: Class[_] = clazz
-        while (cl != null) {
-            if (cl.isAnnotationPresent(classOf[FullRemote]))
-                return (cl, Some(cl.getAnnotation(classOf[FullRemote]).value()))
-            cl = cl.getSuperclass
-        }
-        val interfaces = clazz.getInterfaces
-        if (interfaces.nonEmpty) {
-            for (itf <- interfaces) {
-                val (clazz, rule) = computeImplementationLevel(itf)
-                if (clazz != itf || rule.nonEmpty)
-                    return (clazz, rule)
-            }
-        }
-        (clazz, None)
     }
 }
 

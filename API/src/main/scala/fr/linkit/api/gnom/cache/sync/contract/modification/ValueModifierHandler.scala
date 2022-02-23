@@ -11,12 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contractv2
+package fr.linkit.api.gnom.cache.sync.contract.modification
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.network.Engine
 
-trait FieldContract[A] extends ValueContract[A] {
+trait ValueModifierHandler[A] {
 
-    def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manipulation: SyncObjectFieldManipulation): Unit
+    def modifyForField(obj: A, abstractionLimit: Class[_ >: A])(containingObject: SynchronizedObject[_], causeEngine: Engine): A
+
+    def modifyForParameter(obj: A, abstractionLimit: Class[_ >: A])(targetEngine: Engine, kind: ValueModifierKind): A
+
+    def modifyForMethodReturnValue(obj: A, abstractionLimit: Class[_ >: A])(targetEngine: Engine, kind: ValueModifierKind): A
 
 }

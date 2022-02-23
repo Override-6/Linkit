@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription}
-import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract}
 import fr.linkit.api.internal.concurrency.Procrastinator
 
 trait MemberContractFactory {

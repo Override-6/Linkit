@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contractv2
+package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
@@ -36,13 +36,16 @@ trait MethodContract[R] {
     def executeMethodInvocation(sender: Engine, data: InvocationExecution)
 
     trait InvocationExecution {
+
         val operatingNode: ObjectSyncNode[_]
         val arguments    : Array[Any]
     }
+
     trait RemoteInvocationExecution extends InvocationExecution {
-        val puppeteer    : Puppeteer[_]
+
+        val puppeteer: Puppeteer[_]
+
         def doSuperCall(): Any
     }
-
 
 }

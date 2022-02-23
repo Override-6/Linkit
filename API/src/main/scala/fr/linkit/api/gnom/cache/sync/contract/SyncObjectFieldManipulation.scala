@@ -13,15 +13,17 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptors.MethodContractDescriptor
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.network.Engine
 
-trait StructureContractDescriptor[A <: AnyRef] {
+trait SyncObjectFieldManipulation {
 
-    val targetClass: Class[A]
-    val remoteObjectInfo: Option[RemoteObjectInfo]
+    val engine: Engine
 
-    val methods: Array[MethodContractDescriptor]
-    val fields : Array[(Int, FieldContract[Any])]
-    val modifier: Option[ValueModifier[A]]
+    def findSynchronizedVersion(origin: Any): Option[SynchronizedObject[AnyRef]]
+
+    def initSyncObject(sync: SynchronizedObject[AnyRef]): Unit
+
+    def syncObject(obj: AnyRef): SynchronizedObject[AnyRef]
+
 }

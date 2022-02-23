@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.modification
 
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.network.Engine
 
 abstract class LambdaValueModifier[A <: AnyRef] extends ValueModifier[A] {

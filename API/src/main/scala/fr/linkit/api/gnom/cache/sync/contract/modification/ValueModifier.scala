@@ -11,16 +11,18 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contractv2
+package fr.linkit.api.gnom.cache.sync.contract.modification
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.network.Engine
 
-trait StructureContract[A <: AnyRef] {
+trait ValueModifier[A] {
 
-    val clazz: Class[_]
+    def fromRemote(value: A, remote: Engine): A = value
 
-    def getMethodContract[R](id: Int): MethodContract[R]
+    def fromRemoteEvent(value: A, remote: Engine): Unit = ()
 
-    def applyFieldsContracts(obj: A with SynchronizedObject[A], manip: SyncObjectFieldManipulation): Unit
+    def toRemote(value: A, remote: Engine): A = value
+
+    def toRemoteEvent(value: A, remote: Engine): Unit = ()
 
 }

@@ -11,18 +11,6 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contractv2.modification
+package fr.linkit.api.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.network.Engine
-
-trait ValueModifier[A] {
-
-    def fromRemote(value: A, remote: Engine): A = value
-
-    def fromRemoteEvent(value: A, remote: Engine): Unit = ()
-
-    def toRemote(value: A, remote: Engine): A = value
-
-    def toRemoteEvent(value: A, remote: Engine): Unit = ()
-
-}
+case class RemoteObjectInfo(stubClass: Class[_])

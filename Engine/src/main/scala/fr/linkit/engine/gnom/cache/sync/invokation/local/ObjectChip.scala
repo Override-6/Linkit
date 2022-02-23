@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.local
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contractv2.{MethodContract, StructureContract}
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, StructureContract}
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}

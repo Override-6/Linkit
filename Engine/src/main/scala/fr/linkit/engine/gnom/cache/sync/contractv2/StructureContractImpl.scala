@@ -14,9 +14,10 @@
 package fr.linkit.engine.gnom.cache.sync.contractv2
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract, StructureContract, SyncObjectFieldManipulation}
+import fr.linkit.api.gnom.cache.sync.contract._
 
 class StructureContractImpl[A <: AnyRef](override val clazz: Class[_],
+                                         override val remoteObjectInfo: Option[RemoteObjectInfo],
                                          val methodContracts: Map[Int, MethodContract[Any]],
                                          val fieldContracts: Array[FieldContract[Any]]) extends StructureContract[A] {
 
@@ -31,4 +32,5 @@ class StructureContractImpl[A <: AnyRef](override val clazz: Class[_],
             contract.applyContract(obj.asInstanceOf[AnyRef with SynchronizedObject[AnyRef]], manip)
         }
     }
+
 }

@@ -11,19 +11,18 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contractv2
+package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.network.Engine
 
-trait SyncObjectFieldManipulation {
+trait StructureContract[A <: AnyRef] {
 
-    val engine: Engine
+    val clazz: Class[_]
 
-    def findSynchronizedVersion(origin: Any): Option[SynchronizedObject[AnyRef]]
+    val remoteObjectInfo: Option[RemoteObjectInfo]
 
-    def initSyncObject(sync: SynchronizedObject[AnyRef]): Unit
+    def getMethodContract[R](id: Int): MethodContract[R]
 
-    def syncObject(obj: AnyRef): SynchronizedObject[AnyRef]
+    def applyFieldsContracts(obj: A with SynchronizedObject[A], manip: SyncObjectFieldManipulation): Unit
 
 }

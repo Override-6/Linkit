@@ -13,9 +13,9 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptors
 
+import fr.linkit.api.gnom.cache.sync.contract.ValueContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.api.gnom.cache.sync.contractv2.ValueContract
 import fr.linkit.api.internal.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 

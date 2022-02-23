@@ -16,8 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.contractv2
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.api.gnom.cache.sync.contractv2.{MethodContract, ValueContract}
-import fr.linkit.api.gnom.cache.sync.invocation.HiddenMethodInvocationException
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ValueContract}
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.network.Engine

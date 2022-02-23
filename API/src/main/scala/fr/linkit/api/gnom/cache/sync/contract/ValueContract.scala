@@ -11,9 +11,9 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contractv2
+package fr.linkit.api.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
 trait ValueContract[A] {
 

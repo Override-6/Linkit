@@ -14,11 +14,11 @@
 package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.persistence.context.SimplePersistenceConfig.FullRemoteObjectPersistence
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
@@ -43,21 +43,15 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
             profile = customProfiles.getOrElse(clazz, newDefaultProfile[T](clazz))
             cachedProfiles.put(clazz, profile)
         }
-        if (isSyncClass(clazz)) {
-            @inline
-            def cast[X](a: Any) = a.asInstanceOf[X]
-
-            profile = newSynchronizedObjectDefaultProfile(clazz, cast(profile))
-        }
         profile.asInstanceOf[TypeProfile[T]]
     }
 
-    private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: TypeProfile[T]): DefaultTypeProfile[T] = {
-        val desc                                    = SyncObjectDescription(clazz.getSuperclass)
+    override def getSyncObjectProfile[T <: SynchronizedObject[T]](clazz: Class[T], objectContract: StructureContract[T]): TypeProfile[T] = {
+        val profile = getProfile[T](clazz)
         val persistences: Array[TypePersistence[T]] = profile.getPersistences.map {
             persist =>
-                val p = if (desc.fullRemoteDefaultRule.nonEmpty) FullRemoteObjectPersistence else persist
-                new SynchronizedObjectsPersistence[T](p)
+                val p = if (objectContract.remoteObjectInfo.nonEmpty) FullRemoteObjectPersistence else persist
+                new SynchronizedObjectsPersistence(p)
         }
         new DefaultTypeProfile[T](clazz, this, persistences)
     }

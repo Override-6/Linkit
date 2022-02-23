@@ -15,10 +15,9 @@ package fr.linkit.engine.gnom.cache.sync.contractv2
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, SyncObjectFieldManipulation}
+import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncObjectFieldManipulation}
 import fr.linkit.engine.internal.utils.ScalaUtils
-import org.jetbrains.annotations.Nullable
 
 class FieldContractImpl[A](val desc: FieldDescription,
                            val modifier: Option[ValueModifier[A]],

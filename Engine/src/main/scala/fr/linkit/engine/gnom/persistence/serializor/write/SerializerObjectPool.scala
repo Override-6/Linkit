@@ -183,8 +183,8 @@ class SerializerObjectPool(bundle: PersistenceBundle,
             ref match {
                 case no: NetworkObject[_] =>
                     AppLogger.info(s"A network object ${no.reference} was missing on targeted engine ${bundle.boundId}.")
-                    //selector.informObjectSent(no)
-                case _                    =>
+                //selector.informObjectSent(no)
+                case _ =>
             }
         } else {
             AppLogger.info(s"network object has been replaced by his reference (${nrlOpt.get})")
@@ -205,7 +205,7 @@ class SerializerObjectPool(bundle: PersistenceBundle,
 
     private def addTypeOfIfAbsent(ref: AnyRef): Class[_] = ref match {
         case sync: SynchronizedObject[_] =>
-            val implClass = SyncObjectDescription(sync.getOriginClass).nonOriginalObjectsImplClass
+            val implClass = sync.getNode.contract.remoteObjectInfo.fold[Class[_]](sync.getOriginClass)(_.stubClass)
             getChunkFromFlag(SyncClass).addIfAbsent(implClass)
             implClass
         case _                           =>

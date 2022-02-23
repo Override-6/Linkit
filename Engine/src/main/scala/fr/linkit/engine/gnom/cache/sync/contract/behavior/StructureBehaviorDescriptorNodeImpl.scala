@@ -13,12 +13,11 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.StructureBehaviorDescriptorNode
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, MethodContract, StructureContract}
+import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract, StructureContractDescriptor}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contractv2.{MethodContractImpl, StructureContractImpl}
@@ -26,12 +25,12 @@ import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 
-class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDescriptor: StructureContractDescriptor[A],
+class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: StructureContractDescriptor[A],
                                                        @Nullable val modifier: ValueModifier[A],
                                                        @Nullable val superClass: StructureBehaviorDescriptorNodeImpl[_ >: A],
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
 
-    private val clazz = instanceDescriptor.targetClass
+    private val clazz = descriptor.targetClass
 
     override def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit = {
         if (superClass != null) {
@@ -42,7 +41,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDesc
     }
 
     private def putMethods(map: mutable.HashMap[Int, MethodContract[Any]], context: SyncObjectContext): Unit = {
-        for (desc <- instanceDescriptor.methods) {
+        for (desc <- descriptor.methods) {
             val id = desc.description.methodId
             if (!map.contains(id)) {
                 val agreement = desc.agreement.result(context)
@@ -58,7 +57,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDesc
     }
 
     private def putFields(map: mutable.HashMap[Int, FieldContract[Any]]): Unit = {
-        for ((id, field) <- instanceDescriptor.fields) {
+        for ((id, field) <- descriptor.fields) {
             if (!map.contains(id))
                 map.put(id, field)
         }
@@ -97,7 +96,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val instanceDesc
         putFields(fieldMap)
         fillWithAnnotatedBehaviors(classDesc, methodMap, fieldMap, context)
 
-        new StructureContractImpl(clazz, methodMap.toMap, fieldMap.values.toArray)
+        new StructureContractImpl(clazz, descriptor.remoteObjectInfo, methodMap.toMap, fieldMap.values.toArray)
     }
 
     override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {

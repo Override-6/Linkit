@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
+import fr.linkit.api.gnom.cache.sync.contract.SyncObjectFieldManipulation
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
-import fr.linkit.api.gnom.cache.sync.contractv2.SyncObjectFieldManipulation
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}

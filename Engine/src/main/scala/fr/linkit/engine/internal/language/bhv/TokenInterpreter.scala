@@ -23,7 +23,8 @@ import fr.linkit.engine.internal.language.bhv.parsers.BehaviorLanguageTokens._
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class TokenInterpreter(tokens: List[BHVLangToken], fileName: String, center: CompilerCenter) {
+class TokenInterpreter(tokens: List[BHVLangToken], fileName: String,
+                       center: CompilerCenter, properties: PropertyClass) {
 
     private val importedClasses = mutable.HashMap.empty[String, Class[_]]
     private val builder         = new ContractDescriptorDataBuilder {}
@@ -41,25 +42,32 @@ class TokenInterpreter(tokens: List[BHVLangToken], fileName: String, center: Com
 
     private def computeData(): Unit = {
         tokens.foreach {
-            case ImportToken(name)                                                                    =>
+            case ImportToken(name)                       =>
                 importClass(name)
-            case ClassDescription(ClassDescriptionHead(static, className, referent), methods, fields) =>
-                val desc       = if (static) SyncStaticsDescription(className) else SyncObjectDescription(className)
-                val descriptor = new builder.ClassDescriptor()(desc) {}
-                methods.foreach {
-                    case DisabledMethodDescription(signature)                                      =>
-                        descriptor.disable method(signature.)
-                    case EnabledMethodDescription(referent, signature, syncReturnValue, modifiers) =>
-                    case HiddenMethodDescription(signature, errorMessage)                          =>
-                    case _                                                                         =>
-                }
-                builder.describe(descriptor)
+            case ClassDescription(head, methods, fields) =>
+                computeClassDesc(head, methods, fields)
         }
     }
 
     private def computeClassDesc(head: ClassDescriptionHead, methods: Seq[MethodDescription], fields: Seq[FieldDescription]): Unit = {
+        val static     = head.static
+        val className  = head.className
+        val desc       = if (static) SyncStaticsDescription(className) else SyncObjectDescription(className)
+        val descriptor = new builder.ClassDescriptor[Nothing]()(desc) {}
+        methods.foreach {
+            case DisabledMethodDescription(None)                                           =>
+                descriptor.disable.allMethods()
+            case DisabledMethodDescription(Some(signature))                                =>
 
+                descriptor.disable.method(signature.methodName)(signature.params.map(getClass): _*)
+            case EnabledMethodDescription(referent, signature, syncReturnValue, modifiers) =>
+                signature
+            case HiddenMethodDescription(signature, errorMessage)                          =>
+            case _                                                                         =>
+        }
+        builder.describe(descriptor)
     }
+
 
     private def getClass(name: String): Class[_] = {
         importedClasses.getOrElse(name, Class.forName(name))

@@ -13,13 +13,12 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo, StructureContractDescriptor, ValueContract}
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule
 import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.{ContractDescriptorData, MethodContractDescriptor}
-import fr.linkit.api.gnom.cache.sync.contractv2.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contractv2.{FieldContract, ValueContract}
+import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.AnnotationBasedMemberBehaviorFactory
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder.{MethodBehaviorBuilder, Recognizable}
@@ -33,27 +32,26 @@ import scala.collection.mutable.ListBuffer
 
 abstract class ContractDescriptorDataBuilder {
 
-    private val builders       = mutable.ListBuffer.empty[ClassDescriptor[_]]
+    private val builders = mutable.ListBuffer.empty[ClassDescriptor[_]]
 
     def describe[C <: AnyRef](builder: ClassDescriptor[C]): Unit = {
         builders += builder
     }
-
 
     def build(): ContractDescriptorData = {
         var descriptions = builders.map(_.getResult).toArray
         if (!descriptions.exists(_.targetClass eq classOf[Object])) {
             //Adding descriptor for the object class that is essential.
             descriptions :+= new StructureContractDescriptor[Object] {
-                override val targetClass: Class[Object]                    = classOf[Object]
-                override val methods    : Array[MethodContractDescriptor]  = Array.empty
-                override val fields     : Array[(Int, FieldContract[Any])] = Array.empty
-                override val modifier   : Option[ValueModifier[Object]]    = None
+                override val targetClass     : Class[Object]                    = classOf[Object]
+                override val remoteObjectInfo: Option[RemoteObjectInfo]         = None
+                override val methods         : Array[MethodContractDescriptor]  = Array.empty
+                override val fields          : Array[(Int, FieldContract[Any])] = Array.empty
+                override val modifier        : Option[ValueModifier[Object]]    = None
             }
         }
         new ContractDescriptorDataImpl(descriptions)
     }
-
 
     abstract class ClassDescriptor[A <: AnyRef](override val tag: Option[Any])(implicit desc: SyncStructureDescription[A]) extends Recognizable {
 
@@ -84,6 +82,17 @@ abstract class ContractDescriptorDataBuilder {
                 val contractDescriptor = MethodContractDescriptorImpl(mDesc, null, null, Array.empty, false, false, new GenericRMIRulesAgreementBuilder())
                 methodContracts.put(mDesc.javaMethod, contractDescriptor)
             }
+
+            def allMethods(): Unit = {
+                desc.listMethods().foreach { mDesc =>
+                    val contractDescriptor = MethodContractDescriptorImpl(mDesc, null, null, Array.empty, false, false, new GenericRMIRulesAgreementBuilder())
+                    methodContracts.put(mDesc.javaMethod, contractDescriptor)
+                }
+            }
+
+            def allFields(): Unit = {
+
+            }
         }
 
         class MemberEnable {
@@ -92,12 +101,12 @@ abstract class ContractDescriptorDataBuilder {
 
                 private var concluded = false
 
-                def and(methodName: String): MethodBehaviorDescriptorBuilderIntroduction = {
-                    new MethodBehaviorDescriptorBuilderIntroduction(descs :+ getMethod(methodName))
+                def and(methodName: String)(params: Class[_]*): MethodBehaviorDescriptorBuilderIntroduction = {
+                    new MethodBehaviorDescriptorBuilderIntroduction(descs :+ getMethod(methodName, params))
                 }
 
-                def as(methodName: String): Unit = conclude {
-                    val bhv = methodContracts.getOrElse(getMethod(methodName).javaMethod, {
+                def as(methodName: String)(params: Class[_]*): Unit = conclude {
+                    val bhv = methodContracts.getOrElse(getMethod(methodName, params).javaMethod, {
                         throw new NoSuchElementException(s"Method '$methodName' not described. its behavior must be described before.")
                     })
                     descs.map(new MethodContractDescriptorImpl(_, bhv))
@@ -132,8 +141,8 @@ abstract class ContractDescriptorDataBuilder {
                 //TODO be able to build field behaviors
             }
 
-            private def getMethod(name: String): MethodDescription = {
-                desc.findMethodDescription(name).getOrElse {
+            private def getMethod(name: String, params: Seq[Class[_]]): MethodDescription = {
+                desc.findMethodDescription(name, params).getOrElse {
                     throw new NoSuchElementException(s"Can not find declared or inherited method '$name' in $clazz, is this method final or private ?")
                 }
             }
@@ -144,8 +153,8 @@ abstract class ContractDescriptorDataBuilder {
                 }
             }
 
-            def method(name: String): MethodBehaviorDescriptorBuilderIntroduction = {
-                val mDesc = getMethod(name)
+            def method(name: String)(params: Class[_]*): MethodBehaviorDescriptorBuilderIntroduction = {
+                val mDesc = getMethod(name, params)
                 new MethodBehaviorDescriptorBuilderIntroduction(Array(mDesc))
             }
 
@@ -160,11 +169,11 @@ abstract class ContractDescriptorDataBuilder {
             if (result != null)
                 return result
             result = new StructureContractDescriptor[A] {
-                override val targetClass: Class[A]                         = desc.clazz
-                override val methods    : Array[MethodContractDescriptor]  = methodContracts.values.toArray
-                override val fields     : Array[(Int, FieldContract[Any])] = fieldContracts.values.map(x => (x.desc.fieldId, x)).toArray
-                override val modifier   : Option[ValueModifier[A]]         = Option(ClassDescriptor.this.modifier)
-
+                override val targetClass     : Class[A]                         = desc.clazz
+                override val remoteObjectInfo: Option[RemoteObjectInfo]         = None
+                override val methods         : Array[MethodContractDescriptor]  = methodContracts.values.toArray
+                override val fields          : Array[(Int, FieldContract[Any])] = fieldContracts.values.map(x => (x.desc.fieldId, x)).toArray
+                override val modifier        : Option[ValueModifier[A]]         = Option(ClassDescriptor.this.modifier)
             }
             result
         }
