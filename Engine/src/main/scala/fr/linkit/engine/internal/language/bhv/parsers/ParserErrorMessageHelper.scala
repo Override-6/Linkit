@@ -18,21 +18,31 @@ import scala.util.parsing.input.{CharSequenceReader, Position}
 object ParserErrorMessageHelper {
 
     def makeErrorMessage(msg: String, kind: String, reader: CharSequenceReader, pos: Position): String = {
-        val line   = reader.source
+        val line  = reader.source
                 .toString
                 .lines().toArray(new Array[String](_))
                 .drop(pos.line - 1).head
-        val start  = pos.column
-        var end    = line.indexWhere(_ == ' ', start)
+        val start = pos.column
+        var end   = line.indexWhere(_ == ' ', start)
         if (end == -1) end = line.length
 
-        val identCount = line.takeWhile(_==' ').length
-        val cursor = " " * (start - 1 - identCount) + "^" * (end - start + 1)
+        val identCount = line.takeWhile(_ == ' ').length
+        val cursor     = " " * (start - 1 - identCount) + "^" * (end - start + 1)
         s"""
-           |$kind at $pos: $msg
+           |$kind at $pos: ${unescape(msg)}
            |${line.trim}
            |$cursor
            |""".stripMargin
+    }
+
+    private val escapedChars = Map(escapeAll(
+        "\\n", "\\f", "\\r", "\\b", "\\t",
+    ): _*)
+
+    private def escapeAll(strings: String*): Seq[(String, String)] = strings.map(s => (s.translateEscapes(), s))
+
+    private def unescape(s: String): String = {
+        escapedChars.foldLeft(s) { case (acc, (e, ue)) => acc.replace(e, ue)}
     }
 
 }

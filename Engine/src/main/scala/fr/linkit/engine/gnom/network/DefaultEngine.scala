@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{BasicInvocationRule, MethodControl}
+import fr.linkit.api.gnom.cache.sync.contract.annotation.LinkedBehavior
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.gnom.network.statics.{ClassStaticAccessor, StaticAccess}
 import fr.linkit.api.internal.system.Versions
@@ -24,6 +24,7 @@ import fr.linkit.engine.internal.system.StaticVersions
 
 import java.sql.Timestamp
 
+@LinkedBehavior("contracts/NetworkContract.bhv")
 class DefaultEngine(override val identifier: String,
                     override val cache: SharedCacheManager) extends Engine {
 
@@ -41,7 +42,6 @@ class DefaultEngine(override val identifier: String,
 
     private var connectionState: ExternalConnectionState = ExternalConnectionState.CONNECTED
 
-    @MethodControl(BasicInvocationRule.BROADCAST_IF_ROOT_OWNER) //Root owner is the Network object owner, which is the server.
     def updateState(state: ExternalConnectionState): Unit = connectionState = state
 
     override def getConnectionState: ExternalConnectionState = connectionState

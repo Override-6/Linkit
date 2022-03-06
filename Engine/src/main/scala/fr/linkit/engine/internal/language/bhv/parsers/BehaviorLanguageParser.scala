@@ -23,18 +23,27 @@ import scala.util.parsing.input.CharSequenceReader
 
 object BehaviorLanguageParser extends RegexParsers {
 
-    override val whiteSpace = "\\s+".r
+    override val whiteSpace    = "\\s+".r
+    private var skipWhiteSpace = true
 
-    override def skipWhitespace = true
+    override def skipWhitespace = skipWhiteSpace
 
-    /////////IMPORT PARSERS
+    ////////MISC
+    private val modifiers = rep(
+        scalaCodeIntegration("distant_to_current", RemoteToCurrentModifier)
+                | scalaCodeIntegration("current_to_distant", CurrentToRemoteModifier)
+                | scalaCodeIntegration("current_to_distant_event", CurrentToRemoteEvent)
+                | scalaCodeIntegration("distant_to_current_event", RemoteToCurrentEvent)
+    )
+
+    /////////IMPORT PARSER
     private val importExp = "import " ~> ("[^\\s]+".r ^^ ImportToken)
 
-    ////////CLASS PARSERS
+    ////////CLASS PARSER
     private final val ReturnValue      = "returnvalue"
     private final val ForcedSync       = SynchronizeState(true, true)
     private final val NotForcedNotSync = SynchronizeState(true, false)
-    private       val clazz            = {
+    private       val classDescribe    = {
         val syncOrNot = "synchronize" ^^^ ForcedSync | "!synchronize".r ^^^ SynchronizeState(true, false)
         val reference = ("as" ~> ("@\\w+".r ^^ (x => Some(ExternalReference(x))) | "\\w+".r ^^ (x => Some(InternalReference(x))))) ||| "" ^^^ None
 
@@ -51,27 +60,11 @@ object BehaviorLanguageParser extends RegexParsers {
             def and: Parser[List[String]] = (param ~ "&" ~ and) ^^ { case hd ~ _ ~ tail => hd :: tail } | param ^^ (List(_))
 
             reference ~ ("{" ~>
-                    //parsing the method contract body,
-                    // example:
-                    // modify 1 & 2 & returnvalue {
-                    //     remote_to_current -> ${/*some scala code here*/}
-                    //     current_to_remote_event -> ${/*some scala code here*/}
-                    // }
-                    // synchronize returnvalue
-
-                    //parsing the 'modify' clojure
-                    rep(("modify" ~> and <~ "{")
-                            ~ rep(
-                        scalaCodeIntegration("distant_to_current", RemoteToCurrentModifier)
-                                | scalaCodeIntegration("current_to_distant", CurrentToRemoteModifier)
-                                | scalaCodeIntegration("current_to_distant_event", CurrentToRemoteEvent)
-                                | scalaCodeIntegration("distant_to_current_event", RemoteToCurrentEvent)
-                    ) <~ "}" ^^ {
+                    rep(("modify" ~> and <~ "{") ~ modifiers <~ "}" ^^ {
                         case concernedComps ~ lambdas => MethodComponentsModifier(
                             concernedComps.filter(_ != ReturnValue).map(i => (i.toInt, lambdas)).toMap,
                             if (concernedComps.contains(ReturnValue)) lambdas else Seq())
                     })
-                    // parsing the 'synchronize returnvalue' declaration (which is optional)
                     ~ ("" ^^^ NotForcedNotSync ||| syncOrNot <~ ReturnValue)
 
                     <~ "}" ||| ("" ^^^ new ~(List(), NotForcedNotSync)))
@@ -103,13 +96,75 @@ object BehaviorLanguageParser extends RegexParsers {
         }
     }
 
+    ////////TYPE MODIFIER PARSER
+    private val typeModifier = ("modifier " ~> "[^\\s]+".r <~ "{") ~ modifiers <~ "}" ^^ {
+        case clazz ~ modifiers => TypeModifiers(clazz, modifiers)
+    }
+
+    ////////SCALA INTEGRATION PARSER
+    private val scalaCodePrefix = "${" f "'${' not specified before scala code expression"
+    private val scalaCode       = "scala" ~> scalaCodePrefix ~> codeBlock ^^ toScalaCodeToken
+
     private def keep[X: ClassTag](s: Seq[BHVLangToken]): Seq[X] = {
         val cl = classTag[X].runtimeClass
         s.filter(o => cl.isAssignableFrom(o.getClass)).map(_.asInstanceOf[X])
     }
 
+    private def codeBlock: Parser[String] = {
+        var bracketDepth = 1
+
+        def code: Parser[String] = {
+            skipWhiteSpace = false
+            ("[\\s\\S]+?[}{]".r ^^ { s =>
+                if (s.last == '{') bracketDepth += 1 else bracketDepth -= 1
+                s
+            }) ~ (if (bracketDepth == 0) "" else code) ^^ { case a ~ b => a + b }
+        }
+
+        code
+    }
+
     private def scalaCodeIntegration(name: String, kind: LambdaKind): Parser[LambdaExpression] = {
-        name ~ "->" ~> ("\\$\\{.*}".r ^^ (exp => LambdaExpression(exp.drop(2).dropRight(1), kind)))
+
+        name ~ "->" ~> scalaCodePrefix ~> codeBlock <~ "}" ^^ { exp =>
+            skipWhiteSpace = true //reset to normal
+            LambdaExpression(toScalaCodeToken(exp), kind)
+        }
+    }
+
+    private def reformatCode(s: String): String = {
+        val firstLineIndex = s.indexOf('\n')
+        (s.take(firstLineIndex).stripLeading() + s.drop(firstLineIndex).stripIndent()).dropRight(1)
+    }
+
+    private def toScalaCodeToken(code: String): ScalaCodeBlock = {
+        val formattedCode = reformatCode(code)
+        var pos           = 0
+
+        def p[P](s: P) = {
+            print(s)
+            s
+        }
+
+        val externalReference = ("£{" ^^ p) ~> (".[\\w/]+".r ^^ p) ~ ((":" ~> "[^}]+".r).? ^^ p) <~ "}" ^^ {
+            case name ~ clazz =>
+                pos = formattedCode.indexOf("£{", pos + 1)
+                ScalaCodeExternalObject(name, clazz.getOrElse("scala.Any"), pos)
+        }.?
+
+        def a: Parser[List[ScalaCodeExternalObject]] = {
+            ("[\\s\\S]+?(?=£\\{)".r ~> externalReference ~ a) ^^ {
+                case a ~ b => a.fold(b)(_ :: b) }
+        }
+
+        val refs = parse(a, formattedCode) match {
+            case Success(x, _)     => //TODO try to optimise. x will take the same length as code's string length
+                x
+            case NoSuccess(msg, n) =>
+                val errorMsg = makeErrorMessage(msg, "Failure into scala block code", new CharSequenceReader(formattedCode), n.pos)
+                throw new BHVLanguageException(errorMsg)
+        }
+        ScalaCodeBlock(formattedCode, refs)
     }
 
     private val synchronisePattern = "\\s*synchronize\\s*.*".r.pattern
@@ -123,14 +178,22 @@ object BehaviorLanguageParser extends RegexParsers {
 
     /////////FILE PARSER
 
-    private val fileParser = rep(clazz | importExp)
+    private val fileParser = rep(classDescribe | importExp | typeModifier | scalaCode)
 
     def parse(input: CharSequenceReader): Seq[BHVLangToken] = {
         parseAll(fileParser, input) match {
-            case Failure(msg, n) => throw new BHVLanguageException(makeErrorMessage(msg, "Failure", input, n.pos))
-            case Error(msg, n)   => throw new BHVLanguageException(makeErrorMessage(msg, "Error", input, n.pos))
-            case Success(r, _)   => r
+            case NoSuccess(msg, n) => throw new BHVLanguageException(makeErrorMessage(msg, "Failure", input, n.pos))
+            case Success(r, _)     =>
+                r
         }
     }
 
+    implicit class ParserOps[P](that: Parser[P]) {
+
+        def e(msg: String): Parser[P] = that withErrorMessage msg
+
+        def f(msg: String): Parser[P] = that withFailureMessage msg
+    }
+
+    implicit class StringParserOps[P](that: String) extends ParserOps[String](that)
 }

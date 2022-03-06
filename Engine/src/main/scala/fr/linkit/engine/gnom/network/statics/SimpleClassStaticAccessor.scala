@@ -1,7 +1,8 @@
 package fr.linkit.engine.gnom.network.statics
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{BasicInvocationRule, MethodControl}
+import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule
+import fr.linkit.api.gnom.cache.sync.contract.annotation.MethodControl
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.network.statics.ClassStaticAccessor
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}

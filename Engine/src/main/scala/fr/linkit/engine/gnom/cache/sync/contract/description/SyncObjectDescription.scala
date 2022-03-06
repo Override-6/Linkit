@@ -1,7 +1,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{BasicInvocationRule, FullRemote}
+import fr.linkit.api.gnom.cache.sync.contract.annotation.FullRemote
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.SyntheticMod
 

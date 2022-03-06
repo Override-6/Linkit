@@ -1,0 +1,26 @@
+import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.engine.gnom.network.DefaultEngine
+import fr.linkit.api.gnom.network.Network
+
+scala ${
+    val network = £{@network: Network}
+    val network = £{@network: Network}
+    val network = £{@network: Network}
+    val network = £{@network: Network}
+}
+
+describe class DefaultEngine {
+    enable method updateState(ExternalConnectionState) as broadcast_if_root_owner
+}
+
+modifier SharedCacheManager {
+    current_to_distant -> ${(param, _) => param match {
+            case origin: SharedCacheOriginManager => {transformToDistant(origin)}
+            case _                                => {param}
+    }}
+}
+modifier DefaultEngine {
+    current_to_distant -> ${(e, _) => {
+       new DefaultEngine(e.identifier, network.findCacheManager(identifier).get)
+   }}
+}

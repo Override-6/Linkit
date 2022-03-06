@@ -28,6 +28,11 @@ object BehaviorLanguageTokens {
     case class MethodComponentsModifier(paramsModifiers: Map[Int, Seq[LambdaExpression]], returnvalueModifiers: Seq[LambdaExpression]) extends BHVLangToken
     case class FieldDescription(state: SynchronizeState, fieldName: Option[String]) extends BHVLangToken
 
+    case class TypeModifiers(className: String, modifiers: Seq[LambdaExpression]) extends BHVLangToken
+    case class ScalaCodeExternalObject(name: String, clazz: String, pos: Int) extends BHVLangToken
+    case class ScalaCodeBlock(code: String, objects: Seq[ScalaCodeExternalObject]) extends BHVLangToken
+
+
     trait MethodDescription extends BHVLangToken
     case class DisabledMethodDescription(signature: Option[MethodSignature]) extends MethodDescription
     case class HiddenMethodDescription(signature: Option[MethodSignature], errorMessage: String) extends MethodDescription
@@ -39,11 +44,11 @@ object BehaviorLanguageTokens {
     case object RemoteToCurrentModifier extends LambdaKind
     case object CurrentToRemoteEvent extends LambdaKind
     case object RemoteToCurrentEvent extends LambdaKind
-    case class LambdaExpression(expression: String, kind: LambdaKind) extends BHVLangToken
+    case class LambdaExpression(code: ScalaCodeBlock, kind: LambdaKind) extends BHVLangToken
 
     trait ValueReference extends BHVLangToken
     //Internal reference points a reference to a method/class/field that is declared into the file
-    case class InternalReference(referencedMethod: String) extends ValueReference
+    case class InternalReference(name: String) extends ValueReference
     //External reference points a reference that is external from the file, it's a value that is contained into a property class.
     case class ExternalReference(name: String) extends ValueReference
 

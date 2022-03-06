@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior.annotation;
+package fr.linkit.api.gnom.cache.sync.contract.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{MethodControl, Synchronized}
+import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule._
+import fr.linkit.api.gnom.cache.sync.contract.annotation.{MethodControl, Synchronized}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager

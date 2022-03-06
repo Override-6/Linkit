@@ -16,7 +16,6 @@ package fr.linkit.engine.internal.language.bhv
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
 import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas
 import fr.linkit.engine.internal.language.bhv.parsers.BehaviorLanguageTokens._
 
@@ -27,13 +26,12 @@ class TokenInterpreter(tokens: List[BHVLangToken], fileName: String,
                        center: CompilerCenter, properties: PropertyClass) {
 
     private val importedClasses = mutable.HashMap.empty[String, Class[_]]
-    private val builder         = new ContractDescriptorDataBuilder {}
     private val lambdas         = new FileIntegratedLambdas(fileName, center)
 
     private lazy val data: ContractDescriptorData = {
         computeData()
         lambdas.compileLambdas()
-        builder.build()
+        null
     }
 
     def getData: ContractDescriptorData = {
@@ -45,28 +43,11 @@ class TokenInterpreter(tokens: List[BHVLangToken], fileName: String,
             case ImportToken(name)                       =>
                 importClass(name)
             case ClassDescription(head, methods, fields) =>
-                computeClassDesc(head, methods, fields)
+                //computeClassDesc(head, methods, fields)
         }
     }
 
-    private def computeClassDesc(head: ClassDescriptionHead, methods: Seq[MethodDescription], fields: Seq[FieldDescription]): Unit = {
-        val static     = head.static
-        val className  = head.className
-        val desc       = if (static) SyncStaticsDescription(className) else SyncObjectDescription(className)
-        val descriptor = new builder.ClassDescriptor[Nothing]()(desc) {}
-        methods.foreach {
-            case DisabledMethodDescription(None)                                           =>
-                descriptor.disable.allMethods()
-            case DisabledMethodDescription(Some(signature))                                =>
 
-                descriptor.disable.method(signature.methodName)(signature.params.map(getClass): _*)
-            case EnabledMethodDescription(referent, signature, syncReturnValue, modifiers) =>
-                signature
-            case HiddenMethodDescription(signature, errorMessage)                          =>
-            case _                                                                         =>
-        }
-        builder.describe(descriptor)
-    }
 
 
     private def getClass(name: String): Class[_] = {

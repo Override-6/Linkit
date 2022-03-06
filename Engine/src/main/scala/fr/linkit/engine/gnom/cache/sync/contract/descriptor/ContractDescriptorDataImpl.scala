@@ -20,7 +20,7 @@ class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[
         val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()
         val objectDescriptor = descriptors.head
         if (objectDescriptor.targetClass != classOf[Object])
-            throw new IllegalArgumentException("Descriptions must contain the java.lang.Object type behavior description.")
+            throw new IllegalArgumentException("Descriptions sequence's first element must be the java.lang.Object type behavior description.")
 
         val objectRelation = new SyncObjectClassRelation[AnyRef](cast(objectDescriptor), null)
         relations.put(objectDescriptor.targetClass, objectRelation)
@@ -55,5 +55,6 @@ class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[
         }
         depth
     }
+
 
 }

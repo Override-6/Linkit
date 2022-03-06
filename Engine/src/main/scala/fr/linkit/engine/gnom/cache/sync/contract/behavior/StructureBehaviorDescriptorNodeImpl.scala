@@ -66,7 +66,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         interfaces.foreach(_.putFields(map))
     }
 
-    private def fillWithAnnotatedBehaviors(desc: SyncStructureDescription[A],
+   /* private def fillWithAnnotatedBehaviors(desc: SyncStructureDescription[A],
                                            methodMap: mutable.HashMap[Int, MethodContract[Any]],
                                            fieldMap: mutable.HashMap[Int, FieldContract[Any]],
                                            context: SyncObjectContext): Unit = {
@@ -85,7 +85,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
                 fieldMap.put(id, bhv)
             }
         })
-    }
+    }*/
 
     override def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A] = {
         val classDesc = SyncObjectDescription[A](clazz)
@@ -94,7 +94,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
         putMethods(methodMap, context)
         putFields(fieldMap)
-        fillWithAnnotatedBehaviors(classDesc, methodMap, fieldMap, context)
+        //fillWithAnnotatedBehaviors(classDesc, methodMap, fieldMap, context)
 
         new StructureContractImpl(clazz, descriptor.remoteObjectInfo, methodMap.toMap, fieldMap.values.toArray)
     }

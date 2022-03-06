@@ -21,12 +21,11 @@ import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
-import fr.linkit.engine.gnom.cache.sync.contract.modification.LambdaValueModifier
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
+import fr.linkit.engine.internal.language.bhv.Contract
 
 import java.sql.Timestamp
 
@@ -120,33 +119,13 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         this
     }
 
-    private def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {
+    protected[network] def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {
         val family = cache.family
         val store  = networkStore.createStore(family.hashCode)
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
     }
 
-    private def getEngineStoreContracts: ContractDescriptorData = {
-        import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.fromTag
-        new ContractDescriptorDataBuilder {
-            describe(new ClassDescriptor[SharedCacheManager]() {
-                modifier = new LambdaValueModifier[SharedCacheManager]() {
-                    toRemote = (param, _) => param match {
-                        case origin: SharedCacheOriginManager => transformToDistant(origin)
-                        case _                                => param
-                    }
-                }
-            })
-            describe(new ClassDescriptor[DefaultEngine]() {
-                modifier = new LambdaValueModifier[DefaultEngine] {
-                    fromRemote = (e, _) => {
-                        val identifier = e.identifier
-                        new DefaultEngine(identifier, findCacheManager(identifier).get)
-                    }
-                }
-            })
-        }.build()
-    }
+    private def getEngineStoreContracts: ContractDescriptorData = Contract("contracts/NetworkContract.bhv")
 }
 
 object AbstractNetwork {

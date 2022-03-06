@@ -7,7 +7,7 @@ class BehaviorLangParserTests {
 
     @Test
     def parse(): Unit = {
-        Contract("/FSControl.bhv")
+        Contract("/contracts/NetworkContract.bhv")
     }
 
 }

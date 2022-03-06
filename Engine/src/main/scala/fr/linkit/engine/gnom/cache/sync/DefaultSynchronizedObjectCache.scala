@@ -31,7 +31,6 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageSyncObjectContext
@@ -263,8 +262,8 @@ object DefaultSynchronizedObjectCache {
     implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = apply()
 
     implicit def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
-        val treeView = new ContractDescriptorDataBuilder {}.build()
-        apply[A](treeView)
+        val contracts: ContractDescriptorData = null//new ContractDescriptorDataBuilder {}.build()
+        apply[A](contracts)
     }
 
     implicit def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
@@ -275,7 +274,7 @@ object DefaultSynchronizedObjectCache {
 
     private[linkit] def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         channel => {
-            val contracts = new ContractDescriptorDataBuilder {}.build()
+            val contracts: ContractDescriptorData = null//new ContractDescriptorDataBuilder {}.build()
             apply[A](channel, contracts, network)
         }
     }

@@ -12,7 +12,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior.annotation;
+package fr.linkit.api.gnom.cache.sync.contract;
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder;
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule;

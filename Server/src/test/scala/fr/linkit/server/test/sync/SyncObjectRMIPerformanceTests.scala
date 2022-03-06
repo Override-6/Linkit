@@ -1,8 +1,8 @@
 package fr.linkit.server.test.sync
 
-import java.util
+import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule
+import java.util
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor

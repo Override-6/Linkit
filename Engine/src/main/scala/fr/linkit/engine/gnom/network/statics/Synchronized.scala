@@ -13,6 +13,6 @@
 
 package fr.linkit.engine.gnom.network.statics
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule
+import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule
 
 case class Synchronized(param: AnyRef, methodsBehaviors: BasicInvocationRule = BasicInvocationRule.ONLY_CURRENT)

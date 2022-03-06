@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule.BROADCAST
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{MethodControl => MC}
+import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule.BROADCAST
+import fr.linkit.api.gnom.cache.sync.contract.annotation.{MethodControl => MC}
 
 import scala.annotation.meta.setter
 

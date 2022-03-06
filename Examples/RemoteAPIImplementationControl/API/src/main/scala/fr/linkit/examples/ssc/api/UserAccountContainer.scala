@@ -1,7 +1,7 @@
 package fr.linkit.examples.ssc.api
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.BasicInvocationRule.ONLY_CACHE_OWNER
-import fr.linkit.api.gnom.cache.sync.contract.behavior.annotation.{FullRemote, MethodControl}
+import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule.ONLY_CACHE_OWNER
+import fr.linkit.api.gnom.cache.sync.contract.annotation.{FullRemote, MethodControl}
 
 @FullRemote(ONLY_CACHE_OWNER)
 trait UserAccountContainer {

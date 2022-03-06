@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior.annotation;
+package fr.linkit.api.gnom.cache.sync.contract.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -19,20 +19,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Determines that the synchronised instances of the annotated class
- * are to be controlled remotely by engines that retrieves the synchronized object.
- * <p>
- * a Remote object works exactly the same as a synchronized object,
- * excepted that any method invocation on an object which is not the original object will throw an exception.
- * <p>
- */
-@Target(ElementType.TYPE)
+ * Used to link a .bhv file with a type.
+ * the linkage is valid if and only if the given file describes the annotated type or apply modifications on it.
+ * */
+@Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface FullRemote {
+public @interface LinkedBehavior {
 
     /**
-     * The default behavior applied on all methods
+     * the path to the .bhv file.
+     * The given behavior file MUST describe the annotated type's instances behaviors
+     * and/or apply modifications on the type's instances.
      * */
-    BasicInvocationRule value() default BasicInvocationRule.ONLY_OWNER;
+    String value();
 
 }
