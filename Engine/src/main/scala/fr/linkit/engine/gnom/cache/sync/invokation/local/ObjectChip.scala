@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.invokation.local
 
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, StructureContract}
+import fr.linkit.api.gnom.cache.sync.invocation.HiddenMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
@@ -34,6 +35,9 @@ class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
 
     override def callMethod(methodID: Int, params: Array[Any], origin: Engine): Any = {
         val methodContract = contract.getMethodContract[Any](methodID)
+        val hideMsg = methodContract.hideMessage
+        if (hideMsg.isDefined)
+            throw new HiddenMethodInvocationException(hideMsg.get)
         val procrastinator = methodContract.procrastinator
         if (procrastinator != null) {
             callMethodProcrastinator(methodContract, params, origin)

@@ -14,13 +14,12 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.StructureBehaviorDescriptorNode
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract, StructureContractDescriptor}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contractv2.{MethodContractImpl, StructureContractImpl}
+import fr.linkit.engine.gnom.cache.sync.contract.{MethodContractImpl, SimpleValueContract, StructureContractImpl}
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -45,9 +44,10 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             val id = desc.description.methodId
             if (!map.contains(id)) {
                 val agreement = desc.agreement.result(context)
+                val rvContract = desc.returnValueContract.getOrElse(new SimpleValueContract[Any](false))
                 val contract  = new MethodContractImpl[Any](
                     desc.forceLocalInnerInvocations, agreement, desc.parameterContracts,
-                    desc.returnValueContract, desc.description, None, desc.procrastinator, desc.isHidden)
+                    rvContract, desc.description, desc.hideMessage, desc.procrastinator.orNull)
                 map.put(id, contract)
             }
         }
@@ -103,7 +103,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         new HeritageValueModifier(factory, limit)
     }
 
-    class HeritageValueModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]) extends ValueModifier[A] {
+    private class HeritageValueModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]) extends ValueModifier[A] {
 
         lazy val superClassModifier: Option[ValueModifier[A]] = computeSuperClassModifier()
         lazy val interfacesModifiers                          = computeInterfacesModifiers()

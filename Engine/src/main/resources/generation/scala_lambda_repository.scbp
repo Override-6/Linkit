@@ -11,22 +11,24 @@
  */
 package $ClassPackage$
 import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepository
-
+import fr.linkit.engine.internal.language.bhv.PropertyClass
 import scala.annotation.switch
 
-class $ClassName$ extends LambdaRepository {
+class $ClassName$(properties: PropertyClass) extends LambdaRepository {
 
     override def call(id: Int, args: Array[Any]): Any = {
         (id: @switch) match {
             !!LAMBDA_METHODS!! {
                 case $MethodID$ => _$MethodID$($ParamsOut$)
             }
-            case _ => throw new NoSuchMethodException("Could not find lambda method with id '$id' into this lambda repository.")
+            case _ => throw new NoSuchMethodException(s"Could not find lambda method with id '$id' into this lambda repository.")
         }
     }
 
+    private def getProperty[P](name: String): P = properties.get(name).asInstanceOf[P]
+
     !!LAMBDA_METHODS!! {
-        def _$MethodID$($ParamsIn$): Any = {
+        private final val _$MethodID$: Array[Any] => Any = {
             $LambdaExpression$
         }
     }

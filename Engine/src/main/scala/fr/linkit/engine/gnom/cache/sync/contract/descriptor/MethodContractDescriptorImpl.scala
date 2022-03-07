@@ -21,15 +21,15 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 
 case class MethodContractDescriptorImpl(description: MethodDescription,
-                                        @Nullable procrastinator: Procrastinator,
-                                        @Nullable returnValueContract: ValueContract[Any],
+                                        procrastinator: Option[Procrastinator],
+                                        returnValueContract: Option[ValueContract[Any]],
                                         parameterContracts: Array[ValueContract[Any]],
-                                        isHidden: Boolean,
+                                        hideMessage: Option[String],
                                         forceLocalInnerInvocations: Boolean,
                                         agreement: RMIRulesAgreementBuilder) extends MethodContractDescriptor {
 
     def this(description: MethodDescription, other: MethodContractDescriptor) {
-        this(description, other.procrastinator, other.returnValueContract, other.parameterContracts, other.isHidden, other.forceLocalInnerInvocations, other.agreement)
+        this(description, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.forceLocalInnerInvocations, other.agreement)
     }
 
 }

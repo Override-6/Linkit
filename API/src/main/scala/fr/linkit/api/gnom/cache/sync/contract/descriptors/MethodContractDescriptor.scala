@@ -21,11 +21,11 @@ import org.jetbrains.annotations.Nullable
 
 trait MethodContractDescriptor {
 
-              val description               : MethodDescription
-              val parameterContracts        : Array[ValueContract[Any]]
-    @Nullable val procrastinator            : Procrastinator
-    @Nullable val returnValueContract       : ValueContract[Any]
-              val isHidden                  : Boolean
-              val forceLocalInnerInvocations: Boolean
-              val agreement                 : RMIRulesAgreementBuilder
+    val description               : MethodDescription
+    val parameterContracts        : Array[ValueContract[Any]]
+    val procrastinator            : Option[Procrastinator]
+    val returnValueContract       : Option[ValueContract[Any]]
+    val hideMessage               : Option[String]
+    val forceLocalInnerInvocations: Boolean
+    val agreement                 : RMIRulesAgreementBuilder
 }

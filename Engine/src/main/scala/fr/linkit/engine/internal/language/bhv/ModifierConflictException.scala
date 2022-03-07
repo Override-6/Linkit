@@ -13,12 +13,6 @@
 
 package fr.linkit.engine.internal.language.bhv
 
-import fr.linkit.api.internal.concurrency.Procrastinator
-
-trait PropertyClass {
-
-    def get(refName: String): AnyRef
-
-    def getProcrastinator(refName: String): Procrastinator
+class ModifierConflictException(msg: String) extends BHVLanguageException(msg) {
 
 }

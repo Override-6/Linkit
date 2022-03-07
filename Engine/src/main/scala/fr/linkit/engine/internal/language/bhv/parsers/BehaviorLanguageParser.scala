@@ -97,7 +97,7 @@ object BehaviorLanguageParser extends RegexParsers {
     }
 
     ////////TYPE MODIFIER PARSER
-    private val typeModifier = ("modifier " ~> "[^\\s]+".r <~ "{") ~ modifiers <~ "}" ^^ {
+    private val typeModifier = ("modifier " ~> "[^\\s]+".r <~ "{") ~ modifiers ^^ {
         case clazz ~ modifiers => TypeModifiers(clazz, modifiers)
     }
 
@@ -117,6 +117,7 @@ object BehaviorLanguageParser extends RegexParsers {
             skipWhiteSpace = false
             ("[\\s\\S]+?[}{]".r ^^ { s =>
                 if (s.last == '{') bracketDepth += 1 else bracketDepth -= 1
+                skipWhiteSpace = true
                 s
             }) ~ (if (bracketDepth == 0) "" else code) ^^ { case a ~ b => a + b }
         }
@@ -126,8 +127,7 @@ object BehaviorLanguageParser extends RegexParsers {
 
     private def scalaCodeIntegration(name: String, kind: LambdaKind): Parser[LambdaExpression] = {
 
-        name ~ "->" ~> scalaCodePrefix ~> codeBlock <~ "}" ^^ { exp =>
-            skipWhiteSpace = true //reset to normal
+        name ~ "->" ~> scalaCodePrefix ~> codeBlock ^^ { exp =>
             LambdaExpression(toScalaCodeToken(exp), kind)
         }
     }
@@ -141,24 +141,14 @@ object BehaviorLanguageParser extends RegexParsers {
         val formattedCode = reformatCode(code)
         var pos           = 0
 
-        def p[P](s: P) = {
-            print(s)
-            s
-        }
 
-        val externalReference = ("£{" ^^ p) ~> (".[\\w/]+".r ^^ p) ~ ((":" ~> "[^}]+".r).? ^^ p) <~ "}" ^^ {
+        val externalReference = "[\\s\\S]+?£\\{".r ~> ".[\\w/]+".r ~ (":" ~> "[^}]+".r).? <~ "}" ^^ {
             case name ~ clazz =>
                 pos = formattedCode.indexOf("£{", pos + 1)
                 ScalaCodeExternalObject(name, clazz.getOrElse("scala.Any"), pos)
-        }.?
-
-        def a: Parser[List[ScalaCodeExternalObject]] = {
-            ("[\\s\\S]+?(?=£\\{)".r ~> externalReference ~ a) ^^ {
-                case a ~ b => a.fold(b)(_ :: b) }
         }
-
-        val refs = parse(a, formattedCode) match {
-            case Success(x, _)     => //TODO try to optimise. x will take the same length as code's string length
+        val refs = parse(rep(externalReference), code) match {
+            case Success(x, _)     =>
                 x
             case NoSuccess(msg, n) =>
                 val errorMsg = makeErrorMessage(msg, "Failure into scala block code", new CharSequenceReader(formattedCode), n.pos)
@@ -180,11 +170,10 @@ object BehaviorLanguageParser extends RegexParsers {
 
     private val fileParser = rep(classDescribe | importExp | typeModifier | scalaCode)
 
-    def parse(input: CharSequenceReader): Seq[BHVLangToken] = {
+    def parse(input: CharSequenceReader): List[RootToken] = {
         parseAll(fileParser, input) match {
             case NoSuccess(msg, n) => throw new BHVLanguageException(makeErrorMessage(msg, "Failure", input, n.pos))
-            case Success(r, _)     =>
-                r
+            case Success(r, _)     => r
         }
     }
 

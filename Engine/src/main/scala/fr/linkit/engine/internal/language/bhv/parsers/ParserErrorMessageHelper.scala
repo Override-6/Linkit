@@ -21,7 +21,7 @@ object ParserErrorMessageHelper {
         val line  = reader.source
                 .toString
                 .lines().toArray(new Array[String](_))
-                .drop(pos.line - 1).head
+                .drop(pos.line - 1).headOption.getOrElse("")
         val start = pos.column
         var end   = line.indexWhere(_ == ' ', start)
         if (end == -1) end = line.length

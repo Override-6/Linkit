@@ -18,12 +18,13 @@ import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
+import org.jetbrains.annotations.Nullable
 
 trait MethodContract[R] {
 
-    val procrastinator: Procrastinator
+    @Nullable val procrastinator: Procrastinator
 
-    val isHidden: Boolean
+    val hideMessage: Option[String]
 
     val isRMIActivated: Boolean
 

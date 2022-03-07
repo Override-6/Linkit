@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contractv2
+package fr.linkit.engine.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
@@ -23,15 +23,15 @@ import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
+import org.jetbrains.annotations.Nullable
 
-class MethodContractImpl[R](val forceLocalInnerInvocations: Boolean,
-                            val agreement: RMIRulesAgreement,
-                            val parameterContracts: Array[ValueContract[Any]],
-                            val returnValueContract: ValueContract[Any],
-                            val description: MethodDescription,
-                            val hiddenExceptionMessage: Option[String],
-                            override val procrastinator: Procrastinator,
-                            override val isHidden: Boolean) extends MethodContract[R] {
+class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
+                            agreement: RMIRulesAgreement,
+                            parameterContracts: Array[ValueContract[Any]],
+                            returnValueContract: ValueContract[Any],
+                            description: MethodDescription,
+                            override val hideMessage: Option[String],
+                            @Nullable override val procrastinator: Procrastinator) extends MethodContract[R] {
 
     override val isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
 

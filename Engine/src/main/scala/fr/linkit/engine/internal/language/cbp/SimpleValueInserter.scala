@@ -17,7 +17,7 @@ import fr.linkit.api.internal.language.cbp.ValueInserter
 import fr.linkit.engine.internal.utils.ArrayByteInserter
 import org.jetbrains.annotations.NotNull
 
-class SimpleValueInserter(val posInScopeBp: Int, @NotNull val blueprint: String) extends ArrayByteInserter(blueprint.getBytes) with ValueInserter {
+class SimpleValueInserter(val posInScopeBp: Int, @NotNull val source: String) extends ArrayByteInserter(source.getBytes) with ValueInserter {
 
     override def recenterPosFromScopeBp(pos: Int): Int = {
         val recenter = pos - posInScopeBp

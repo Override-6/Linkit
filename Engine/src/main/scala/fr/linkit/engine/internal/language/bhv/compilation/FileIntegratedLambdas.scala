@@ -28,9 +28,9 @@ class FileIntegratedLambdas(fileName: String, center: CompilerCenter) {
      * convert a lambda expression to an actual lambda object.
      *
      * */
-    def submitLambda[X](expression: String, lambdaParams: Array[Class[_]]): Array[Any] => X = {
+    def submitLambda[X](expression: String, lambdaParams: Class[_]*): Array[Any] => X = {
         val id = expression.hashCode
-        expressions.put(id, LambdaExpressionInfo(id, expression, lambdaParams))
+        expressions.put(id, LambdaExpressionInfo(id, expression, lambdaParams.toArray))
         args => {
             val repo = this.repo.getOrElse(throw new UnsupportedOperationException("Lambda Repository not yet compiled."))
             repo.call(id, args).asInstanceOf[X]

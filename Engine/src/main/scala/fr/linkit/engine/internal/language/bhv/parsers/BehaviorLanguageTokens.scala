@@ -13,31 +13,46 @@
 
 package fr.linkit.engine.internal.language.bhv.parsers
 
+import fr.linkit.api.gnom.cache.sync.contract.RemoteObjectInfo
+
 object BehaviorLanguageTokens {
 
     trait BHVLangToken
+    trait RootToken extends BHVLangToken
 
-    case class ImportToken(className: String) extends BHVLangToken
+    case class ImportToken(className: String) extends RootToken
 
     case class SynchronizeState(forced: Boolean, value: Boolean)
 
-    case class ClassDescriptionHead(static: Boolean, className: String, referent: Option[ValueReference]) extends BHVLangToken
-    case class ClassDescription(head: ClassDescriptionHead, methods: Seq[MethodDescription], fields: Seq[FieldDescription]) extends BHVLangToken
+    case class ClassDescriptionHead(static: Boolean, className: String,
+                                    referent: Option[ValueReference], remoteObjectInfo: Option[RemoteObjectInfo])
+            extends BHVLangToken
+    case class ClassDescription(head: ClassDescriptionHead,
+                                foreachMethod: Option[MethodDescription],
+                                foreachField: Option[FieldDescription],
+                                methods: Seq[MethodDescription],
+                                fields: Seq[FieldDescription]) extends RootToken
 
-    case class MethodSignature(methodName: String, signature: String, params: Seq[String], synchronisedParams: Seq[Int]) extends BHVLangToken
+    case class MethodSignature(methodName: String, params: Seq[String], synchronisedParams: Seq[Int]) extends BHVLangToken {
+        override def toString: String = s"$methodName${params.mkString("(", ",", ")")}"
+    }
     case class MethodComponentsModifier(paramsModifiers: Map[Int, Seq[LambdaExpression]], returnvalueModifiers: Seq[LambdaExpression]) extends BHVLangToken
     case class FieldDescription(state: SynchronizeState, fieldName: Option[String]) extends BHVLangToken
 
-    case class TypeModifiers(className: String, modifiers: Seq[LambdaExpression]) extends BHVLangToken
-    case class ScalaCodeExternalObject(name: String, clazz: String, pos: Int) extends BHVLangToken
-    case class ScalaCodeBlock(code: String, objects: Seq[ScalaCodeExternalObject]) extends BHVLangToken
+
+    case class TypeModifiers(className: String, modifiers: Seq[LambdaExpression]) extends RootToken
+    case class ScalaCodeExternalObject(name: String, typeName: String, pos: Int) extends BHVLangToken
+    case class ScalaCodeBlock(sourceCode: String, objects: Seq[ScalaCodeExternalObject]) extends RootToken
 
 
     trait MethodDescription extends BHVLangToken
     case class DisabledMethodDescription(signature: Option[MethodSignature]) extends MethodDescription
-    case class HiddenMethodDescription(signature: Option[MethodSignature], errorMessage: String) extends MethodDescription
-    case class EnabledMethodDescription(referent: Option[ValueReference], signature: Option[MethodSignature],
-                                        syncReturnValue: SynchronizeState, modifiers: Seq[MethodComponentsModifier]) extends MethodDescription
+    case class HiddenMethodDescription(signature: Option[MethodSignature], hideMessage: Option[String]) extends MethodDescription
+    case class EnabledMethodDescription(referent: Option[ValueReference],
+                                        procrastinatorName: Option[ExternalReference],
+                                        signature: Option[MethodSignature],
+                                        modifiers: Seq[MethodComponentsModifier],
+                                        syncReturnValue: SynchronizeState) extends MethodDescription
 
     trait LambdaKind
     case object CurrentToRemoteModifier extends LambdaKind

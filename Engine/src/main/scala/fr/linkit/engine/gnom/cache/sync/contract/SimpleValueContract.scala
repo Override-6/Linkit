@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contractv2
+package fr.linkit.engine.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.ValueContract
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
