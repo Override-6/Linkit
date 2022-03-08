@@ -125,7 +125,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
     }
 
-    private def getEngineStoreContracts: ContractDescriptorData = Contract("contracts/NetworkContract.bhv")
+    private def getEngineStoreContracts: ContractDescriptorData = ???//Contract("contracts/NetworkContract.bhv")
 }
 
 object AbstractNetwork {

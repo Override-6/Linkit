@@ -11,18 +11,18 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.parsers
+package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
-import fr.linkit.engine.internal.language.bhv.parsers.BehaviorLanguageTokens._
-import fr.linkit.engine.internal.language.bhv.parsers.ParserErrorMessageHelper.makeErrorMessage
+import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageTokens._
+import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
 
 import scala.reflect.{ClassTag, classTag}
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.CharSequenceReader
 
 object BehaviorLanguageParser extends RegexParsers {
-
+/*
     override val whiteSpace    = "\\s+".r
     private var skipWhiteSpace = true
 
@@ -184,5 +184,5 @@ object BehaviorLanguageParser extends RegexParsers {
         def f(msg: String): Parser[P] = that withFailureMessage msg
     }
 
-    implicit class StringParserOps[P](that: String) extends ParserOps[String](that)
+    implicit class StringParserOps[P](that: String) extends ParserOps[String](that)*/
 }

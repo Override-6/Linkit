@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.parsers
+package fr.linkit.engine.internal.language.bhv.parser
 
 import scala.util.parsing.input.{CharSequenceReader, Position}
 

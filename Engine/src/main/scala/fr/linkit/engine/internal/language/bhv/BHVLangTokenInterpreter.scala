@@ -13,21 +13,19 @@
 
 package fr.linkit.engine.internal.language.bhv
 
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo, StructureContractDescriptor, ValueContract}
-import fr.linkit.api.gnom.cache.sync.contract.descriptors.{ContractDescriptorData, MethodContractDescriptor}
-import fr.linkit.api.gnom.cache.sync.contract.modification.{ValueModifier, ValueModifierKind}
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.MethodContractDescriptorImpl
-import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas
-import fr.linkit.engine.internal.language.bhv.parsers.BehaviorLanguageTokens._
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncStructureDescription, MethodDescription => MethodDesc}
+import fr.linkit.api.gnom.cache.sync.contract.descriptors.{ContractDescriptorData, MethodContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo, StructureContractDescriptor, ValueContract}
 import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.gnom.cache.sync.contract.SimpleValueContract
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticDescription}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.MethodContractDescriptorImpl
 import fr.linkit.engine.gnom.cache.sync.contract.modification.LambdaValueModifier
 import fr.linkit.engine.gnom.cache.sync.invokation.GenericRMIRulesAgreementBuilder
-import fr.linkit.engine.internal.language.bhv.parsers.BehaviorLanguageTokens
-import fr.linkit.engine.internal.language.cbp.SimpleValueInserter
+import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas
+import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageTokens._
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -37,6 +35,7 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
 
     private val importedClasses = mutable.HashMap.empty[String, Class[_]]
     private val lambdas         = new FileIntegratedLambdas(fileName, center)
+
 
     private lazy val data: ContractDescriptorData = {
         computeData()
@@ -62,13 +61,13 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
                           methodSeq: Seq[MethodDescription], fieldSeq: Seq[FieldDescription]): Unit = {
         val clazz = findClass(head.className)
         val desc  = if (head.static) SyncStaticDescription(clazz) else SyncObjectDescription(clazz)
-        new StructureContractDescriptor[_] {
+        /*new StructureContractDescriptor[_] {
             override val targetClass     : Class[_]                         = clazz
             override val remoteObjectInfo: Option[RemoteObjectInfo]         = head.remoteObjectInfo
             override val methods         : Array[MethodContractDescriptor]  = methodSeq.map(methodDesc(desc, _)).toArray
-            override val fields          : Array[(Int, FieldContract[Any])] = _
-            override val modifier        : Option[ValueModifier[_]]         = _
-        }
+            override val fields          : Array[(Int, FieldContract[Any])] = ???
+            override val modifier        : Option[ValueModifier[_]]         = ???
+        }*/
     }
 
     private def methodDesc(ssd: SyncStructureDescription[_ <: AnyRef],
@@ -79,7 +78,7 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
             val hideMessage = hideMsg.getOrElse(s"Method ${ssd.clazz.getName}.$signature is hidden.")
             disabledMethodDesc(signature, Some(hideMessage), ssd)
         case EnabledMethodDescription(referent, procrastinatorName,
-        Some(signature), modifiers, syncReturnValue)           =>
+        Some(signature), modifiers, syncReturnValue)           => ???
 
     }
 
@@ -89,7 +88,7 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
                                   modifiers: Seq[MethodComponentsModifier],
                                   syncReturnValue: SynchronizeState,
                                   ssd: SyncStructureDescription[_ <: AnyRef]): Unit = {
-        val procrastinator     = procrastinatorName.map(properties.getProcrastinator)
+        val procrastinator     = ???//procrastinatorName.map(properties.getProcrastinator)
         val clazz              = ssd.clazz
         val rvContract         = getContract(modifiers, signature, syncReturnValue.value, clazz)("return value", _.returnvalueModifiers)
         val parameterContracts = {
@@ -102,7 +101,7 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
         val javaMethod = clazz.getMethod(signature.methodName, signature.params.map(findClass): _*)
         val desc       = new MethodDesc(javaMethod, ssd)
         val builder    = new GenericRMIRulesAgreementBuilder()
-        MethodContractDescriptorImpl(desc, procrastinator, Some(rvContract), parameterContracts, None, ???, builder)
+        ???//MethodContractDescriptorImpl(desc, procrastinator, Some(rvContract), parameterContracts, None, ???, builder)
     }
 
     private def getContract(modifiers: Seq[MethodComponentsModifier],
