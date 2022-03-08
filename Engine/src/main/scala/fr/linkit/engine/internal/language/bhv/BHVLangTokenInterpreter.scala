@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.cache.sync.contract.descriptor.MethodContractDescri
 import fr.linkit.engine.gnom.cache.sync.contract.modification.LambdaValueModifier
 import fr.linkit.engine.gnom.cache.sync.invokation.GenericRMIRulesAgreementBuilder
 import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas
-import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageTokens._
+import fr.linkit.engine.internal.language.bhv.parser.ASTTokens._
 
 import scala.collection.mutable
 import scala.reflect.ClassTag

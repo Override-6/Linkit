@@ -15,10 +15,10 @@ package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.api.gnom.cache.sync.contract.RemoteObjectInfo
 
-object BehaviorLanguageTokens {
+object ASTTokens {
 
-    trait BHVLangToken
-    trait RootToken extends BHVLangToken
+    sealed trait BHVLangToken
+    sealed trait RootToken extends BHVLangToken
 
     case class ImportToken(className: String) extends RootToken
 
@@ -33,7 +33,10 @@ object BehaviorLanguageTokens {
                                 methods: Seq[MethodDescription],
                                 fields: Seq[FieldDescription]) extends RootToken
 
-    case class MethodSignature(methodName: String, params: Seq[String], synchronisedParams: Seq[Int]) extends BHVLangToken {
+    case class MethodParam(synchronized: Boolean, tpe: String) extends BHVLangToken {
+        override def toString: String = (if (synchronized) "synchronized " else "") + tpe
+    }
+    case class MethodSignature(methodName: String, params: Seq[MethodParam]) extends BHVLangToken {
         override def toString: String = s"$methodName${params.mkString("(", ",", ")")}"
     }
     case class MethodComponentsModifier(paramsModifiers: Map[Int, Seq[LambdaExpression]], returnvalueModifiers: Seq[LambdaExpression]) extends BHVLangToken

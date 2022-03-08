@@ -16,7 +16,7 @@ class BehaviorLangParserTests {
     }
 
     @Test
-    def lexe(): Unit = {
+    def lex(): Unit = {
         val file = "/contracts/NetworkContract.bhv"
         val source = new String(getClass.getResourceAsStream(file).readAllBytes())
         val in = new CharSequenceReader(source)
