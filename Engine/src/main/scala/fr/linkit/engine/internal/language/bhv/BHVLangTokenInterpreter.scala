@@ -13,10 +13,10 @@
 
 package fr.linkit.engine.internal.language.bhv
 
+import fr.linkit.api.gnom.cache.sync.contract.ValueContract
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncStructureDescription, MethodDescription => MethodDesc}
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.{ContractDescriptorData, MethodContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo, StructureContractDescriptor, ValueContract}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.gnom.cache.sync.contract.SimpleValueContract
@@ -52,7 +52,7 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
             case ImportToken(name)                   => importClass(name)
             case ClassDescription(head, foreachMethod,
             foreachField, methods, fields)           => classDesc(head, foreachMethod, foreachField, methods, fields)
-            case ScalaCodeBlock(code, objects)       =>
+            case ScalaCodeBlock(code)                =>
             case TypeModifiers(className, modifiers) =>
         }
     }
@@ -88,20 +88,21 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
                                   modifiers: Seq[MethodComponentsModifier],
                                   syncReturnValue: SynchronizeState,
                                   ssd: SyncStructureDescription[_ <: AnyRef]): Unit = {
-        val procrastinator     = ???//procrastinatorName.map(properties.getProcrastinator)
+        val procrastinator     = ??? //procrastinatorName.map(properties.getProcrastinator)
         val clazz              = ssd.clazz
         val rvContract         = getContract(modifiers, signature, syncReturnValue.value, clazz)("return value", _.returnvalueModifiers)
         val parameterContracts = {
-            (0 to signature.params.length).map { idx =>
-                val isSync = signature.synchronisedParams.contains(idx)
+            for (idx <- signature.params.indices) yield {
+                val param  = signature.params(idx)
+                val isSync = param.synchronized
                 getContract(modifiers, signature, isSync, clazz)(s"parameter $idx", _.paramsModifiers.getOrElse(idx, Seq()))
             }
         }.toArray
 
-        val javaMethod = clazz.getMethod(signature.methodName, signature.params.map(findClass): _*)
+        val javaMethod = clazz.getMethod(signature.methodName, signature.params.map(p => findClass(p.tpe)): _*)
         val desc       = new MethodDesc(javaMethod, ssd)
         val builder    = new GenericRMIRulesAgreementBuilder()
-        ???//MethodContractDescriptorImpl(desc, procrastinator, Some(rvContract), parameterContracts, None, ???, builder)
+        ??? //MethodContractDescriptorImpl(desc, procrastinator, Some(rvContract), parameterContracts, None, ???, builder)
     }
 
     private def getContract(modifiers: Seq[MethodComponentsModifier],
@@ -110,11 +111,11 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
                             clazz: Class[_])
                            (compName: String, extract: MethodComponentsModifier => Seq[LambdaExpression]): ValueContract[AnyRef] = {
         val filteredMods = modifiers.filter(extract(_).nonEmpty)
-                .flatMap(extract)
-                .foldRight(List[LambdaExpression]())((mod, acc) => {
-                    if (acc.contains(mod.kind)) throw new ModifierConflictException(s"Multiple modifiers set for method $compName ${clazz.getName}.${signature}.")
-                    mod :: acc
-                })
+            .flatMap(extract)
+            .foldRight(List[LambdaExpression]())((mod, acc) => {
+                if (acc.contains(mod.kind)) throw new ModifierConflictException(s"Multiple modifiers set for method $compName ${clazz.getName}.${signature}.")
+                mod :: acc
+            })
         //                 use a light implementation of ValueModifier if no modifier is set
         val modifier     = if (filteredMods.isEmpty) new ValueModifier[AnyRef] {} else {
             new LambdaValueModifier[AnyRef] {
@@ -135,35 +136,18 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
 
                 @inline
                 private def submitLamb(lambda: LambdaExpression): Array[Any] => AnyRef = {
-                    lambdas.submitLambda(transformSourceCode(lambda.code), classOf[AnyRef], classOf[Engine])
+                    lambdas.submitLambda(lambda.block.sourceCode, classOf[AnyRef], classOf[Engine])
                 }
             }
         }
         new SimpleValueContract(sync, Some(modifier))
     }
 
-    private def transformSourceCode(code: ScalaCodeBlock): String = {
-        val source  = code.sourceCode
-        val objects = code.objects
-        val sb      = new StringBuilder(source)
-        var shift   = 0
-
-        objects.foreach { obj =>
-            val call         = s"getProperty[${obj.typeName}](\"${obj.name}\")"
-            val beforeLength = sb.length()
-            val pos          = obj.pos - shift
-            sb.delete(pos, sb.indexOf("}", obj.pos))
-            sb.insert(pos, call)
-            shift += (beforeLength - sb.length())
-        }
-        sb.toString()
-    }
-
     private def disabledMethodDesc(signature: MethodSignature,
                                    hideMessage: Option[String],
                                    ssd: SyncStructureDescription[_ <: AnyRef]): MethodContractDescriptor = {
         val clazz      = ssd.clazz
-        val javaMethod = clazz.getMethod(signature.methodName, signature.params.map(findClass): _*)
+        val javaMethod = clazz.getMethod(signature.methodName, signature.params.map(p => findClass(p.tpe)): _*)
         val desc       = new MethodDesc(javaMethod, ssd)
         val builder    = new GenericRMIRulesAgreementBuilder()
         MethodContractDescriptorImpl(desc, None, None, Array.empty, hideMessage, false, builder)

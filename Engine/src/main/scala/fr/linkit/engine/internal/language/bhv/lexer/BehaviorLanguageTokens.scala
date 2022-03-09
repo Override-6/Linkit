@@ -1,17 +1,9 @@
 package fr.linkit.engine.internal.language.bhv.lexer
 
-object BehaviorLanguageTokens {
+object BehaviorLanguageTokens extends AbstractTokens {
 
-    final val SymbolsRegex = "}|]|->|\\[|\\{|,|\\)|\\(".r
+    override final val SymbolsRegex = "}|]|->|\\[|\\{|,|\\)|\\(".r
 
-    sealed trait Token {
-        val name: Option[String]
-        override def toString: String = name.getOrElse(getClass.getSimpleName.toLowerCase().dropRight(1))
-    }
-    class NamedToken (override val name: Option[String]) extends Token {
-        def this() = this(None)
-        def this(name: String) = this(Option(name))
-    }
     case object Import extends NamedToken
     case object Describe extends NamedToken
     case object Method extends NamedToken

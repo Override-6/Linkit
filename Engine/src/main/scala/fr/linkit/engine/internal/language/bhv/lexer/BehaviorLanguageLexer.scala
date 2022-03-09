@@ -4,28 +4,20 @@ import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageTokens._
 import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
 
+import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.CharSequenceReader
 
-object BehaviorLanguageLexer extends RegexParsers {
+object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
 
     private var skipWhiteSpace = true
 
+    override protected val symbolsRegex: Regex = SymbolsRegex
+
     override def skipWhitespace: Boolean = skipWhiteSpace
 
-    private final val stringTokens = Seq(
-        Import, Describe, Scala,
-        Enable, Disable, Hide, As, Method,
-        Modifier, Class, Synchronize).map(x => (x.toString, x)).toMap
-    private final val symbolTokens = Seq(
-        BracketLeft, BracketRight, SquareBracketLeft,
-        SquareBracketRight, Arrow,
-        Comma, ParenRight, ParenLeft
-    ).map(x => (x.toString, x)).toMap
-
     /////////// Parsers
-    private val stringToken     = "\\w+".r.filter(stringTokens.contains) ^^ stringTokens
-    private val symbolToken     = SymbolsRegex.filter(symbolTokens.contains) ^^ symbolTokens
+
     private val codeBlock       = "${" ~> codeBlockParser ^^ CodeBlock
     private val stringLiteral   = "\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ Literal
     private val identifier      = "[\\w.$£]+".r ^^ Identifier
@@ -52,7 +44,7 @@ object BehaviorLanguageLexer extends RegexParsers {
     implicit private def tokenToParser(token: Token): Parser[String] = literal(token.toString)
 
     def tokenize(input: CharSequenceReader): List[Token] = {
-        val tokens = stringToken | symbolToken |
+        val tokens = stringTokenParser | symbolTokenParser |
                 codeBlock | stringLiteral | identifier
         parseAll(rep(tokens), input) match {
             case NoSuccess(msg, n) => throw new BHVLanguageException(makeErrorMessage(msg, "Failure", input, n.pos))

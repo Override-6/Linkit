@@ -36,4 +36,11 @@ class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBluep
         bindValue("ParamsOut" ~> (_.paramTypes.zipWithIndex.map { case (_, i) => s"args($i)" }.mkString(",")))
     }
 
+
+}
+
+object LambdaRepositoryClassBlueprint {
+    def getPropertyAccessCodeString(name: String, tpe: String): String = {
+        s"getProperty[$tpe]($name)"
+    }
 }

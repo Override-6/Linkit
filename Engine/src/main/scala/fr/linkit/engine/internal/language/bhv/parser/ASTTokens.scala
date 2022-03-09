@@ -44,8 +44,7 @@ object ASTTokens {
 
 
     case class TypeModifiers(className: String, modifiers: Seq[LambdaExpression]) extends RootToken
-    case class ScalaCodeExternalObject(name: String, typeName: String, pos: Int) extends BHVLangToken
-    case class ScalaCodeBlock(sourceCode: String, objects: Seq[ScalaCodeExternalObject]) extends RootToken
+    case class ScalaCodeBlock(sourceCode: String) extends RootToken
 
 
     trait MethodDescription extends BHVLangToken
@@ -62,7 +61,7 @@ object ASTTokens {
     case object RemoteToCurrentModifier extends LambdaKind
     case object CurrentToRemoteEvent extends LambdaKind
     case object RemoteToCurrentEvent extends LambdaKind
-    case class LambdaExpression(code: ScalaCodeBlock, kind: LambdaKind) extends BHVLangToken
+    case class LambdaExpression(block: ScalaCodeBlock, kind: LambdaKind) extends BHVLangToken
 
     trait ValueReference extends BHVLangToken
     //Internal reference points a reference to a method/class/field that is declared into the file
