@@ -9,25 +9,32 @@ import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.CharSequenceReader
 
 object ScalaCodeBlocksLexer extends AbstractLexer with RegexParsers {
+
     override protected def symbolsRegex: Regex = SymbolsRegex
 
-    private val identifier = "[\\S]+".r ^^ Identifier
+    override type Token = ScalaCodeBlocksTokens.Token
+
+    override protected def keywords: Seq[Token] = Seq()
+
+    override protected def symbols: Seq[Token] = Seq(ValueOpen, ValueClose, DoublePoints)
+
+    private def p[T](t: T): T = {
+        print(t)
+        t
+    }
+
+    private val identifier   = "[^£:\\s}]+".r ^^ Identifier
+    private val codeFragment = ("[\\s\\S]+?(?=£\\{)".r | "[\\s\\S]+".r) ^^ CodeFragment
+    private val value        = rep1("£{" ~> rep((symbolParser | identifier) - "}")) ^^ (l => ValueOpen :: (l :+ ValueClose))
+    private val parser       = rep(value | codeFragment)
 
     def tokenize(input: CharSequenceReader): List[Token] = {
-        parseAll(rep(symbolTokenParser | identifier), input) match {
+        parseAll(parser, input) match {
             case NoSuccess(msg, n) => throw new BHVLanguageException(makeErrorMessage(msg, "Failure", input, n.pos))
-            case Success(x, _)     => x.foldRight(List[Token]()) { case (token, hd) =>
-                (token, hd.lastOption) match {
-                    case (Identifier(id), fragment) => fragment.fold[Token](CodeFragment(id)) {
-                        case CodeFragment(last) => CodeFragment(last + ' ' + id)
-                        case x                  => x
-                    } :: hd
-                    case (NewLine, fragment)        => fragment.fold[Token](CodeFragment("\n")) {
-                        case CodeFragment(last) => CodeFragment(last + "\n")
-                        case x                  => x
-                    } :: hd
-                    case (t: Token, _) => t :: hd
-                }
+            case Success(x, _)     => x.foldLeft(List[Token]()) {
+                case (hd, token: Token)        => hd :+ token
+                case (hd, (head: Token) :: (next: List[Token]) :: (last: Token)) =>
+                    (hd :+ head) ++ next :+ last
             }
         }
     }

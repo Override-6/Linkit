@@ -12,15 +12,27 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
 
     private var skipWhiteSpace = true
 
+    override type Token = BehaviorLanguageTokens.Token
+
     override protected def symbolsRegex: Regex = SymbolsRegex
 
     override def skipWhitespace: Boolean = skipWhiteSpace
 
+    override protected def keywords = Seq(
+        Import, Describe, Scala,
+        Enable, Disable, Hide, As, Method,
+        Modifier, Class, Synchronize)
+    override protected def symbols  = Seq(
+        BracketLeft, BracketRight, SquareBracketLeft,
+        SquareBracketRight, Arrow,
+        Comma, ParenRight, ParenLeft
+    )
+
     /////////// Parsers
 
-    private val codeBlock       = "${" ~> codeBlockParser ^^ CodeBlock
-    private val stringLiteral   = "\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ Literal
-    private val identifier      = "[\\S]+".r ^^ Identifier
+    private val codeBlock     = "${" ~> codeBlockParser ^^ CodeBlock
+    private val stringLiteral = "\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ Literal
+    private val identifier    = "[\\S]+".r ^^ Identifier
 
     private def codeBlockParser: Parser[String] = {
         var bracketDepth = 1
@@ -44,7 +56,7 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
     implicit private def tokenToParser(token: Token): Parser[String] = literal(token.toString)
 
     def tokenize(input: CharSequenceReader): List[Token] = {
-        val tokens = stringTokenParser | symbolTokenParser |
+        val tokens = stringParser | symbolParser |
                 codeBlock | stringLiteral | identifier
         parseAll(rep(tokens), input) match {
             case NoSuccess(msg, n) => throw new BHVLanguageException(makeErrorMessage(msg, "Failure", input, n.pos))

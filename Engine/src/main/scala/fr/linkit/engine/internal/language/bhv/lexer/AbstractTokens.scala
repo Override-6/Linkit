@@ -6,12 +6,17 @@ abstract class AbstractTokens {
 
     val SymbolsRegex: Regex
 
-    sealed trait Token {
+    sealed trait Token extends Product with Serializable {
+
         val name: Option[String]
+
         override def toString: String = name.getOrElse(getClass.getSimpleName.toLowerCase().dropRight(1))
     }
-    class NamedToken (override val name: Option[String]) extends Token {
+
+    abstract class NamedToken(override val name: Option[String]) extends Token {
+
         def this() = this(None)
+
         def this(name: String) = this(Option(name))
     }
 
