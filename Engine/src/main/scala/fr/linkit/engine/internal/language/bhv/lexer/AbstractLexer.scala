@@ -17,7 +17,7 @@ abstract class AbstractLexer extends RegexParsers {
         Comma, ParenRight, ParenLeft
     ).map(x => (x.toString, x)).toMap
 
-    protected val symbolsRegex: Regex
+    protected def symbolsRegex: Regex
 
     protected val stringTokenParser = "\\w+".r.filter(stringTokens.contains) ^^ stringTokens
     protected val symbolTokenParser = symbolsRegex.filter(symbolTokens.contains) ^^ symbolTokens

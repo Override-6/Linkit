@@ -9,9 +9,9 @@ import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.CharSequenceReader
 
 object ScalaCodeBlocksLexer extends AbstractLexer with RegexParsers {
-    override protected val symbolsRegex: Regex = SymbolsRegex
+    override protected def symbolsRegex: Regex = SymbolsRegex
 
-    private val identifier = "[\\w]+".r ^^ Identifier
+    private val identifier = "[\\S]+".r ^^ Identifier
 
     def tokenize(input: CharSequenceReader): List[Token] = {
         parseAll(rep(symbolTokenParser | identifier), input) match {
@@ -26,6 +26,7 @@ object ScalaCodeBlocksLexer extends AbstractLexer with RegexParsers {
                         case CodeFragment(last) => CodeFragment(last + "\n")
                         case x                  => x
                     } :: hd
+                    case (t: Token, _) => t :: hd
                 }
             }
         }

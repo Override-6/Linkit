@@ -12,7 +12,7 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
 
     private var skipWhiteSpace = true
 
-    override protected val symbolsRegex: Regex = SymbolsRegex
+    override protected def symbolsRegex: Regex = SymbolsRegex
 
     override def skipWhitespace: Boolean = skipWhiteSpace
 
@@ -20,7 +20,7 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
 
     private val codeBlock       = "${" ~> codeBlockParser ^^ CodeBlock
     private val stringLiteral   = "\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ Literal
-    private val identifier      = "[\\w.$£]+".r ^^ Identifier
+    private val identifier      = "[\\S]+".r ^^ Identifier
 
     private def codeBlockParser: Parser[String] = {
         var bracketDepth = 1
