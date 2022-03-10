@@ -25,7 +25,6 @@ import fr.linkit.engine.gnom.cache.sync.contract.descriptor.MethodContractDescri
 import fr.linkit.engine.gnom.cache.sync.contract.modification.LambdaValueModifier
 import fr.linkit.engine.gnom.cache.sync.invokation.GenericRMIRulesAgreementBuilder
 import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas
-import fr.linkit.engine.internal.language.bhv.parser.ASTTokens._
 
 import scala.collection.mutable
 import scala.reflect.ClassTag
@@ -49,9 +48,9 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
 
     private def computeData(): Unit = {
         tokens.foreach {
-            case ImportToken(name)                   => importClass(name)
+            case Import(name)              => importClass(name)
             case ClassDescription(head, foreachMethod,
-            foreachField, methods, fields)           => classDesc(head, foreachMethod, foreachField, methods, fields)
+            foreachField, methods, fields) => classDesc(head, foreachMethod, foreachField, methods, fields)
             case ScalaCodeBlock(code)                =>
             case TypeModifiers(className, modifiers) =>
         }

@@ -7,7 +7,7 @@ scala ${
 }
 
 describe class DefaultEngine [full_remote] {
-    enable method updateState(synchronize ExternalConnectionState, String, synchronize Int) as broadcast_if_root_owner {
+    enable method updateState(synchronize ExternalConnectionState, synchronize Network) as broadcast_if_root_owner {
         modifier 1 & 2 {
             current_to_distant -> ${(x, engine) => x}
         }

@@ -17,7 +17,6 @@ import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.internal.language.bhv.Contract.center
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageParser$Old
-import fr.linkit.engine.internal.language.bhv.parser.ASTTokens.{BHVLangToken, RootToken}
 
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
