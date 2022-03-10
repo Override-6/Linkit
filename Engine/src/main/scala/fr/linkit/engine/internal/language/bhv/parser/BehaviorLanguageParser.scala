@@ -35,6 +35,8 @@ object BehaviorLanguageParser extends Parsers {
     private val literal            = accept("literal", { case Literal(str) => str })
     private val codeBlock          = accept("scala code", { case CodeBlock(code) => toScalaCodeToken(code) })
     private val externalReference  = identifier ^^ ExternalReference
+
+    private val importParser = Import ~> identifier ^^ ClassImport
     private val classParser        = {
         val syncOrNot            = (Not.? <~ Synchronize ^^ (_.isEmpty)).? ^^ (s => SynchronizeState(s.isDefined, s.getOrElse(false)))
         val methodSignature      = {
@@ -89,6 +91,7 @@ object BehaviorLanguageParser extends Parsers {
     private val codeBlockParser    = Scala ~> codeBlock
     private val typeModifierParser = Modifier ~> identifier ~ modifiers
 
+
     private def scalaCodeIntegration(name: String, kind: LambdaKind): Parser[LambdaExpression] = {
         Identifier(name) ~ Arrow ~> codeBlock ^^ (LambdaExpression(_, kind))
     }
@@ -102,8 +105,7 @@ object BehaviorLanguageParser extends Parsers {
         def ~[B](b: B): A ~ B = new ~(a, b)
     }
 
-    private val fileParser = phrase(rep(classParser | codeBlockParser | typeModifierParser))
-Seq().partition()
+    private val fileParser = phrase(rep(importParser | classParser | codeBlockParser | typeModifierParser))
     def parse(input: CharSequenceReader): BehaviorFileAST = {
         ???
     }
