@@ -35,6 +35,6 @@ public @interface FullRemote {
     /**
      * The default behavior applied on all methods
      * */
-    BasicInvocationRule value() default BasicInvocationRule.ONLY_OWNER;
+    BasicInvocationRule value() default BasicInvocationRule.ONLY_ORIGIN;
 
 }

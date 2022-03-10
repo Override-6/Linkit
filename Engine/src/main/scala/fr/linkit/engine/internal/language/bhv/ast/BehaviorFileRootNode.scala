@@ -11,12 +11,6 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language
+package fr.linkit.engine.internal.language.bhv.ast
 
-import scala.util.parsing.combinator.RegexParsers
-
-package object bhv {
-
-    type P[+A] = RegexParsers#Parser[A]
-
-}
+trait BehaviorFileRootNode

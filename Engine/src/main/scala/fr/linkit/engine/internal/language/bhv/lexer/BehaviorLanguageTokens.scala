@@ -2,34 +2,35 @@ package fr.linkit.engine.internal.language.bhv.lexer
 
 object BehaviorLanguageTokens extends AbstractTokens {
 
-    override final val SymbolsRegex = "}|]|->|\\[|\\{|,|\\)|\\(".r
+    case object Import extends Keyword
+    case object Describe extends Keyword
+    case object Method extends Keyword
+    case object Scala extends Keyword
+    case object Enable extends Keyword
+    case object Stub extends Keyword
+    case object Mirroring extends Keyword
+    case object Disable extends Keyword
+    case object Statics extends Keyword
+    case object Hide extends Keyword
+    case object As extends Keyword
+    case object Modifier extends Keyword
+    case object Synchronize extends Keyword
+    case object ReturnValue extends Keyword
 
-    case object Import extends NamedToken
-    case object Describe extends NamedToken
-    case object Method extends NamedToken
-    case object Class extends NamedToken
-    case object Scala extends NamedToken
-    case object Enable extends NamedToken
-    case object Disable extends NamedToken
-    case object Hide extends NamedToken
-    case object As extends NamedToken
-    case object Modifier extends NamedToken
-    case object Synchronize extends NamedToken
-    case object ReturnValue extends NamedToken
+    case object Not extends Symbol("!")
+    case object And extends Symbol("&")
+    case object Equal extends Symbol("=")
+    case object BracketLeft extends Symbol("{", "\\{")
+    case object BracketRight extends Symbol("}")
+    case object SquareBracketLeft extends Symbol("[", "\\[")
+    case object SquareBracketRight extends Symbol("]")
+    case object Arrow extends Symbol("->")
+    case object Comma extends Symbol(",")
+    case object ParenRight extends Symbol(")", "\\)")
+    case object ParenLeft extends Symbol("(", "\\(")
 
-    case object Not extends NamedToken("!")
-    case object And extends NamedToken("&")
-    case object BracketLeft extends NamedToken("{")
-    case object BracketRight extends NamedToken("}")
-    case object SquareBracketLeft extends NamedToken("[")
-    case object SquareBracketRight extends NamedToken("]")
-    case object Arrow extends NamedToken("->")
-    case object Comma extends NamedToken(",")
-    case object ParenRight extends NamedToken(")")
-    case object ParenLeft extends NamedToken("(")
-
-    case class CodeBlock(sourceCode: String) extends NamedToken(s"$${${sourceCode.dropRight(1)}}")
-    case class Identifier(str: String) extends NamedToken(s"Identifier($str)")
-    case class Literal(str: String) extends NamedToken(s"Literal(\"$str\")")
+    case class CodeBlock(sourceCode: String) extends Value(s"$${${sourceCode.dropRight(1)}}")
+    case class Identifier(str: String) extends Value(s"Identifier($str)")
+    case class Literal(str: String) extends Value(s"Literal(\"$str\")")
 
 }

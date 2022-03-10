@@ -1,10 +1,10 @@
 package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
+import fr.linkit.engine.internal.language.bhv.ast.ScalaCodeBlock
 import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepositoryClassBlueprint
 import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlocksTokens._
 import fr.linkit.engine.internal.language.bhv.lexer.{ScalaCodeBlocksLexer, ScalaCodeBlocksTokens}
-import .ScalaCodeBlock
 
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.{CharSequenceReader, NoPosition, Position, Reader}

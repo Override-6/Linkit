@@ -37,9 +37,8 @@ trait MethodContract[R] {
     def executeMethodInvocation(sender: Engine, data: InvocationExecution)
 
     trait InvocationExecution {
-
-        val operatingNode: ObjectSyncNode[_]
-        val arguments    : Array[Any]
+        val syncObject: SynchronizedObject[_]
+        val arguments : Array[Any]
     }
 
     trait RemoteInvocationExecution extends InvocationExecution {

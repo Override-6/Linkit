@@ -103,7 +103,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         if (path.length != 1)
             throw new IllegalArgumentException("Can only make tree from a root synchronised object.")
         val wrapper = new InstanceWrapper[A](root.asInstanceOf[A with SynchronizedObject[A]])
-        createNewTree(path.head, reference.owner, wrapper)
+        createNewTree(path.head, reference.origin, wrapper)
     }
 
     override def newObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef],
@@ -115,7 +115,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val path          = parent.treePath :+ id
         val behaviorStore = tree.contractFactory
         val context       = UsageSyncObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId)
-        val contract      = behaviorStore.getObjectContract[B](syncObject.getOriginClass, context)
+        val contract      = behaviorStore.getObjectContract[B](syncObject.getSourceClass, context)
         val chip          = ObjectChip[B](contract, network, syncObject)
         val reference     = new SyncObjectReference(family, cacheID, ownerID, path)
         val puppeteer     = new ObjectPuppeteer[B](channel, this, reference)

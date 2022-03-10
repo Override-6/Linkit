@@ -13,4 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation
 
-class HiddenMethodInvocationException(msg: String) extends InvocationFailedException(msg)
+import fr.linkit.api.gnom.cache.sync.SyncObjectException
+
+class InvocationFailedException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
+
+}

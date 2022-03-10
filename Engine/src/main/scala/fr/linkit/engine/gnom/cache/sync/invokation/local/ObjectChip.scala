@@ -15,9 +15,8 @@ package fr.linkit.engine.gnom.cache.sync.invokation.local
 
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, StructureContract}
-import fr.linkit.api.gnom.cache.sync.invocation.HiddenMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
-import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
+import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
@@ -29,43 +28,48 @@ class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
                                       syncObject: SynchronizedObject[S],
                                       network: Network) extends Chip[S] {
 
+    private final val isDistant = contract.remoteObjectInfo.isDefined
+    private final val isOrigin  = syncObject.isOrigin
+
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(syncObject, obj)
     }
 
-    override def callMethod(methodID: Int, params: Array[Any], origin: Engine): Any = {
+    override def callMethod(methodID: Int, params: Array[Any], caller: Engine): Any = {
         val methodContract = contract.getMethodContract[Any](methodID)
-        val hideMsg = methodContract.hideMessage
+        val hideMsg        = methodContract.hideMessage
         if (hideMsg.isDefined)
             throw new HiddenMethodInvocationException(hideMsg.get)
+        if (!isOrigin && isDistant)
+            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring ${syncObject.reference} on engine ${syncObject.origin}")
         val procrastinator = methodContract.procrastinator
         if (procrastinator != null) {
-            callMethodProcrastinator(methodContract, params, origin)
+            callMethodProcrastinator(methodContract, params, caller)
         } else {
-            callMethod(methodContract, params, origin)
+            callMethod(methodContract, params, caller)
         }
     }
 
-    @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], origin: Engine): Any = {
+    @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], caller: Engine): Any = {
         syncObject.getChoreographer.forceLocalInvocation {
-            ExecutorEngine.setCurrentEngine(origin)
+            ExecutorEngine.setCurrentEngine(caller)
             val data   = new contract.InvocationExecution {
-                override val operatingNode        : ObjectSyncNode[_] = syncObject.getNode
-                override val arguments            : Array[Any]        = params
+                override val syncObject: SynchronizedObject[_] = ObjectChip.this.syncObject
+                override val arguments : Array[Any]            = params
             }
-            val result = contract.executeMethodInvocation(origin, data)
+            val result = contract.executeMethodInvocation(caller, data)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
             result
         }
     }
 
-    @inline private def callMethodProcrastinator(contract: MethodContract[Any], params: Array[Any], origin: Engine): Any = {
+    @inline private def callMethodProcrastinator(contract: MethodContract[Any], params: Array[Any], caller: Engine): Any = {
         @volatile var result: Any = NoResult
         val worker                = WorkerPools.currentWorker
         val task                  = WorkerPools.currentTask.get
         val pool                  = worker.pool
         contract.procrastinator.runLater {
-            result = callMethod(contract, params, origin)
+            result = callMethod(contract, params, caller)
             task.wakeup()
         }
         if (result == NoResult)
@@ -75,6 +79,8 @@ class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
 }
 
 object ObjectChip {
+
+    object NoResult
 
     def apply[S <: AnyRef](contract: StructureContract[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
@@ -86,7 +92,5 @@ object ObjectChip {
 
         new ObjectChip[S](contract, wrapper, network)
     }
-
-    object NoResult
 
 }

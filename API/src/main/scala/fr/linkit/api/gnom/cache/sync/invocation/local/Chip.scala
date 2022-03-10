@@ -35,9 +35,10 @@ trait Chip[S] {
      * The method is determined by the methodID integer.
      * @param methodID the method identifier that must be called
      * @param params the parameters for the method call
+     * @param caller the engine that is calling the method
      * @see [[fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription]]
      * */
-    def callMethod(methodID: Int, params: Array[Any], origin: Engine): Any
+    def callMethod(methodID: Int, params: Array[Any], caller: Engine): Any
 
     def updateObject(obj: S): Unit
 }

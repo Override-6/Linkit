@@ -54,13 +54,19 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
     def isInitialized: Boolean
 
     /**
-     * @return true if the engine that created this synchronized object is the current engine.
+     * @return true if this object is the original among other copies of the same object on other clients.<br>
+     *         An original object can <b>ONLY</b> be present on the current engine.
      */
-    def isOwnedByCurrent: Boolean
+    def isOrigin: Boolean
+
+    /**
+     * @return true if this object is a distant object that is mirroring on current engine a distant implementation
+     * */
+    def isMirroring: Boolean
 
     /**
      * @return the original type of the synchronized object
      */
-    def getOriginClass: Class[T]
+    def getSourceClass: Class[T]
 
 }

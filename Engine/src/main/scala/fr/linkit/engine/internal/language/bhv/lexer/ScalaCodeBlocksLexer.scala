@@ -10,20 +10,16 @@ import scala.util.parsing.input.CharSequenceReader
 
 object ScalaCodeBlocksLexer extends AbstractLexer with RegexParsers {
 
-    override protected def symbolsRegex: Regex = SymbolsRegex
+    override type Tokens = ScalaCodeBlocksTokens.type
 
-    override type Token = ScalaCodeBlocksTokens.Token
-
+    override protected val tokens            = ScalaCodeBlocksTokens
     override protected val whiteSpace: Regex = "[ \t\r]+".r
-
-    override protected def keywords: Seq[Token] = Seq()
-
-    override protected def symbols: Seq[Token] = Seq(ValueOpen, ValueClose, DoublePoints)
 
     private val identifier   = "[^£:\\s}]+".r ^^ Identifier
     private val codeFragment = ("[\\s\\S]+?(?=£\\{)".r | "[\\s\\S]+".r) ^^ CodeFragment
     private val value        = rep1("£{" ~> rep((symbolParser | identifier) - "}")) ~ symbolParser ^^ {
-        case a ~ b => ValueOpen :: (a :+ b) }
+        case a ~ b => ValueOpen :: (a :+ b)
+    }
     private val parser       = rep(value | codeFragment)
 
     def tokenize(input: CharSequenceReader): List[Token] = {

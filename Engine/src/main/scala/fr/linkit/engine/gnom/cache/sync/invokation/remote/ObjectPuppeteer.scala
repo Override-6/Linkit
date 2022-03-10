@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.invocation.RemoteInvocationFailedException
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
@@ -62,7 +62,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                         .nextResponse
                         .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
-                        throw new RemoteInvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeLocation, executed by engine '$desiredEngineReturn' failed :\n $exceptionString")
+                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeLocation, executed by engine '$desiredEngineReturn' failed :\n $exceptionString")
                     case p: RefPacket[R]                     =>
                         requestResult = p.value
                         isResultSet = true

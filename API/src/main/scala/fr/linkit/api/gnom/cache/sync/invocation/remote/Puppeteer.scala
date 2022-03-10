@@ -31,7 +31,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The engine's identifier that have created the synchronized object
      * */
-    val ownerID: String = nodeLocation.owner
+    val ownerID: String = nodeLocation.origin
 
     /**
      * The object center that stores the synchronized object.

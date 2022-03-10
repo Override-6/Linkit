@@ -1,18 +1,24 @@
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.Engine
 
 scala ${
     val network = £{@network: Network}
 }
 
-describe class DefaultEngine [full_remote] {
+describe mirroring DefaultEngine stub Engine {
     enable method updateState(synchronize ExternalConnectionState, synchronize Network) as broadcast_if_root_owner {
         modifier 1 & 2 {
             current_to_distant -> ${(x, engine) => x}
         }
     }
     hide method test(x, y) "WAW"
+}
+
+describe statics Path {
+    enable method of(URI) as broadcast_if_origin
+    enable method of(String, String[]) as of(URI)
 }
 
 modifier SharedCacheManager {

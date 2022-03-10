@@ -126,9 +126,9 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
     }
 
     private def makeMemberInvocation(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
-        val origin = puppeteer.network.findEngine(senderID).orNull
-        Try(chip.callMethod(packet.methodID, packet.params, origin)) match {
-            case Success(value)     => handleInvocationResult(value.asInstanceOf[AnyRef], origin, packet, response)
+        val executor = puppeteer.network.findEngine(senderID).orNull
+        Try(chip.callMethod(packet.methodID, packet.params, executor)) match {
+            case Success(value)     => handleInvocationResult(value.asInstanceOf[AnyRef], executor, packet, response)
             case Failure(exception) => exception match {
                 case NonFatal(e) =>
                     val ex = if (e.isInstanceOf[InvocationTargetException]) e.getCause else e

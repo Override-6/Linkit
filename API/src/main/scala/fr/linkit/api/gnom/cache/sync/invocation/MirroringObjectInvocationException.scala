@@ -13,8 +13,4 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation
 
-import fr.linkit.api.gnom.cache.sync.SyncObjectException
-
-class RemoteInvocationFailedException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
-
-}
+class MirroringObjectInvocationException(msg: String) extends InvocationFailedException(msg)

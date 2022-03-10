@@ -4,7 +4,6 @@ import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageTokens._
 import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
 
-import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.CharSequenceReader
 
@@ -12,21 +11,10 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
 
     private var skipWhiteSpace = true
 
-    override type Token = BehaviorLanguageTokens.Token
-
-    override protected def symbolsRegex: Regex = SymbolsRegex
+    override type Tokens = BehaviorLanguageTokens.type
+    override protected val tokens = BehaviorLanguageTokens
 
     override def skipWhitespace: Boolean = skipWhiteSpace
-
-    override protected def keywords = Seq(
-        Import, Describe, Scala,
-        Enable, Disable, Hide, As, Method,
-        Modifier, Class, Synchronize)
-    override protected def symbols  = Seq(
-        BracketLeft, BracketRight, SquareBracketLeft,
-        SquareBracketRight, Arrow, Not,
-        Comma, ParenRight, ParenLeft
-    )
 
     /////////// Parsers
 
@@ -56,7 +44,7 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
     implicit private def tokenToParser(token: Token): Parser[String] = literal(token.toString)
 
     def tokenize(input: CharSequenceReader): List[Token] = {
-        val tokens = stringParser | symbolParser |
+        val tokens = keywordParser | symbolParser |
                 codeBlock | stringLiteral | identifier
         parseAll(rep(tokens), input) match {
             case NoSuccess(msg, n) => throw new BHVLanguageException(makeErrorMessage(msg, "Failure", input, n.pos))

@@ -16,7 +16,7 @@ package fr.linkit.engine.internal.language.bhv
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.internal.language.bhv.Contract.center
-import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageParser$Old
+import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageParser
 
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
@@ -37,7 +37,7 @@ object Contract {
 
     def apply(file: String)(implicit propertyClass: PropertyClass): ContractDescriptorData = contracts.getOrElse(file, {
         val source = new String(getClass.getResourceAsStream(file).readAllBytes())
-        val ast    = ???//BehaviorLanguageParser.parse(new CharSequenceReader(source))
+        val ast    = BehaviorLanguageParser.parse(new CharSequenceReader(source))
         val cdd    = completeAST(ast, file, propertyClass)
         contracts.put(file, cdd)
         cdd

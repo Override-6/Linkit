@@ -37,7 +37,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
     /**
      * Invocation will only be performed on the engine that owns the original object.
      */
-    ONLY_OWNER((agreement) ->
+    ONLY_ORIGIN((agreement) ->
         agreement.discardAll()
                 .accept(OwnerEngine)
                 .setDesiredEngineReturn(OwnerEngine)
@@ -75,7 +75,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * is the owner of the object.
      * The return value of the invocation will come from the current machine.
      */
-    BROADCAST_IF_OWNER((agreement) ->
+    BROADCAST_IF_ORIGINAL((agreement) ->
             agreement
                 .ifCurrentIs(OwnerEngine, RMIRulesAgreementBuilder::acceptAll)
                 .accept(CurrentEngine)
@@ -98,7 +98,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * If the current machine owns the wrapper object, the execution will be called only once.
      * The return value of the invocation will come from the current machine.
      */
-    CURRENT_AND_OWNER(((agreement) -> {
+    CURRENT_AND_ORIGIN(((agreement) -> {
         return agreement.discardAll()
                 .accept(CurrentEngine)
                 .accept(OwnerEngine)

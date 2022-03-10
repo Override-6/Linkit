@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ValueContract}
+import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.network.Engine
@@ -62,9 +63,9 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
 
     override def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R = {
         val id                                                = description.methodId
-        val node                                              = data.operatingNode
+        val node                                              = data.syncObject.getNode
         val args                                              = data.arguments
-        val choreographer                                     = node.synchronizedObject.getChoreographer
+        val choreographer                                     = data.syncObject.getChoreographer
         val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, node) with CallableLocalMethodInvocation[R] {
             override val methodArguments: Array[Any] = args
 
@@ -81,13 +82,18 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
 
     override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Unit = {
         val args = data.arguments
+        val syncObject = data.syncObject
+        if (hideMessage.isDefined)
+            throw new HiddenMethodInvocationException(hideMessage.get)
+        if (syncObject.isMirroring)
+            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${syncObject.reference} on engine ${syncObject.origin}")
         modifyParameters(origin, args)
         AppLogger.debug {
             val name     = description.javaMethod.getName
             val methodID = description.methodId
             s"RMI - Calling method $methodID $name(${args.mkString(", ")})"
         }
-        description.javaMethod.invoke(data.operatingNode.synchronizedObject, args: _*)
+        description.javaMethod.invoke(syncObject, args: _*)
     }
 
     @inline

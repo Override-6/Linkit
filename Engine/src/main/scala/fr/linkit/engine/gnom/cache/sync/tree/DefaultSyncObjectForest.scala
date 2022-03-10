@@ -105,7 +105,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         if (nodeOpt.isEmpty) {
             def castedSyncObject[X <: AnyRef](): X with SynchronizedObject[X] = syncObj.asInstanceOf[X with SynchronizedObject[X]]
 
-            tree.registerSynchronizedObject(parentPath, path.last, castedSyncObject(), reference.owner, None).synchronizedObject
+            tree.registerSynchronizedObject(parentPath, path.last, castedSyncObject(), reference.origin, None).synchronizedObject
         } else {
             nodeOpt.get match {
                 case node: ObjectSyncNode[_]     =>
@@ -113,7 +113,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                         throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
                 case node: UnknownObjectSyncNode =>
                     val parent = node.parent.asInstanceOf[MutableSyncNode[AnyRef]]
-                    val data   = center.newObjectData[A](parent, node.id, syncObj, None, reference.owner)
+                    val data   = center.newObjectData[A](parent, node.id, syncObj, None, reference.origin)
                     node.setToKnownObjectNode(data)
             }
         }
