@@ -3,9 +3,7 @@ import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.api.gnom.network.Network
 
 scala ${
-    val network = £{@network is fun[]}
-    val network = £{@network is fun[]}
-    val network = £{@network is fun[]}
+    val network = £{@network: Network}
 }
 
 describe class DefaultEngine [full_remote] {

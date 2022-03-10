@@ -24,7 +24,7 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
         Modifier, Class, Synchronize)
     override protected def symbols  = Seq(
         BracketLeft, BracketRight, SquareBracketLeft,
-        SquareBracketRight, Arrow,
+        SquareBracketRight, Arrow, Not,
         Comma, ParenRight, ParenLeft
     )
 

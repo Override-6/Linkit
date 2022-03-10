@@ -90,7 +90,7 @@ class BHVLangTokenInterpreter(tokens: List[RootToken], fileName: String,
                                   ssd: SyncStructureDescription[_ <: AnyRef]): Unit = {
         val procrastinator     = ??? //procrastinatorName.map(properties.getProcrastinator)
         val clazz              = ssd.clazz
-        val rvContract         = getContract(modifiers, signature, syncReturnValue.value, clazz)("return value", _.returnvalueModifiers)
+        val rvContract         = getContract(modifiers, signature, syncReturnValue.isSync, clazz)("return value", _.returnvalueModifiers)
         val parameterContracts = {
             for (idx <- signature.params.indices) yield {
                 val param  = signature.params(idx)

@@ -13,13 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import fr.linkit.engine.internal.language.bhv.BHVLanguageException
-import fr.linkit.engine.internal.language.bhv.parser.ASTTokens._
-import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
-
-import scala.reflect.{ClassTag, classTag}
 import scala.util.parsing.combinator.RegexParsers
-import scala.util.parsing.input.CharSequenceReader
 
 object BehaviorLanguageParser$Old extends RegexParsers {
 /*

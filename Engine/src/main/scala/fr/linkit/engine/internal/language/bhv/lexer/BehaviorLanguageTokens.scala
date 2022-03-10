@@ -17,6 +17,7 @@ object BehaviorLanguageTokens extends AbstractTokens {
     case object Synchronize extends NamedToken
     case object ReturnValue extends NamedToken
 
+    case object Not extends NamedToken("!")
     case object And extends NamedToken("&")
     case object BracketLeft extends NamedToken("{")
     case object BracketRight extends NamedToken("}")

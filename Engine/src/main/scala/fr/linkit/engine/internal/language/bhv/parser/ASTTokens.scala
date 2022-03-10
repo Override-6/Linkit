@@ -22,7 +22,7 @@ object ASTTokens {
 
     case class ImportToken(className: String) extends RootToken
 
-    case class SynchronizeState(forced: Boolean, value: Boolean)
+    case class SynchronizeState(forced: Boolean, isSync: Boolean)
 
     case class ClassDescriptionHead(static: Boolean, className: String,
                                     referent: Option[ValueReference], remoteObjectInfo: Option[RemoteObjectInfo])
@@ -33,8 +33,8 @@ object ASTTokens {
                                 methods: Seq[MethodDescription],
                                 fields: Seq[FieldDescription]) extends RootToken
 
-    case class MethodParam(synchronized: Boolean, tpe: String) extends BHVLangToken {
-        override def toString: String = (if (synchronized) "synchronized " else "") + tpe
+    case class MethodParam(synchronized: SynchronizeState, tpe: String) extends BHVLangToken {
+        override def toString: String = (if (synchronized.isSync) "synchronized " else "") + tpe
     }
     case class MethodSignature(methodName: String, params: Seq[MethodParam]) extends BHVLangToken {
         override def toString: String = s"$methodName${params.mkString("(", ",", ")")}"

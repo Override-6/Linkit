@@ -33,26 +33,29 @@ class BehaviorLanguageParser extends Parsers {
     private val identifierParser      = accept("identifier", { case Identifier(identifier) => identifier })
     private val literalParser         = accept("literal", { case Literal(str) => str })
     private val codeBlockParser       = accept("scala code", { case CodeBlock(code) => toScalaCodeToken(code) })
+    private val syncOrNot             = (Not.? <~ Synchronize ^^ (_.isEmpty)).? ^^ (s => SynchronizeState(s.isDefined, s.getOrElse(false)))
     private val methodSignatureParser = {
-        val param = Synchronize.? ~ identifierParser ^^ { case s ~ id => MethodParam(s.isDefined, id) }
+        val param = syncOrNot ~ identifierParser ^^ { case s ~ id => MethodParam(s, id) }
+        val params = repsep(param, Comma)
 
-        def params: Parser[List[MethodParam]] = {
-            (param ~ Comma ~ params) ^^ { case param ~ _ ~ hd => param :: hd } | param ^^ (List(_))
-        }
-
-        identifierParser ~ ParenLeft ~ params ~ ParenRight ^^ { case name ~ _ ~ params ~ _ => MethodSignature(name, params) }
+        (identifierParser <~ ParenLeft) ~ params <~ ParenRight ^^ { case name ~ params => MethodSignature(name, params) }
     }
     private val methodModifierParser  = {
-        val param = ReturnValue | accept("identifier", { case x: Identifier => x })
-
-        def params: Parser[List[Token]] = {
-            (param ~ And ~ params) ^^ { case num ~ _ ~ hd => num :: hd } | param ^^ (List(_))
-        }
+        val param  = ReturnValue | accept("identifier", { case x: Identifier => x })
+        val params = repsep(param, And)
 
         Modifier ~> params ~ BracketLeft ~ modifiers <~ BracketRight ^^ {
             case concernedComps ~ _ ~ lambdas => MethodComponentsModifier(
                 concernedComps.filterNot(_ == ReturnValue).map { case Identifier(num) => (num.toInt, lambdas) }.toMap,
                 if (concernedComps.contains(ReturnValue)) lambdas else Seq())
+        }
+    }
+    private val enabledMethodCore     = {
+        (BracketLeft ~> rep(methodModifierParser) ~ (syncOrNot <~ ReturnValue).? <~ BracketRight).? ^^ (x => new ~(x.getOrElse(List(), SynchronizedState())))
+    }
+    private val enableMethodParser    = {
+        (Enable ~> Method ~> methodSignatureParser) ~ (As ~> identifierParser).? ~ enabledMethodCore ^^ {
+            case signature ~ referent ~ modifiers ~ syncRv =>
         }
     }
 

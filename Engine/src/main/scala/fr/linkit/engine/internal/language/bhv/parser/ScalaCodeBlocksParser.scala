@@ -5,9 +5,7 @@ import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepositoryClassB
 import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlocksTokens._
 import fr.linkit.engine.internal.language.bhv.lexer.{ScalaCodeBlocksLexer, ScalaCodeBlocksTokens}
 import fr.linkit.engine.internal.language.bhv.parser.ASTTokens.ScalaCodeBlock
-import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
 
-import scala.collection.immutable.{::, List}
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.{CharSequenceReader, NoPosition, Position, Reader}
 
