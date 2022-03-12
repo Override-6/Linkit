@@ -46,7 +46,7 @@ describe class ShooterCharacter : GraphicComponent, Collidable {
                 modifier for remote -> ${arg, engineID => if (engineID != "DumbEngine") localModifier(arg) else ExampleObject.modified(arg)}
             }
         }
-        returnvalue -> disable //we don't want the returnvalue of this method to be synchronized
+        !sync returnvalue //we don't want the returnvalue of this method to be synchronized
     }
 
     //Let's say that the exampleMethod returns an integer.

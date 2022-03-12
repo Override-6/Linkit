@@ -11,15 +11,15 @@ class BehaviorLangParserTests {
 
     @Test
     def parse(): Unit = {
-        Contract("/contracts/NetworkContract.bhv")(null)
+        Contract("contracts/NetworkContract.bhv")(null)
     }
 
     @Test
     def lex(): Unit = {
-        val file = "/contracts/NetworkContract.bhv"
+        val file = "contracts/NetworkContract.bhv"
         val source = new String(getClass.getResourceAsStream(file).readAllBytes())
         val in = new CharSequenceReader(source)
-        val tokens = BehaviorLanguageLexer.tokenize(in)
+        val tokens = BehaviorLanguageLexer.tokenize(in, file)
         print(tokens)
         tokens
     }

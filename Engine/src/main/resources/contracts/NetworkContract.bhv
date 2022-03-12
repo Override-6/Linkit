@@ -1,3 +1,5 @@
+
+
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.api.gnom.network.Network
@@ -7,28 +9,45 @@ scala ${
     val network = £{@network: Network}
 }
 
+
 describe mirroring DefaultEngine stub Engine {
-    enable method updateState(synchronize ExternalConnectionState, synchronize Network) as broadcast_if_root_owner {
-        modifier 1 & 2 {
-            current_to_distant -> ${(x, engine) => x}
-        }
-    }
+    enable method updateState(ExternalConnectionState, Network) as broadcast_if_root_owner
     hide method test(x, y) "WAW"
 }
 
+x: String[] -> {
+    in : ${(x, _) => /***/}
+    out: ${(x, _) => /***/}
+}
+access_filter cache_owner_only = { engine =>
+    if (engine is owning @/) broadcast()
+}
+access_filter self_player_only = { engine =>
+    if (engine is owning @/engine.identifier) broadcast()
+}
+access_filter not_current = { engine =>
+    if (engine is not current) broadcast() return owning object
+}
 describe statics Path {
-    enable method of(URI) as broadcast_if_origin
-    enable method of(String, String[]) as broadcast_if_origin
+    enable method of(URI) as cache_owner_only
+
+    [procrastinator = @lwjgl]
+    enable method of(str: String, array: String[]) {
+        str -> {
+            in : ${(x, _) => x + £{@test_value: String}}
+            out: ${(x, _) => x + £{@other_value_lol: String}}
+        }
+        array -> x
+        sync returnvalue
+    }
+
 }
 
 modifier SharedCacheManager {
-    current_to_distant -> ${(param, _) => param match {
-            case origin: SharedCacheOriginManager => {transformToDistant(origin)}
-            case _                                => {param}
-    }}
+    out: ${(cache, _) => network.transformToDistant(cache)}
 }
 modifier DefaultEngine {
-    current_to_distant -> ${(e, _) => {
+    out: ${(e, _) => {
        new DefaultEngine(e.identifier, network.findCacheManager(identifier).get)
    }}
 }

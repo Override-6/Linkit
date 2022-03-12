@@ -2,6 +2,7 @@ package fr.linkit.engine.internal.language.bhv.lexer
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageValues._
+import fr.linkit.engine.internal.language.bhv.parser.ParserContext
 import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
 
 import scala.util.matching.Regex
@@ -22,9 +23,9 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
 
     /////////// Parsers
 
-    private val codeBlock     = "${" ~> codeBlockParser ^^ CodeBlock
-    private val stringLiteral = "\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ Literal
-    private val identifier    = "[\\S]+".r ^^ Identifier
+    private val codeBlock     = pos("${" ~> codeBlockParser ^^ CodeBlock)
+    private val stringLiteral = pos("\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ (Literal))
+    private val identifier    = pos(identifierParser ^^ Identifier)
 
     private def codeBlockParser: Parser[String] = {
         var bracketDepth = 1
@@ -48,13 +49,15 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
     implicit private def tokenToParser(token: Token): Parser[String] = literal(token.toString)
 
     private val tokensParser = rep(keywordParser | symbolParser |
-        codeBlock | stringLiteral | identifier)
+            codeBlock | stringLiteral | identifier)
 
-    def tokenize(input: CharSequenceReader): List[Token] = {
+    def tokenize(input: CharSequenceReader, filePath: String): ParserContext[Token] = {
         parseAll(tokensParser, input) match {
-            case NoSuccess(msg, n) => throw new BHVLanguageException(makeErrorMessage(msg, "Failure", input, n.pos))
-            case Success(r, _)     =>
-                r
+            case NoSuccess(msg, n)  =>
+                throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, input.source.toString, filePath))
+            case Success(tokens, _) =>
+                ParserContext(filePath, input.source.toString, tokens)
         }
     }
+
 }

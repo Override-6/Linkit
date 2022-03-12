@@ -33,5 +33,6 @@ trait RMIRulesAgreementBuilder {
 
     def result(context: SyncObjectContext): RMIRulesAgreement
 
+
 }
 

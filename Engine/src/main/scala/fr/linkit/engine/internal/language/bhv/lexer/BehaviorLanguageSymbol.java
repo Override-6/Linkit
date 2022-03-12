@@ -5,13 +5,14 @@ import scala.util.matching.Regex;
 public enum BehaviorLanguageSymbol implements BehaviorLanguageToken, Symbol  {
     Not("!"),
     And("&"),
-    Equals("="),
+    Equal("="),
+    Arrow("->"),
+    Comma(","),
+    Colon(":"),
     BracketLeft("{"),
     BracketRight("}"),
     SquareBracketLeft("["),
     SquareBracketRight("]"),
-    Arrow("->"),
-    Comma(","),
     ParenRight(")"),
     ParenLeft("(");
 

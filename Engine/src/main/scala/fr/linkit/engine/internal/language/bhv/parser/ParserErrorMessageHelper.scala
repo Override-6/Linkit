@@ -13,13 +13,12 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import scala.util.parsing.input.{CharSequenceReader, Position}
+import scala.util.parsing.input.Position
 
 object ParserErrorMessageHelper {
 
-    def makeErrorMessage(msg: String, kind: String, reader: CharSequenceReader, pos: Position): String = {
-        val line  = reader.source
-                .toString
+    def makeErrorMessage(msg: String, kind: String, pos: Position, fileSource: String, filePath: String): String = {
+        val line  = fileSource
                 .lines().toArray(new Array[String](_))
                 .drop(pos.line - 1).headOption.getOrElse("")
         val start = pos.column
@@ -29,7 +28,7 @@ object ParserErrorMessageHelper {
         val identCount = line.takeWhile(_ == ' ').length
         val cursor     = " " * (start - 1 - identCount) + "^" * (end - start + 1)
         s"""
-           |$kind at $pos: ${unescape(msg)}
+           |$kind at $filePath:$pos: ${unescape(msg)}
            |${line.trim}
            |$cursor
            |""".stripMargin
@@ -42,7 +41,7 @@ object ParserErrorMessageHelper {
     private def escapeAll(strings: String*): Seq[(String, String)] = strings.map(s => (s.translateEscapes(), s))
 
     private def unescape(s: String): String = {
-        escapedChars.foldLeft(s) { case (acc, (e, ue)) => acc.replace(e, ue)}
+        escapedChars.foldLeft(s) { case (acc, (e, ue)) => acc.replace(e, ue) }
     }
 
 }

@@ -13,7 +13,8 @@ trait Symbol extends Token
 
 object Symbol {
     def makeRegex(tokens: Array[Symbol]): Regex = {
-        tokens.map('\\' + _.representation).mkString("|").r
+       tokens.map(_.representation.map("\\" + _).mkString(""))
+               .mkString("|").r
     }
 }
 

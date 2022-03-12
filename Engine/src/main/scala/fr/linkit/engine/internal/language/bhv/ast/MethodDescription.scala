@@ -11,18 +11,20 @@ class DisabledMethodDescription() extends MethodDescription
 
 class HiddenMethodDescription(val hideMessage: Option[String]) extends MethodDescription
 
-class EnabledMethodDescription(val referent: Option[ExternalReference],
+class EnabledMethodDescription(val properties: List[MethodProperty],
+                               val referent: Option[ExternalReference],
                                val procrastinatorName: Option[ExternalReference],
-                               val modifiers: Seq[MethodComponentsModifier],
+                               val modifiers: List[CompModifier],
                                val syncReturnValue: SynchronizeState) extends MethodDescription
 
 object EnabledMethodDescription {
 
-    def apply(referent: Option[ExternalReference],
+    def apply(properties: List[MethodProperty],
+              referent: Option[ExternalReference],
               procrastinatorName: Option[ExternalReference],
-              modifiers: Seq[MethodComponentsModifier],
+              modifiers: List[CompModifier],
               syncReturnValue: SynchronizeState)(sig: MethodSignature): EnabledMethodDescription with AttributedMethodDescription = {
-        new EnabledMethodDescription(referent, procrastinatorName, modifiers, syncReturnValue) with AttributedMethodDescription {
+        new EnabledMethodDescription(properties, referent, procrastinatorName, modifiers, syncReturnValue) with AttributedMethodDescription {
             override val signature: MethodSignature = sig
         }
     }
@@ -46,9 +48,11 @@ case object DisabledMethodDescription extends DisabledMethodDescription {
     }
 }
 
-case class MethodParam(synchronized: SynchronizeState, tpe: String) {
+case class MethodProperty(name: String, value: String)
 
-    override def toString: String = (if (synchronized.isSync) "synchronized " else "") + tpe
+case class MethodParam(synchronized: SynchronizeState, name: Option[String], tpe: String) {
+
+    override def toString: String = (if (synchronized.isSync) "sync " else "") + tpe
 }
 
 case class MethodSignature(methodName: String, params: Seq[MethodParam]) {
@@ -56,4 +60,10 @@ case class MethodSignature(methodName: String, params: Seq[MethodParam]) {
     override def toString: String = s"$methodName${params.mkString("(", ",", ")")}"
 }
 
-case class MethodComponentsModifier(paramsModifiers: Map[Int, Seq[LambdaExpression]], returnvalueModifiers: Seq[LambdaExpression])
+case class MethodComponentsModifier(paramsModifiers: Map[Int, CompModifier], rvModifiers: Seq[CompModifier])
+
+trait CompModifier
+
+case class ValueModifierReference(target: String, ref: String) extends CompModifier
+
+case class ModifierExpression(target: String, in: Option[LambdaExpression], out: Option[LambdaExpression]) extends CompModifier

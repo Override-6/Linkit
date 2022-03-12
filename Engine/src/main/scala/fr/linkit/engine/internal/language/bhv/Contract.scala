@@ -16,7 +16,7 @@ package fr.linkit.engine.internal.language.bhv
 import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFile
-import fr.linkit.engine.internal.language.bhv.interpretation.BehaviorFileInterpreter
+import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileInterpreter
 import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageParser
 
@@ -38,8 +38,9 @@ object Contract {
 
 
     def apply(file: String)(implicit propertyClass: PropertyClass): ContractDescriptorData = contracts.getOrElse(file, {
-        val source = new String(getClass.getResourceAsStream(file).readAllBytes())
-        val tokens = BehaviorLanguageLexer.tokenize(new CharSequenceReader(source))
+        val loader = Thread.currentThread().getContextClassLoader
+        val source = new String(loader.getResourceAsStream(file).readAllBytes())
+        val tokens = BehaviorLanguageLexer.tokenize(new CharSequenceReader(source), file)
         val ast    = BehaviorLanguageParser.parse(tokens)
         val cdd    = completeAST(ast, file, propertyClass)
         contracts.put(file, cdd)

@@ -27,23 +27,12 @@ object ScalaCodeBlocksParser extends Parsers {
     }*/
 
     def parse(input: CharSequenceReader): ScalaCodeBlock = {
-        val tokens = ScalaCodeBlocksLexer.tokenize(input)
-        phrase(rep(fragmentParser | valueParser)).apply(new TokenReader(tokens)) match {
+        val tokens = ScalaCodeBlocksLexer.tokenize(input, "<scala block>")
+        phrase(rep(fragmentParser | valueParser)).apply(new TokenReader(tokens.fileTokens)) match {
             case NoSuccess(msg, _) => throw new BHVLanguageException(s"Failure with scala block external access value: $msg")
             case Success(x, _)     =>
                 ScalaCodeBlock(x.mkString(""))
         }
-    }
-
-    class TokenReader(tokens: Seq[Elem]) extends Reader[Elem] {
-
-        override def first: Elem = tokens.head
-
-        override def rest: Reader[Elem] = new TokenReader(tokens.tail)
-
-        override def pos: Position = NoPosition
-
-        override def atEnd: Boolean = tokens.isEmpty
     }
 
 }
