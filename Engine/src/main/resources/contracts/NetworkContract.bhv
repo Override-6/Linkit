@@ -18,7 +18,7 @@ describe mirroring DefaultEngine stub Engine {
 
 describe statics Path {
     enable method of(URI) as broadcast_if_origin
-    enable method of(String, String[]) as of(URI)
+    enable method of(String, String[]) as broadcast_if_origin
 }
 
 modifier SharedCacheManager {

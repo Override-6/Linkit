@@ -1,5 +1,6 @@
 package fr.linkit.engine.test
 
+import fr.linkit.engine.internal.language.bhv.Contract
 import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.ScalaCodeBlocksParser
 import org.junit.jupiter.api.Test
@@ -10,8 +11,7 @@ class BehaviorLangParserTests {
 
     @Test
     def parse(): Unit = {
-        //Contract("/contracts/NetworkContract.bhv")
-
+        Contract("/contracts/NetworkContract.bhv")(null)
     }
 
     @Test

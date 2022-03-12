@@ -12,4 +12,4 @@ case class ClassDescription(head: ClassDescriptionHead,
                             foreachMethod: Option[MethodDescription],
                             foreachField: Option[FieldDescription],
                             fields: Seq[AttributedFieldDescription],
-                            methods: Seq[AttributedMethodDescription]) extends BehaviorFileRootNode
+                            methods: Seq[AttributedMethodDescription])

@@ -3,18 +3,19 @@ package fr.linkit.engine.internal.language.bhv.parser
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast.ScalaCodeBlock
 import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepositoryClassBlueprint
-import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlocksTokens._
-import fr.linkit.engine.internal.language.bhv.lexer.{ScalaCodeBlocksLexer, ScalaCodeBlocksTokens}
+import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlockSymbol._
+import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlockValues._
+import fr.linkit.engine.internal.language.bhv.lexer.{ScalaCodeBlockToken, ScalaCodeBlocksLexer}
 
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.{CharSequenceReader, NoPosition, Position, Reader}
 
 object ScalaCodeBlocksParser extends Parsers {
 
-    override type Elem = Token
+    override type Elem = ScalaCodeBlockToken
 
     private val identifierParser = accept("identifier", { case Identifier(identifier) => identifier }).+ ^^ (_.mkString(" "))
-    private val valueParser      = ValueOpen ~> identifierParser ~ (DoublePoints ~> identifierParser).? <~ ValueClose ^^ {
+    private val valueParser      = ValueOpen ~> identifierParser ~ (Colon ~> identifierParser).? <~ ValueClose ^^ {
         case name ~ types =>
             LambdaRepositoryClassBlueprint.getPropertyAccessCodeString(name, types.getOrElse("scala.Any"))
     }
@@ -34,11 +35,11 @@ object ScalaCodeBlocksParser extends Parsers {
         }
     }
 
-    class TokenReader(tokens: Seq[Token]) extends Reader[Token] {
+    class TokenReader(tokens: Seq[Elem]) extends Reader[Elem] {
 
-        override def first: ScalaCodeBlocksTokens.Token = tokens.head
+        override def first: Elem = tokens.head
 
-        override def rest: Reader[ScalaCodeBlocksTokens.Token] = new TokenReader(tokens.tail)
+        override def rest: Reader[Elem] = new TokenReader(tokens.tail)
 
         override def pos: Position = NoPosition
 

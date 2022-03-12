@@ -15,36 +15,39 @@ package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageTokens._
+import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageKeyword._
+import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageSymbol._
+import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageToken
+import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageValues._
 
 import scala.util.parsing.combinator.Parsers
-import scala.util.parsing.input.CharSequenceReader
+import scala.util.parsing.input.{CharSequenceReader, Position, Reader}
 
 object BehaviorLanguageParser extends Parsers {
 
-    override type Elem = Token
+    override type Elem = BehaviorLanguageToken
 
     private val modifiers = BracketLeft ~> rep(
         scalaCodeIntegration("distant_to_current", RemoteToCurrentModifier)
-                | scalaCodeIntegration("current_to_distant", CurrentToRemoteModifier)
-                | scalaCodeIntegration("current_to_distant_event", CurrentToRemoteEvent)
-                | scalaCodeIntegration("distant_to_current_event", RemoteToCurrentEvent)
+            | scalaCodeIntegration("current_to_distant", CurrentToRemoteModifier)
+            | scalaCodeIntegration("current_to_distant_event", CurrentToRemoteEvent)
+            | scalaCodeIntegration("distant_to_current_event", RemoteToCurrentEvent)
     ) <~ BracketRight
 
-    private val identifier         = accept("identifier", { case Identifier(identifier) => identifier })
-    private val literal            = accept("literal", { case Literal(str) => str })
-    private val codeBlock          = accept("scala code", { case CodeBlock(code) => toScalaCodeToken(code) })
-    private val externalReference  = identifier ^^ ExternalReference
+    private val identifier        = accept("identifier", { case Identifier(identifier) => identifier })
+    private val literal           = accept("literal", { case Literal(str) => str })
+    private val codeBlock         = accept("scala code", { case CodeBlock(code) => toScalaCodeToken(code) })
+    private val externalReference = identifier ^^ ExternalReference
 
-    private val importParser = Import ~> identifier ^^ ClassImport
+    private val importParser       = Import ~> identifier ^^ ClassImport
     private val classParser        = {
         val syncOrNot            = (Not.? <~ Synchronize ^^ (_.isEmpty)).? ^^ (s => SynchronizeState(s.isDefined, s.getOrElse(false)))
-        val methodSignature      = {
+        val methodSignature      = log{
             val param  = syncOrNot ~ identifier ^^ { case s ~ id => MethodParam(s, id) }
             val params = repsep(param, Comma)
 
             (identifier <~ ParenLeft) ~ params <~ ParenRight ^^ { case name ~ params => MethodSignature(name, params) }
-        }
+        }("method signature")
         val methodModifierParser = {
             val param  = ReturnValue | accept("identifier", { case x: Identifier => x })
             val params = repsep(param, And)
@@ -56,7 +59,7 @@ object BehaviorLanguageParser extends Parsers {
             }
         }
         val enabledMethodCore    = {
-            (BracketLeft ~> rep(methodModifierParser) ~ (syncOrNot <~ ReturnValue.?) <~ BracketRight) | success(List() ~ SynchronizeState(false, false))
+            (BracketLeft ~> rep(methodModifierParser) ~ (syncOrNot <~ ReturnValue.?) <~ BracketRight) | success(List() ~~ SynchronizeState(false, false))
         }
         val enabledMethodParser  = {
             (Enable ~> Method ~> methodSignature) ~ (As ~> externalReference).? ~ enabledMethodCore ^^ {
@@ -82,7 +85,7 @@ object BehaviorLanguageParser extends Parsers {
         val attributedFieldsAndMethods = rep(methodsParser | fieldsParser) ^^ { x =>
             val fields  = x.filter(_.isInstanceOf[AttributedFieldDescription]).map { case d: AttributedFieldDescription => d }
             val methods = x.filter(_.isInstanceOf[AttributedMethodDescription]).map { case d: AttributedMethodDescription => d }
-            fields ~ methods
+            fields ~~ methods
         }
         (classHead <~ BracketLeft) ~ attributedFieldsAndMethods <~ BracketRight ^^ {
             case head ~ (fields ~ methods) => ClassDescription(head, None, None, fields, methods)
@@ -90,7 +93,6 @@ object BehaviorLanguageParser extends Parsers {
     }
     private val codeBlockParser    = Scala ~> codeBlock
     private val typeModifierParser = Modifier ~> identifier ~ modifiers
-
 
     private def scalaCodeIntegration(name: String, kind: LambdaKind): Parser[LambdaExpression] = {
         Identifier(name) ~ Arrow ~> codeBlock ^^ (LambdaExpression(_, kind))
@@ -102,11 +104,47 @@ object BehaviorLanguageParser extends Parsers {
 
     implicit class Tilde[A](a: A) {
 
-        def ~[B](b: B): A ~ B = new ~(a, b)
+        def ~~[B](b: B): A ~ B = new ~(a, b)
     }
 
     private val fileParser = phrase(rep(importParser | classParser | codeBlockParser | typeModifierParser))
-    def parse(input: CharSequenceReader): BehaviorFileAST = {
-        ???
+
+    def parse(tokens: Seq[Elem]): BehaviorFile = {
+        fileParser.apply(new TokenReader(tokens, 0)) match {
+            case NoSuccess(msg, n) => throw new BHVLanguageException(s"Failure while parsing: $msg. at: ${n.pos}")
+            case Success(x, _)     =>
+                val (imports, classes, blocks, modifiers) = x.foldLeft(
+                    (List[ClassImport](), List[ClassDescription](), List[ScalaCodeBlock](), List[TypeModifiers]())
+                ) {
+                    case ((imports, x, y, z), imp: ClassImport)        => (imp :: imports, x, y, z)
+                    case ((w, classes, y, z), clazz: ClassDescription) => (w, clazz :: classes, y, z)
+                    case ((w, x, blocks, z), block: ScalaCodeBlock)    => (w, x, block :: blocks, z)
+                    case ((w, x, y, modifiers), imp: TypeModifiers)    => (w, x, y, imp :: modifiers)
+                }
+                new BehaviorFile {
+                    override val classDescriptions = classes
+                    override val typesModifiers    = modifiers
+                    override val codeBlocks        = blocks
+                    override val classImports      = imports
+                }
+        }
     }
+
+    class TokenReader(tokens: Seq[Elem], offset: Int) extends Reader[Elem] {
+
+        override def first: Elem = tokens.head
+
+        override def rest: Reader[Elem] = new TokenReader(tokens.tail, offset + 1)
+
+        override def pos: Position = new Position {
+            override def line: Int = 0
+
+            override def column: Int = offset
+
+            override protected def lineContents: String = ""
+        }
+
+        override def atEnd: Boolean = tokens.isEmpty
+    }
+
 }

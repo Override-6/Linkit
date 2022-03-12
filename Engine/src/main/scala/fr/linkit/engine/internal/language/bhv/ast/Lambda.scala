@@ -10,5 +10,5 @@ case object CurrentToRemoteEvent extends LambdaKind
 
 case object RemoteToCurrentEvent extends LambdaKind
 
-case class LambdaExpression(block: ScalaCodeBlock, kind: LambdaKind) extends BHVLangToken
+case class LambdaExpression(block: ScalaCodeBlock, kind: LambdaKind)
     

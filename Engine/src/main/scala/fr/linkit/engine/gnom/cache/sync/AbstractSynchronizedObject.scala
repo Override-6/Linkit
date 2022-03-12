@@ -99,7 +99,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     }
 
     private def getMirroringCallExceptionMessage: String = {
-        s"Attempted to call a method on a distant object representation. This object is mirroring ${reference} on engine ${origin}"
+        s"Attempted to call a method on a distant object representation. This object is mirroring $reference on engine ${ownerID}"
     }
 
     @inline override def isInitialized: Boolean = puppeteer != null
