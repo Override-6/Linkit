@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{SuperMethodModifiers, getMethodDescriptor}
 import javassist._
-import javassist.bytecode.MethodInfo
+import javassist.bytescala.MethodInfo
 
 import java.lang.reflect.{Method, Modifier}
 import scala.collection.mutable.ListBuffer

@@ -3,9 +3,10 @@ package fr.linkit.engine.internal.language.bhv.parser
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast.ScalaCodeBlock
 import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepositoryClassBlueprint
-import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlockSymbol._
-import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlockValues._
-import fr.linkit.engine.internal.language.bhv.lexer.{ScalaCodeBlockToken, ScalaCodeBlocksLexer}
+import fr.linkit.engine.internal.language.bhv.lexer.scala.ScalaCodeBlockSymbol._
+import fr.linkit.engine.internal.language.bhv.lexer.scala.ScalaCodeBlockValues._
+import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlockToken
+import fr.linkit.engine.internal.language.bhv.lexer.scala.{ScalaCodeBlockToken, ScalaCodeBlocksLexer}
 
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.{CharSequenceReader, NoPosition, Position, Reader}

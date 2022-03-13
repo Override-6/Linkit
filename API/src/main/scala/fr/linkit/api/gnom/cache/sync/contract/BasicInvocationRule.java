@@ -32,15 +32,15 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     ONLY_CURRENT((agreement) ->
         agreement.discardAll()
-                .accept(CurrentEngine)
+                .accept(CurrentEngine())
     ),
     /**
      * Invocation will only be performed on the engine that owns the original object.
      */
     ONLY_ORIGIN((agreement) ->
         agreement.discardAll()
-                .accept(OwnerEngine)
-                .setDesiredEngineReturn(OwnerEngine)
+                .accept(OwnerEngine())
+                .appointReturn(OwnerEngine())
     ),
     /**
      * Invocation will only be performed on the engine that hosts the cache manager in which the object's
@@ -48,8 +48,8 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     ONLY_CACHE_OWNER((agreement) ->
         agreement.discardAll()
-                .accept(CacheOwnerEngine)
-                .setDesiredEngineReturn(CacheOwnerEngine)
+                .accept(CacheOwnerEngine())
+                .appointReturn(CacheOwnerEngine())
     ),
     /**
      * The invocation will be performed on every remote machines, excluding the current machine.
@@ -58,8 +58,8 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * and the return value of the method will be taken from the local invocation result
      */
     NOT_CURRENT(((agreement) ->
-        agreement.discard(CurrentEngine)
-                .setDesiredEngineReturn(OwnerEngine)
+        agreement.discard(CurrentEngine())
+                .appointReturn(OwnerEngine())
     )),
     /**
      * The invocation will be performed on the current machine <b>and</b> on every remote machines.
@@ -67,7 +67,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST(((agreement) ->
         agreement.acceptAll()
-                .setDesiredEngineReturn(CurrentEngine)
+                .appointReturn(CurrentEngine())
     )),
 
     /**
@@ -77,9 +77,9 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST_IF_ORIGINAL((agreement) ->
             agreement
-                .ifCurrentIs(OwnerEngine, RMIRulesAgreementBuilder::acceptAll)
-                .accept(CurrentEngine)
-                .setDesiredEngineReturn(CurrentEngine)
+                .ifCurrentIs(OwnerEngine(), RMIRulesAgreementBuilder::acceptAll)
+                .accept(CurrentEngine())
+                .appointReturn(CurrentEngine())
     ),
 
 
@@ -89,9 +89,9 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * The return value of the invocation will come from the current machine.
      */
     BROADCAST_IF_ROOT_OWNER((agreement ->
-            agreement.ifCurrentIs(RootOwnerEngine, RMIRulesAgreementBuilder::acceptAll)
-                    .accept(CurrentEngine)
-                    .setDesiredEngineReturn(CurrentEngine)
+            agreement.ifCurrentIs(RootOwnerEngine(), RMIRulesAgreementBuilder::acceptAll)
+                    .accept(CurrentEngine())
+                    .appointReturn(CurrentEngine())
     )),
     /**
      * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.
@@ -100,9 +100,9 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     CURRENT_AND_ORIGIN(((agreement) -> {
         return agreement.discardAll()
-                .accept(CurrentEngine)
-                .accept(OwnerEngine)
-                .setDesiredEngineReturn(CurrentEngine);
+                .accept(CurrentEngine())
+                .accept(OwnerEngine())
+                .appointReturn(CurrentEngine());
     }));
 
     private final RemoteInvocationRule rule;

@@ -15,10 +15,10 @@ package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageKeyword._
-import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageSymbol._
-import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageToken
-import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageValues._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageValues._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageToken
 import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
 
 import scala.util.parsing.combinator.Parsers

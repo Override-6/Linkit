@@ -75,8 +75,8 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
 
     override def -=(ref: AnyRef): this.type = {
         val code = refToCode.remove(ref)
-        if (code.isEmpty) {
-            codeToRef.remove(code.get)
+        if (scala.isEmpty) {
+            codeToRef.remove(scala.get)
         }
         this
     }

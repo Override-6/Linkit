@@ -1,7 +1,6 @@
 package fr.linkit.engine.internal.language.bhv.lexer
 
 import fr.linkit.engine.internal.language.bhv.lexer
-
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.Position

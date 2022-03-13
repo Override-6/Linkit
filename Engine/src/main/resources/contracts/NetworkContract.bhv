@@ -19,17 +19,18 @@ x: String[] -> {
     in : ${(x, _) => /***/}
     out: ${(x, _) => /***/}
 }
-access_filter cache_owner_only = { engine =>
-    if (engine is owning @/) broadcast()
+
+agreement only_owner = {
+    discard * -> accept owner -> appoint owner
 }
-access_filter self_player_only = { engine =>
-    if (engine is owning @/engine.identifier) broadcast()
+agreement current_and_origin = {
+    discard * -> accept current and owner -> appoint current
 }
-access_filter not_current = { engine =>
-    if (engine is not current) broadcast() return owning object
+agreement broadcast_if_owner = {
+    if (current is owner) {accept *} else {discard *} -> accept current -> appoint current
 }
 describe statics Path {
-    enable method of(URI) as cache_owner_only
+    enable method of(URI) as broadcast_if_owner
 
     [procrastinator = @lwjgl]
     enable method of(str: String, array: String[]) {

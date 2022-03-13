@@ -46,7 +46,7 @@ object Version extends StringRepresentable[Version] {
     }
 
     def apply(name: String, code: String, stable: Boolean): Version = {
-        val args = code.split('.')
+        val args = scala.split('.')
 
         if (args.length != 3)
             throw new IllegalArgumentException(s"version '$code' is incompatible")

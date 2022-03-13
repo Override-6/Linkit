@@ -25,7 +25,7 @@ trait RMIRulesAgreementBuilder {
 
     def discardAll(): RMIRulesAgreementBuilder
 
-    def setDesiredEngineReturn(target: EngineTag): RMIRulesAgreementBuilder
+    def appointReturn(target: EngineTag): RMIRulesAgreementBuilder
 
     def ifCurrentIs(target: EngineTag)(action: AgreementConditionAction): RMIRulesAgreementBuilder
 

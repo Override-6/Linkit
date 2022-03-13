@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFile
 import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileInterpreter
-import fr.linkit.engine.internal.language.bhv.lexer.BehaviorLanguageLexer
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageParser
 
 import scala.collection.mutable
