@@ -15,6 +15,7 @@ package fr.linkit.engine.internal.language.bhv.lexer.file
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.lexer.AbstractLexer
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageValues._
 import fr.linkit.engine.internal.language.bhv.parser.ParserContext
 import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
 
@@ -66,9 +67,9 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
 
     def tokenize(input: CharSequenceReader, filePath: String): ParserContext[Token] = {
         parseAll(tokensParser, input) match {
-            case NoSuccess(msg, n)  =>
-                throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, input.source.toString, filePath))
-            case Success(tokens, _) =>
+            case NoSuccess(msg, n) =>
+                throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, n.source.toString, filePath))
+            case Success(tokens, _)             =>
                 ParserContext(filePath, input.source.toString, tokens)
         }
     }

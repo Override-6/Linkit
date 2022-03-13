@@ -17,8 +17,7 @@ import fr.linkit.engine.internal.language.bhv.lexer.Symbol;
 import scala.util.matching.Regex;
 
 public enum BehaviorLanguageSymbol implements BehaviorLanguageToken, Symbol {
-    Not("!"),
-    And("&"),
+    Exclamation("!"),
     Equal("="),
     Arrow("->"),
     Comma(","),

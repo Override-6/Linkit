@@ -7,5 +7,5 @@ trait BehaviorFile {
     val codeBlocks       : List[ScalaCodeBlock]
     val classImports     : List[ClassImport]
     val valueModifiers   : List[ValueModifier]
-
+    val agreementBuilders: List[AgreementBuilder]
 }

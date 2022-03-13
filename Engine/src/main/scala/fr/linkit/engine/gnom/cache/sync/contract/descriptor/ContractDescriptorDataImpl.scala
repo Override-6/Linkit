@@ -1,7 +1,6 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.StructureContractDescriptor
-import fr.linkit.api.gnom.cache.sync.contract.descriptors.{ContractDescriptorData, StructureBehaviorDescriptorNode}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectClassRelation
 import fr.linkit.engine.internal.utils.ClassMap
 

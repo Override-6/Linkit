@@ -19,10 +19,6 @@ trait ValueModifier[A] {
 
     def fromRemote(value: A, remote: Engine): A = value
 
-    def fromRemoteEvent(value: A, remote: Engine): Unit = ()
-
     def toRemote(value: A, remote: Engine): A = value
-
-    def toRemoteEvent(value: A, remote: Engine): Unit = ()
 
 }

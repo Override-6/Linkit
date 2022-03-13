@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.descriptors
+package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
 trait ContractDescriptorData {
 

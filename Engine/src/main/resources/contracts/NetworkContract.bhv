@@ -27,9 +27,14 @@ agreement current_and_origin = {
     discard * -> accept current and owner -> appoint current
 }
 agreement broadcast_if_owner = {
-    if (current is owner) {accept *} else {discard *} -> accept current -> appoint current
+    if (current is owner) { accept * } else { discard * } -> accept current -> appoint current
 }
 describe statics Path {
+    sync *
+    [procrastinator = @my_procrastinator]
+    foreach method enable as broadcast {
+        sync returnvalue
+    }
     enable method of(URI) as broadcast_if_owner
 
     [procrastinator = @lwjgl]

@@ -13,42 +13,32 @@
 
 package fr.linkit.engine.internal.language.bhv
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
+import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFile
 import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileInterpreter
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
-import fr.linkit.engine.internal.language.bhv.parser.BehaviorLanguageParser
+import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
 
 object Contract {
 
-    private final val contracts                      = mutable.HashMap.empty[String, ContractDescriptorData]
-    private final var center: Option[CompilerCenter] = None
-
-    private[linkit] def initCenter(center: CompilerCenter): Unit = {
-        if (this.center.isDefined)
-            throw new IllegalAccessException("center already initialized")
-        if (center == null)
-            throw new NullPointerException
-        this.center = Some(center)
-    }
-
+    private final val contracts = mutable.HashMap.empty[String, ContractDescriptorData]
+    private final val center    = new DefaultCompilerCenter
 
     def apply(file: String)(implicit propertyClass: PropertyClass): ContractDescriptorData = contracts.getOrElse(file, {
         val loader = Thread.currentThread().getContextClassLoader
         val source = new String(loader.getResourceAsStream(file).readAllBytes())
         val tokens = BehaviorLanguageLexer.tokenize(new CharSequenceReader(source), file)
-        val ast    = BehaviorLanguageParser.parse(tokens)
+        val ast    = BehaviorFileParser.parse(tokens)
         val cdd    = completeAST(ast, file, propertyClass)
         contracts.put(file, cdd)
         cdd
     })
 
     private def completeAST(ast: BehaviorFile, fileName: String, propertyClass: PropertyClass): ContractDescriptorData = {
-        val center      = this.center.getOrElse(throw new UnsupportedOperationException("Compiler center not initialised."))
         val interpreter = new BehaviorFileInterpreter(ast, fileName, center, propertyClass)
         interpreter.getData
     }

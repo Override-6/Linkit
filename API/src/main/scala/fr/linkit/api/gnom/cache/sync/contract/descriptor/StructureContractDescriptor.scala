@@ -11,19 +11,17 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.descriptors
+package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, StructureContractDescriptor}
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo}
 
-trait StructureBehaviorDescriptorNode[A <: AnyRef] {
+trait StructureContractDescriptor[A <: AnyRef] {
 
-    val descriptor: StructureContractDescriptor[A]
+    val targetClass     : Class[A]
+    val remoteObjectInfo: Option[RemoteObjectInfo]
 
-    def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit
-
-    def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A]
-
-    def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A]
+    val methods : Array[MethodContractDescriptor]
+    val fields  : Array[(Int, FieldContract[Any])]
+    val modifier: Option[ValueModifier[A]]
 }

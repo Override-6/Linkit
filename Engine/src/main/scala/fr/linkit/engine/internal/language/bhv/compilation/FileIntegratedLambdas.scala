@@ -19,7 +19,7 @@ import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas.
 
 import scala.collection.mutable
 
-class FileIntegratedLambdas(fileName: String, center: CompilerCenter) {
+class FileIntegratedLambdas(fileName: String, center: CompilerCenter, imports: Seq[Class[_]]) {
 
     private val expressions                    = mutable.HashMap.empty[Int, LambdaExpressionInfo]
     private var repo: Option[LambdaRepository] = None

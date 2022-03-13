@@ -13,16 +13,21 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-
 import fr.linkit.engine.internal.language.bhv.lexer.Token
 
 import scala.util.parsing.input.{NoPosition, Position, Reader}
 
-class TokenReader[T <: Token](tokens: Seq[(T, Position)]) extends Reader[T] {
+class TokenReader[T <: Token]private(tokens: Seq[(T, Position)],
+                              override val source: String,
+                              val filePath: String) extends Reader[T] {
+
+    def this(context: ParserContext[T]) = {
+        this(context.fileTokens, context.fileSource, context.filePath)
+    }
 
     override def first: T = tokens.head._1
 
-    override def rest: Reader[T] = new TokenReader(tokens.tail)
+    override def rest: Reader[T] = new TokenReader(tokens.tail, source,  filePath)
 
     override def pos: Position = tokens.headOption.map(_._2).getOrElse(NoPosition)
 

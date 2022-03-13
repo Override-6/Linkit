@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCache
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
-import fr.linkit.api.gnom.cache.sync.contract.descriptors.ContractDescriptorData
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network

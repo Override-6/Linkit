@@ -20,8 +20,6 @@ abstract class LambdaValueModifier[A <: AnyRef] extends ValueModifier[A] {
 
     private var remoteToCurrent     : (A, Engine) => A    = (receivedParam, _) => receivedParam
     private var currentToRemote     : (A, Engine) => A    = (localParam, _) => localParam
-    private var remoteToCurrentEvent: (A, Engine) => Unit = (_, _) => ()
-    private var currentToRemoteEvent: (A, Engine) => Unit = (_, _) => ()
 
     override final def toRemote(localParam: A, remote: Engine): A = {
         currentToRemote(localParam, remote)
@@ -39,20 +37,5 @@ abstract class LambdaValueModifier[A <: AnyRef] extends ValueModifier[A] {
 
     protected def fromRemote: (A, Engine) => A = remoteToCurrent
 
-    override final def fromRemoteEvent(receivedParam: A, remote: Engine): Unit = {
-        remoteToCurrentEvent(receivedParam, remote)
-    }
-
-    protected def fromRemoteEvent_=(f: (A, Engine) => Unit): Unit = remoteToCurrentEvent = f
-
-    protected def fromRemoteEvent: (A, Engine) => Unit = remoteToCurrentEvent
-
-    override final def toRemoteEvent(localParam: A, remote: Engine): Unit = {
-        currentToRemoteEvent(localParam, remote)
-    }
-
-    protected def toRemoteEvent_=(f: (A, Engine) => Unit): Unit = currentToRemoteEvent = f
-
-    protected def toRemoteEvent: (A, Engine) => Unit = currentToRemoteEvent
 
 }

@@ -27,12 +27,28 @@ trait RMIRulesAgreementBuilder {
 
     def appointReturn(target: EngineTag): RMIRulesAgreementBuilder
 
-    def ifCurrentIs(target: EngineTag)(action: AgreementConditionAction): RMIRulesAgreementBuilder
-
-    def ifCurrentIsNot(target: EngineTag)(action: AgreementConditionAction): RMIRulesAgreementBuilder
+    def assuming(left: EngineTag): Condition
 
     def result(context: SyncObjectContext): RMIRulesAgreement
 
+    trait Condition {
+
+        def is(right: EngineTag, ifTrue: AgreementConditionAction): RMIRulesAgreementBuilder = is(right)(ifTrue)
+
+        def isNot(right: EngineTag, ifTrue: AgreementConditionAction): RMIRulesAgreementBuilder = isNot(right)(ifTrue)
+
+        def isElse(right: EngineTag, ifTrue: AgreementConditionAction, ifFalse: AgreementConditionAction): RMIRulesAgreementBuilder = isElse(right)(ifTrue, ifFalse)
+
+        def isNotElse(right: EngineTag, ifTrue: AgreementConditionAction, ifFalse: AgreementConditionAction): RMIRulesAgreementBuilder = isNotElse(right)(ifTrue, ifFalse)
+
+        def is(right: EngineTag): AgreementConditionAction => RMIRulesAgreementBuilder
+
+        def isNot(right: EngineTag): AgreementConditionAction => RMIRulesAgreementBuilder
+
+        def isElse(right: EngineTag): (AgreementConditionAction, AgreementConditionAction) => RMIRulesAgreementBuilder
+
+        def isNotElse(right: EngineTag): (AgreementConditionAction, AgreementConditionAction) => RMIRulesAgreementBuilder
+    }
 
 }
 

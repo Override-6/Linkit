@@ -13,19 +13,54 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
-import fr.linkit.engine.internal.language.bhv.ast.AgreementInstruction
-import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageToken
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{EngineTag, EngineTags}
+import fr.linkit.engine.internal.language.bhv.ast.Equals.IsBuilder
+import fr.linkit.engine.internal.language.bhv.ast._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
 
-import scala.util.parsing.combinator.Parsers
+import scala.annotation.switch
 
-class AgreementParser extends Parsers {
+object AgreementParser extends BehaviorLanguageParser {
 
-    override type Elem = BehaviorLanguageToken
+    private val tag = identifier ^^ getTag
 
-
-
-    def parse(tokens: TokenReader[Elem]): Seq[AgreementInstruction] = {
-
+    private val instruction = {
+        val discardAll = Discard ~ Star ^^^ DiscardAll
+        val acceptAll  = Accept ~ Star ^^^ AcceptAll
+        val accept     = Accept ~> rep1sep(tag, And) ^^ AcceptEngines
+        val discard    = Discard ~> rep1sep(tag, And) ^^ DiscardEngines
+        val appoint    = Appoint ~> tag ^^ AppointEngine
+        discard | discardAll | acceptAll | accept | appoint
     }
+
+    private val ifInstruction = {
+        val test                   = (tag <~ Is) ~ Not.? ~ tag ^^ {
+            case a ~ None ~ b    => a is b
+            case a ~ Some(_) ~ b => a isNot b
+        }
+        val contextualInstructions = block(repsep(instruction, Arrow))
+        (If ~ ParenLeft ~> test <~ ParenRight) ~ contextualInstructions ~ ((Else ~> contextualInstructions) | success(List())) ^^ {
+            case test ~ ifTrue ~ ifFalse => Condition(test, ifTrue, ifFalse)
+        }
+    }
+
+    private def block[P](parser: Parser[P]): Parser[P] = BracketLeft ~> parser <~ BracketRight
+
+    private val agreementParser = {
+        Agreement ~> (identifier <~ Equal) ~ block(repsep(instruction | ifInstruction, Arrow)) ^^ {
+            case name ~ instructions => AgreementBuilder(name, instructions)
+        }
+    }
+
+    private implicit def toToken(token: Elem): Parser[Elem] = accept(token)
+
+    def getTag(name: String): EngineTag = (name: @switch) match {
+        case "owner"       => EngineTags.OwnerEngine
+        case "root_owner"  => EngineTags.RootOwnerEngine
+        case "cache_owner" => EngineTags.CacheOwnerEngine
+        case "current"     => EngineTags.CurrentEngine
+    }
+
+    private[parser] def parser: Parser[AgreementBuilder] = agreementParser
 }

@@ -3,13 +3,12 @@ package fr.linkit.engine.internal.language.bhv.parser
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast.ScalaCodeBlock
 import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepositoryClassBlueprint
-import fr.linkit.engine.internal.language.bhv.lexer.scala.ScalaCodeBlockSymbol._
-import fr.linkit.engine.internal.language.bhv.lexer.scala.ScalaCodeBlockValues._
-import fr.linkit.engine.internal.language.bhv.lexer.ScalaCodeBlockToken
-import fr.linkit.engine.internal.language.bhv.lexer.scala.{ScalaCodeBlockToken, ScalaCodeBlocksLexer}
+import fr.linkit.engine.internal.language.bhv.lexer.code.ScalaCodeBlockSymbol._
+import fr.linkit.engine.internal.language.bhv.lexer.code.ScalaCodeBlockValues.{Identifier, _}
+import fr.linkit.engine.internal.language.bhv.lexer.code.{ScalaCodeBlockToken, ScalaCodeBlocksLexer}
 
 import scala.util.parsing.combinator.Parsers
-import scala.util.parsing.input.{CharSequenceReader, NoPosition, Position, Reader}
+import scala.util.parsing.input.CharSequenceReader
 
 object ScalaCodeBlocksParser extends Parsers {
 
@@ -29,7 +28,7 @@ object ScalaCodeBlocksParser extends Parsers {
 
     def parse(input: CharSequenceReader): ScalaCodeBlock = {
         val tokens = ScalaCodeBlocksLexer.tokenize(input, "<scala block>")
-        phrase(rep(fragmentParser | valueParser)).apply(new TokenReader(tokens.fileTokens)) match {
+        phrase(rep(fragmentParser | valueParser)).apply(new TokenReader(tokens)) match {
             case NoSuccess(msg, _) => throw new BHVLanguageException(s"Failure with scala block external access value: $msg")
             case Success(x, _)     =>
                 ScalaCodeBlock(x.mkString(""))

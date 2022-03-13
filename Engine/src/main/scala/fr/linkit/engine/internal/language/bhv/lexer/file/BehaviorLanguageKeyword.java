@@ -18,10 +18,10 @@ import fr.linkit.engine.internal.language.bhv.lexer.Keyword;
 public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
     Import, Describe, Method, Scala, Enable, Stub,
     Mirroring, Disable, Statics, Hide, As, Modifier,
-    Sync, ReturnValue,
+    Sync, ReturnValue, Foreach,
     //Agreements
     Agreement,
-    Discard, Accept, And, Appoint, If, Else, Is
+    Discard, Accept, And, Appoint, If, Else, Is, Not
     ;
 
     @Override

@@ -91,7 +91,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             override def doSuperCall(): Any = {
                 if (isNotMirroring)
                     superCall(synchronizedArgs)
-                else throw new MirroringObjectInvocationException("")
+                else throw new MirroringObjectInvocationException(getMirroringCallExceptionMessage)
 
             }
         }

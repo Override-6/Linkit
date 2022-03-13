@@ -107,7 +107,6 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
             var result   = params(i)
             if (modifier != null) {
                 result = modifier.fromRemote(result, engine)
-                modifier.fromRemoteEvent(result, engine)
             }
             params(i) = result
         }
@@ -182,7 +181,6 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
 
             if (modifier != null) {
                 result = modifier.toRemote(result, engine)
-                modifier.toRemoteEvent(result, engine)
                 if (paramContract.isSynchronized) result match {
                     //The modification could return a non synchronized object even if the contract wants it to be synchronized.
                     case ref: AnyRef if !ref.isInstanceOf[SynchronizedObject[AnyRef]] =>

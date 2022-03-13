@@ -16,11 +16,11 @@ package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 import fr.linkit.api.gnom.cache.sync.contract.ValueContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.api.gnom.cache.sync.contract.descriptors.MethodContractDescriptor
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.MethodContractDescriptor
 import fr.linkit.api.internal.concurrency.Procrastinator
-import org.jetbrains.annotations.Nullable
 
 case class MethodContractDescriptorImpl(description: MethodDescription,
+                                        forced: Boolean,
                                         procrastinator: Option[Procrastinator],
                                         returnValueContract: Option[ValueContract[Any]],
                                         parameterContracts: Array[ValueContract[Any]],
@@ -29,7 +29,7 @@ case class MethodContractDescriptorImpl(description: MethodDescription,
                                         agreement: RMIRulesAgreementBuilder) extends MethodContractDescriptor {
 
     def this(description: MethodDescription, other: MethodContractDescriptor) {
-        this(description, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.forceLocalInnerInvocations, other.agreement)
+        this(description, other.forced, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.forceLocalInnerInvocations, other.agreement)
     }
 
 }

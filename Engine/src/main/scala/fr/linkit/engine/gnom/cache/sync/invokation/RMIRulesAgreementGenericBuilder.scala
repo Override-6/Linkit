@@ -23,7 +23,6 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
                                               private val acceptAllTargets: Boolean,
                                               private val desiredEngineReturn: EngineTag) extends RMIRulesAgreementBuilder {
 
-
     def this() {
         this(Seq.empty, Seq.empty, Seq.empty, true, CurrentEngine)
     }
@@ -52,20 +51,33 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
         new RMIRulesAgreementGenericBuilder(discarded, accepted, conditions, acceptAllTargets, target)
     }
 
-    private def addCondition(condition: AgreementCondition, testedState: EngineTag, action: AgreementConditionAction): RMIRulesAgreementGenericBuilder = {
-        val conditions = this.conditions :+ ((context: SyncObjectContext) => condition(context, testedState, this, action))
+    private def addCondition(condition: AgreementCondition, ifTrue: AgreementConditionAction, ifFalse: AgreementConditionAction): RMIRulesAgreementGenericBuilder = {
+        val conditions = this.conditions :+ ((context: SyncObjectContext) => condition(context, this, ifTrue, ifFalse))
         new RMIRulesAgreementGenericBuilder(discarded, accepted, conditions, acceptAllTargets, desiredEngineReturn)
     }
 
-    override def ifCurrentIs(target: EngineTag)(action: AgreementConditionAction): RMIRulesAgreementGenericBuilder = {
-        addCondition(CurrentIs, target, action)
+    override def assuming(left: EngineTag): Condition = new GenericCondition(left)
+
+    class GenericCondition(left: EngineTag) extends Condition {
+
+        override def is(right: EngineTag): AgreementConditionAction => RMIRulesAgreementBuilder = {
+            addCondition(compare(left, right), _, x => x)
+        }
+
+        override def isNot(right: EngineTag): (AgreementConditionAction) => RMIRulesAgreementBuilder = {
+            addCondition(compareNot(left, right), _, x => x)
+        }
+
+        override def isElse(right: EngineTag): (AgreementConditionAction, AgreementConditionAction) => RMIRulesAgreementBuilder = {
+            addCondition(compareNot(left, right), _, _)
+        }
+
+        override def isNotElse(right: EngineTag): (AgreementConditionAction, AgreementConditionAction) => RMIRulesAgreementBuilder = {
+            addCondition(compareNot(left, right), _, _)
+        }
     }
 
-    override def ifCurrentIsNot(target: EngineTag)(action: AgreementConditionAction): RMIRulesAgreementGenericBuilder = {
-        addCondition(CurrentIsNot, target, action)
-    }
-
-    def result(context: SyncObjectContext): RMIRulesAgreement = {
+    override def result(context: SyncObjectContext): RMIRulesAgreement = {
         var builder = this
         for (condition <- conditions) {
             builder = condition(context).asInstanceOf[RMIRulesAgreementGenericBuilder]
@@ -80,10 +92,15 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
 
 object RMIRulesAgreementGenericBuilder {
 
-    type AgreementCondition = (SyncObjectContext, EngineTag, RMIRulesAgreementBuilder, RMIRulesAgreementBuilder => RMIRulesAgreementBuilder) => RMIRulesAgreementBuilder
+    final val EmptyBuilder = new RMIRulesAgreementGenericBuilder()
+
+    type Action = RMIRulesAgreementBuilder => RMIRulesAgreementBuilder
+    type AgreementCondition = (SyncObjectContext, RMIRulesAgreementBuilder, Action, Action) => RMIRulesAgreementBuilder
     type AgreementConditionResult = SyncObjectContext => RMIRulesAgreementBuilder
-    private final val CurrentIs   : AgreementCondition = (c, t, b, e) => if (c.currentIs(t)) e(b) else b
-    private final val CurrentIsNot: AgreementCondition = (c, t, b, e) => if (!c.currentIs(t)) e(b) else b
+
+    private final def compare(left: EngineTag, right: EngineTag): AgreementCondition = (c, b, ifTrue, ifFalse) => if (c.areEquals(right, left)) ifTrue(b) else ifFalse(b)
+
+    private final def compareNot(left: EngineTag, right: EngineTag): AgreementCondition = (c, b, ifTrue, ifFalse) => if (!c.areEquals(right, left)) ifTrue(b) else ifFalse(b)
 
     implicit private def fastWrap(in: () => Unit): Boolean = true
 

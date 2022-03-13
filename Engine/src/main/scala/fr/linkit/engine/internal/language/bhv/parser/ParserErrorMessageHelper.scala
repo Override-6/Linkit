@@ -34,6 +34,9 @@ object ParserErrorMessageHelper {
            |""".stripMargin
     }
 
+    def makeErrorMessage(msg: String, kind: String, reader: TokenReader[_]): String =
+        makeErrorMessage(msg, kind, reader.pos, reader.source, reader.filePath)
+
     private val escapedChars = Map(escapeAll(
         "\\n", "\\f", "\\r", "\\b", "\\t",
     ): _*)

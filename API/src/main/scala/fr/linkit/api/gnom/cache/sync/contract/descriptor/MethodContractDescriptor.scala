@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.descriptors
+package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.ValueContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable
 
 trait MethodContractDescriptor {
 
+    val forced                    : Boolean
     val description               : MethodDescription
     val parameterContracts        : Array[ValueContract[Any]]
     val procrastinator            : Option[Procrastinator]

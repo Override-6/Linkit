@@ -7,25 +7,28 @@ trait AttributedMethodDescription extends MethodDescription {
     val signature: MethodSignature
 }
 
+trait AttributedEnabledMethodDescription extends AttributedMethodDescription {
+
+    val modifiers: List[CompModifier]
+}
+
 class DisabledMethodDescription() extends MethodDescription
 
 class HiddenMethodDescription(val hideMessage: Option[String]) extends MethodDescription
 
 class EnabledMethodDescription(val properties: List[MethodProperty],
-                               val referent: Option[ExternalReference],
-                               val procrastinatorName: Option[ExternalReference],
-                               val modifiers: List[CompModifier],
+                               val agreement: Option[AgreementReference],
                                val syncReturnValue: SynchronizeState) extends MethodDescription
 
 object EnabledMethodDescription {
 
     def apply(properties: List[MethodProperty],
-              referent: Option[ExternalReference],
-              procrastinatorName: Option[ExternalReference],
-              modifiers: List[CompModifier],
-              syncReturnValue: SynchronizeState)(sig: MethodSignature): EnabledMethodDescription with AttributedMethodDescription = {
-        new EnabledMethodDescription(properties, referent, procrastinatorName, modifiers, syncReturnValue) with AttributedMethodDescription {
-            override val signature: MethodSignature = sig
+              agreement: Option[AgreementReference],
+              syncReturnValue: SynchronizeState)
+             (sig: MethodSignature, mods: List[CompModifier]): EnabledMethodDescription with AttributedMethodDescription = {
+        new EnabledMethodDescription(properties, agreement, syncReturnValue) with AttributedEnabledMethodDescription {
+            override val signature = sig
+            override val modifiers = mods
         }
     }
 }
@@ -39,7 +42,7 @@ object HiddenMethodDescription {
     }
 }
 
-case object DisabledMethodDescription extends DisabledMethodDescription {
+case object DisabledMethodDescription {
 
     def apply(sig: MethodSignature): DisabledMethodDescription with AttributedMethodDescription = {
         new DisabledMethodDescription() with AttributedMethodDescription {
@@ -50,9 +53,9 @@ case object DisabledMethodDescription extends DisabledMethodDescription {
 
 case class MethodProperty(name: String, value: String)
 
-case class MethodParam(synchronized: SynchronizeState, name: Option[String], tpe: String) {
+case class MethodParam(syncState: SynchronizeState, name: Option[String], tpe: String) {
 
-    override def toString: String = (if (synchronized.isSync) "sync " else "") + tpe
+    override def toString: String = (if (syncState.isSync) "sync " else "") + tpe
 }
 
 case class MethodSignature(methodName: String, params: Seq[MethodParam]) {
@@ -62,7 +65,9 @@ case class MethodSignature(methodName: String, params: Seq[MethodParam]) {
 
 case class MethodComponentsModifier(paramsModifiers: Map[Int, CompModifier], rvModifiers: Seq[CompModifier])
 
-trait CompModifier
+trait CompModifier {
+    val target: String
+}
 
 case class ValueModifierReference(target: String, ref: String) extends CompModifier
 

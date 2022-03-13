@@ -77,7 +77,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST_IF_ORIGINAL((agreement) ->
             agreement
-                .ifCurrentIs(OwnerEngine(), RMIRulesAgreementBuilder::acceptAll)
+                .assuming(CurrentEngine()).is(OwnerEngine(), RMIRulesAgreementBuilder::acceptAll)
                 .accept(CurrentEngine())
                 .appointReturn(CurrentEngine())
     ),
@@ -89,7 +89,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * The return value of the invocation will come from the current machine.
      */
     BROADCAST_IF_ROOT_OWNER((agreement ->
-            agreement.ifCurrentIs(RootOwnerEngine(), RMIRulesAgreementBuilder::acceptAll)
+            agreement.assuming(CurrentEngine()).is(RootOwnerEngine(), RMIRulesAgreementBuilder::acceptAll)
                     .accept(CurrentEngine())
                     .appointReturn(CurrentEngine())
     )),

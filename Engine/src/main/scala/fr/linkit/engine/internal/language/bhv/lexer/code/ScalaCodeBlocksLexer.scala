@@ -14,8 +14,8 @@
 package fr.linkit.engine.internal.language.bhv.lexer.code
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
-import fr.linkit.engine.internal.language.bhv.lexer.scala.ScalaCodeBlockValues._
-import fr.linkit.engine.internal.language.bhv.lexer.scala.ScalaCodeBlockSymbol._
+import fr.linkit.engine.internal.language.bhv.lexer.code.ScalaCodeBlockValues._
+import fr.linkit.engine.internal.language.bhv.lexer.code.ScalaCodeBlockSymbol._
 import fr.linkit.engine.internal.language.bhv.lexer.{AbstractLexer, Keyword}
 import fr.linkit.engine.internal.language.bhv.parser.ParserContext
 import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage

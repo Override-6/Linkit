@@ -14,9 +14,9 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
-import fr.linkit.api.gnom.cache.sync.contract.descriptors.StructureBehaviorDescriptorNode
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contract.{MethodContractImpl, SimpleValueContract, StructureContractImpl}
@@ -66,27 +66,6 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         interfaces.foreach(_.putFields(map))
     }
 
-   /* private def fillWithAnnotatedBehaviors(desc: SyncStructureDescription[A],
-                                           methodMap: mutable.HashMap[Int, MethodContract[Any]],
-                                           fieldMap: mutable.HashMap[Int, FieldContract[Any]],
-                                           context: SyncObjectContext): Unit = {
-        desc.listMethods().foreach(methodDesc => {
-            val id = methodDesc.methodId
-            if (!methodMap.contains(id)) {
-                //TODO maybe add a default procrastinator in this node's descriptor.
-                val contract = AnnotationBasedMemberBehaviorFactory.genMethodContract(None, methodDesc)(context)
-                methodMap.put(id, contract)
-            }
-        })
-        desc.listFields().foreach(field => {
-            val id = field.fieldId
-            if (!fieldMap.contains(id)) {
-                val bhv = AnnotationBasedMemberBehaviorFactory.genFieldContract(field)
-                fieldMap.put(id, bhv)
-            }
-        })
-    }*/
-
     override def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A] = {
         val classDesc = SyncObjectDescription[A](clazz)
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
@@ -116,25 +95,6 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             transform(value)(_.toRemote(_, remote))
         }
 
-        override def fromRemoteEvent(value: A, remote: Engine): Unit = {
-            iterate(_.fromRemoteEvent(value, remote))
-        }
-
-        override def toRemoteEvent(value: A, remote: Engine): Unit = {
-            iterate(_.toRemoteEvent(value, remote))
-        }
-
-        def iterate(f: ValueModifier[A] => Unit): Unit = {
-            if (limit.isInterface) {
-                for (interfaceModifier <- interfacesModifiers) {
-                    f(interfaceModifier)
-                }
-            } else if (superClass != null) superClassModifier match {
-                case Some(modifier) => f(modifier)
-                case None           =>
-            }
-            f(modifier)
-        }
 
         def transform(start: A)(f: (ValueModifier[A], A) => A): A = {
             var a = start

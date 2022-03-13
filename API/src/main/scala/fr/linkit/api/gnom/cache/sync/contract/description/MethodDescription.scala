@@ -13,6 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.description
 
+import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription.computeID
+
 import java.lang.reflect.{InaccessibleObjectException, Method, Parameter}
 
 case class MethodDescription(javaMethod: Method,
@@ -24,14 +26,18 @@ case class MethodDescription(javaMethod: Method,
         case _: InaccessibleObjectException => //do nothing
     }
 
-    val params: Array[Parameter] = javaMethod.getParameters
-    val methodId: Int = {
-        val parameters: Array[Class[_]] = javaMethod.getParameterTypes
-        javaMethod.getName.hashCode + hashCode(parameters) + javaMethod.getReturnType.getName.hashCode
-    }
-
     def getName: String = javaMethod.getName
 
+    val params  : Array[Parameter] = javaMethod.getParameters
+    val methodId: Int              = computeID(javaMethod.getName, javaMethod.getParameterTypes, javaMethod.getReturnType)
+}
+
+object MethodDescription {
+
+    def computeID(name: String, params: Array[Class[_]], returnType: Class[_]): Int = {
+        val parameters: Array[Class[_]] = params
+        name.hashCode + hashCode(parameters) + returnType.getName.hashCode
+    }
 
     private def hashCode(a: Array[Class[_]]): Int = {
         if (a == null) return 0
@@ -43,9 +49,4 @@ case class MethodDescription(javaMethod: Method,
         }
         result
     }
-}
-
-object MethodDescription {
-
-    val NumberTypes: Array[String] = Array(fullNameOf[Float], fullNameOf[Double], fullNameOf[Int], fullNameOf[Byte], fullNameOf[Long], fullNameOf[Short])
 }

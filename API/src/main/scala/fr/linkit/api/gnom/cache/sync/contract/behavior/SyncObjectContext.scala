@@ -21,5 +21,8 @@ trait SyncObjectContext {
 
     def translate(tag: EngineTag): String
 
-    def currentIs(tag: EngineTag): Boolean = translate(tag) == currentID
+    /**
+     * @return true if a is b depending on this context.
+     * */
+    def areEquals(a: EngineTag, b: EngineTag): Boolean = translate(a) == translate(b)
 }
