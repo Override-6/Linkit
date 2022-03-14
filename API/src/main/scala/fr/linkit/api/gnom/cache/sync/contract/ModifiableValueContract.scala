@@ -15,8 +15,7 @@ package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
-trait ValueContract {
+trait ModifiableValueContract[A] extends ValueContract {
 
-    val isSynchronized: Boolean
-
+    val modifier: Option[ValueModifier[A]]
 }

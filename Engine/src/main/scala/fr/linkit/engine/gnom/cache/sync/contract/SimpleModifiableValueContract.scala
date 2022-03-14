@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.contract.ValueContract
+import fr.linkit.api.gnom.cache.sync.contract.ModifiableValueContract
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
-class SimpleValueContract[A](override val isSynchronized: Boolean,
-                             override val modifier: Option[ValueModifier[A]] = None) extends ValueContract[A]
+class SimpleModifiableValueContract[A](override val isSynchronized: Boolean,
+                                       override val modifier: Option[ValueModifier[A]] = None) extends ModifiableValueContract[A]

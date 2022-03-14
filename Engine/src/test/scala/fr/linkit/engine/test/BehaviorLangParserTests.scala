@@ -1,6 +1,6 @@
 package fr.linkit.engine.test
 
-import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
+import fr.linkit.api.gnom.network.ExternalConnectionState
 import fr.linkit.engine.internal.language.bhv.Contract
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.ScalaCodeBlocksParser

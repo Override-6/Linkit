@@ -22,6 +22,6 @@ trait StructureContractDescriptor[A <: AnyRef] {
     val remoteObjectInfo: Option[RemoteObjectInfo]
 
     val methods : Array[MethodContractDescriptor]
-    val fields  : Array[(Int, FieldContract[Any])]
+    val fields  : Array[FieldContract[Any]]
     val modifier: Option[ValueModifier[A]]
 }

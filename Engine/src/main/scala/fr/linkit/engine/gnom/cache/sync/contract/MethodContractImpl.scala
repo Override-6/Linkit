@@ -16,10 +16,10 @@ package fr.linkit.engine.gnom.cache.sync.contract
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ValueContract}
-import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract}
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
+import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.AppLogger
@@ -28,8 +28,8 @@ import org.jetbrains.annotations.Nullable
 
 class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
                             agreement: RMIRulesAgreement,
-                            parameterContracts: Array[ValueContract[Any]],
-                            returnValueContract: ValueContract[Any],
+                            parameterContracts: Array[ModifiableValueContract[Any]],
+                            returnValueContract: ModifiableValueContract[Any],
                             description: MethodDescription,
                             override val hideMessage: Option[String],
                             @Nullable override val procrastinator: Procrastinator) extends MethodContract[R] {
@@ -81,7 +81,7 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
     }
 
     override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Unit = {
-        val args = data.arguments
+        val args       = data.arguments
         val syncObject = data.syncObject
         if (hideMessage.isDefined)
             throw new HiddenMethodInvocationException(hideMessage.get)

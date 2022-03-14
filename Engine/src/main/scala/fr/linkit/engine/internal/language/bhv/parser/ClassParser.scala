@@ -38,11 +38,11 @@ object ClassParser extends BehaviorLanguageParser {
         val as                         = As ~> identifier ^^ AgreementReference
         val foreachMethodEnable        = {
             val notModifiers = not(rep1(methodModifierParser)) withFailureMessage "Global method description can't have any modifier"
-            log(properties <~ Foreach <~ Method <~ Enable)("head") ~ as.? ~ log(BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight)("core").? ^^ {
+            (properties <~ Foreach <~ Method <~ Enable) ~ as.? ~ (BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight).? ^^ {
                 case properties ~ ref ~ rvState => new EnabledMethodDescription(properties, ref, rvState.getOrElse(SynchronizeState(false, false)))
             }
         }
-        val foreachMethodDisable       = Foreach ~ Method ~> Disable ^^^ DisabledMethodDescription
+        val foreachMethodDisable       = Foreach ~ Method ~> Disable ^^^ new DisabledMethodDescription()
         val foreachMethod              = foreachMethodEnable | foreachMethodDisable
         val foreachFields              = syncOrNot <~ Star ^^ (new FieldDescription(_))
         val methodSignature            = {

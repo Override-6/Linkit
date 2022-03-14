@@ -4,6 +4,9 @@ import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.Engine
+import java.nio.file.Path
+import java.net.URI
+import fr.linkit.api.gnom.network.ExternalConnectionState
 
 scala ${
     val network = £{@network: Network}
@@ -11,8 +14,10 @@ scala ${
 
 
 describe mirroring DefaultEngine stub Engine {
-    enable method updateState(ExternalConnectionState, Network) as broadcast_if_root_owner
-    hide method test(x, y) "WAW"
+    sync *
+    !sync cache
+    enable method updateState(ExternalConnectionState) as current_and_origin
+    hide method connectionDate() "WAW"
 }
 
 x: String[] -> {
@@ -31,13 +36,11 @@ agreement broadcast_if_owner = {
 }
 describe statics Path {
     sync *
-    [procrastinator = @my_procrastinator]
-    foreach method enable as broadcast {
+    foreach method enable as broadcast_if_owner {
         sync returnvalue
     }
     enable method of(URI) as broadcast_if_owner
 
-    [procrastinator = @lwjgl]
     enable method of(str: String, array: String[]) {
         str -> {
             in : ${(x, _) => x + £{@test_value: String}}

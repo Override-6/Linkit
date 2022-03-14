@@ -24,6 +24,7 @@ class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBluep
 
     override val compilerType: CompilerType   = CommonCompilerType.Scalac
     override val rootScope   : RootValueScope = new RootValueScope {
+        bindValue("Imports" ~> (_.importedClasses.map(cl => s"import ${cl.getName}\n").mkString("")))
         bindSubScope(new LambdaMethodScope(_, _), (context, action: LambdaExpressionInfo => Unit) => context.expressions.foreach(action))
     }
 
@@ -39,6 +40,7 @@ class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBluep
 }
 
 object LambdaRepositoryClassBlueprint {
+
     def getPropertyAccessCodeString(name: String, tpe: String): String = {
         s"getProperty[$tpe](\"${name.replaceAll("\"", "\\\"")}\")"
     }

@@ -13,19 +13,18 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.ValueContract
+import fr.linkit.api.gnom.cache.sync.contract.ModifiableValueContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.internal.concurrency.Procrastinator
-import org.jetbrains.annotations.Nullable
 
 trait MethodContractDescriptor {
 
     val forced                    : Boolean
     val description               : MethodDescription
-    val parameterContracts        : Array[ValueContract[Any]]
+    val parameterContracts        : Array[ModifiableValueContract[Any]]
     val procrastinator            : Option[Procrastinator]
-    val returnValueContract       : Option[ValueContract[Any]]
+    val returnValueContract       : Option[ModifiableValueContract[Any]]
     val hideMessage               : Option[String]
     val forceLocalInnerInvocations: Boolean
     val agreement                 : RMIRulesAgreementBuilder

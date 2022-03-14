@@ -19,7 +19,10 @@ import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas.
 
 import scala.collection.mutable
 
-class FileIntegratedLambdas(fileName: String, center: CompilerCenter, imports: Seq[Class[_]]) {
+class FileIntegratedLambdas(fileName: String,
+                            center: CompilerCenter,
+                            imports: Seq[Class[_]],
+                            classBlocks: Seq[String]) {
 
     private val expressions                    = mutable.HashMap.empty[Int, LambdaExpressionInfo]
     private var repo: Option[LambdaRepository] = None
@@ -38,7 +41,10 @@ class FileIntegratedLambdas(fileName: String, center: CompilerCenter, imports: S
     }
 
     def compileLambdas(): Unit = {
-        val context = LambdaRepositoryContext(fileName, expressions.values.toArray, Thread.currentThread().getContextClassLoader)
+        val context = LambdaRepositoryContext(fileName,
+            expressions.values.toArray,
+            Thread.currentThread().getContextClassLoader,
+            imports)
         val clazz   = center.processRequest(factory.makeRequest(context))
                 .getResult.get
         repo = Some(clazz.getConstructor().newInstance())
@@ -48,6 +54,6 @@ class FileIntegratedLambdas(fileName: String, center: CompilerCenter, imports: S
 
 object FileIntegratedLambdas {
 
-    private final val Blueprint = new LambdaRepositoryClassBlueprint(getClass.getResourceAsStream("generation/scala_lambda_repository.scbp"))
+    private final val Blueprint = new LambdaRepositoryClassBlueprint(getClass.getResourceAsStream("/generation/scala_lambda_repository.scbp"))
     private final val factory   = new ClassCompilationRequestFactory[LambdaRepositoryContext, LambdaRepository](Blueprint)
 }

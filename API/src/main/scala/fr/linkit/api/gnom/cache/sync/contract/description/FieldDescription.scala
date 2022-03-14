@@ -13,10 +13,20 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.description
 
+import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription.computeID
+
 import java.lang.reflect.Field
 
 case class FieldDescription(javaField: Field, classDesc: SyncStructureDescription[_ <: AnyRef]) {
-    val fieldId: Int = {
-        javaField.getName.hashCode + javaField.getDeclaringClass.getName.hashCode
+
+    val fieldId: Int = computeID(javaField)
+}
+
+object FieldDescription {
+
+    def computeID(name: String, declaringClassName: String): Int = {
+        name.hashCode + declaringClassName.hashCode
     }
+
+    def computeID(field: Field): Int = computeID(field.getName, field.getDeclaringClass.getName)
 }

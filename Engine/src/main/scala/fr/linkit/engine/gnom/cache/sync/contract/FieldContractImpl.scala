@@ -15,23 +15,17 @@ package fr.linkit.engine.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncObjectFieldManipulation}
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 class FieldContractImpl[A](val desc: FieldDescription,
-                           val modifier: Option[ValueModifier[A]],
                            val isSynchronized: Boolean) extends FieldContract[A] {
 
     override def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manip: SyncObjectFieldManipulation): Unit = {
         val field      = desc.javaField
-        val engine     = manip.engine
         var fieldValue = ScalaUtils.getValue(obj, field)
         //As the given object is being synchronized,
         fieldValue = manip.findSynchronizedVersion(fieldValue).getOrElse(fieldValue)
-        if (modifier.isDefined) {
-            fieldValue = modifier.get.fromRemote(fieldValue.asInstanceOf[A], engine)
-        }
         if (isSynchronized && fieldValue != null) {
             fieldValue = fieldValue match {
                 case sync: SynchronizedObject[AnyRef] =>

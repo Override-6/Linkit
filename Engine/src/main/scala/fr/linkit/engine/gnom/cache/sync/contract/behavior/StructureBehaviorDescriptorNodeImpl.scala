@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.{MethodContractImpl, SimpleValueContract, StructureContractImpl}
+import fr.linkit.engine.gnom.cache.sync.contract.{MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -44,7 +44,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             val id = desc.description.methodId
             if (!map.contains(id)) {
                 val agreement = desc.agreement.result(context)
-                val rvContract = desc.returnValueContract.getOrElse(new SimpleValueContract[Any](false))
+                val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](false))
                 val contract  = new MethodContractImpl[Any](
                     desc.forceLocalInnerInvocations, agreement, desc.parameterContracts,
                     rvContract, desc.description, desc.hideMessage, desc.procrastinator.orNull)
@@ -57,7 +57,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     }
 
     private def putFields(map: mutable.HashMap[Int, FieldContract[Any]]): Unit = {
-        for ((id, field) <- descriptor.fields) {
+        for (field <- descriptor.fields) {
+            val id = field.desc.fieldId
             if (!map.contains(id))
                 map.put(id, field)
         }
@@ -87,32 +88,30 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         lazy val superClassModifier: Option[ValueModifier[A]] = computeSuperClassModifier()
         lazy val interfacesModifiers                          = computeInterfacesModifiers()
 
-        override def fromRemote(value: A, remote: Engine): A = {
-            transform(value)(_.fromRemote(_, remote))
+        override def fromRemote(input: A, remote: Engine): A = {
+            transform(input)(_.fromRemote(_, remote))
         }
 
-        override def toRemote(value: A, remote: Engine): A = {
-            transform(value)(_.toRemote(_, remote))
+        override def toRemote(input: A, remote: Engine): A = {
+            transform(input)(_.toRemote(_, remote))
         }
 
 
         def transform(start: A)(f: (ValueModifier[A], A) => A): A = {
-            var a = start
-            if (a == null) {
-                return a
+            var acc = start
+            if (acc == null) {
+                return acc
             }
-            val clazz = a.getClass
+            val clazz = acc.getClass
             if (clazz.isInterface) {
                 for (modifier <- interfacesModifiers) {
-                    handleExternalTransformation(a, modifier)(f)
+                    handleExternalTransformation(acc, modifier)(f)
                 }
             } else superClassModifier match {
-                case None           =>
-                    a = f(modifier, a)
-                case Some(superMod) =>
-                    handleExternalTransformation(a, superMod)(f)
+                case None           => acc = f(modifier, acc)
+                case Some(superMod) => handleExternalTransformation(acc, superMod)(f)
             }
-            a
+            acc
         }
 
         private def handleExternalTransformation(initial: A, externalModifier: ValueModifier[A])(f: (ValueModifier[A], A) => A): A = {

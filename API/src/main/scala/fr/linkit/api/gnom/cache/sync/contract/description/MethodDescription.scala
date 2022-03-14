@@ -29,7 +29,7 @@ case class MethodDescription(javaMethod: Method,
     def getName: String = javaMethod.getName
 
     val params  : Array[Parameter] = javaMethod.getParameters
-    val methodId: Int              = computeID(javaMethod.getName, javaMethod.getParameterTypes, javaMethod.getReturnType)
+    val methodId: Int              = computeID(javaMethod)
 }
 
 object MethodDescription {
@@ -38,6 +38,8 @@ object MethodDescription {
         val parameters: Array[Class[_]] = params
         name.hashCode + hashCode(parameters) + returnType.getName.hashCode
     }
+
+    def computeID(method: Method): Int = computeID(method.getName, method.getParameterTypes, method.getReturnType)
 
     private def hashCode(a: Array[Class[_]]): Int = {
         if (a == null) return 0

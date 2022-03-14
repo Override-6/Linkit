@@ -19,7 +19,8 @@ import java.io.File
 
 case class LambdaRepositoryContext(fileName: String,
                                    expressions: Array[LambdaExpressionInfo],
-                                   parentLoader: ClassLoader) extends CompilationContext {
+                                   parentLoader: ClassLoader,
+                                   importedClasses: Seq[Class[_]]) extends CompilationContext {
 
     override def className: String = s"LambdaRepository_${fileName.replace(File.separator, "$")}"
 

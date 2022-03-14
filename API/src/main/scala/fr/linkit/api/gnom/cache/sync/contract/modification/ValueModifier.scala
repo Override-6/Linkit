@@ -15,10 +15,23 @@ package fr.linkit.api.gnom.cache.sync.contract.modification
 
 import fr.linkit.api.gnom.network.Engine
 
+/**
+ * Used to modify an object of type [[A]].
+ * */
 trait ValueModifier[A] {
 
-    def fromRemote(value: A, remote: Engine): A = value
+    /**
+     * @param input the value to modify
+     * @param remote the concerned remote engine
+     * @return the new input version
+     * */
+    def fromRemote(input: A, remote: Engine): A = input
 
-    def toRemote(value: A, remote: Engine): A = value
+    /**
+     * @param input the value to modify
+     * @param remote the concerned remote engine
+     * @return the new input version
+     * */
+    def toRemote(input: A, remote: Engine): A = input
 
 }

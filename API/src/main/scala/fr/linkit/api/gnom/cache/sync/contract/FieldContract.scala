@@ -14,8 +14,11 @@
 package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription
 
-trait FieldContract[A] extends ValueContract[A] {
+trait FieldContract[A] extends ValueContract {
+
+    val desc: FieldDescription
 
     def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manipulation: SyncObjectFieldManipulation): Unit
 

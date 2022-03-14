@@ -14,6 +14,8 @@ import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepository
 import fr.linkit.engine.internal.language.bhv.PropertyClass
 import scala.annotation.switch
 
+import $Imports$
+
 class $ClassName$(properties: PropertyClass) extends LambdaRepository {
 
     override def call(id: Int, args: Array[Any]): Any = {
