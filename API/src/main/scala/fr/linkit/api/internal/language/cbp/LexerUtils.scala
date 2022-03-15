@@ -13,8 +13,7 @@
 
 package fr.linkit.api.internal.language.cbp
 
-import java.util.regex.Pattern
-
+import java.util.regex.{MatchResult, Pattern}
 import scala.collection.mutable.ListBuffer
 
 object LexerUtils {
@@ -31,11 +30,9 @@ object LexerUtils {
 
     def expressionsBetween(regexA: String, regexB: String, blueprint: String): Seq[(String, Int)] = {
         val matcher = Pattern.compile(s"$regexA(.*?)$regexB").matcher(blueprint)
-        val buffer  = ListBuffer.empty[(String, Int)]
-        while (matcher.find()) {
-            buffer += ((matcher.group(1).trim, matcher.start()))
+        matcher.results().toArray(new Array[MatchResult](_)).map { result =>
+            (result.group(1).trim, result.start())
         }
-        buffer.toSeq
     }
 
     def nextBlock(blueprint: String, pos: Int): String = {

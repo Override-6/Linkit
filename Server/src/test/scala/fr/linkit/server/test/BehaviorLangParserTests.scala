@@ -1,6 +1,5 @@
-package fr.linkit.engine.test
+package fr.linkit.server.test
 
-import fr.linkit.api.gnom.network.ExternalConnectionState
 import fr.linkit.engine.internal.language.bhv.Contract
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.ScalaCodeBlocksParser
@@ -9,6 +8,8 @@ import org.junit.jupiter.api.Test
 import scala.util.parsing.input.CharSequenceReader
 
 class BehaviorLangParserTests {
+
+    private val app = ServerLauncher.launch()
 
     @Test
     def parse(): Unit = {

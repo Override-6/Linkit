@@ -21,7 +21,7 @@ import scala.collection.mutable.ListBuffer
 class ArrayByteInserter(@NotNull val origin: Array[Byte]) {
 
     protected val buff            : ListBuffer[Byte]       = ListBuffer.from(origin)
-    protected val insertionHistory: ListBuffer[(Int, Int)] = mutable.ListBuffer.empty[(Int, Int)] //(Index, Shift)
+    protected val insertionHistory         = mutable.HashMap.empty[Int, Int] //(Index, Shift)
     protected val ignoredBPZones  : ListBuffer[(Int, Int)] = ListBuffer.empty[(Int, Int)]
 
     def isIgnoredPosition(pos: Int): Boolean = {
@@ -42,19 +42,20 @@ class ArrayByteInserter(@NotNull val origin: Array[Byte]) {
     }
 
     def getShiftAt(pos: Int): Int = {
-        insertionHistory.takeWhile(_._1 < pos).map(_._2).sum
+        insertionHistory.takeWhile(_._1 < pos).values.sum
     }
 
     protected def archiveShift(pos: Int, shift: Int): Unit = {
         def insert(shift: Int): Unit = {
-            insertionHistory.insert(insertionHistory.lastIndexWhere(_._1 <= pos) + 1, (pos, shift))
+            insertionHistory(pos) = shift
         }
         //insert(shift)
-        insertionHistory.find(_._1 == pos).fold(insert(shift)) { (pair) =>
-            insert(shift + pair._2)
+        insertionHistory.get(pos).fold(insert(shift)) { (posShift) =>
+            insert(shift + posShift)
         }
     }
 
     def getResult: Array[Byte] = buff.toArray
+
 
 }

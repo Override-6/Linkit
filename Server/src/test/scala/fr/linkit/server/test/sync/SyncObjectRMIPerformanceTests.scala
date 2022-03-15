@@ -1,10 +1,6 @@
 package fr.linkit.server.test.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule
-
-import java.util
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.ContractDescriptorDataBuilder
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 import fr.linkit.engine.internal.mapping.ClassMappings
 import fr.linkit.engine.test.Player
@@ -18,7 +14,6 @@ class SyncObjectRMIPerformanceTests {
         val app = ServerLauncher.launch()
         ClassMappings.putClass(classOf[Player])
         val connection = app.findConnection("TestServer1").get
-        import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.fromTag
         /*val behavior = new ContractDescriptorDataBuilder {
             describe(new ClassDescriptor[Player]() {
                 enable method "add" withRule(BasicInvocationRule.BROADCAST)

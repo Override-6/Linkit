@@ -14,7 +14,7 @@ import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepository
 import fr.linkit.engine.internal.language.bhv.PropertyClass
 import scala.annotation.switch
 
-import $Imports$
+$Imports$
 
 class $ClassName$(properties: PropertyClass) extends LambdaRepository {
 
@@ -23,7 +23,7 @@ class $ClassName$(properties: PropertyClass) extends LambdaRepository {
             !!LAMBDA_METHODS!! {
                 case $MethodID$ => _$MethodID$($ParamsOut$)
             }
-            case _ => throw new NoSuchMethodException(s"Could not find lambda method with id '$id' into this lambda repository.")
+            case _ => throw new NoSuchMethodException("Could not find lambda method with id '" + id + "' into this lambda repository.")
         }
     }
 

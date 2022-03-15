@@ -45,8 +45,9 @@ class FileIntegratedLambdas(fileName: String,
             expressions.values.toArray,
             Thread.currentThread().getContextClassLoader,
             imports)
-        val clazz   = center.processRequest(factory.makeRequest(context))
-                .getResult.get
+        val clazz   = center
+            .processRequest(factory.makeRequest(context))
+            .getResult.get
         repo = Some(clazz.getConstructor().newInstance())
     }
 

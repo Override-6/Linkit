@@ -12,7 +12,7 @@ import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescript
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, MethodContractDescriptorImpl}
 import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
-import fr.linkit.engine.internal.language.bhv.ast.{EnabledMethodDescription, _}
+import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, PropertyClass}
 import fr.linkit.engine.internal.utils.ClassMap
@@ -23,7 +23,7 @@ import scala.util.Try
 class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: CompilerCenter, propertyClass: PropertyClass) {
 
     private val imports          : Map[String, Class[_]]                       = computeImports()
-    private val lambdas          : FileIntegratedLambdas                       = new FileIntegratedLambdas(fileName, center, imports.values.toSeq)
+    private val lambdas          : FileIntegratedLambdas                       = new FileIntegratedLambdas(fileName, center, imports.values.toSeq, ast.codeBlocks.map(_.sourceCode))
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
     private val valueModifiers   : Map[String, (Class[_], ValueModifier[Any])] = computeValueModifiers()
     private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
@@ -62,8 +62,8 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-                .map(new FieldContractImpl[Any](_, desc.state.isSync))
-                .toArray
+            .map(new FieldContractImpl[Any](_, desc.state.isSync))
+            .toArray
     }
 
     private def foreachMethods(classDesc: SyncStructureDescription[_])
@@ -133,9 +133,9 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
                         }
                     }
                     val agreement          = desc.agreement
-                            .map(ag => getAgreement(ag.name))
-                            .orElse(referent.map(_.agreement))
-                            .getOrElse(EmptyBuilder)
+                        .map(ag => getAgreement(ag.name))
+                        .orElse(referent.map(_.agreement))
+                        .getOrElse(EmptyBuilder)
                     val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                     val parameterContracts = {
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
@@ -226,18 +226,18 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
         val pureName   = name.take(arrayIndex)
         val arrayDepth = (name.length - pureName.length) / 2
         val clazz      = imports
-                .get(pureName)
-                .orElse(Try(Class.forName(pureName)).toOption)
-                .orElse(Try(Class.forName("java.lang." + pureName)).toOption)
-                .getOrElse {
-                    throw new BHVLanguageException(s"Unknown class '$pureName' ${if (pureName.contains(".")) ", is it imported ?" else ""}")
-                }
+            .get(pureName)
+            .orElse(Try(Class.forName(pureName)).toOption)
+            .orElse(Try(Class.forName("java.lang." + pureName)).toOption)
+            .getOrElse {
+                throw new BHVLanguageException(s"Unknown class '$pureName' ${if (pureName.contains(".")) ", is it imported ?" else ""}")
+            }
         (0 until arrayDepth).foldLeft[Class[_]](clazz)((cl, _) => cl.arrayType())
     }
 
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {
         agreementBuilders
-                .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
+            .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
     }
 
     private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {
