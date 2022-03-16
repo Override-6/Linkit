@@ -18,10 +18,12 @@ $Imports$
 
 class $ClassName$(properties: PropertyClass) extends LambdaRepository {
 
+    $Blocks$
+
     override def call(id: Int, args: Array[Any]): Any = {
         (id: @switch) match {
             !!LAMBDA_METHODS!! {
-                case $MethodID$ => _$MethodID$($ParamsOut$)
+                case $MethodID$ => _$MethodName$($ParamsOut$)
             }
             case _ => throw new NoSuchMethodException("Could not find lambda method with id '" + id + "' into this lambda repository.")
         }
@@ -30,7 +32,7 @@ class $ClassName$(properties: PropertyClass) extends LambdaRepository {
     private def getProperty[P](name: String): P = properties.get(name).asInstanceOf[P]
 
     !!LAMBDA_METHODS!! {
-        private final val _$MethodID$: Array[Any] => Any = {
+        private final val _$MethodName$: ($ParamTypes$) => Any = {
             $LambdaExpression$
         }
     }

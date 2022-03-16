@@ -15,8 +15,10 @@ package fr.linkit.engine.internal.language.bhv.compilation
 
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
+import fr.linkit.engine.internal.language.bhv.PropertyClass
 import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas.factory
 
+import java.io.File
 import scala.collection.mutable
 
 class FileIntegratedLambdas(fileName: String,
@@ -40,15 +42,17 @@ class FileIntegratedLambdas(fileName: String,
         }
     }
 
-    def compileLambdas(): Unit = {
-        val context = LambdaRepositoryContext(fileName,
+    def compileLambdas(propertyClass: PropertyClass): Unit = {
+        val name = fileName.reverse.takeWhile(_ != '/').reverse.takeWhile(_ != '.')
+        val context = LambdaRepositoryContext(name,
             expressions.values.toArray,
+            classBlocks.toArray,
             Thread.currentThread().getContextClassLoader,
             imports)
         val clazz   = center
             .processRequest(factory.makeRequest(context))
             .getResult.get
-        repo = Some(clazz.getConstructor().newInstance())
+        repo = Some(clazz.getConstructor(classOf[PropertyClass]).newInstance(propertyClass))
     }
 
 }

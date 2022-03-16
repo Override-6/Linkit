@@ -19,6 +19,7 @@ import java.io.File
 
 case class LambdaRepositoryContext(fileName: String,
                                    expressions: Array[LambdaExpressionInfo],
+                                   blocks: Array[String],
                                    parentLoader: ClassLoader,
                                    importedClasses: Seq[Class[_]]) extends CompilationContext {
 

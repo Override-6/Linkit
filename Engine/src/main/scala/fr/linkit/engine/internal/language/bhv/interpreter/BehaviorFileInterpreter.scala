@@ -22,6 +22,8 @@ import scala.util.Try
 
 class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: CompilerCenter, propertyClass: PropertyClass) {
 
+    if (propertyClass == null)
+        throw new NullPointerException("property class cannot be null. ")
     private val imports          : Map[String, Class[_]]                       = computeImports()
     private val lambdas          : FileIntegratedLambdas                       = new FileIntegratedLambdas(fileName, center, imports.values.toSeq, ast.codeBlocks.map(_.sourceCode))
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
@@ -30,7 +32,7 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
     private val contracts        : Seq[StructureContractDescriptor[_]]         = computeContracts()
 
     lazy val contractDescriptorData = {
-        lambdas.compileLambdas()
+        lambdas.compileLambdas(propertyClass)
         new ContractDescriptorDataImpl(contracts.toArray)
     }
 

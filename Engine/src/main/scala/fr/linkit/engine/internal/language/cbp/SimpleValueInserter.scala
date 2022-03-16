@@ -33,7 +33,8 @@ class SimpleValueInserter(val posInScopeBp: Int, @NotNull val source: String) ex
         val shift             = getShiftAt(pos)
         buff.remove(pos + shift, valueClauseLength)
         buff.insertAll(pos + shift, value.getBytes())
-        archiveShift(pos, value.length - valueClauseLength)
+        val posShift = value.length - valueClauseLength
+        archiveShift(pos, posShift)
     }
 
     override def insertOther(inserter: ValueInserter, pos: Int): Unit = {

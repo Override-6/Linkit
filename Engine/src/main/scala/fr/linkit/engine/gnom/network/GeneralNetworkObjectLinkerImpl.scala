@@ -32,16 +32,14 @@ import scala.collection.mutable.ListBuffer
 
 class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                                      network: Network,
-                                     override val cacheNOL: InitialisableNetworkObjectLinker[SharedCacheManagerReference]
-                                             with TrafficInterestedNPH,
-                                     override val trafficNOL: NetworkObjectLinker[TrafficReference]
-                                             with TrafficInterestedNPH,
+                                     override val cacheNOL: InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH,
+                                     override val trafficNOL: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH,
                                      override val remainingNOL: Option[RemainingNetworkObjectsLinker with TrafficInterestedNPH])
-        extends GeneralNetworkObjectLinker {
+    extends GeneralNetworkObjectLinker {
 
-    private val connection       = network.connection
-    private val application      = connection.getApp
-    private val otherLinkers     = ListBuffer.empty[NetworkObjectLinker[NetworkObjectReference]]
+    private val connection   = network.connection
+    private val application  = connection.getApp
+    private val otherLinkers = ListBuffer.empty[NetworkObjectLinker[NetworkObjectReference]]
 
     startObjectManagement()
 
@@ -66,53 +64,44 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
         case ref: SharedCacheManagerReference => cacheNOL.isPresentOnEngine(engineID, ref)
         case ref: TrafficReference            => trafficNOL.isPresentOnEngine(engineID, ref)
         case _: SystemObjectReference         => true //System references, are guaranteed to be present on every remote engines
-        case _                                => {
+        case _                                =>
             otherLinkers.find(_.isAssignable(reference)) match {
                 case Some(linker) => linker.isPresentOnEngine(engineID, reference)
                 case None         => remainingNOL.exists(_.isPresentOnEngine(engineID, reference))
             }
-        }
     }
 
     override def findPresence(reference: NetworkObjectReference): Option[NetworkObjectPresence] = reference match {
         case ref: SharedCacheManagerReference => cacheNOL.findPresence(ref)
         case ref: TrafficReference            => trafficNOL.findPresence(ref)
         case _: SystemObjectReference         =>
-            /* As other NetworkReferences are guaranteed to be
-            * to be present on every engines as long as they come from the framework's system,
+            /* As other NetworkReferences are guaranteed
+            * to be present on every engines,
             * The result of their presence on any engine will be always present if they are legit objects.
             */
             Some(SystemNetworkObjectPresence)
-        case _                                => {
+        case _                                =>
             otherLinkers.find(_.isAssignable(reference)) match {
                 case Some(linker) => linker.findPresence(reference)
                 case None         => remainingNOL.fold(throwUnknownRef(reference))(_.findPresence(reference))
             }
-        }
     }
-    /*
-    Use once more system object are added.
-    private def findSystemObject(reference: NetworkReference): Option[NetworkObject[_ <: NetworkReference]] = reference match {
-        case _: NetworkConnectionReference => Some(network.connection)
-        case _                             => Some(network)
-    }*/
 
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = reference match {
-        case ref: SharedCacheManagerReference                 => cacheNOL.findObject(ref)
-        case ref: TrafficReference                            => trafficNOL.findObject(ref)
-        case _: NetworkConnectionReference                    => Some(connection)
-        case ref: NetworkReference if ref == NetworkReference => Some(network)
-        case _: ApplicationReference                          => Some(application)
-        case _                                                => {
+        case ref: SharedCacheManagerReference => cacheNOL.findObject(ref)
+        case ref: TrafficReference            => trafficNOL.findObject(ref)
+        case _: NetworkConnectionReference    => Some(connection)
+        case NetworkReference                 => Some(network)
+        case _: ApplicationReference          => Some(application)
+        case _                                =>
             otherLinkers.find(_.isAssignable(reference)) match {
                 case Some(linker) => linker.findObject(reference)
                 case None         => remainingNOL.fold(throwUnknownRef(reference))(_.findObject(reference))
             }
-        }
     }
 
     private def handleRequest(request: RequestPacketBundle): Unit = {
-        val reference = request.attributes.getAttribute[NetworkObjectReference](ReferenceAttributeKey).getOrElse {
+        val reference    = request.attributes.getAttribute[NetworkObjectReference](ReferenceAttributeKey).getOrElse {
             throw UnexpectedPacketException(s"Could not find attribute '$ReferenceAttributeKey' in object management request bundle $request")
         }
         val linkerBundle = new DefaultRequestBundle(omc, request.packet, request.coords, request.responseSubmitter) with LinkerRequestBundle {
@@ -122,12 +111,11 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
             case _: SharedCacheManagerReference => cacheNOL.injectRequest(linkerBundle)
             case _: TrafficReference            => trafficNOL.injectRequest(linkerBundle)
             case _: SystemObjectReference       => throw UnexpectedPacketException("Could not handle Object Manager Request for System objects")
-            case _                              => {
+            case _                              =>
                 otherLinkers.find(_.isAssignable(reference)) match {
                     case Some(linker: TrafficInterestedNPH) => linker.findPresence(reference)
                     case None                               => remainingNOL.fold()(_.injectRequest(linkerBundle))
                 }
-            }
         }
     }
 

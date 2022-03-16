@@ -31,7 +31,7 @@ object ScalaCodeBlocksParser extends Parsers {
         phrase(rep(fragmentParser | valueParser)).apply(new TokenReader(tokens)) match {
             case NoSuccess(msg, _) => throw new BHVLanguageException(s"Failure with scala block external access value: $msg")
             case Success(x, _)     =>
-                ScalaCodeBlock(x.mkString(""))
+                ScalaCodeBlock(x.mkString("").dropRight(1))
         }
     }
 

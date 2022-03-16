@@ -7,9 +7,11 @@ import fr.linkit.api.gnom.network.Engine
 import java.nio.file.Path
 import java.net.URI
 import fr.linkit.api.gnom.network.ExternalConnectionState
+import fr.linkit.engine.gnom.network.AbstractNetwork
+import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 
 scala ${
-    val network = £{@network: Network}
+    val network = £{@network: AbstractNetwork}
 }
 
 
@@ -52,11 +54,11 @@ describe statics Path {
 
 }
 
-modifier SharedCacheManager {
+modifier SharedCacheOriginManager {
     out: ${(cache, _) => network.transformToDistant(cache)}
 }
 modifier DefaultEngine {
     out: ${(e, _) => {
-       new DefaultEngine(e.identifier, network.findCacheManager(identifier).get)
+       new DefaultEngine(e.identifier, network.findCacheManager(e.identifier).get)
    }}
 }

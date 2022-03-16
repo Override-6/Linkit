@@ -1,16 +1,3 @@
-/*
- * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
- *
- * This code is free software; you can only use it for personal uses, studies or documentation.
- * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
- * For any professional use, please contact me at overridelinkit@gmail.com.
- *
- * Please contact overridelinkit@gmail.com if you need additional information or have any
- * questions.
- */
-
 package fr.linkit.engine.internal.utils
 
 import org.jetbrains.annotations.NotNull
@@ -21,7 +8,7 @@ import scala.collection.mutable.ListBuffer
 class ArrayByteInserter(@NotNull val origin: Array[Byte]) {
 
     protected val buff            : ListBuffer[Byte]       = ListBuffer.from(origin)
-    protected val insertionHistory         = mutable.HashMap.empty[Int, Int] //(Index, Shift)
+    protected val insertionHistory: ListBuffer[(Int, Int)] = mutable.ListBuffer.empty[(Int, Int)] //(Index, Shift)
     protected val ignoredBPZones  : ListBuffer[(Int, Int)] = ListBuffer.empty[(Int, Int)]
 
     def isIgnoredPosition(pos: Int): Boolean = {
@@ -42,20 +29,22 @@ class ArrayByteInserter(@NotNull val origin: Array[Byte]) {
     }
 
     def getShiftAt(pos: Int): Int = {
-        insertionHistory.takeWhile(_._1 < pos).values.sum
+        insertionHistory.takeWhile(_._1 < pos).map(_._2).sum
     }
 
     protected def archiveShift(pos: Int, shift: Int): Unit = {
         def insert(shift: Int): Unit = {
-            insertionHistory(pos) = shift
+            val idx = insertionHistory.lastIndexWhere(_._1 <= pos)
+            if (insertionHistory.exists(_._1 == pos))
+                insertionHistory.update(idx, (pos, shift))
+            else insertionHistory.insert(idx + 1, (pos, shift))
         }
         //insert(shift)
-        insertionHistory.get(pos).fold(insert(shift)) { (posShift) =>
-            insert(shift + posShift)
+        insertionHistory.find(_._1 == pos).fold(insert(shift)) { (pair) =>
+            insert(shift + pair._2)
         }
     }
 
     def getResult: Array[Byte] = buff.toArray
-
 
 }

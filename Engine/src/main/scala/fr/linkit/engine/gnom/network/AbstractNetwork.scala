@@ -119,7 +119,8 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         this
     }
 
-    protected[network] def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {
+    //TODO Private this or find an alternative ! - not private because used in bhv contract file
+    def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {
         val family = cache.family
         val store  = networkStore.createStore(family.hashCode)
         new SharedCacheDistantManager(family, cache.ownerID, this, store)

@@ -33,7 +33,7 @@ object ScalaBlueprintUtilities {
         toScalaString(desc.javaMethod.getReturnType)
     }
 
-    private def toScalaString(clazz: Class[_]): String = {
+    def toScalaString(clazz: Class[_]): String = {
         if (clazz.isArray) {
             return s"Array[${toScalaString(clazz.componentType())}]"
         }

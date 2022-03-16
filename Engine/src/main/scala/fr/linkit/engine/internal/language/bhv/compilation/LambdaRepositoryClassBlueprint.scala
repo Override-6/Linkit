@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.language.bhv.compilation
 
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
-import fr.linkit.engine.gnom.cache.sync.generation.sync.ScalaBlueprintUtilities.getParameters
+import fr.linkit.engine.gnom.cache.sync.generation.sync.ScalaBlueprintUtilities.{getParameters, toScalaString}
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
 import fr.linkit.engine.internal.language.cbp.{AbstractClassBlueprint, AbstractValueScope}
 
@@ -25,16 +25,19 @@ class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBluep
     override val compilerType: CompilerType   = CommonCompilerType.Scalac
     override val rootScope   : RootValueScope = new RootValueScope {
         bindValue("Imports" ~> (_.importedClasses.map(cl => s"import ${cl.getName}\n").mkString("")))
+        bindValue("Blocks" ~> (_.blocks.mkString("\n")))
         bindSubScope(new LambdaMethodScope(_, _), (context, action: LambdaExpressionInfo => Unit) => context.expressions.foreach(action))
     }
 
     private class LambdaMethodScope(bp: String, pos: Int)
-            extends AbstractValueScope[LambdaExpressionInfo]("LAMBDA_METHODS", pos, bp) {
+        extends AbstractValueScope[LambdaExpressionInfo]("LAMBDA_METHODS", pos, bp) {
 
+        bindValue("MethodName" ~> (c => if (c.id < 0) s"_${c.id.abs}" else c.id.toString))
         bindValue("MethodID" ~> (_.id.toString))
         bindValue("ParamsIn" ~> (e => getParameters(e.paramTypes, true)))
         bindValue("LambdaExpression" ~> (_.expression))
-        bindValue("ParamsOut" ~> (_.paramTypes.zipWithIndex.map { case (_, i) => s"args($i)" }.mkString(",")))
+        bindValue("ParamsOut" ~> (_.paramTypes.zipWithIndex.map { case (c, i) => s"args($i).asInstanceOf[${toScalaString(c)}]" }.mkString(",")))
+        bindValue("ParamTypes" ~> (_.paramTypes.map(toScalaString).mkString(",")))
     }
 
 }
