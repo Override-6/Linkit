@@ -1,39 +1,17 @@
 package fr.linkit.server.test
 
-import fr.linkit.engine.internal.language.bhv.Contract
-import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
-import fr.linkit.engine.internal.language.bhv.parser.ScalaCodeBlocksParser
+import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
+import fr.linkit.server.test.ServerLauncher.Port
 import org.junit.jupiter.api.Test
-
-import scala.util.parsing.input.CharSequenceReader
 
 class BehaviorLangParserTests {
 
-    private val app = ServerLauncher.launch()
+    private val app     = ServerLauncher.launch()
+    private val network = app.findConnection(Port).get.network
 
     @Test
     def parse(): Unit = {
-        Contract("contracts/NetworkContract.bhv")(null)
-    }
-
-    @Test
-    def lex(): Unit = {
-        val file   = "contracts/NetworkContract.bhv"
-        val source = new String(getClass.getResourceAsStream(file).readAllBytes())
-        val in     = new CharSequenceReader(source)
-        val tokens = BehaviorLanguageLexer.tokenize(in, file)
-        print(tokens)
-        tokens
-    }
-
-    @Test
-    def lexScalaBlock(): Unit = {
-        val file   = "/contracts/NetworkContract.bhv"
-        val source = new String(getClass.getResourceAsStream(file).readAllBytes())
-        val in     = new CharSequenceReader(source)
-        val tokens = ScalaCodeBlocksParser.parse(in)
-        print(tokens)
-        tokens
+        Contract("contracts/NetworkContract.bhv")(ObjectsProperty.default(network))
     }
 
 }

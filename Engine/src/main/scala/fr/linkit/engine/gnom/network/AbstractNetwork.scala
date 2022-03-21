@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManage
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
-import fr.linkit.engine.internal.language.bhv.Contract
+import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 
 import java.sql.Timestamp
 
@@ -127,7 +127,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
 
     private def getEngineStoreContracts: ContractDescriptorData = {
-        Contract("contracts/NetworkContract.bhv")(null)
+        Contract("contracts/NetworkContract.bhv")(ObjectsProperty.default(this))
     }
 }
 

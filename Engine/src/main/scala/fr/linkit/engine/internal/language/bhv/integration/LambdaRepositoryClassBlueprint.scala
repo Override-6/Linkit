@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.compilation
+package fr.linkit.engine.internal.language.bhv.integration
 
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.engine.gnom.cache.sync.generation.sync.ScalaBlueprintUtilities.{getParameters, toScalaString}
@@ -32,8 +32,7 @@ class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBluep
     private class LambdaMethodScope(bp: String, pos: Int)
         extends AbstractValueScope[LambdaExpressionInfo]("LAMBDA_METHODS", pos, bp) {
 
-        bindValue("MethodName" ~> (c => if (c.id < 0) s"_${c.id.abs}" else c.id.toString))
-        bindValue("MethodID" ~> (_.id.toString))
+        bindValue("MethodName" ~> (_.name))
         bindValue("ParamsIn" ~> (e => getParameters(e.paramTypes, true)))
         bindValue("LambdaExpression" ~> (_.expression))
         bindValue("ParamsOut" ~> (_.paramTypes.zipWithIndex.map { case (c, i) => s"args($i).asInstanceOf[${toScalaString(c)}]" }.mkString(",")))

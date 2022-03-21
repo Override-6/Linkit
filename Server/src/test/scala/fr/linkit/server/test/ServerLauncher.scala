@@ -25,8 +25,9 @@ import java.util.Scanner
 object ServerLauncher {
 
     private val DefaultServerID = "TestServer1"
-    val HomeProperty   : String = "LinkitHome"
-    val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
+    final val HomeProperty   : String = "LinkitHome"
+    final val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
+    final val Port = 48484
 
     def main(args: Array[String]): Unit = launch(args: _*)
 
@@ -43,7 +44,7 @@ object ServerLauncher {
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = DefaultServerID
-                    override val port      : Int    = 48484
+                    override val port      : Int    = Port
                     nWorkerThreadFunction = c => c + 1 //one thread per connections.
 
                     configName = "config1"

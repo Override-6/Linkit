@@ -71,4 +71,4 @@ trait CompModifier {
 
 case class ValueModifierReference(target: String, ref: String) extends CompModifier
 
-case class ModifierExpression(target: String, in: Option[LambdaExpression], out: Option[LambdaExpression]) extends CompModifier
+case class ModifierExpression(target: String, in: Option[LambdaExpression], out: Option[LambdaExpression]) extends CompModifier with LambdaExpressionHolder

@@ -20,13 +20,13 @@ class ObjectsProperty(parent: PropertyClass, map: Map[String, AnyRef]) extends P
 }
 
 object ObjectsProperty {
-    def default(network: Network): ObjectsProperty = {
+    implicit def default(network: Network): ObjectsProperty = {
         val map: Map[String, AnyRef] = Map(
             "network" -> network,
             "connection" -> network.connection,
             "app" -> network.connection.getApp,
             "application" -> network.connection.getApp,
-            "server" -> network.serverEngine,
+            //"server" -> network.serverEngine,
             "gnol" -> network.gnol,
             "traffic" -> network.connection.traffic,
         )

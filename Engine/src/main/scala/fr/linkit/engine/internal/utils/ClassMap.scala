@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.utils
 
-import scala.collection.{immutable, mutable}
+import scala.collection.mutable
 
 class ClassMap[V] extends mutable.HashMap[Class[_], V]() {
 

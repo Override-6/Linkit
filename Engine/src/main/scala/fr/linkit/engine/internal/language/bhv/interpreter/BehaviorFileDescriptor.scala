@@ -1,51 +1,41 @@
 package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncStructureDescription, FieldDescription => SFieldDescription, MethodDescription => SMethodDescription}
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, MethodContractDescriptor, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, RemoteObjectInfo}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
-import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticDescription}
+import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, MethodContractDescriptorImpl}
 import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas
+import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, PropertyClass}
 import fr.linkit.engine.internal.utils.ClassMap
 
-import java.lang.reflect.Modifier
-import scala.util.Try
+class BehaviorFileDescriptor(file: BehaviorFile, propertyClass: PropertyClass, caller: LambdaCaller) {
 
-class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: CompilerCenter, propertyClass: PropertyClass) {
-
-    if (propertyClass == null)
-        throw new NullPointerException("property class cannot be null. ")
-    private val imports          : Map[String, Class[_]]                       = computeImports()
-    private val lambdas          : FileIntegratedLambdas                       = new FileIntegratedLambdas(fileName, center, imports.values.toSeq, ast.codeBlocks.map(_.sourceCode))
+    private val ast                                                            = file.ast
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
     private val valueModifiers   : Map[String, (Class[_], ValueModifier[Any])] = computeValueModifiers()
     private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
     private val contracts        : Seq[StructureContractDescriptor[_]]         = computeContracts()
 
-    lazy val contractDescriptorData = {
-        lambdas.compileLambdas(propertyClass)
+    lazy val data = {
         new ContractDescriptorDataImpl(contracts.toArray)
     }
 
-    def getData: ContractDescriptorData = contractDescriptorData
-
     private def computeContracts(): Seq[StructureContractDescriptor[_]] = {
-        ast.classDescriptions.map {
+        val result = ast.classDescriptions.map {
             case ClassDescription(ClassDescriptionHead(kind, className), foreachMethod, foreachField, fieldDescs, methodDescs) => {
-                val clazz                      = findClass(className)
+                val clazz                      = file.findClass(className)
                 val (mirroringInfo, classDesc) = kind match {
                     case RegularDescription         => (None, SyncObjectDescription(clazz))
-                    case StaticsDescription         => (None, SyncStaticDescription(clazz))
-                    case MirroringDescription(stub) => (Some(RemoteObjectInfo(findClass(stub))), SyncObjectDescription(clazz))
+                    case StaticsDescription         => (None, SyncStaticsDescription(clazz))
+                    case MirroringDescription(stub) => (Some(RemoteObjectInfo(file.findClass(stub))), SyncObjectDescription(clazz))
                 }
                 new StructureContractDescriptor[AnyRef] {
                     override val targetClass      = clazz.asInstanceOf[Class[AnyRef]]
@@ -56,6 +46,13 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
                 }
             }
         }
+        new StructureContractDescriptor[AnyRef] {
+            override val targetClass      = classOf[Object]
+            override val remoteObjectInfo = None
+            override val methods          = Array()
+            override val fields           = Array()
+            override val modifier         = None
+        } :: result
     }
 
     private def foreachFields(classDesc: SyncStructureDescription[_])
@@ -64,8 +61,8 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-            .map(new FieldContractImpl[Any](_, desc.state.isSync))
-            .toArray
+                .map(new FieldContractImpl[Any](_, desc.state.isSync))
+                .toArray
     }
 
     private def foreachMethods(classDesc: SyncStructureDescription[_])
@@ -95,7 +92,7 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
 
         val result = descriptions.map { method =>
             val signature  = method.signature
-            val methodDesc = getMethodDescFromSignature(kind, signature, classDesc)
+            val methodDesc = file.getMethodDescFromSignature(kind, signature, classDesc)
 
             val referentPos = foreachResult.indexWhere(_.description == methodDesc)
             val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
@@ -109,10 +106,10 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
                     throw new BHVLanguageException("disabled methods can't define synchronized arguments")
             }
 
-            def extractModifier(mod: CompModifier, returnType: String): ValueModifier[Any] = {
+            def extractModifier(mod: CompModifier, valType: String): ValueModifier[Any] = {
                 mod match {
-                    case ValueModifierReference(_, ref) => getValueModifier(ref, returnType)
-                    case ModifierExpression(_, in, out) => makeModifier(returnType, in, out)
+                    case ValueModifierReference(_, ref)      => getValueModifier(ref, valType)
+                    case ModifierExpression(target, in, out) => makeModifier(s"method_${target}_${signature.methodName}_${signature.hashCode()}", valType, in, out)
                 }
             }
 
@@ -135,9 +132,9 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
                         }
                     }
                     val agreement          = desc.agreement
-                        .map(ag => getAgreement(ag.name))
-                        .orElse(referent.map(_.agreement))
-                        .getOrElse(EmptyBuilder)
+                            .map(ag => getAgreement(ag.name))
+                            .orElse(referent.map(_.agreement))
+                            .getOrElse(EmptyBuilder)
                     val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                     val parameterContracts = {
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
@@ -159,7 +156,7 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
                                          foreachResult: Array[FieldContract[Any]])
                                         (descriptions: Seq[AttributedFieldDescription]): Array[FieldContract[Any]] = {
         val result = descriptions.map { field =>
-            val desc        = getFieldDescFromName(kind, field.fieldName, classDesc)
+            val desc        = file.getFieldDescFromName(kind, field.fieldName, classDesc)
             val referentPos = foreachResult.indexWhere(_.desc.javaField.getName == field.fieldName)
             val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
             if (referentPos != -1)
@@ -172,47 +169,9 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
         foreachResult.filter(_ != null) ++ result
     }
 
-    private def getMethodDescFromSignature(kind: DescriptionKind, signature: MethodSignature, classDesc: SyncStructureDescription[_]): SMethodDescription = {
-        val name   = signature.methodName
-        val params = signature.params.map(param => findClass(param.tpe)).toArray
-        val method = {
-            try classDesc.clazz.getDeclaredMethod(name, params: _*)
-            catch {
-                case _: NoSuchMethodException => throw new BHVLanguageException(s"Unknown method $signature in ${classDesc.clazz}")
-            }
-        }
-        val static = Modifier.isStatic(method.getModifiers)
-        //checking if method is valid depending on the description context
-        kind match {
-            case StaticsDescription if !static                            => throw new BHVLanguageException(s"Method '$signature' is not static.")
-            case _@MirroringDescription(_) | RegularDescription if static => throw new BHVLanguageException(s"Method '$signature' is static. ")
-            case _                                                        =>
-        }
-
-        val methodID = SMethodDescription.computeID(method)
-        classDesc.findMethodDescription(methodID).get
-    }
-
-    private def getFieldDescFromName(kind: DescriptionKind, name: String, classDesc: SyncStructureDescription[_]): SFieldDescription = {
-        val clazz  = classDesc.clazz
-        val field  = {
-            try clazz.getDeclaredField(name)
-            catch {
-                case _: NoSuchFieldException => throw new BHVLanguageException(s"Unknown field $name in ${clazz}")
-            }
-        }
-        val static = Modifier.isStatic(field.getModifiers)
-        kind match {
-            case StaticsDescription if !static                            => throw new BHVLanguageException(s"Field $name is not static.")
-            case _@MirroringDescription(_) | RegularDescription if static => throw new BHVLanguageException(s"Field $name is static. ")
-            case _                                                        =>
-        }
-        classDesc.findFieldDescription(SFieldDescription.computeID(field)).get
-    }
-
     private def getValueModifier(name: String, expectedType: String): ValueModifier[Any] = {
         val (modTypeTarget, mod) = valueModifiers.getOrElse(name, throw new BHVLanguageException(s"Unknown modifier '$name'"))
-        val expectedTypeClass    = findClass(expectedType)
+        val expectedTypeClass    = file.findClass(expectedType)
         if (!modTypeTarget.isAssignableFrom(expectedTypeClass))
             throw new BHVLanguageException(s"trying to apply a modifier '${modTypeTarget.getName}' on value of type '${expectedTypeClass.getName}'")
         mod
@@ -222,30 +181,15 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
         properties.find(_.name == "procrastinator").map(x => propertyClass.getProcrastinator(x.value))
     }
 
-    private def findClass(name: String): Class[_] = {
-        var arrayIndex = name.indexOf('[')
-        if (arrayIndex == -1) arrayIndex = name.length
-        val pureName   = name.take(arrayIndex)
-        val arrayDepth = (name.length - pureName.length) / 2
-        val clazz      = imports
-            .get(pureName)
-            .orElse(Try(Class.forName(pureName)).toOption)
-            .orElse(Try(Class.forName("java.lang." + pureName)).toOption)
-            .getOrElse {
-                throw new BHVLanguageException(s"Unknown class '$pureName' ${if (pureName.contains(".")) ", is it imported ?" else ""}")
-            }
-        (0 until arrayDepth).foldLeft[Class[_]](clazz)((cl, _) => cl.arrayType())
-    }
-
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {
         agreementBuilders
-            .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
+                .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
     }
 
     private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {
         val map = ast.typesModifiers.map {
             case TypeModifier(className, in, out) => {
-                (findClass(className), makeModifier[AnyRef](className, in, out))
+                (file.findClass(className), makeModifier[AnyRef]("type", className, in, out))
             }
         }.toMap
         new ClassMap(map)
@@ -254,36 +198,29 @@ class BehaviorFileInterpreter(ast: BehaviorFile, fileName: String, center: Compi
     private def computeValueModifiers(): Map[String, (Class[_], ValueModifier[Any])] = {
         ast.valueModifiers.map {
             case ValueModifier(name, tpeName, in, out) =>
-                (name, (findClass(tpeName), makeModifier[Any](tpeName, in, out)))
+                (name, (file.findClass(tpeName), makeModifier[Any](s"value_$name", tpeName, in, out)))
         }.toMap
     }
 
-    private def makeModifier[A](valTpeName: String, in: Option[LambdaExpression], out: Option[LambdaExpression]): ValueModifier[A] = {
-        val clazz     = findClass(valTpeName)
-        val inLambda  = in.map(in => lambdas.submitLambda(in.block.sourceCode, clazz, classOf[Engine])).orNull
-        val outLambda = out.map(out => lambdas.submitLambda(out.block.sourceCode, clazz, classOf[Engine])).orNull
+    private def makeModifier[A](tpe: String, valTpeName: String, in: Option[LambdaExpression], out: Option[LambdaExpression]): ValueModifier[A] = {
+        val formattedTpeName = file.formatClassName(file.findClass(valTpeName))
+        val inLambdaName    = s"${tpe}_in_${formattedTpeName}"
+        val outLambdaName   = s"${tpe}_out_${formattedTpeName}"
         new ValueModifier[A] {
             override def fromRemote(input: A, remote: Engine): A = {
-                if (inLambda != null) {
-                    val result = inLambda(Array(input, remote))
-                    if (result == ()) input else result
+                if (in.isDefined) {
+                    val result = caller.call(inLambdaName, Array(input, remote))
+                    if (result == ()) input else result.asInstanceOf[A]
                 } else input
             }
 
             override def toRemote(input: A, remote: Engine): A = {
-                if (outLambda != null) {
-                    val result = outLambda(Array(input, remote))
-                    if (result == ()) input else result
+                if (out.isDefined) {
+                    val result = caller.call(outLambdaName, Array(input, remote))
+                    if (result == ()) input else result.asInstanceOf[A]
                 } else input
             }
         }
-    }
-
-    private def computeImports(): Map[String, Class[_]] = {
-        ast.classImports.map { x =>
-            val clazz = Class.forName(x.className)
-            (clazz.getSimpleName, clazz)
-        }.toMap
     }
 
     private def computeAgreements(): Map[String, RMIRulesAgreementBuilder] = {

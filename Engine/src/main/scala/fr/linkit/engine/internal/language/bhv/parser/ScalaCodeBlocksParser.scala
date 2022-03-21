@@ -2,7 +2,7 @@ package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast.ScalaCodeBlock
-import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepositoryClassBlueprint
+import fr.linkit.engine.internal.language.bhv.integration.LambdaRepositoryClassBlueprint
 import fr.linkit.engine.internal.language.bhv.lexer.code.ScalaCodeBlockSymbol._
 import fr.linkit.engine.internal.language.bhv.lexer.code.ScalaCodeBlockValues.{Identifier, _}
 import fr.linkit.engine.internal.language.bhv.lexer.code.{ScalaCodeBlockToken, ScalaCodeBlocksLexer}

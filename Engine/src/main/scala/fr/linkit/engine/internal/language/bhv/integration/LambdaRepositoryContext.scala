@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.compilation
+package fr.linkit.engine.internal.language.bhv.integration
 
 import fr.linkit.api.internal.generation.compilation.CompilationContext
 

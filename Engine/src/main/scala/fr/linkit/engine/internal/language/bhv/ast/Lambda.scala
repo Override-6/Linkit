@@ -7,4 +7,8 @@ case object In extends LambdaKind
 case object Out extends LambdaKind
 
 case class LambdaExpression(block: ScalaCodeBlock, kind: LambdaKind)
-    
+
+trait LambdaExpressionHolder {
+    val in: Option[LambdaExpression]
+    val out: Option[LambdaExpression]
+}

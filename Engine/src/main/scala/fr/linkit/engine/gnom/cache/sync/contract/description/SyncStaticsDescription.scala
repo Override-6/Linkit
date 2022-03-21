@@ -7,7 +7,7 @@ import java.lang.reflect.{Executable, Modifier}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-class SyncStaticDescription[A <: AnyRef]@Persist()(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
+class SyncStaticsDescription[A <: AnyRef]@Persist()(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
 
     override protected def applyNotFilter(e: Executable): Boolean = {
         val mods = e.getModifiers
@@ -17,17 +17,17 @@ class SyncStaticDescription[A <: AnyRef]@Persist()(clazz: Class[A]) extends Abst
     override def deconstruct(): Array[Any] = Array(clazz)
 }
 
-object SyncStaticDescription {
+object SyncStaticsDescription {
 
-    private val cache = mutable.HashMap.empty[Class[_], SyncStaticDescription[_]]
+    private val cache = mutable.HashMap.empty[Class[_], SyncStaticsDescription[_]]
 
-    implicit def fromTag[A <: AnyRef : ClassTag]: SyncStaticDescription[A] = apply[A](classTag[A].runtimeClass)
+    implicit def fromTag[A <: AnyRef : ClassTag]: SyncStaticsDescription[A] = apply[A](classTag[A].runtimeClass)
 
-    def apply[A <: AnyRef](clazz: Class[_]): SyncStaticDescription[A] = cache.getOrElseUpdate(clazz, {
+    def apply[A <: AnyRef](clazz: Class[_]): SyncStaticsDescription[A] = cache.getOrElseUpdate(clazz, {
         if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
         val AClass = clazz.asInstanceOf[Class[A]]
-        new SyncStaticDescription[A](AClass)
-    }).asInstanceOf[SyncStaticDescription[A]]
+        new SyncStaticsDescription[A](AClass)
+    }).asInstanceOf[SyncStaticsDescription[A]]
 
 }

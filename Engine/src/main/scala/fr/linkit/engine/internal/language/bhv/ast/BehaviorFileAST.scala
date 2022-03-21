@@ -1,6 +1,6 @@
 package fr.linkit.engine.internal.language.bhv.ast
 
-trait BehaviorFile {
+trait BehaviorFileAST {
 
     val classDescriptions: List[ClassDescription]
     val typesModifiers   : List[TypeModifier]

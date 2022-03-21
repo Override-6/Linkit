@@ -11,6 +11,6 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.compilation
+package fr.linkit.engine.internal.language.bhv.integration
 
-case class LambdaExpressionInfo(id: Int, expression: String, paramTypes: Array[Class[_]])
+case class LambdaExpressionInfo(name: String, expression: String, paramTypes: Array[Class[_]])

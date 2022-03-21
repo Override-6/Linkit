@@ -68,7 +68,6 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     }
 
     override def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A] = {
-        val classDesc = SyncObjectDescription[A](clazz)
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
         val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
 

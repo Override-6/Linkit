@@ -10,20 +10,20 @@
  *  questions.
  */
 package $ClassPackage$
-import fr.linkit.engine.internal.language.bhv.compilation.LambdaRepository
+import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
 import fr.linkit.engine.internal.language.bhv.PropertyClass
 import scala.annotation.switch
 
 $Imports$
 
-class $ClassName$(properties: PropertyClass) extends LambdaRepository {
+class $ClassName$(properties: PropertyClass) extends LambdaCaller {
 
     $Blocks$
 
-    override def call(id: Int, args: Array[Any]): Any = {
+    override def call(id: String, args: Array[Any]): Any = {
         (id: @switch) match {
             !!LAMBDA_METHODS!! {
-                case $MethodID$ => _$MethodName$($ParamsOut$)
+                case "$MethodName$" => _$MethodName$($ParamsOut$)
             }
             case _ => throw new NoSuchMethodException("Could not find lambda method with id '" + id + "' into this lambda repository.")
         }

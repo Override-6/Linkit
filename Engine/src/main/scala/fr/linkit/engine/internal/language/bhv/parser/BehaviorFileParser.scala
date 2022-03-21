@@ -32,7 +32,7 @@ object BehaviorFileParser extends BehaviorLanguageParser {
 
     private val fileParser = phrase(rep(importParser | classParser | codeBlockParser | typeModifierParser | valueModifierParser | agreement))
 
-    def parse(context: ParserContext[Elem]): BehaviorFile = {
+    def parse(context: ParserContext[Elem]): BehaviorFileAST = {
         fileParser.apply(new TokenReader(context)) match {
             case NoSuccess(msg, n) =>
                 throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, context.fileSource, context.filePath))
@@ -41,7 +41,7 @@ object BehaviorFileParser extends BehaviorLanguageParser {
         }
     }
 
-    private def unpack(roots: List[Product]): BehaviorFile = {
+    private def unpack(roots: List[Product]): BehaviorFileAST = {
         val (imports, classes, blocks, tpeMods, valMods, agreements) = roots.foldLeft(
             (List[ClassImport](), List[ClassDescription](), List[ScalaCodeBlock](),
                     List[TypeModifier](), List[ValueModifier](), List[AgreementBuilder]())
@@ -53,7 +53,7 @@ object BehaviorFileParser extends BehaviorLanguageParser {
             case ((a, b, c, d, valMods, f), mod: ValueModifier)         => (a, b, c, d, mod :: valMods, f)
             case ((a, b, c, d, e, agreements), value: AgreementBuilder) => (a, b, c, d, e, value :: agreements)
         }
-        new BehaviorFile {
+        new BehaviorFileAST {
             override val classDescriptions = classes
             override val typesModifiers    = tpeMods
             override val codeBlocks        = blocks

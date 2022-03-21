@@ -11,10 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.compilation
+package fr.linkit.engine.internal.language.bhv.integration
 
-trait LambdaRepository {
+trait LambdaCaller {
 
-    def call(id: Int, args: Array[Any]): Any
+    def call(name: String, args: Array[Any]): Any
 
 }
