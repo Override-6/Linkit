@@ -18,9 +18,7 @@ import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import java.util
 
 class ContextualObjectReference(private val trafficPath0: Array[Int], val objectID: Int) extends TrafficObjectReference(trafficPath0) {
-    override def toString: String = {
-        s"@traffic/${trafficPath0.mkString("/")}/~$objectID"
-    }
+    override def toString: String = super.toString + s"/~$objectID"
 
     override def hashCode(): Int = util.Arrays.deepHashCode(Array(trafficPath0, objectID))
 

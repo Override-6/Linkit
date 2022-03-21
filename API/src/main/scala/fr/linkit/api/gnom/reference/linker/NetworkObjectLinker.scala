@@ -21,6 +21,7 @@ import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
  * This trait is a pillar of the [[https://drive.google.com/file/d/1nbuscC1mLd_I047VNW8X0u1uEzGGsiVZ/view?usp=sharing GNOM]] System.
  *
  * Network Objects Linkers guarantees that the presence of an object's location is synchronized between each Engines.<br>
+ *
  * @tparam R the location kind of this NetworkObjectLinker
  * */
 trait NetworkObjectLinker[R <: NetworkObjectReference] extends NetworkPresenceHandler[R] {
@@ -28,5 +29,6 @@ trait NetworkObjectLinker[R <: NetworkObjectReference] extends NetworkPresenceHa
     def isAssignable(reference: NetworkObjectReference): Boolean
 
     def findObject(reference: R): Option[NetworkObject[_ <: R]]
+
 
 }

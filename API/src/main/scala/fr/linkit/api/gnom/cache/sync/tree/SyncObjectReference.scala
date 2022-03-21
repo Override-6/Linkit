@@ -28,9 +28,7 @@ class SyncObjectReference(family: String,
                           cacheID: Int,
                           val origin: String,
                           val nodePath: Array[Int]) extends SharedCacheReference(family, cacheID) {
-    override def toString: String = {
-        s"@network/caches/$family/$cacheID/~${nodePath.mkString("/")}"
-    }
+    override def toString: String = super.toString + s"/~${nodePath.mkString("/")}"
 
     override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, origin, nodePath))
 

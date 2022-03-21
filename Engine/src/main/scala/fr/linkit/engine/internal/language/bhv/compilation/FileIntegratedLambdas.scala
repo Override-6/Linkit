@@ -18,7 +18,6 @@ import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilati
 import fr.linkit.engine.internal.language.bhv.PropertyClass
 import fr.linkit.engine.internal.language.bhv.compilation.FileIntegratedLambdas.factory
 
-import java.io.File
 import scala.collection.mutable
 
 class FileIntegratedLambdas(fileName: String,
