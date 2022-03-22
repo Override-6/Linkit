@@ -14,13 +14,12 @@
 package fr.linkit.engine.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode, SyncObjectReference, SynchronizedObjectForest, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
-import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableSyncNode, TrafficInterestedSyncNode, UnknownObjectSyncNode}
+import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableSyncNode, UnknownObjectSyncNode}
 import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject

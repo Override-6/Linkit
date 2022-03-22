@@ -204,20 +204,18 @@ class BehaviorFileDescriptor(file: BehaviorFile, propertyClass: PropertyClass, c
 
     private def makeModifier[A](tpe: String, valTpeName: String, in: Option[LambdaExpression], out: Option[LambdaExpression]): ValueModifier[A] = {
         val formattedTpeName = file.formatClassName(file.findClass(valTpeName))
+        val inLambdaName     = s"${tpe}_in_${formattedTpeName}"
+        val outLambdaName    = s"${tpe}_out_${formattedTpeName}"
         new ValueModifier[A] {
-            val i = in
-            val o = out
-            val inLambdaName     = s"${tpe}_in_${formattedTpeName}"
-            val outLambdaName    = s"${tpe}_out_${formattedTpeName}"
             override def fromRemote(input: A, remote: Engine): A = {
-                if (i.isDefined) {
+                if (in.isDefined) {
                     val result = caller.call(inLambdaName, Array(input, remote))
                     if (result == ()) input else result.asInstanceOf[A]
                 } else input
             }
 
             override def toRemote(input: A, remote: Engine): A = {
-                if (o.isDefined) {
+                if (out.isDefined) {
                     val result = caller.call(outLambdaName, Array(input, remote))
                     if (result == ()) input else result.asInstanceOf[A]
                 } else input

@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCache
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, ContractDescriptorDataHolder}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network
@@ -87,7 +87,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * @param behaviorFactory the behavior factory for the object
      * @return the synchronized object.
      * */
-    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], behaviorFactory: ContractDescriptorData): A with SynchronizedObject[A]
+    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorDataHolder): A with SynchronizedObject[A]
 
     /**
      * Finds a synchronized object in the cache.
