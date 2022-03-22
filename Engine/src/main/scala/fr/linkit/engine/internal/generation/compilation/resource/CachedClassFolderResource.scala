@@ -27,7 +27,7 @@ import scala.collection.mutable
 
 class CachedClassFolderResource[C](override val resource: ResourceFolder) extends ClassFolderResource[C] {
 
-    private val folderPath       = Path.of(resource.getPath.toString)
+    private val folderPath       = resource.getPath
     private val generatedClasses = mutable.Map.empty[String, Class[_ <: C]]
 
     override def findClass[S <: AnyRef](className: String, loader: ClassLoader): Option[Class[S with C]] = {

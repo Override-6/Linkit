@@ -23,7 +23,7 @@ trait StructureBehaviorDescriptorNode[A <: AnyRef] {
 
     def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit
 
-    def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A]
+    def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A]
 
     def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A]
 }

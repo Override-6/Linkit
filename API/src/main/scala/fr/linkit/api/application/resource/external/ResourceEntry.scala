@@ -38,8 +38,9 @@ trait ResourceEntry[+E <: Resource] extends Closeable {
     def getResource: Resource
 
     /**
-     * Links a resource with a resource class which represent it and make the resource manipulable from the code.
+     * Links a resource with a resource class and a String tag which represent it.
      *
+     * @param tag the tag used to refer the representation.
      * @param factory the factory which will create a representation instance of type [[R]].
      * @tparam R the type of the resource representation.
      * @throws IncompatibleResourceTypeException If the requested resource type is incompatible with the name it targets.
@@ -47,7 +48,8 @@ trait ResourceEntry[+E <: Resource] extends Closeable {
      *                                           as the resource can't be handled as a folder, the implementation may throw this exception.
      */
     @throws[IncompatibleResourceTypeException]("If the requested resource type is incompatible with the resource it targets.")
-    def attachRepresentation[R <: ResourceRepresentation : ClassTag](implicit factory: ResourceRepresentationFactory[R, E]): R
+    def attachRepresentation[R <: ResourceRepresentation : ClassTag](tag: String = null)(implicit factory: ResourceRepresentationFactory[R, E]): R
+
 
     /**
      * Retrieves the wanted representation of the resource.
@@ -58,7 +60,7 @@ trait ResourceEntry[+E <: Resource] extends Closeable {
      * */
     @throws[NoSuchRepresentationException]("If a resource was found but with another type than R.")
     @NotNull
-    def getRepresentation[R <: ResourceRepresentation : ClassTag]: R
+    def getRepresentation[R <: ResourceRepresentation : ClassTag](tag: String = null): R
 
 
     /**
@@ -70,8 +72,8 @@ trait ResourceEntry[+E <: Resource] extends Closeable {
      * */
     @throws[NoSuchRepresentationException]("If a resource was found but with another type than R.")
     @NotNull
-    def getOrAttachRepresentation[R <: ResourceRepresentation : ClassTag](implicit factory: ResourceRepresentationFactory[R, E]): R = {
-        findRepresentation[R].getOrElse(attachRepresentation[R])
+    def getOrAttachRepresentation[R <: ResourceRepresentation : ClassTag](tag: String = null)(implicit factory: ResourceRepresentationFactory[R, E]): R = {
+        findRepresentation[R](tag).getOrElse(attachRepresentation[R](tag))
     }
 
 
@@ -82,5 +84,5 @@ trait ResourceEntry[+E <: Resource] extends Closeable {
      * @tparam R the kind of resource expected.
      * @return [[Some]] if a representation of type [[R]] was found, or [[None]] instead
      * */
-    def findRepresentation[R <: ResourceRepresentation : ClassTag]: Option[R]
+    def findRepresentation[R <: ResourceRepresentation : ClassTag](tag: String = null): Option[R]
 }

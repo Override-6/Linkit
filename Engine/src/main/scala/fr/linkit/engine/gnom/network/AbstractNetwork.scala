@@ -127,7 +127,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
 
     private def getEngineStoreContracts: ContractDescriptorData = {
-        Contract("contracts/NetworkContract.bhv")(ObjectsProperty.default(this))
+        Contract("contracts/NetworkContract.bhv")(connection.getApp, ObjectsProperty.default(this))
     }
 }
 

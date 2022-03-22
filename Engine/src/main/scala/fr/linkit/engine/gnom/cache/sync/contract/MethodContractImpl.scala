@@ -80,7 +80,7 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
         handleRMI(data.puppeteer, localInvocation)
     }
 
-    override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Unit = {
+    override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Any = {
         val args       = data.arguments
         val syncObject = data.syncObject
         if (hideMessage.isDefined)

@@ -64,7 +64,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
             requestFactory.makeRequest(desc)
         }
         AppLogger.info(s"Compilation done. (${result.getCompileTime} ms).")
-        val syncClass = result.getResult
+        val syncClass = result.getValue
                 .get
                 .asInstanceOf[Class[S with SynchronizedObject[S]]]
         ClassMappings.putClass(syncClass)

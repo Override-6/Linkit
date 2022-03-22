@@ -63,10 +63,10 @@ object LocalResourceFolder extends ResourceFactory[LocalResourceFolder] {
             val resource = folder.getOrOpen[E](name)
             val entry    = resource.getEntry.asInstanceOf[ResourceEntry[E]]
             entry
-                    .findRepresentation[R]
+                    .findRepresentation[R]()
                     .getOrElse {
-                        entry.attachRepresentation[R](classTag[R], representationFactory)
-                        entry.getRepresentation[R]
+                        entry.attachRepresentation[R]()(classTag[R], representationFactory)
+                        entry.getRepresentation[R]()
                     }
         }
     }

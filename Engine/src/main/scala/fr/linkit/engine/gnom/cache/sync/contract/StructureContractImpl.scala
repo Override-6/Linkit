@@ -21,10 +21,10 @@ class StructureContractImpl[A <: AnyRef](override val clazz: Class[_],
                                          val methodContracts: Map[Int, MethodContract[Any]],
                                          val fieldContracts: Array[FieldContract[Any]]) extends StructureContract[A] {
 
-    override def getMethodContract[R](id: Int): MethodContract[R] = {
-        val x = methodContracts.getOrElse(id,
-            throw new NoSuchElementException(s"Could not find method contract with identifier #$id for class $clazz."))
-        x.asInstanceOf[MethodContract[R]]
+    override def findMethodContract[R](id: Int): Option[MethodContract[R]] = {
+        methodContracts
+            .get(id)
+            .asInstanceOf[Option[MethodContract[R]]]
     }
 
     override def applyFieldsContracts(obj: A with SynchronizedObject[A], manip: SyncObjectFieldManipulation): Unit = {

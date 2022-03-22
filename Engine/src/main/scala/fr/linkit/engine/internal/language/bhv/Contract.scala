@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv
 
+import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
@@ -29,7 +30,7 @@ object Contract {
     private final val contracts = mutable.HashMap.empty[String, PartialContractDescriptorData]
     private final val center    = new DefaultCompilerCenter
 
-    def apply(file: String)(implicit propertyClass: PropertyClass): ContractDescriptorData = contracts.get(file) match {
+    def apply(file: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): ContractDescriptorData = contracts.get(file) match {
         case Some(partial) =>
             partial(propertyClass)
         case None          =>
@@ -37,15 +38,15 @@ object Contract {
             val source = new String(loader.getResourceAsStream(file).readAllBytes())
             val tokens = BehaviorLanguageLexer.tokenize(new CharSequenceReader(source), file)
             val ast    = BehaviorFileParser.parse(tokens)
-            completeAST(ast, file, propertyClass)
+            completeAST(ast, file, propertyClass, app)
     }
 
-    private def completeAST(ast: BehaviorFileAST, fileName: String, propertyClass: PropertyClass): ContractDescriptorData = {
+    private def completeAST(ast: BehaviorFileAST, fileName: String, propertyClass: PropertyClass, app: ApplicationContext): ContractDescriptorData = {
         if (propertyClass == null)
             throw new NullPointerException("property class cannot be null. ")
         val file          = new BehaviorFile(ast)
         val extractor     = new BehaviorFileLambdaExtractor(file, fileName, center)
-        val callerFactory = extractor.compileLambdas()
+        val callerFactory = extractor.compileLambdas(app)
         val partial       = new PartialContractDescriptorData(file, callerFactory)
         contracts.put(fileName, partial)
         partial(propertyClass)

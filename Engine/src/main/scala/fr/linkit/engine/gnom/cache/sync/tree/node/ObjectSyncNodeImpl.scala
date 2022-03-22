@@ -155,7 +155,9 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
     private def handleInvocationResult(initialResult: AnyRef, engine: Engine, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
         var result: Any = initialResult
         if (packet.expectedEngineIDReturn == currentIdentifier) {
-            val methodContract = contract.getMethodContract(packet.methodID)
+            val methodContract = contract.findMethodContract[Any](packet.methodID).getOrElse {
+                throw new NoSuchElementException(s"Could not find method contract with identifier #$id for ${contract.clazz}.")
+            }
             result = methodContract.handleInvocationResult(initialResult, engine)(ref => {
                 val id = ThreadLocalRandom.current().nextInt()
                 tree.insertObject(this, id, ref, ownerID)

@@ -34,7 +34,7 @@ trait MethodContract[R] {
 
     def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R
 
-    def executeMethodInvocation(sender: Engine, data: InvocationExecution)
+    def executeMethodInvocation(sender: Engine, data: InvocationExecution): Any
 
     trait InvocationExecution {
         val syncObject: SynchronizedObject[_]

@@ -23,7 +23,7 @@ import scala.reflect.{ClassTag, classTag}
 
 class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry[E] {
 
-    private val representations  = mutable.Map.empty[Class[_], ResourceRepresentation]
+    private val representations  = mutable.Map.empty[(Class[_], String), ResourceRepresentation]
     private val path          = resource.getPath
     @volatile private var closed = false
 
@@ -31,7 +31,7 @@ class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry
 
     override def name: String = resource.name
 
-    override def attachRepresentation[R <: ResourceRepresentation : ClassTag](implicit factory: ResourceRepresentationFactory[R, E]): R = {
+    override def attachRepresentation[R <: ResourceRepresentation : ClassTag](tag: String = null)(implicit factory: ResourceRepresentationFactory[R, E]): R = {
         ensureAlive()
 
         def abort(requested: String, found: String): Unit = {
@@ -49,14 +49,14 @@ class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry
         }
 
         val representation = factory(resource)
-        representations.put(classTag[R].runtimeClass, representation)
+        representations.put((classTag[R].runtimeClass, tag), representation)
         representation
     }
 
-    override def findRepresentation[R <: ResourceRepresentation : ClassTag]: Option[R] = {
+    override def findRepresentation[R <: ResourceRepresentation : ClassTag](tag: String = null): Option[R] = {
         ensureAlive()
 
-        representations.get(classTag[R].runtimeClass) match {
+        representations.get((classTag[R].runtimeClass, tag)) match {
             case opt: Some[R] => opt
             case _            => resource match {
                 case r: R => Some(r)
@@ -67,10 +67,10 @@ class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry
 
     @throws[NoSuchRepresentationException]("If a resource was found but with another type than R.")
     @NotNull
-    override def getRepresentation[R <: ResourceRepresentation : ClassTag]: R = {
+    override def getRepresentation[R <: ResourceRepresentation : ClassTag](tag:String = null): R = {
         ensureAlive()
 
-        findRepresentation[R].getOrElse {
+        findRepresentation[R](tag).getOrElse {
             throw NoSuchRepresentationException(s"No resource representation '${classTag[R].runtimeClass.getSimpleName}' was registered for resource ${resource.getLocation}")
         }
     }

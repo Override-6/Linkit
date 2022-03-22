@@ -19,7 +19,7 @@ trait CompilationResult[T] {
 
     def getOuterFiles: Seq[Path]
 
-    def getResult: Option[T]
+    def getValue: Option[T]
 
     def getCompileTime: Long
 

@@ -47,7 +47,7 @@ class ClassCompilationRequestFactory[I <: CompilationContext, C](blueprint: Clas
                                 })
                     }
 
-                    override def getResult: Option[Seq[Class[_ <: C]]] = {
+                    override def getValue: Option[Seq[Class[_ <: C]]] = {
                         result
                     }
                 }

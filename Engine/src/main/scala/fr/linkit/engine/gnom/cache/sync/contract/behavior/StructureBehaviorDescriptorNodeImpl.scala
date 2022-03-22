@@ -14,12 +14,15 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract}
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.{MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.StructureBehaviorDescriptorNodeImpl.defaultContract
+import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
+import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
+import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -29,7 +32,9 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
                                                        @Nullable val superClass: StructureBehaviorDescriptorNodeImpl[_ >: A],
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
 
-    private val clazz = descriptor.targetClass
+    private val clazz        = descriptor.targetClass
+    private val instanceDesc = SyncObjectDescription[A](clazz)
+    private val staticsDesc  = SyncStaticsDescription[A](clazz)
 
     override def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit = {
         if (superClass != null) {
@@ -43,9 +48,9 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         for (desc <- descriptor.methods) {
             val id = desc.description.methodId
             if (!map.contains(id)) {
-                val agreement = desc.agreement.result(context)
+                val agreement  = desc.agreement.result(context)
                 val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](false))
-                val contract  = new MethodContractImpl[Any](
+                val contract   = new MethodContractImpl[Any](
                     desc.forceLocalInnerInvocations, agreement, desc.parameterContracts,
                     rvContract, desc.description, desc.hideMessage, desc.procrastinator.orNull)
                 map.put(id, contract)
@@ -67,13 +72,12 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         interfaces.foreach(_.putFields(map))
     }
 
-    override def getObjectContract(clazz: Class[_], context: SyncObjectContext): StructureContract[A] = {
+    override def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
         val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
 
         putMethods(methodMap, context)
         putFields(fieldMap)
-        //fillWithAnnotatedBehaviors(classDesc, methodMap, fieldMap, context)
 
         new StructureContractImpl(clazz, descriptor.remoteObjectInfo, methodMap.toMap, fieldMap.values.toArray)
     }
@@ -129,8 +133,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
         private def computeInterfacesModifiers(): Array[ValueModifier[A]] = {
             interfaces.asInstanceOf[Array[StructureBehaviorDescriptorNodeImpl[A]]]
-                    .filter(n => limit.isAssignableFrom(n.clazz))
-                    .map(_.getInstanceModifier(factory, limit))
+                .filter(n => limit.isAssignableFrom(n.clazz))
+                .map(_.getInstanceModifier(factory, limit))
         }
 
         private def computeSuperClassModifier(): Option[ValueModifier[A]] = {
@@ -139,3 +143,13 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         }
     }
 }
+
+object StructureBehaviorDescriptorNodeImpl {
+    private final val DisabledValueContract = new SimpleModifiableValueContract[Any](false, None)
+
+    private def defaultContract(context: SyncObjectContext, desc: MethodDescription) = {
+        new MethodContractImpl[Any](false, EmptyBuilder.result(context),
+            Array(), DisabledValueContract, desc, None, null)
+    }
+}
+

@@ -29,7 +29,7 @@ class SourceFileCompilationRequestFactory extends CompilationRequestFactory[Path
         new AbstractRequest[Path](workingDir, Seq(context)) {
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Path] = {
                 new AbstractCompilationResult[Path](outs, compilationTime, this) {
-                    override def getResult: Option[Path] = outs.headOption
+                    override def getValue: Option[Path] = outs.headOption
                 }
             }
         }
@@ -39,7 +39,7 @@ class SourceFileCompilationRequestFactory extends CompilationRequestFactory[Path
         new AbstractRequest[Seq[Path]](workingDirectory, contexts) {
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Path]] = {
                 new AbstractCompilationResult[Seq[Path]](outs, compilationTime, this) {
-                    override def getResult: Option[Seq[Path]] = Some(outs)
+                    override def getValue: Option[Seq[Path]] = Some(outs)
                 }
             }
         }

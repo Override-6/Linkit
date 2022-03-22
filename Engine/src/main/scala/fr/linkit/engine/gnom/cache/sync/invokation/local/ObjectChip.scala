@@ -36,7 +36,9 @@ class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
     }
 
     override def callMethod(methodID: Int, params: Array[Any], caller: Engine): Any = {
-        val methodContract = contract.getMethodContract[Any](methodID)
+        val methodContract = contract.findMethodContract[Any](methodID).getOrElse{
+            throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${syncObject.getSourceClass}.")
+        }
         val hideMsg        = methodContract.hideMessage
         if (hideMsg.isDefined)
             throw new HiddenMethodInvocationException(hideMsg.get)

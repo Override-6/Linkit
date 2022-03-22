@@ -76,7 +76,13 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             //throw new IllegalStateException(s"Synchronized object at '${location}' is not initialised")
             return superCall(args).asInstanceOf[R]
         }
-        val methodContract   = contract.getMethodContract(id)
+        val methodContract   = {
+            val opt = contract.findMethodContract(id)
+            if (opt.isEmpty) {
+                return superCall(args).asInstanceOf[R]
+            }
+            opt.get
+        }
         //Arguments that must be synchronized wil be synchronized according to method contract.
         val synchronizedArgs = methodContract.synchronizeArguments(args, puppeteer.synchronizedObj(_))
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")

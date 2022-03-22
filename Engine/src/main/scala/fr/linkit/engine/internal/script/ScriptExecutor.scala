@@ -18,14 +18,12 @@ import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile, ScriptHandler, ScriptInstantiator}
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.application.LinkitApplication
+import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
-import fr.linkit.engine.application.resource.external.LocalResourceFolder
+
 import java.net.URL
-
-import fr.linkit.engine.application.LinkitApplication
-
-import scala.reflect.ClassTag
 
 object ScriptExecutor {
 
@@ -48,10 +46,10 @@ object ScriptExecutor {
             AppLogger.debug(s"Performing Class generation for script '$scriptName'")
             val blueprint = new ScalaScriptBlueprint(scriptHandler.scriptClassBlueprint).asInstanceOf[ClassBlueprint[ScriptContext]]
             new ClassCompilationRequestFactory[ScriptContext, S](blueprint)
-                    .makeRequest(scriptHandler.newScriptContext(scriptCode, scriptName, additionalArguments, classLoader))
+                .makeRequest(scriptHandler.newScriptContext(scriptCode, scriptName, additionalArguments, classLoader))
         }
         AppLogger.debug(s"Script '$scriptName' class generation ended in ${result.getCompileTime} ms.")
-        val clazz = result.getResult.get
+        val clazz = result.getValue.get
         if (clazz == null)
             throw new ScriptCompileException(s"Some exception occurred during class compilation of script '$scriptName'. See above messages for further details.")
         scriptHandler.newScript(clazz, _: _*)
@@ -89,11 +87,10 @@ object ScriptExecutor {
     }
 
     def findScript[S <: ScriptFile](name: String, app: ApplicationContext)(implicit handler: ScriptHandler[S]): Option[ScriptInstantiator[S]] = {
-        val classTag  = ClassTag[CachedClassFolderResource[ScriptFile]](classOf[CachedClassFolderResource[ScriptFile]])
         val resources = app.getAppResources
-                .getOrOpen[LocalResourceFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
-                .getEntry
-                .getOrAttachRepresentation[CachedClassFolderResource[ScriptFile]](classTag, CachedClassFolderResource.factory[ScriptFile])
+            .getOrOpen[LocalResourceFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
+            .getEntry
+            .getOrAttachRepresentation[CachedClassFolderResource[ScriptFile]]("script")
         handler.findScript(name, resources)
     }
 

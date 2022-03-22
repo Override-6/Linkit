@@ -14,7 +14,7 @@
 package fr.linkit.api.application.resource.external
 
 import fr.linkit.api.application.resource.exception._
-import fr.linkit.api.application.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
+import fr.linkit.api.application.resource.representation.ResourceRepresentation
 import fr.linkit.api.application.resource.{OpenActionShortener, ResourcesMaintainer}
 import org.jetbrains.annotations.NotNull
 

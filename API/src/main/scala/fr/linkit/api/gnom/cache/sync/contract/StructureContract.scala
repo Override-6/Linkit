@@ -21,7 +21,7 @@ trait StructureContract[A <: AnyRef] {
 
     val remoteObjectInfo: Option[RemoteObjectInfo]
 
-    def getMethodContract[R](id: Int): MethodContract[R]
+    def findMethodContract[R](id: Int): Option[MethodContract[R]]
 
     def applyFieldsContracts(obj: A with SynchronizedObject[A], manip: SyncObjectFieldManipulation): Unit
 

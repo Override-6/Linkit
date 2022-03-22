@@ -61,8 +61,8 @@ class BehaviorFileDescriptor(file: BehaviorFile, propertyClass: PropertyClass, c
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-                .map(new FieldContractImpl[Any](_, desc.state.isSync))
-                .toArray
+            .map(new FieldContractImpl[Any](_, desc.state.isSync))
+            .toArray
     }
 
     private def foreachMethods(classDesc: SyncStructureDescription[_])
@@ -132,9 +132,9 @@ class BehaviorFileDescriptor(file: BehaviorFile, propertyClass: PropertyClass, c
                         }
                     }
                     val agreement          = desc.agreement
-                            .map(ag => getAgreement(ag.name))
-                            .orElse(referent.map(_.agreement))
-                            .getOrElse(EmptyBuilder)
+                        .map(ag => getAgreement(ag.name))
+                        .orElse(referent.map(_.agreement))
+                        .getOrElse(EmptyBuilder)
                     val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                     val parameterContracts = {
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
@@ -183,7 +183,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, propertyClass: PropertyClass, c
 
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {
         agreementBuilders
-                .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
+            .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
     }
 
     private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {
@@ -204,18 +204,20 @@ class BehaviorFileDescriptor(file: BehaviorFile, propertyClass: PropertyClass, c
 
     private def makeModifier[A](tpe: String, valTpeName: String, in: Option[LambdaExpression], out: Option[LambdaExpression]): ValueModifier[A] = {
         val formattedTpeName = file.formatClassName(file.findClass(valTpeName))
-        val inLambdaName    = s"${tpe}_in_${formattedTpeName}"
-        val outLambdaName   = s"${tpe}_out_${formattedTpeName}"
         new ValueModifier[A] {
+            val i = in
+            val o = out
+            val inLambdaName     = s"${tpe}_in_${formattedTpeName}"
+            val outLambdaName    = s"${tpe}_out_${formattedTpeName}"
             override def fromRemote(input: A, remote: Engine): A = {
-                if (in.isDefined) {
+                if (i.isDefined) {
                     val result = caller.call(inLambdaName, Array(input, remote))
                     if (result == ()) input else result.asInstanceOf[A]
                 } else input
             }
 
             override def toRemote(input: A, remote: Engine): A = {
-                if (out.isDefined) {
+                if (o.isDefined) {
                     val result = caller.call(outLambdaName, Array(input, remote))
                     if (result == ()) input else result.asInstanceOf[A]
                 } else input

@@ -13,12 +13,17 @@
 
 package fr.linkit.engine.internal.language.bhv.integration
 
+import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
+import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.application.LinkitApplication
+import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
+import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
 import fr.linkit.engine.internal.language.bhv.PropertyClass
-import fr.linkit.engine.internal.language.bhv.integration.FileIntegratedLambdas.factory
 
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 class FileIntegratedLambdas(fileName: String,
                             center: CompilerCenter,
@@ -29,29 +34,48 @@ class FileIntegratedLambdas(fileName: String,
 
     /**
      * convert a lambda expression to an actual lambda object.
+     *
      * @return the lambda identifier
      * */
     def submitLambda[X](expression: String, name: String, lambdaParams: Class[_]*): Unit = {
         expressions.put(name, LambdaExpressionInfo(name, expression, lambdaParams.toArray))
     }
 
-    def compileLambdas(): PropertyClass => LambdaCaller = {
+    def compileLambdas(app: ApplicationContext): PropertyClass => LambdaCaller = {
+
         val name    = fileName.reverse.takeWhile(_ != '/').reverse.takeWhile(_ != '.')
         val context = LambdaRepositoryContext(name,
             expressions.values.toArray,
             classBlocks.toArray,
             Thread.currentThread().getContextClassLoader,
             imports)
-        val clazz   = center
-                .processRequest(factory.makeRequest(context))
-                .getResult.get
-        clazz.getConstructor(classOf[PropertyClass]).newInstance(_)
+
+        val resource = app.getAppResources
+            .getOrOpen[LocalResourceFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
+            .getEntry
+            .getOrAttachRepresentation[CachedClassFolderResource[LambdaCaller]]("lambdas")
+
+        val clazz       = resource
+            .findClass(context.classPackage + "." + context.className, context.parentLoader)
+            .getOrElse(genClass(context))
+        val constructor = clazz.getConstructor(classOf[PropertyClass])
+        constructor.newInstance(_)
+    }
+
+    private def genClass(context: LambdaRepositoryContext): Class[_ <: LambdaCaller] = {
+        val result = center
+            .processRequest {
+                AppLogger.info(s"Compiling Lambdas Class for behavior file '$fileName'...")
+                FileIntegratedLambdas.CompilationRequestFactory.makeRequest(context)
+            }
+        AppLogger.info(s"Compilation done in ${result.getCompileTime} ms.")
+        result.getValue.get
     }
 
 }
 
 object FileIntegratedLambdas {
 
-    private final val Blueprint = new LambdaRepositoryClassBlueprint(getClass.getResourceAsStream("/generation/scala_lambda_repository.scbp"))
-    private final val factory   = new ClassCompilationRequestFactory[LambdaRepositoryContext, LambdaCaller](Blueprint)
+    private final val Blueprint                 = new LambdaRepositoryClassBlueprint(getClass.getResourceAsStream("/generation/scala_lambda_repository.scbp"))
+    private final val CompilationRequestFactory = new ClassCompilationRequestFactory[LambdaRepositoryContext, LambdaCaller](Blueprint)
 }
