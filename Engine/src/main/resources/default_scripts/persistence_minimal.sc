@@ -7,6 +7,8 @@ import fr.linkit.engine.internal.language.bhv.interpreter.LangContractDescriptor
 import fr.linkit.engine.internal.language.bhv.{Contract, PropertyClass}
 import fr.linkit.engine.internal.utils.Identity
 
+import java.net.URL
+
 //Start Of Context
 val builder: PersistenceConfigBuilder = null
 
@@ -17,8 +19,8 @@ import builder._
 putContextReference(1, EmptyPacket)
 putContextReference(2, Identity(Nil))
 putContextReference(3, None)
-setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.fromData)
-setTConverter[LangContractDescriptorData, (ApplicationContext, String, PropertyClass)](d => (d.app, d.source, d.propertyClass)){case (app, f, p) => Contract(f)(app, p)}
+setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.fromData(_))
+setTConverter[LangContractDescriptorData, (ApplicationContext, String, PropertyClass)](d => (d.app, d.filePath, d.propertyClass)){case (app, url, p) => Contract(url)(app, p)}
 //putPersistence(new ScalaIterableTypePersistence)
 //putPersistence(new ScalaMapTypePersistence)
 putPersistence(new JavaArrayListTypePersistence)

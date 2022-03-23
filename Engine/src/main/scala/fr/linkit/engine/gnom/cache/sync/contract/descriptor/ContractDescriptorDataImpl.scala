@@ -1,6 +1,8 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureBehaviorDescriptorNode, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, MethodContractDescriptor, StructureBehaviorDescriptorNode, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectClassRelation
 import fr.linkit.engine.internal.utils.ClassMap
 
@@ -55,5 +57,12 @@ class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[
         depth
     }
 
-
 }
+
+object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(new StructureContractDescriptor[Object] {
+    override val targetClass     : Class[Object]                   = classOf[Object]
+    override val remoteObjectInfo: Option[RemoteObjectInfo]        = None
+    override val methods         : Array[MethodContractDescriptor] = Array()
+    override val fields          : Array[FieldContract[Any]]       = Array()
+    override val modifier        : Option[ValueModifier[Object]]   = None
+}))

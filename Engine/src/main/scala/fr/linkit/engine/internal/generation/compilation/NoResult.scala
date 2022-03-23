@@ -11,20 +11,19 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior
+package fr.linkit.engine.internal.generation.compilation
 
-trait RMIRulesAgreement {
+import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilationResult}
 
-    val acceptedEngines: Array[String]
+import java.nio.file.Path
 
-    val discardedEngines: Array[String]
+case class NoResult(request: CompilationRequest[_]) extends CompilationResult[Nothing] {
 
-    def isAcceptAll: Boolean
+    override def getOuterFiles: Seq[Path] = Seq()
 
-    def getAppointedEngineReturn: String
+    override def getValue: Option[Nothing] = None
 
-    def mayCallSuper: Boolean
+    override def getCompileTime: Long = 0
 
-    def mayPerformRemoteInvocation: Boolean
-
+    override def getRequest: CompilationRequest[_] = request
 }

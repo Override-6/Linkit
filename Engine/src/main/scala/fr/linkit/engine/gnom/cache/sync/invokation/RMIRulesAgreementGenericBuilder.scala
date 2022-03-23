@@ -24,7 +24,7 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
                                               private val desiredEngineReturn: EngineTag) extends RMIRulesAgreementBuilder {
 
     def this() {
-        this(Seq.empty, Seq.empty, Seq.empty, true, CurrentEngine)
+        this(Seq.empty, Seq(CurrentEngine), Seq.empty, false, CurrentEngine)
     }
 
     def this(other: RMIRulesAgreementGenericBuilder) {

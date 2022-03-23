@@ -15,15 +15,17 @@ package fr.linkit.engine.internal.generation.compilation.access
 
 import fr.linkit.api.internal.generation.compilation.access.{CompilerAccess, CompilerAccessException}
 import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilationResult}
+import fr.linkit.engine.internal.generation.compilation.NoResult
 
 import java.nio.file.Path
-import scala.util.control.NonFatal
 
 abstract class AbstractCompilerAccess extends CompilerAccess {
 
     override def compileRequest[T](request: CompilationRequest[T]): CompilationResult[T] = {
         val files       = request.sourceCodesPaths
                 .filter(canCompileFile)
+        if (files.isEmpty)
+            return NoResult(request)
         val t0          = System.currentTimeMillis()
         val outputFiles = try {
             compile(files, request.classDir, request.classPaths, request.additionalParams(getType))

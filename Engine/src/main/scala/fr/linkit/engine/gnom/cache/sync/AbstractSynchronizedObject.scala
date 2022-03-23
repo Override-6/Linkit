@@ -52,7 +52,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
-        this.isNotMirroring = !(!isOrigin && contract.remoteObjectInfo.isDefined)
+        this.isNotMirroring = isOrigin || contract.remoteObjectInfo.isEmpty
     }
 
     override def isOrigin: Boolean = currentIdentifier == ownerID

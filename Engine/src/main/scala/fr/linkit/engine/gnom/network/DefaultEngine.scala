@@ -14,7 +14,6 @@
 package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.cache.sync.contract.annotation.LinkedBehavior
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.gnom.network.statics.{ClassStaticAccessor, StaticAccess}
@@ -25,14 +24,13 @@ import fr.linkit.engine.internal.system.StaticVersions
 
 import java.sql.Timestamp
 
-@LinkedBehavior("contracts/NetworkContract.bhv")
 class DefaultEngine(override val identifier: String,
                     override val cache: SharedCacheManager) extends Engine {
 
     override val reference   : EngineReference = new EngineReference(identifier)
     override val network     : Network         = cache.network
     override val staticAccess: StaticAccess    = {
-        val center = cache.attachToCache(5, DefaultSynchronizedObjectCache[ClassStaticAccessor[_ <: AnyRef]](null: ContractDescriptorData))
+        val center = cache.attachToCache(5, DefaultSynchronizedObjectCache[ClassStaticAccessor[_ <: AnyRef]]())
         new SimpleStaticAccess(center)
     }
 

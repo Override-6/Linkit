@@ -108,17 +108,18 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     protected def createGlobalCache: SharedCacheManager
 
     def initialize(): this.type = {
-        //init those lazy vals
+        //init those lazy vals, do not change the order!
         gnol
         globalCache
-        trunk
+        trunk.reinjectEngines()
+
         engine0 = trunk.newEngine(currentIdentifier)
         ExecutorEngine.initDefaultEngine(connectionEngine)
         engine0.staticAccess //lazy val
         this
     }
 
-    //TODO Private this or find an alternative ! - not private because used in bhv contract file
+    //TODO Private this or find an alternative ! - not private because used in NetworkContract.bhv contract file
     def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {
         val family = cache.family
         val store  = networkStore.createStore(family.hashCode)

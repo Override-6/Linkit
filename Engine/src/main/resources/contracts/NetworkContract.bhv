@@ -2,6 +2,7 @@
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.engine.gnom.network.DefaultEngine
+import fr.linkit.engine.gnom.network.NetworkDataTrunk
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.Engine
 import java.nio.file.Path
@@ -14,46 +15,19 @@ scala ${
     val network = £{@network: AbstractNetwork}
 }
 
-
-describe mirroring DefaultEngine stub Engine {
-    sync *
-    !sync cache
+describe DefaultEngine {
     enable method updateState(ExternalConnectionState) as current_and_origin
-    hide method connectionDate() "WAW"
 }
-
-x: String[] -> {
-    in : ${(x, _) => /***/}
-    out: ${(x, _) => /***/}
-}
-
-agreement only_owner = {
-    discard * -> accept owner -> appoint owner
+describe NetworkDataTrunk {
+    enable method newEngine(String) as broadcast
+    enable method addEngine(sync Engine)
 }
 agreement current_and_origin = {
     discard * -> accept current and owner -> appoint current
 }
-agreement broadcast_if_owner = {
-    if (current is owner) { accept * } else { discard * } -> accept current -> appoint current
+agreement broadcast = {
+    accept * -> appoint current
 }
-describe statics Path {
-    sync *
-    foreach method enable as broadcast_if_owner {
-        sync returnvalue
-    }
-    enable method of(URI) as broadcast_if_owner
-
-    enable method of(str: String, array: String[]) {
-        str -> {
-            in : ${(x, _) => x + £{@test_value: String}}
-            out: ${(x, _) => x + £{@other_value_lol: String}}
-        }
-        array -> x
-        sync returnvalue
-    }
-
-}
-
 modifier SharedCacheOriginManager {
     out: ${(cache, _) => network.transformToDistant(cache)}
 }

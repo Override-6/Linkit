@@ -26,7 +26,7 @@ class UsageRMIRulesAgreement(currentID: String, ownerID: String,
 
     override def isAcceptAll: Boolean = acceptAll
 
-    override def getDesiredEngineReturn: String = desiredEngineReturn
+    override def getAppointedEngineReturn: String = desiredEngineReturn
 
     override def mayCallSuper: Boolean = {
         if (acceptAll)

@@ -21,7 +21,7 @@ import java.lang.invoke.MethodHandles
 //TODO  https://stackoverflow.com/questions/23595136/get-a-list-of-classes-lambdas
 object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPRepresentation] {
 
-    private val lookup = MethodHandles.lookup()
+    //private val lookup = MethodHandles.lookup()
 
     override def toRepresentation(lambdaObject: AnyRef): JLTPRepresentation = {
         throw new UnsupportedOperationException("Can't serialize not serializable lambdas")

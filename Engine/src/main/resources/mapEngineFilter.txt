@@ -7,5 +7,6 @@ java.io
 java.nio.file
 java.sql.*
 java.util
+java.net
 
 sun.nio.fs

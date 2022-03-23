@@ -129,10 +129,12 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
             } else v
         }
 
-        val currentMustReturn = agreement.getDesiredEngineReturn == currentIdentifier
+        val currentMustReturn = agreement.getAppointedEngineReturn == currentIdentifier
         if (!mayPerformRMI) {
             return (if (currentMustReturn) syncValue(localResult) else null).asInstanceOf[R]
         }
+
+
         val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with DispatchableRemoteMethodInvocation[R] {
             override val agreement: RMIRulesAgreement = MethodContractImpl.this.agreement
 
@@ -142,6 +144,7 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
         }
         if (currentMustReturn) {
             puppeteer.sendInvoke(remoteInvocation)
+            result = localResult
         } else {
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
         }

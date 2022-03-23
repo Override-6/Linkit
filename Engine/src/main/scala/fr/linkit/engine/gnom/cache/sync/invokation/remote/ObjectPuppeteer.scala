@@ -47,7 +47,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val agreement = invocation.agreement
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("the agreement states that the method should not be called on a remote engine")
-        val desiredEngineReturn = agreement.getDesiredEngineReturn
+        val desiredEngineReturn = agreement.getAppointedEngineReturn
 
         if (desiredEngineReturn == currentIdentifier)
             throw new UnsupportedOperationException("invocation's desired engine return is this engine.")

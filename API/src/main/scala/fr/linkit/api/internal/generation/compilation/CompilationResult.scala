@@ -15,7 +15,7 @@ package fr.linkit.api.internal.generation.compilation
 
 import java.nio.file.Path
 
-trait CompilationResult[T] {
+trait CompilationResult[+T] {
 
     def getOuterFiles: Seq[Path]
 

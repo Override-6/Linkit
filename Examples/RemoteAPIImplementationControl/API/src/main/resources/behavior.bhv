@@ -1,0 +1,40 @@
+import fr.linkit.examples.ssc.api.UserAccount
+import fr.linkit.examples.ssc.api.CurrentUserAccount
+import fr.linkit.examples.ssc.api.CurrentUserWallet
+import fr.linkit.examples.ssc.api.UserAccountContainer
+import fr.linkit.examples.ssc.api.UserWallet
+
+agreement only_cache_owner = {
+    accept cache_owner -> appoint cache_owner
+}
+
+describe mirroring UserAccount {
+    foreach method enable as only_cache_owner {
+        sync returnvalue
+    }
+    enable method name {
+        !sync returnvalue
+    }
+}
+
+describe mirroring CurrentUserAccount {
+    foreach method enable as only_cache_owner {
+        sync returnvalue
+    }
+}
+
+describe mirroring CurrentUserWallet {
+    foreach method enable as only_cache_owner
+}
+
+describe mirroring UserWallet {
+    foreach method enable as only_cache_owner
+}
+describe mirroring UserAccountContainer {
+    foreach method enable as only_cache_owner {
+        sync returnvalue
+    }
+    enable method listAccounts {
+        !sync returnvalue
+    }
+}

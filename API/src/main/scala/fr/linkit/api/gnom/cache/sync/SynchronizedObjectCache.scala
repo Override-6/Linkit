@@ -86,7 +86,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * @param behaviorFactory the behavior factory for the object
      * @return the synchronized object.
      * */
-    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A]
+    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contract: ContractDescriptorData): A with SynchronizedObject[A]
 
     /**
      * Finds a synchronized object in the cache.

@@ -145,6 +145,11 @@ class PersistenceConfigBuilder {
                 config.getProfile[T](clazz)
             }
 
+            override def getProfile[T <: AnyRef](ref: T): TypeProfile[T] = {
+                check()
+                config.getProfile(ref)
+            }
+
         }
         val profiles                  = collectProfiles(store)
         val refStore                  = new WeakContextObjectLinker(storeParent, omc)

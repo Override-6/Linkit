@@ -31,6 +31,7 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageSyncObjectContext
@@ -179,7 +180,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     private object DefaultInstantiator extends SyncInstanceInstantiator {
 
         override def newSynchronizedInstance[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
-            val syncClass = generator.getSyncClass[B](creator.tpeClass.asInstanceOf[Class[B]])
+            val syncClass = generator.getSyncClass[B](creator.tpeClass)
             try {
                 creator.getInstance(syncClass)
             } catch {
@@ -262,8 +263,7 @@ object DefaultSynchronizedObjectCache {
     implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A]] = apply()
 
     implicit def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A]] = {
-        val contracts: ContractDescriptorData = null //new ContractDescriptorDataBuilder {}.build()
-        apply[A](contracts)
+        apply[A](EmptyContractDescriptorData)
     }
 
     def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[SynchronizedObjectCache[A]] = {

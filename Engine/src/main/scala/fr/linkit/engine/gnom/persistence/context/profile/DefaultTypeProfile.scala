@@ -28,11 +28,11 @@ class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
 
     override def getPersistence(t: T): TypePersistence[T] = {
         return persists.head
-        //TODO Choose between other compatible persistence (if an error occured or...)
+        /*//TODO Choose between other compatible persistence (if an error occurred etc...)
         if (declaredParent ne null)
             declaredParent.getPersistence(t)
         else
-            throw new NoSuchElementException(s"Could not find type persistence matching object ${t} (of class ${t.getClass.getName}.")
+            throw new NoSuchElementException(s"Could not find type persistence matching object ${t} (of class ${t.getClass.getName}.")*/
     }
 
     override def getPersistence(args: Array[Any]): TypePersistence[T] = {

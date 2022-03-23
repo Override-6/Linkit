@@ -21,6 +21,9 @@ import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, Behavio
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 
+import java.io.File
+import java.net.URL
+import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
 
@@ -29,15 +32,31 @@ object Contract {
     private final val contracts = mutable.HashMap.empty[String, PartialContractDescriptorData]
     private final val center    = new DefaultCompilerCenter
 
-    def apply(file: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(file) match {
+    def apply(url: URL)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(url.getFile) match {
         case Some(partial) =>
             partial(propertyClass)
         case None          =>
-            val loader = Thread.currentThread().getContextClassLoader
-            val source = new String(loader.getResourceAsStream(file).readAllBytes())
-            val tokens = BehaviorLanguageLexer.tokenize(new CharSequenceReader(source), file)
-            val ast    = BehaviorFileParser.parse(tokens)
-            completeAST(ast, file, propertyClass, app)
+            val stream = url.openStream()
+            val result = fromText(new String(stream.readAllBytes()), url.getFile)
+            stream.close()
+            result
+    }
+
+    //FIXME Using URL is ok but when a contract must be sent to another computer,
+    // it becomes complex to handle where to find the computer's equivalent source
+    // as the bhv file is certainly not stored at the same path.
+    def apply(url: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = {
+        val loader = Thread.currentThread().getContextClassLoader
+        if (url.contains(":")) {//it's an absolute file path
+            val pathStr = if (url.head == '/') url.tail else url
+            fromText(Files.readString(Path.of(pathStr)), url)
+        } else apply(loader.getResource(url))
+    }
+
+    private def fromText(text: String, source: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = {
+        val tokens = BehaviorLanguageLexer.tokenize(new CharSequenceReader(text), source)
+        val ast    = BehaviorFileParser.parse(tokens)
+        completeAST(ast, source, propertyClass, app)
     }
 
     private def completeAST(ast: BehaviorFileAST, filePath: String, propertyClass: PropertyClass, app: ApplicationContext): LangContractDescriptorData = {
@@ -54,9 +73,13 @@ object Contract {
     private class PartialContractDescriptorData(file: BehaviorFile, app: ApplicationContext, callerFactory: PropertyClass => LambdaCaller) {
 
         def apply(propertyClass: PropertyClass): LangContractDescriptorData = {
-            val caller      = callerFactory(propertyClass)
-            val interpreter = new BehaviorFileDescriptor(file, app, propertyClass, caller)
-            interpreter.data
+            val caller = callerFactory(propertyClass)
+            try {
+                val interpreter = new BehaviorFileDescriptor(file, app, propertyClass, caller)
+                interpreter.data
+            } catch {
+                case e: BHVLanguageException => throw new BHVLanguageException(s"in: ${file.source}: ${e.getMessage}", e)
+            }
         }
 
     }

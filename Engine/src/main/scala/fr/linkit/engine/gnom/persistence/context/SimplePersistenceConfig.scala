@@ -48,32 +48,53 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         profile.asInstanceOf[TypeProfile[T]]
     }
 
+    override def getProfile[T <: AnyRef](ref: T): TypeProfile[T] = {
+        ref match {
+            case sync: SynchronizedObject[T] => sync.getNode.contract.remoteObjectInfo match {
+                // force warp because the output of getProfile will be a regular type profile a not a sync type profile
+                case Some(value) => warpTypePersistencesWithSyncPersist(getProfile(value.stubClass))
+                case None        => getProfile(sync.getClass)
+            }
+            case _                           => getProfile(ref.getClass)
+        }
+    }
+
+    private def getSyncOriginClass(clazz: Class[_]): Class[_] = {
+        val sc = clazz.getSuperclass
+        if (sc eq classOf[Object]) {
+            clazz.getInterfaces()(1) //the head is AbstractSynchronizedObject
+        }
+        else sc
+    }
+
     private def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
         val isSync                          = isSyncClass(clazz)
-        val nonSyncClass                    = if (isSync) clazz.getSuperclass else clazz
-        val constructor                     = context.findConstructor[T](nonSyncClass)
-        var persistence: TypePersistence[T] = {
-            if (classOf[Deconstructible].isAssignableFrom(nonSyncClass)) {
-                constructor.fold(new DeconstructiveTypePersistence[T with Deconstructible](nonSyncClass)) {
-                    ctr => new DeconstructiveTypePersistence[T with Deconstructible](nonSyncClass, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
-                }
-            }.asInstanceOf[TypePersistence[T]] else {
-                val deconstructor = context.findDeconstructor[T](nonSyncClass)
-                constructor.fold(getSafestTypeProfileOfAnyClass[T](nonSyncClass, deconstructor)) { ctr =>
-                    if (deconstructor.isEmpty) {
-                        if (!useUnsafe)
-                            throw new NoSuchElementException(s"Could not find constructor: A Deconstructor must be set for the class '${nonSyncClass.getName}' in order to create a safe TypePersistence.")
-                        new UnsafeTypePersistence[T](nonSyncClass)
-                    } else {
-                        new ConstructorTypePersistence[T](nonSyncClass, ctr, deconstructor.get)
-                    }
-                }
-            }
-        }
+        val nonSyncClass                    = if (isSync) getSyncOriginClass(clazz) else clazz
+        var persistence: TypePersistence[T] = determinePersistence(nonSyncClass)
         if (isSync) {
             persistence = new SynchronizedObjectsPersistence[Nothing](persistence).asInstanceOf[TypePersistence[T]]
         }
         new DefaultTypeProfile[T](nonSyncClass, this, Array(persistence))
+    }
+
+    private def determinePersistence[T <: AnyRef](clazz: Class[_]): TypePersistence[T] = {
+        val constructor = context.findConstructor[T](clazz)
+        if (classOf[Deconstructible].isAssignableFrom(clazz)) {
+            constructor.fold(new DeconstructiveTypePersistence[T with Deconstructible](clazz)) {
+                ctr => new DeconstructiveTypePersistence[T with Deconstructible](clazz, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
+            }
+        }.asInstanceOf[TypePersistence[T]] else {
+            val deconstructor = context.findDeconstructor[T](clazz)
+            constructor.fold(getSafestTypeProfileOfAnyClass[T](clazz, deconstructor)) { ctr =>
+                if (deconstructor.isEmpty) {
+                    if (!useUnsafe)
+                        throw new NoSuchElementException(s"Could not find constructor: A Deconstructor must be set for the class '${clazz.getName}' in order to create a safe TypePersistence.")
+                    new UnsafeTypePersistence[T](clazz)
+                } else {
+                    new ConstructorTypePersistence[T](clazz, ctr, deconstructor.get)
+                }
+            }
+        }
     }
 
     @inline

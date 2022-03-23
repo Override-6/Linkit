@@ -18,9 +18,10 @@ import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast._
 
 import java.lang.reflect.Modifier
+import java.net.URL
 import scala.util.Try
 
-class BehaviorFile(val ast: BehaviorFileAST, val sourcePath: String) {
+class BehaviorFile(val ast: BehaviorFileAST, val source: String) {
 
     val imports = computeImports()
 

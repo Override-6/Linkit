@@ -163,7 +163,7 @@ class SerializerObjectPool(bundle: PersistenceBundle,
 
     private def addObjectAndReturnDecomposed(ref: AnyRef): Array[Any] = {
         val selectedRefType = addTypeOfIfAbsent(ref)
-        val profile         = config.getProfile[AnyRef](ref.getClass)
+        val profile         = config.getProfile[AnyRef](ref)
         val persistence     = profile.getPersistence(ref)
         val decomposed      = persistence.toArray(ref)
         val objPool         = getChunkFromFlag[InstanceObject[AnyRef]](Object)

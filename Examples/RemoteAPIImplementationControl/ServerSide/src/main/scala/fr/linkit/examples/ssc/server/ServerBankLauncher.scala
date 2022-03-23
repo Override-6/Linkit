@@ -15,7 +15,8 @@ package fr.linkit.examples.ssc.server
 
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
-import fr.linkit.examples.ssc.api.UserAccountContainer
+import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
+import fr.linkit.examples.ssc.api.{UserAccountContainer, UserWallet}
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
@@ -37,16 +38,20 @@ object ServerBankLauncher {
         }
     }
 
+
     private def createAccounts(): UserAccountContainer = {
         val connection = launchApp()
-        val global     = connection.network.globalCache
+        val network    = connection.network
+        val global     = network.globalCache
         val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer]())
-        cache.syncObject(0, Constructor[UserAccountContainerImpl]())
+        val app        = connection.getApp
+        val contract   = Contract(classOf[UserWallet].getResource("/behavior.bhv"))(app, ObjectsProperty.default(network))
+        cache.syncObject(0, Constructor[UserAccountContainerImpl](), contract)
     }
 
     private def launchApp(): ServerConnection = {
         val config = new ServerApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = ServerIdentifier

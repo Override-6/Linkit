@@ -32,8 +32,14 @@ object BehaviorFileParser extends BehaviorLanguageParser {
 
     private val fileParser = phrase(rep(importParser | classParser | codeBlockParser | typeModifierParser | valueModifierParser | agreement))
 
-    def parse(context: ParserContext[Elem]): BehaviorFileAST = {
-        fileParser.apply(new TokenReader(context)) match {
+    def parse(context: ParserContext[Elem]): BehaviorFileAST = try {
+        val r = try {
+            fileParser.apply(new TokenReader(context))
+        } catch {
+            case e: BHVLanguageException =>
+                throw new BHVLanguageException(s"in ${context.filePath}: " + e.getMessage)
+        }
+        r match {
             case NoSuccess(msg, n) =>
                 throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, context.fileSource, context.filePath))
             case Success(x, _)     =>

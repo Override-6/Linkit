@@ -49,7 +49,7 @@ object ClassParser extends BehaviorLanguageParser {
             val param  = syncOrNot ~ (identifier <~ Colon).? ~ typeParser ^^ { case sync ~ name ~ id => MethodParam(sync, name, id) }
             val params = repsep(param, Comma)
 
-            (identifier <~ ParenLeft) ~ params <~ ParenRight ^^ { case name ~ params => MethodSignature(name, params) }
+            identifier ~ (ParenLeft ~> params <~ ParenRight).? ^^ { case name ~ params => MethodSignature(name, params.getOrElse(Seq())) }
         }
         val enabledMethodCore          = {
             (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ SynchronizeState(false, false))
@@ -71,7 +71,8 @@ object ClassParser extends BehaviorLanguageParser {
             case Some(Mirroring) ~ className ~ stubClass => ClassDescriptionHead(MirroringDescription(stubClass.getOrElse(className)), className)
             case None ~ className ~ None                 => ClassDescriptionHead(RegularDescription, className)
             case Some(Statics) ~ className ~ None        => ClassDescriptionHead(StaticsDescription, className)
-            case _@(Some(Statics) | None) ~ _ ~ Some(_)  => throw new BHVLanguageException("statics or regular description cannot define a stub class.")
+            case _@(Some(Statics) | None) ~ className ~ Some(_)  =>
+                throw new BHVLanguageException(s"statics or regular description '${className}' cannot define a stub class.")
         }
         val attributedFieldsAndMethods = rep(methodsParser | fieldsParser) ^^ { x =>
             val fields  = x.filter(_.isInstanceOf[AttributedFieldDescription]).map { case d: AttributedFieldDescription => d }
