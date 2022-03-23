@@ -80,19 +80,19 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
     }
 
     protected def registerReference(ref: R): Unit = ref.synchronized {
-        AppLogger.info(s"Registering Network Object reference $ref (${System.identityHashCode(ref)}).")
-        var presence: InternalNetworkObjectPresence[R] = null
-        if (!internalPresences.contains(ref)) {
-            presence = new InternalNetworkObjectPresence[R](this, ref)
-            internalPresences(ref) = presence
-        } else {
-            presence = internalPresences(ref)
+            AppLogger.info(s"Registering Network Object reference $ref (${System.identityHashCode(ref)}).")
+            var presence: InternalNetworkObjectPresence[R] = null
+            if (!internalPresences.contains(ref)) {
+                presence = new InternalNetworkObjectPresence[R](this, ref)
+                internalPresences(ref) = presence
+            } else {
+                presence = internalPresences(ref)
+            }
+            presence.setPresent()
+            val opt = externalPresences.get(ref)
+            if (opt.isDefined)
+                opt.get.onObjectSet(currentIdentifier)
         }
-        presence.setPresent()
-        val opt = externalPresences.get(ref)
-        if (opt.isDefined)
-            opt.get.onObjectSet(currentIdentifier)
-    }
 
     protected def unregisterReference(ref: R): Unit = {
         val opt = internalPresences.get(ref)

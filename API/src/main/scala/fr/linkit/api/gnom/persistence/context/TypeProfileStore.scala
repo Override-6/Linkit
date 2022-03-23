@@ -13,14 +13,10 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-
 trait TypeProfileStore {
 
     def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T]
 
-    def getSyncObjectProfile[T <: SynchronizedObject[T]](clazz: Class[T], objectContract: StructureContract[T]): TypeProfile[T]
 
 
 }

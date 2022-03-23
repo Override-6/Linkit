@@ -34,6 +34,8 @@ private[gnom] class MapNetworkObjectsLinker(omc: ObjectManagementChannel) extend
 
     def save(no: NetworkObject[NetworkObjectReference]): Unit = {
         val reference = no.reference
+        if (reference == null)
+            throw new NullPointerException("Network Object's reference is null.")
         map.put(reference, no)
         registerReference(reference)
     }

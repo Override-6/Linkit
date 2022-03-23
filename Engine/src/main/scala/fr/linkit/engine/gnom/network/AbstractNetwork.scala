@@ -86,7 +86,6 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         trunk.addCacheManager(manager, storePath)
     }
 
-    //TODO creating cache manager does not get synchronized
     private[network] def newCacheManager(family: String): SharedCacheManager = {
         AppLogger.vDebug(s" ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
         val store       = networkStore.createStore(family.hashCode)

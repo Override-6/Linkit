@@ -13,8 +13,6 @@
 
 package fr.linkit.engine.gnom.persistence.context
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
@@ -147,10 +145,6 @@ class PersistenceConfigBuilder {
                 config.getProfile[T](clazz)
             }
 
-            override def getSyncObjectProfile[T <: SynchronizedObject[T]](clazz: Class[T], objectContract: StructureContract[T]): TypeProfile[T] = {
-                check()
-                config.getSyncObjectProfile(clazz, objectContract)
-            }
         }
         val profiles                  = collectProfiles(store)
         val refStore                  = new WeakContextObjectLinker(storeParent, omc)

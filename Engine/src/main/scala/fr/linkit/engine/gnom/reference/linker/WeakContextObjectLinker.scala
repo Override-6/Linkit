@@ -16,7 +16,6 @@ package fr.linkit.engine.gnom.reference.linker
 import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
 import java.util
 import java.util.Map.Entry
-
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
@@ -26,6 +25,8 @@ import fr.linkit.engine.gnom.packet.traffic.injection.EndOfInjectionChainExcepti
 import fr.linkit.engine.gnom.reference.{AbstractNetworkPresenceHandler, ContextObject, ObjectAlreadyReferencedException}
 import fr.linkit.engine.internal.utils.Identity
 import org.jetbrains.annotations.Nullable
+
+import scala.util.Try
 
 class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: ObjectManagementChannel)
     extends AbstractNetworkPresenceHandler[ContextualObjectReference](omc)
@@ -37,7 +38,7 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
     override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ContextualObjectReference]
 
     override def findReferenceID(obj: AnyRef): Option[Int] = {
-        var result = refToCode.get(obj)
+        var result = Try(refToCode.get(obj)).getOrElse(0)
         if (result == 0) result = refToCode.get(Identity(obj))
         if (result == 0) {
             if (parent != null) parent.findReferenceID(obj)

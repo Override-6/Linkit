@@ -14,12 +14,10 @@
 package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
-import fr.linkit.engine.gnom.persistence.context.SimplePersistenceConfig.FullRemoteObjectPersistence
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
@@ -37,29 +35,24 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     private val cachedProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
 
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        var profile            = cachedProfiles.get(clazz).orNull
-        val defaultProfileNull = profile == null
-        if (defaultProfileNull) {
-            profile = customProfiles.getOrElse(clazz, newDefaultProfile[T](clazz))
+        var profile = cachedProfiles.get(clazz).orNull
+        if (profile eq null) {
+            val isSync = isSyncClass(clazz)
+            profile = customProfiles.get(clazz) match {
+                case Some(value: TypeProfile[T]) if isSync => warpTypePersistencesWithSyncPersist[T](value)
+                case Some(value)                           => value
+                case None                                  => newDefaultProfile(clazz)
+            }
             cachedProfiles.put(clazz, profile)
         }
         profile.asInstanceOf[TypeProfile[T]]
     }
 
-    override def getSyncObjectProfile[T <: SynchronizedObject[T]](clazz: Class[T], objectContract: StructureContract[T]): TypeProfile[T] = {
-        val profile = getProfile[T](clazz)
-        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map {
-            persist =>
-                val p = if (objectContract.remoteObjectInfo.nonEmpty) FullRemoteObjectPersistence else persist
-                new SynchronizedObjectsPersistence(p)
-        }
-        new DefaultTypeProfile[T](clazz, this, persistences)
-    }
-
-    protected def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        val nonSyncClass                    = if (isSyncClass(clazz)) clazz.getSuperclass else clazz
+    private def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
+        val isSync                          = isSyncClass(clazz)
+        val nonSyncClass                    = if (isSync) clazz.getSuperclass else clazz
         val constructor                     = context.findConstructor[T](nonSyncClass)
-        val persistence: TypePersistence[T] = {
+        var persistence: TypePersistence[T] = {
             if (classOf[Deconstructible].isAssignableFrom(nonSyncClass)) {
                 constructor.fold(new DeconstructiveTypePersistence[T with Deconstructible](nonSyncClass)) {
                     ctr => new DeconstructiveTypePersistence[T with Deconstructible](nonSyncClass, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
@@ -77,6 +70,9 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
                 }
             }
         }
+        if (isSync) {
+            persistence = new SynchronizedObjectsPersistence[Nothing](persistence).asInstanceOf[TypePersistence[T]]
+        }
         new DefaultTypeProfile[T](nonSyncClass, this, Array(persistence))
     }
 
@@ -93,6 +89,11 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
             return new UnsafeTypePersistence[T](clazz)
         }
         new ConstructorTypePersistence[T](clazz, constructor.get, deconstructor.get)
+    }
+
+    private def warpTypePersistencesWithSyncPersist[T <: AnyRef](profile: TypeProfile[T]): TypeProfile[T] = {
+        val persistences = profile.getPersistences.map(new SynchronizedObjectsPersistence[Nothing](_).asInstanceOf[TypePersistence[T]])
+        new DefaultTypeProfile[T](profile.typeClass, this, persistences)
     }
 
 }

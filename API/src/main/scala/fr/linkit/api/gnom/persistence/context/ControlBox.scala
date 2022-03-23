@@ -14,9 +14,7 @@
 package fr.linkit.api.gnom.persistence.context
 
 /**
- * The Control box is used during object deserialisation.
- * The control box is currently very simple but could get more complex in the future
- * Used to handle async object deserialisation
+ * The Control box is used during object deserialisation, meant to handle object deserialisation
  * */
 trait ControlBox {
 
