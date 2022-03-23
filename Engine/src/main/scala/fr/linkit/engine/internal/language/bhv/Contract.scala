@@ -14,11 +14,10 @@
 package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
 import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
-import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor}
+import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 
@@ -30,7 +29,7 @@ object Contract {
     private final val contracts = mutable.HashMap.empty[String, PartialContractDescriptorData]
     private final val center    = new DefaultCompilerCenter
 
-    def apply(file: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): ContractDescriptorData = contracts.get(file) match {
+    def apply(file: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(file) match {
         case Some(partial) =>
             partial(propertyClass)
         case None          =>
@@ -41,22 +40,22 @@ object Contract {
             completeAST(ast, file, propertyClass, app)
     }
 
-    private def completeAST(ast: BehaviorFileAST, fileName: String, propertyClass: PropertyClass, app: ApplicationContext): ContractDescriptorData = {
+    private def completeAST(ast: BehaviorFileAST, filePath: String, propertyClass: PropertyClass, app: ApplicationContext): LangContractDescriptorData = {
         if (propertyClass == null)
             throw new NullPointerException("property class cannot be null. ")
-        val file          = new BehaviorFile(ast)
-        val extractor     = new BehaviorFileLambdaExtractor(file, fileName, center)
+        val file          = new BehaviorFile(ast, filePath)
+        val extractor     = new BehaviorFileLambdaExtractor(file, filePath, center)
         val callerFactory = extractor.compileLambdas(app)
-        val partial       = new PartialContractDescriptorData(file, callerFactory)
-        contracts.put(fileName, partial)
+        val partial       = new PartialContractDescriptorData(file, app, callerFactory)
+        contracts.put(filePath, partial)
         partial(propertyClass)
     }
 
-    private class PartialContractDescriptorData(file: BehaviorFile, callerFactory: PropertyClass => LambdaCaller) {
+    private class PartialContractDescriptorData(file: BehaviorFile, app: ApplicationContext, callerFactory: PropertyClass => LambdaCaller) {
 
-        def apply(propertyClass: PropertyClass): ContractDescriptorData = {
+        def apply(propertyClass: PropertyClass): LangContractDescriptorData = {
             val caller      = callerFactory(propertyClass)
-            val interpreter = new BehaviorFileDescriptor(file, propertyClass, caller)
+            val interpreter = new BehaviorFileDescriptor(file, app, propertyClass, caller)
             interpreter.data
         }
 

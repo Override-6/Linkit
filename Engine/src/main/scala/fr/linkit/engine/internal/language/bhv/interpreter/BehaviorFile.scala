@@ -20,7 +20,7 @@ import fr.linkit.engine.internal.language.bhv.ast._
 import java.lang.reflect.Modifier
 import scala.util.Try
 
-class BehaviorFile(val ast: BehaviorFileAST) {
+class BehaviorFile(val ast: BehaviorFileAST, val sourcePath: String) {
 
     val imports = computeImports()
 

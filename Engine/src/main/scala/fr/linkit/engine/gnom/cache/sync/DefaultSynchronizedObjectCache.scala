@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, ContractDescriptorDataHolder}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncObjectReference}
@@ -47,28 +47,26 @@ import scala.util.control.NonFatal
 
 final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePacketChannel,
                                                                 generator: SyncClassCenter,
-                                                                defaultContractsHolder: ContractDescriptorDataHolder,
+                                                                override val defaultContracts: ContractDescriptorData,
                                                                 override val network: Network)
-        extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
+    extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
-    override val defaultContracts                              = defaultContractsHolder.getData(network)
     private  val cacheOwnerId                                  = channel.manager.ownerID
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val forest           : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
 
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = {
-        syncObject(id, creator, defaultContractsHolder)
+        syncObject(id, creator, defaultContracts)
     }
 
-    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], holder: ContractDescriptorDataHolder): A with SynchronizedObject[A] = {
-        val contracts   = holder.getData(network)
+    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A] = {
         val tree        = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], contracts)
-        val treeProfile = ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier, holder)
+        val treeProfile = ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier, contracts)
         channel.makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(ObjectPacket(treeProfile))
-                .putAllAttributes(this)
-                .submit()
+            .addPacket(ObjectPacket(treeProfile))
+            .putAllAttributes(this)
+            .submit()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
         wrapperNode.synchronizedObject
@@ -156,13 +154,13 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
         forest
-                .findTree(path.head)
-                .flatMap(tree => {
-                    if (path.length == 1)
-                        Some(tree.rootNode)
-                    else
-                        tree.findNode[A](path)
-                })
+            .findTree(path.head)
+            .flatMap(tree => {
+                if (path.length == 1)
+                    Some(tree.rootNode)
+                else
+                    tree.findNode[A](path)
+            })
     }
 
     private def handleRootObjectPacket(treeID: Int,
@@ -187,9 +185,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
             } catch {
                 case NonFatal(e) =>
                     throw new SyncObjectInstantiationException(e.getMessage +
-                            s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
-                               | Try to regenerate the sync class of ${creator.tpeClass}.
-                               | """.stripMargin, e)
+                        s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
+                           | Try to regenerate the sync class of ${creator.tpeClass}.
+                           | """.stripMargin, e)
             }
         }
 
@@ -205,11 +203,11 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                     handleInvocationPacket(ip, bundle)
                 case ObjectPacket(location: SyncObjectReference) =>
                     bundle.responseSubmitter
-                            .addPacket(BooleanPacket(isObjectPresent(location)))
-                            .submit()
+                        .addPacket(BooleanPacket(isObjectPresent(location)))
+                        .submit()
 
-                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner, holder)) =>
-                    handleRootObjectPacket(treeID, rootObject, owner, holder.getData(network))
+                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner, contracts)) =>
+                    handleRootObjectPacket(treeID, rootObject, owner, contracts)
             }
         }
 
@@ -260,27 +258,31 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 object DefaultSynchronizedObjectCache {
 
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
-    /*
-        implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = apply()
 
-        implicit def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
-            val contracts: ContractDescriptorData = null //new ContractDescriptorDataBuilder {}.build()
-            apply[A](contracts)
-        }*/
+    implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A]] = apply()
 
-    implicit def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorDataHolder): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
+    implicit def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A]] = {
+        val contracts: ContractDescriptorData = null //new ContractDescriptorDataBuilder {}.build()
+        apply[A](contracts)
+    }
+
+    def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[SynchronizedObjectCache[A]] = {
+        apply[A](null, network)
+    }
+
+    implicit def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData): SharedCacheFactory[SynchronizedObjectCache[A]] = {
         channel => {
             apply[A](channel, contracts, channel.traffic.connection.network)
         }
     }
 
-    private[linkit] def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorDataHolder, network: Network): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
+    private[linkit] def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData, network: Network): SharedCacheFactory[SynchronizedObjectCache[A]] = {
         channel => {
             apply[A](channel, contracts, network)
         }
     }
 
-    private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorDataHolder, network: Network): SynchronizedObjectCache[A] = {
+    private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): SynchronizedObjectCache[A] = {
         import fr.linkit.engine.application.resource.external.LocalResourceFolder._
         val context   = channel.manager.network.connection.getApp
         val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
@@ -292,6 +294,6 @@ object DefaultSynchronizedObjectCache {
     case class ObjectTreeProfile[A <: AnyRef](treeID: Int,
                                               rootObject: A with SynchronizedObject[A],
                                               treeOwner: String,
-                                              holder: ContractDescriptorDataHolder) extends Serializable
+                                              holder: ContractDescriptorData) extends Serializable
 
 }

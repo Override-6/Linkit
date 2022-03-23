@@ -1,5 +1,6 @@
 package fr.linkit.server.test.sync
 
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 import fr.linkit.engine.internal.mapping.ClassMappings
@@ -21,7 +22,7 @@ class SyncObjectRMIPerformanceTests {
         }.build()*/
         val array = connection.network
             .globalCache
-            .attachToCache(52, DefaultSynchronizedObjectCache[Player]())
+            .attachToCache(52, DefaultSynchronizedObjectCache[Player](null: ContractDescriptorData))
             .syncObject(0, Constructor[Player](9, "test", "test", 9, 8))
         println(s"array = $array")
         Thread.sleep(4567890987654L)

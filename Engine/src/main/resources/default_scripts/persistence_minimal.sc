@@ -1,28 +1,24 @@
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.gnom.network.{NetworkDataBundle, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
 import fr.linkit.engine.gnom.persistence.defaults._
+import fr.linkit.engine.internal.language.bhv.interpreter.LangContractDescriptorData
+import fr.linkit.engine.internal.language.bhv.{Contract, PropertyClass}
 import fr.linkit.engine.internal.utils.Identity
 
 //Start Of Context
 val builder: PersistenceConfigBuilder = null
-val app    : ApplicationContext       = null
-val traffic: PacketTraffic            = null
 
 import builder._
 
 //ENd Of Context
 
-val connection = traffic.connection
 putContextReference(1, EmptyPacket)
 putContextReference(2, Identity(Nil))
 putContextReference(3, None)
-putContextReference(4, app)
-putContextReference(5, traffic)
-//FIXME connection is null -> putContextReference(6, connection)
 setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.fromData)
+setTConverter[LangContractDescriptorData, (ApplicationContext, String, PropertyClass)](d => (d.app, d.source, d.propertyClass)){case (app, f, p) => Contract(f)(app, p)}
 //putPersistence(new ScalaIterableTypePersistence)
 //putPersistence(new ScalaMapTypePersistence)
 putPersistence(new JavaArrayListTypePersistence)

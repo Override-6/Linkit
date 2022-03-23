@@ -1,5 +1,6 @@
 package fr.linkit.engine.internal.language.bhv.interpreter
 
+import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
@@ -16,7 +17,7 @@ import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, PropertyClass}
 import fr.linkit.engine.internal.utils.ClassMap
 
-class BehaviorFileDescriptor(file: BehaviorFile, propertyClass: PropertyClass, caller: LambdaCaller) {
+class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, propertyClass: PropertyClass, caller: LambdaCaller) {
 
     private val ast                                                            = file.ast
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
@@ -25,7 +26,11 @@ class BehaviorFileDescriptor(file: BehaviorFile, propertyClass: PropertyClass, c
     private val contracts        : Seq[StructureContractDescriptor[_]]         = computeContracts()
 
     lazy val data = {
-        new ContractDescriptorDataImpl(contracts.toArray)
+        new ContractDescriptorDataImpl(contracts.toArray) with LangContractDescriptorData {
+            override val source       : String             = file.sourcePath
+            override val propertyClass: PropertyClass      = BehaviorFileDescriptor.this.propertyClass
+            override val app          : ApplicationContext = app
+        }
     }
 
     private def computeContracts(): Seq[StructureContractDescriptor[_]] = {

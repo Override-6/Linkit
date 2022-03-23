@@ -15,6 +15,8 @@ package fr.linkit.api.application
 
 import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
 
-case class ApplicationReference() extends NetworkObjectReference
+case class ApplicationReference() extends NetworkObjectReference {
+    override def toString: String = "@application"
+}
 
 object ApplicationReference extends ApplicationReference with SystemObjectReference
