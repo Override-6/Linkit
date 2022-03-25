@@ -36,6 +36,11 @@ trait SyncStructureDescription[A <: AnyRef] extends CompilationContext {
     def listMethods(): Iterable[MethodDescription]
 
     /**
+     * @return A list of [[FieldDescription]]
+     * @see [[FieldDescription]]
+     */
+    def listFields(): Iterable[FieldDescription]
+    /**
      * @param methodID the method identifier to search.
      * @return Some(MethodDescription) if a method of the given identifier was found, None instead.
      * */
@@ -43,11 +48,6 @@ trait SyncStructureDescription[A <: AnyRef] extends CompilationContext {
 
     def findMethodDescription(methodName: String, params: Seq[Class[_]]): Option[MethodDescription]
 
-    /**
-     * @return A list of [[FieldDescription]]
-     * @see [[FieldDescription]]
-     */
-    def listFields(): Seq[FieldDescription]
 
     /**
      * @param fieldID the field identifier to search.

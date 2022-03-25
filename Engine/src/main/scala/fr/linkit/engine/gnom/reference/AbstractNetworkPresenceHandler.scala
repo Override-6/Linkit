@@ -79,7 +79,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         externalPresences.put(location, listener)
     }
 
-    protected def registerReference(ref: R): Unit = ref.synchronized {
+    protected def registerReference(ref: R): Unit = ref.getClass.synchronized {
             AppLogger.info(s"Registering Network Object reference $ref (${System.identityHashCode(ref)}).")
             var presence: InternalNetworkObjectPresence[R] = null
             if (!internalPresences.contains(ref)) {

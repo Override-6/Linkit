@@ -180,14 +180,7 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
             addObjectAndReturnDecomposed(ref)
-            ref match {
-                case no: NetworkObject[_] =>
-                    AppLogger.info(s"A network object ${no.reference} was missing on targeted engine ${bundle.boundId}.")
-                //selector.informObjectSent(no)
-                case _ =>
-            }
         } else {
-            AppLogger.info(s"network object has been replaced by his reference (${nrlOpt.get})")
             val chunk = getChunkFromFlag[ReferencedNetworkObject](RNO)
             if (chunk.indexOf(ref) >= 0)
                 return

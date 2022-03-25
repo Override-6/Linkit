@@ -34,11 +34,11 @@ class UserInputHandler(accounts: UserAccountContainer) {
         if (args.length != 1)
             fail("usage: getHistory <wallet_name>")
         val walletName = args.head
-        Option(accounts.getCurrentAccount
+        val history    = Option(accounts.getCurrentAccount
                 .findCurrentWallet(walletName))
                 .getOrElse(fail(s"could not find wallet '$walletName'"))
                 .getHistory
-                .foreach(println)
+        history.foreach(println)
     }
 
     private def sendMoney(args: Array[String]): Unit = {

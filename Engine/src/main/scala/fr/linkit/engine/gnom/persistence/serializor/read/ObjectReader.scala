@@ -115,7 +115,7 @@ class ObjectReader(bundle: PersistenceBundle,
 
             override lazy val value: AnyRef = {
                 val loc = reference
-                loc.synchronized {
+                loc.getClass.synchronized {
                     selector.findObject(loc).getOrElse {
                         throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
                     }

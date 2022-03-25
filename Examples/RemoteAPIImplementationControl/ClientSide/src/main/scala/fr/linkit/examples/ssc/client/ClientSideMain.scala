@@ -19,8 +19,7 @@ object ClientSideMain {
     def main(args: Array[String]): Unit = {
         val pool = new HiringBusyWorkerPool("main")
         pool.hireCurrentThread()
-        pool.runLater(start())
-        pool.executeRemainingTasks()
+        start()
     }
 
     private def start(): Unit = {
@@ -42,7 +41,7 @@ object ClientSideMain {
         Thread.sleep(250)
         val global     = connection.network.globalCache
         val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer]())
-        cache.findObject(0).getOrElse(throw new NoSuchElementException("could not find accounts container DAO"))
+        cache.findObject(0).getOrElse(throw new NoSuchElementException("could not find accounts container"))
     }
 
     private def launchApp(identifier0: String): ExternalConnection = {

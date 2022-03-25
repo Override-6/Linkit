@@ -14,14 +14,13 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract}
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.StructureBehaviorDescriptorNodeImpl.defaultContract
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
-import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
+import fr.linkit.engine.gnom.cache.sync.contract.{MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import org.jetbrains.annotations.Nullable
 
@@ -33,8 +32,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
 
     private val clazz        = descriptor.targetClass
-    private val instanceDesc = SyncObjectDescription[A](clazz)
-    private val staticsDesc  = SyncStaticsDescription[A](clazz)
+    //private val instanceDesc = SyncObjectDescription[A](clazz)
+    //private val staticsDesc  = SyncStaticsDescription[A](clazz)
 
     override def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit = {
         if (superClass != null) {

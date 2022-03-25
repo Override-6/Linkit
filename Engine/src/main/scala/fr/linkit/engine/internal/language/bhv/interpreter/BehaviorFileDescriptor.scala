@@ -8,7 +8,7 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, RemoteObjectInfo}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
+import fr.linkit.engine.gnom.cache.sync.contract.description.{AbstractSyncStructureDescription, SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, MethodContractDescriptorImpl}
 import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
@@ -76,8 +76,12 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                               (descOpt: Option[MethodDescription]): Array[MethodContractDescriptor] = {
         if (descOpt.isEmpty)
             return Array()
-        val desc = descOpt.get
-        classDesc.listMethods().map { method =>
+        val desc    = descOpt.get
+        val methods = classDesc match {
+            case desc: SyncObjectDescription[_]  => desc.listMethods(desc.clazz)
+            case desc: SyncStaticsDescription[_] => desc.listMethods()
+        }
+        methods.map { method =>
             desc match {
                 case _: DisabledMethodDescription   =>
                     MethodContractDescriptorImpl(method, false, None, None, Array.empty, None, false, EmptyBuilder)

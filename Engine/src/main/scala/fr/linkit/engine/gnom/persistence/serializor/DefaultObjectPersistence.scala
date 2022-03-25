@@ -45,9 +45,9 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         val pool = writer.getPool
         writeEntries(objects, writer, pool)
         val t1 = System.currentTimeMillis()
-        InvocationChoreographer.forceLocalInvocation {
-            AppLogger.debug(s"Ended serialization of ${objects.mkString(", ")} (took ${t1 - t0} ms.)")
-        }
+        //InvocationChoreographer.forceLocalInvocation {
+            //AppLogger.debug(s"Ended serialization of ${objects.mkString(", ")} (took ${t1 - t0} ms.)")
+        //}
     }
 
     private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,
