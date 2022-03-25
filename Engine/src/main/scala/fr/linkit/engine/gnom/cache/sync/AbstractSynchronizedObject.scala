@@ -30,7 +30,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient private final var presenceOnNetwork: NetworkObjectPresence   = _
     @transient private final var node             : ObjectSyncNode[A]       = _
 
-    //cached for handleCall
+    //cached values for handleCall
     @transient private final var currentIdentifier: String  = _
     @transient private final var ownerID          : String  = _
     @transient private final var isNotMirroring   : Boolean = _
@@ -52,7 +52,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
-        this.isNotMirroring = isOrigin || contract.remoteObjectInfo.isEmpty
+        this.isNotMirroring = !(!isOrigin && contract.remoteObjectInfo.isDefined)
     }
 
     override def isOrigin: Boolean = currentIdentifier == ownerID

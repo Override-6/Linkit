@@ -42,15 +42,20 @@ object Contract {
             result
     }
 
-    //FIXME Using URL is ok but when a contract must be sent to another computer,
+    //FIXME Using a source URL is ok but when a contract must be sent to another computer,
     // it becomes complex to handle where to find the computer's equivalent source
     // as the bhv file is certainly not stored at the same path.
     def apply(url: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = {
         val loader = Thread.currentThread().getContextClassLoader
-        if (url.contains(":")) {//it's an absolute file path
-            val pathStr = if (url.head == '/') url.tail else url
-            fromText(Files.readString(Path.of(pathStr)), url)
-        } else apply(loader.getResource(url))
+        contracts.get(url) match {
+            case Some(partial) => partial(propertyClass)
+            case None          =>
+                if (url.contains(":")) { //it's an absolute file path
+                    val pathStr = if (url.head == '/') url.tail else url
+
+                    fromText(Files.readString(Path.of(pathStr)), url)
+                } else apply(loader.getResource(url))
+        }
     }
 
     private def fromText(text: String, source: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = {

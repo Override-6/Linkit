@@ -213,14 +213,15 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         }
 
         override def initializeContent(content: CacheRepoContent[A]): Unit = {
-            if (content.array.isEmpty)
-                return
             val array = content.array
+            if (array.isEmpty)
+                return
 
             array.foreach(profile => {
                 val rootObject = profile.rootObject
                 val owner      = profile.treeOwner
                 val treeID     = profile.treeID
+                val contracts = profile.contracts
                 //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
                 if (isRegistered(treeID)) {
                     forest.findTreeInternal(treeID).map(_.getRoot).fold {
@@ -229,7 +230,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                 }
                 //it's an object that must be remotely controlled because it is chipped by another objects cache.
                 else {
-                    createNewTree(treeID, owner, new InstanceWrapper[A](rootObject))
+                    createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), contracts)
                 }
             })
         }
@@ -294,6 +295,6 @@ object DefaultSynchronizedObjectCache {
     case class ObjectTreeProfile[A <: AnyRef](treeID: Int,
                                               rootObject: A with SynchronizedObject[A],
                                               treeOwner: String,
-                                              holder: ContractDescriptorData) extends Serializable
+                                              contracts: ContractDescriptorData) extends Serializable
 
 }

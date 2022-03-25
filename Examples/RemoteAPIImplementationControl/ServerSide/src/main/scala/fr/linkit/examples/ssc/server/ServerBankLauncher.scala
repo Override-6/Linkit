@@ -51,7 +51,7 @@ object ServerBankLauncher {
 
     private def launchApp(): ServerConnection = {
         val config = new ServerApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = System.getenv("LinkitHome")
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = ServerIdentifier

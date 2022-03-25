@@ -89,14 +89,13 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
     private def initializeSyncObject(syncObj: A with SynchronizedObject[A]): Unit = {
         val reference = syncObj.reference
         val path      = reference.nodePath
+        if (path.length == 1) {
+            // syncObj is a root object, it's gonna be initialized later in #handleBundle
+            return
+        }
         var treeOpt   = findTreeInternal(path.head)
         if (treeOpt.isEmpty) {
-            if (path.length == 1) {
-                center.makeTree(syncObj)
-                treeOpt = findTreeInternal(path.head)
-            } else {
-                throw new NoSuchObjectTreeException(s"No Object Tree found of id ${path.head} for object at $reference.")
-            }
+            throw new NoSuchObjectTreeException(s"No Object Tree found of id ${path.head} for object at $reference.")
         }
         val tree       = treeOpt.get
         val nodeOpt    = tree.findNode[AnyRef](path)
