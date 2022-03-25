@@ -87,7 +87,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
     import fr.linkit.api.internal.concurrency.WorkerPools._
 
     protected val workers: ListBuffer[Worker] = ListBuffer.empty
-    protected var closed                        = false
+    protected var closed                      = false
 
     //additional values for debugging
     @volatile private var activeThreads = 0
@@ -128,8 +128,8 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
 
             try {
                 currentWorker
-                        .getController
-                        .runTask(childTask)
+                    .getController
+                    .runTask(childTask)
             } catch {
                 case e: Throwable =>
                     e.printStackTrace()
@@ -180,10 +180,10 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         if (!isCurrentThreadWorker)
             return
         currentWorker
-                .getController
-                .getCurrentTask
-                .get
-                .notifyNestThrow(cause)
+            .getController
+            .getCurrentTask
+            .get
+            .notifyNestThrow(cause)
     }
 
     def sleepingThreads: Iterable[Worker] = {

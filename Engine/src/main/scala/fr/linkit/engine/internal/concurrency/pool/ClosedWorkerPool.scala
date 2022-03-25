@@ -4,7 +4,7 @@ import fr.linkit.api.internal.concurrency.{Worker, WorkerPools}
 
 import java.util.concurrent.LinkedBlockingQueue
 
-class BusyWorkerPool(initialThreadCount: Int, name: String) extends AbstractWorkerPool(name) {
+class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWorkerPool(name) {
 
     if (initialThreadCount <= 0)
         throw new IllegalArgumentException(s"Worker pool '$name' must contain at least 1 thread, provided: '$initialThreadCount'")

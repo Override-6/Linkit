@@ -36,7 +36,7 @@ class UsageRMIRulesAgreement(currentID: String, ownerID: String,
     }
 
     override val mayPerformRemoteInvocation: Boolean = {
-        acceptAll || (accepted.nonEmpty && !accepted.contains(currentID))
+        acceptAll || (accepted.nonEmpty && !(accepted.length == 1 && accepted.head == currentID))
     }
 
 }

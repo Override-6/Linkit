@@ -1,10 +1,12 @@
 package fr.linkit.examples.ssc.client
 
-import fr.linkit.api.application.connection.ExternalConnection
+import fr.linkit.api.application.connection.{ConnectionContext, ExternalConnection}
+import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
+import fr.linkit.engine.internal.concurrency.pool.HiringBusyWorkerPool
 import fr.linkit.examples.ssc.api.UserAccountContainer
 
 import java.net.InetSocketAddress
@@ -15,7 +17,19 @@ object ClientSideMain {
     private final val Address = new InetSocketAddress("localhost", 48481)
 
     def main(args: Array[String]): Unit = {
-        val accounts = connectToAccounts()
+        val pool = new HiringBusyWorkerPool("main")
+        pool.hireCurrentThread()
+        pool.runLater(start())
+        pool.executeRemainingTasks()
+    }
+
+    private def start(): Unit = {
+        println("Choose the user name you want to control")
+        print("> ")
+        val username = StdIn.readLine()
+        println(s"Opening connection as '$username'.")
+        val connection = launchApp(username)
+        val accounts = connectToAccounts(connection)
         println("Successfully connected !")
         val handler = new UserInputHandler(accounts)
         do {
@@ -24,12 +38,7 @@ object ClientSideMain {
         } while (true)
     }
 
-    private def connectToAccounts(): UserAccountContainer = {
-        println("Choose the user name you want to control")
-        print("> ")
-        val username = StdIn.readLine()
-        println(s"Opening connection as '$username'.")
-        val connection = launchApp(username)
+    private def connectToAccounts(connection: ConnectionContext): UserAccountContainer = {
         Thread.sleep(250)
         val global     = connection.network.globalCache
         val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer]())

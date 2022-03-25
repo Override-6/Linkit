@@ -76,7 +76,7 @@ class PersistenceConfigBuilder {
         val fromClass                     = classTag[A].runtimeClass
         val toClass                       = classTag[B].runtimeClass
         val persistor: TypePersistence[A] = new TypePersistence[A] {
-            private  val fields                     = ScalaUtils.retrieveAllFields(fromClass).filterNot(f => Modifier.isTransient(f.getModifiers))
+            private  def fields(clazz: Class[_])                     = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
             override val structure: ObjectStructure = new ArrayObjectStructure {
                 override val types: Array[Class[_]] = Array(toClass)
             }
@@ -96,8 +96,9 @@ class PersistenceConfigBuilder {
             private def initInstance0(allocatedObject: A, args: Array[Any]): Unit = {
                 val t: B   = args.head.asInstanceOf[B]
                 val from   = fFrom(t)
-                val values = ObjectCreator.getAllFields(from, fields)
-                ObjectCreator.pasteAllFields(allocatedObject, fields, values)
+                val classFields = fields(from.getClass)
+                val values = ObjectCreator.getAllFields(from, classFields)
+                ObjectCreator.pasteAllFields(allocatedObject, classFields, values)
             }
 
             override def toArray(t: A): Array[Any] = {
@@ -105,7 +106,7 @@ class PersistenceConfigBuilder {
                 Array(to)
             }
         }
-        persistors put(classTag[A].runtimeClass, persistor)
+        persistors put(fromClass, persistor)
         this
     }
 

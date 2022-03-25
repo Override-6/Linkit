@@ -21,7 +21,7 @@ import fr.linkit.api.internal.system
 import fr.linkit.api.internal.system._
 import fr.linkit.api.internal.system.security.ConnectionSecurityException
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.internal.concurrency.pool.ClosedWorkerPool
 import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
@@ -32,7 +32,7 @@ import scala.util.{Failure, Success}
 
 class ServerApplication private(override val configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) {
 
-    protected override val appPool         = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
+    protected override val appPool         = new ClosedWorkerPool(configuration.mainPoolThreadCount, "Application")
     private            val serverCache     = mutable.HashMap.empty[Any, ServerConnection]
     private            val securityManager = configuration.securityManager
     override val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, ServerApplication.Version)

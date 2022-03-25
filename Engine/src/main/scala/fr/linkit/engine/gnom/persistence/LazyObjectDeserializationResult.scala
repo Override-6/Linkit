@@ -57,7 +57,7 @@ class LazyObjectDeserializationResult(override val buff: ByteBuffer,
         packet0 = extract[Packet](EmptyPacket).prepare()
         val t1 = System.currentTimeMillis()
         InvocationChoreographer.forceLocalInvocation {
-            AppLogger.debug(s"Deserialization has been performed $coords, $packet0, $attributes0 (took ${t1 - t0} ms.)")
+            //AppLogger.debug(s"Deserialization has been performed $coords, $packet0, $attributes0 (took ${t1 - t0} ms.)")
         }
     }
 

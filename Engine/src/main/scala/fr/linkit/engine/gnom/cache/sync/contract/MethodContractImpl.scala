@@ -59,6 +59,7 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
                 result = modifier.toRemote(result, remote)
             return syncAction(result.asInstanceOf[AnyRef])
         }
+        result
     }
 
     override def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R = {
@@ -116,10 +117,11 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
         // From here we are sure that we want to perform a remote
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
         val currentIdentifier = puppeteer.currentIdentifier
+        val sync              = localInvocation.objectNode.synchronizedObject
         var result     : Any  = null
-        var localResult: Any  = result
+        var localResult: Any  = null
         val mayPerformRMI     = agreement.mayPerformRemoteInvocation
-        if (agreement.mayCallSuper) {
+        if (agreement.mayCallSuper && !sync.isMirroring) {
             localResult = localInvocation.callSuper()
         }
 
