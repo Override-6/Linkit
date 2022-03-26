@@ -23,7 +23,9 @@ class SimpleObject(override val value: AnyRef,
                    val decomposed: Array[Any],
                    override val profile: TypeProfile[_]) extends InstanceObject[AnyRef] {
 
-    override def hashCode(): Int = System.identityHashCode(value)
+    override def hashCode(): Int = identity
+
+    override val identity: Int = System.identityHashCode(value)
 
     override def equals(obj: Any): Boolean = JavaUtils.sameInstance(obj, value)
 

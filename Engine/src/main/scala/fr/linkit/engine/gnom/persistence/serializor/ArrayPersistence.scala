@@ -112,7 +112,8 @@ object ArrayPersistence {
                 new NotInstantiatedArray[String](reader.getPool, content, array)
             case _      =>
                 new PoolObject[AnyRef] {
-                    override val value: AnyRef = readPrimitiveArray(kind, reader)
+                    override val value   : AnyRef = readPrimitiveArray(kind, reader)
+                    override val identity: Int    = System.identityHashCode(value)
                 }
         }
     }

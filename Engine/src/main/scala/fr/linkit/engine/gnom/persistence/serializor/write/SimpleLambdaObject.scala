@@ -21,6 +21,8 @@ class SimpleLambdaObject(lambdaObject: AnyRef,
 
     override def value: AnyRef = representation
 
+    override def identity: Int = System.identityHashCode(representation)
+
     override def equals(obj: Any): Boolean = obj == lambdaObject
 
     override def hashCode(): Int = lambdaObject.hashCode()

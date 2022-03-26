@@ -113,6 +113,8 @@ class ObjectReader(bundle: PersistenceBundle,
                     throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
             }
 
+            override val identity: Int = referenceIdx
+
             override lazy val value: AnyRef = {
                 val loc = reference
                 loc.getClass.synchronized {

@@ -97,9 +97,10 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         var idx   = chunk.indexOf(ref)
         if (idx > -1)
             idx += chunksPositions(chunk.tag) + 1
-        else if (tag == Object) { //it could be a referenced object
-            idx = chunks(RNO).indexOf(ref) + chunksPositions(RNO) + 1
-        }
+        else
+            if (tag == Object) { //it could be a referenced object
+                idx = chunks(RNO).indexOf(ref) + chunksPositions(RNO) + 1
+            }
         idx
     }
 
@@ -188,9 +189,10 @@ class SerializerObjectPool(bundle: PersistenceBundle,
             val nrl = nrlOpt.get
             addObj(nrl)
             val rno: ReferencedNetworkObject = new ReferencedNetworkObject {
-                override val referenceIdx: Int                    = pos
-                override val reference   : NetworkObjectReference = nrl
-                override val value       : AnyRef                 = ref
+                override val referenceIdx         : Int                    = pos
+                override val reference            : NetworkObjectReference = nrl
+                override val value: AnyRef = ref
+                override val identity: Int = System.identityHashCode(ref)
             }
             chunk.add(rno)
         }

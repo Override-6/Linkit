@@ -55,6 +55,8 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         obj
     }
 
+    override val identity: Int = System.identityHashCode(obj)
+
     override def equals(obj: Any): Boolean = JavaUtils.sameInstance(obj, this.obj)
 
     private def initObject(): Unit = {

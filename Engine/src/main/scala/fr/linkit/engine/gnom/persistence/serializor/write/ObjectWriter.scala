@@ -163,7 +163,7 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     @inline
     def putRef(ref: Int): Unit = {
         if (ref < 0)
-            throw new IndexOutOfBoundsException(s"Could not write negative reference into buffer.")
+            throw new IndexOutOfBoundsException(s"Could not write negative reference index into buffer.")
         if (widePacket) buff.putInt(ref)
         else buff.putChar(ref.toChar)
     }

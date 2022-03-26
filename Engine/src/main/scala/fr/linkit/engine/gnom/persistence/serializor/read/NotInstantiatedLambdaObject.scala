@@ -31,6 +31,8 @@ class NotInstantiatedLambdaObject(nio: NotInstantiatedObject[AnyRef],
         lambdaObject
     }
 
+    override def identity: Int = nio.identity
+
     private def initLambda(): Unit = {
         isInit = true
         try {

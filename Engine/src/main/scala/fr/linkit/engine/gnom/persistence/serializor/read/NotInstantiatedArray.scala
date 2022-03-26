@@ -16,6 +16,8 @@ class NotInstantiatedArray[T <: AnyRef](pool: DeserializerObjectPool, arrayConte
         }
     }
 
+    override def identity: Int = System.identityHashCode(emptyArray)
+
     override lazy val value: Array[T] = {
         var i = 0
         while (i < arrayContent.length) {

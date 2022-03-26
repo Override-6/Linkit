@@ -17,4 +17,9 @@ trait PoolObject[T <: AnyRef] {
 
     def value: T
 
+    /**
+     * an int to identity this object in an object pool
+     * */
+    def identity: Int
+
 }

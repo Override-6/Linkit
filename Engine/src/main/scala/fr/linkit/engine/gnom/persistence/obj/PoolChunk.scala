@@ -14,18 +14,20 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.Freezable
+import fr.linkit.api.gnom.persistence.obj.PoolObject
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk.BuffSteps
 import org.jetbrains.annotations.NotNull
 
-import scala.collection.mutable
+import java.util
 import scala.reflect.ClassTag
 
 class PoolChunk[T](val tag: Byte,
-                                  freezable: Freezable,
-                                  maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
+                   freezable: Freezable,
+                   maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
-    private final var buff = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
-    private final var pos  = 0
+    private final var buff    = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
+    private final val buffMap = new util.HashMap[Int, Int]() //Key Identity Hash Code -> Buff Pos + 1
+    private final var pos     = 0
 
     private final var frozen = false
 
@@ -54,9 +56,14 @@ class PoolChunk[T](val tag: Byte,
             buff = extendedBuff
         }
         buff(pos) = t
+        t match {
+            case obj: PoolObject[AnyRef] =>
+                buffMap.put(obj.identity, pos + 1)
+            case obj: AnyRef             =>
+                buffMap.put(System.identityHashCode(obj), pos + 1)
+        }
         pos += 1
     }
-
 
     def addIfAbsent(t: T): Unit = {
         if (indexOf(t) < 0)
@@ -76,13 +83,7 @@ class PoolChunk[T](val tag: Byte,
     def indexOf(t: Any): Int = {
         if (t == null)
             return -1
-        var i = 0
-        while (i < pos) {
-            if (buff(i) == t)
-                return i
-            i += 1
-        }
-        -1
+        buffMap.get(System.identityHashCode(t)) - 1
     }
 
     def size: Int = pos
