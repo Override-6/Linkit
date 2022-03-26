@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.persistence.Freezable
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk.BuffSteps
 import org.jetbrains.annotations.NotNull
 
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 class PoolChunk[T](val tag: Byte,

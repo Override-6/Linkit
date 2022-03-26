@@ -12,7 +12,7 @@ describe mirroring UserAccount {
     foreach method enable as only_cache_owner {
         sync returnvalue
     }
-    enable method name {
+    enable name {
         !sync returnvalue
     }
 }
@@ -34,7 +34,7 @@ describe mirroring UserAccountContainer {
     foreach method enable as only_cache_owner {
         sync returnvalue
     }
-    enable method listAccounts {
+    enable listAccounts() {
         !sync returnvalue
     }
 }

@@ -55,12 +55,12 @@ object ClassParser extends BehaviorLanguageParser {
             (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ SynchronizeState(false, false))
         }
         val enabledMethodParser        = {
-            properties ~ (Enable ~> Method ~> methodSignature) ~ as.? ~ enabledMethodCore ^^ {
+            properties ~ (Enable.? ~> methodSignature) ~ as.? ~ enabledMethodCore ^^ {
                 case properties ~ sig ~ referent ~ (modifiers ~ syncRv) => EnabledMethodDescription(properties, referent, syncRv)(sig, modifiers)
             }
         }
         val disabledMethodParser       = {
-            Disable ~> Method ~> methodSignature ^^ (DisabledMethodDescription(_))
+            Disable ~> methodSignature ^^ (DisabledMethodDescription(_))
         }
         val hiddenMethodParser         = {
             Hide ~> Method ~> methodSignature ~ literal.? ^^ { case sig ~ msg => HiddenMethodDescription(msg)(sig) }

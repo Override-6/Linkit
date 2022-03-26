@@ -8,7 +8,7 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, RemoteObjectInfo}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.engine.gnom.cache.sync.contract.description.{AbstractSyncStructureDescription, SyncObjectDescription, SyncStaticsDescription}
+import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, MethodContractDescriptorImpl}
 import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
@@ -16,8 +16,6 @@ import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, PropertyClass}
 import fr.linkit.engine.internal.utils.ClassMap
-
-import java.net.URL
 
 class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, propertyClass: PropertyClass, caller: LambdaCaller) {
 

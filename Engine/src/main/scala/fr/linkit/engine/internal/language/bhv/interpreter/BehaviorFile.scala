@@ -16,9 +16,9 @@ package fr.linkit.engine.internal.language.bhv.interpreter
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncStructureDescription, FieldDescription => SFieldDescription, MethodDescription => SMethodDescription}
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast._
+import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFile.PrimitiveClasses
 
 import java.lang.reflect.Modifier
-import java.net.URL
 import scala.util.Try
 
 class BehaviorFile(val ast: BehaviorFileAST, val source: String) {
@@ -40,6 +40,7 @@ class BehaviorFile(val ast: BehaviorFileAST, val source: String) {
         val clazz      = imports
                 .get(pureName)
                 .orElse(Try(Class.forName(pureName)).toOption)
+                .orElse(PrimitiveClasses.get(pureName))
                 .orElse(Try(Class.forName("java.lang." + pureName)).toOption)
                 .getOrElse {
                     throw new BHVLanguageException(s"Unknown class '$pureName' ${if (pureName.contains(".")) ", is it imported ?" else ""}")
@@ -98,4 +99,20 @@ class BehaviorFile(val ast: BehaviorFileAST, val source: String) {
         }
         classDesc.findFieldDescription(SFieldDescription.computeID(field)).get
     }
+}
+
+object BehaviorFile {
+
+    import java.lang
+
+    private final val PrimitiveClasses = Array(
+        Integer.TYPE,
+        lang.Byte.TYPE,
+        lang.Short.TYPE,
+        lang.Long.TYPE,
+        lang.Double.TYPE,
+        lang.Float.TYPE,
+        lang.Boolean.TYPE,
+        Character.TYPE
+    ).map(cl => (cl.getName, cl)).toMap
 }
