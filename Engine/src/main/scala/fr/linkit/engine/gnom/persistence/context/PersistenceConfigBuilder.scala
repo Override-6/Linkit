@@ -22,7 +22,7 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
-import fr.linkit.engine.gnom.reference.linker.WeakContextObjectLinker
+import fr.linkit.engine.gnom.reference.linker.NodeContextObjectLinker
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, Identity, ScalaUtils}
@@ -153,7 +153,7 @@ class PersistenceConfigBuilder {
 
         }
         val profiles                  = collectProfiles(store)
-        val refStore                  = new WeakContextObjectLinker(storeParent, omc)
+        val refStore                  = new NodeContextObjectLinker(storeParent, omc)
         refStore ++= referenceStore.toMap
         config = new SimplePersistenceConfig(
             context, profiles, refStore,

@@ -22,17 +22,17 @@ import java.util
 import scala.reflect.ClassTag
 
 class PoolChunk[T](val tag: Byte,
-                   freezable: Freezable,
+                   pool: ObjectPool,
                    maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
-    private final var buff    = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
-    private final val buffMap = new util.HashMap[Int, Int]() //Key Identity Hash Code -> Buff Pos + 1
+    private final var buff    = new Array[T](pool.determineBuffLength(maxLength, BuffSteps))
+    private final val buffMap = new util.HashMap[Int, Int]() //Buff item Identity Hash Code -> Buff Pos + 1
     private final var pos     = 0
 
     private final var frozen = false
 
     @inline
-    override def isFrozen: Boolean = frozen || freezable.isFrozen
+    override def isFrozen: Boolean = frozen || pool.isFrozen
 
     override def freeze(): Unit = {
         frozen = true
@@ -92,5 +92,5 @@ class PoolChunk[T](val tag: Byte,
 
 object PoolChunk {
 
-    val BuffSteps = 200
+    private final val BuffSteps = 200
 }

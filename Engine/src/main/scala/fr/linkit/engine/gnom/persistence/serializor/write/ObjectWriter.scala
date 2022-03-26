@@ -78,7 +78,7 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             val chunk = chunks(i)
             val size  = chunk.size
             if (size > 0) {
-                putRef(pos + i * refSize, size)
+                putRef(pos + i * refSize, size) //set the size of the chunk
                 totalSize += size
                 //println(s"Write chunk. pos of ${chunk.tag} = ${buff.position()}")
                 writeChunk(i, chunk)

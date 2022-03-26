@@ -13,9 +13,6 @@
 
 package fr.linkit.engine.gnom.reference.linker
 
-import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
-import java.util
-import java.util.Map.Entry
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
@@ -26,14 +23,16 @@ import fr.linkit.engine.gnom.reference.{AbstractNetworkPresenceHandler, ContextO
 import fr.linkit.engine.internal.utils.Identity
 import org.jetbrains.annotations.Nullable
 
+import java.util
+import java.util.Map.Entry
 import scala.util.Try
 
-class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: ObjectManagementChannel)
-    extends AbstractNetworkPresenceHandler[ContextualObjectReference](omc)
-        with ContextObjectLinker {
+class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: ObjectManagementChannel)
+        extends AbstractNetworkPresenceHandler[ContextualObjectReference](omc)
+                with ContextObjectLinker {
 
-    private val codeToRef = new util.HashMap[Int, WeakReference[AnyRef]]()
-    private val refToCode = new util.WeakHashMap[AnyRef, Int]()
+    private val codeToRef = new util.HashMap[Int, AnyRef]()
+    private val refToCode = new util.HashMap[AnyRef, Int]()
 
     override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ContextualObjectReference]
 
@@ -56,12 +55,13 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
     }
 
     override def findObject(reference: ContextualObjectReference): Option[NetworkObject[_ <: ContextualObjectReference]] = {
-        val result = codeToRef.get(reference.objectID)
+        val id = reference.objectID
+        val result = codeToRef.get(id)
         if (result == null && parent != null)
             return findObject(reference)
         if (result eq null) None
         else {
-            val obj = result.get() match {
+            val obj = result match {
                 case id: Identity[AnyRef] => id.obj
                 case x                    => x
             }
@@ -71,9 +71,9 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     override def transferTo(linker: ContextObjectLinker): this.type = {
         linker ++= codeToRef
-            .entrySet()
-            .toArray(new Array[(Int, WeakReference[AnyRef])](_))
-            .toMap
+                .entrySet()
+                .toArray(new Array[(Int, AnyRef)](_))
+                .toMap
         this
     }
 
@@ -102,12 +102,12 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
         this
     }
 
-    def ++=(other: WeakContextObjectLinker): this.type = {
+    def ++=(other: NodeContextObjectLinker): this.type = {
         ++=(other.codeToRef
-            .entrySet()
-            .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
-            .map(p => (p.getKey, p.getValue.get()))
-            .toMap)
+                .entrySet()
+                .toArray(new Array[Entry[Int, AnyRef]](_))
+                .map(p => (p.getKey, p.getValue))
+                .toMap)
         this
     }
 
@@ -125,27 +125,16 @@ class WeakContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
             throw new ObjectAlreadyReferencedException(s"Object $anyRef is already referenced with identifier '${codeToRef.get(code)}'.")
         }
         refToCode.put(anyRef, code)
-        codeToRef.put(code, newWeakReference(anyRef))
+        codeToRef.put(code, anyRef)
         this
     }
 
     override def -=(ref: AnyRef): this.type = {
         val code = refToCode.remove(ref)
-        if (code == null) { //²warn here is normal
+        if (code == null) {
             codeToRef.remove(code)
         }
         this
-    }
-
-    private val eventQueue = new ReferenceQueue[AnyRef]() {
-        override def poll(): Reference[_ <: AnyRef] = {
-            val code = refToCode.get(super.poll())
-            codeToRef.remove(code)
-        }
-    }
-
-    private def newWeakReference(ref: AnyRef): WeakReference[AnyRef] = {
-        new WeakReference[AnyRef](ref, eventQueue)
     }
 
 }

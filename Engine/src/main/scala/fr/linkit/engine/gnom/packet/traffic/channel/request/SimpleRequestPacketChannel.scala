@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.engine.internal.utils.ConsumerContainer
 
-import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
+import java.lang.ref.WeakReference
 import java.util
 import java.util.NoSuchElementException
 import java.util.concurrent.LinkedBlockingQueue
@@ -63,7 +63,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                     case Some(request)                     => request.get().pushResponse(response)
                     case None if responseID > requestCount =>
                         throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
-                    case _                                 =>
+                    case None                              => requestHolders remove responseID
                 }
         }
     }
@@ -91,13 +91,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
     }
 
     private[request] def addRequestHolder(holder: SimpleResponseHolder): Unit = {
-        requestHolders.put(holder.id, new WeakReference[SimpleResponseHolder](holder, eventQueue))
-    }
-
-    private val eventQueue: ReferenceQueue[SimpleResponseHolder] = new ReferenceQueue[SimpleResponseHolder]() {
-        override def poll(): Reference[SimpleResponseHolder] = {
-            requestHolders.remove(super.poll().get().id)
-        }
+        requestHolders.put(holder.id, new WeakReference[SimpleResponseHolder](holder))
     }
 
 }

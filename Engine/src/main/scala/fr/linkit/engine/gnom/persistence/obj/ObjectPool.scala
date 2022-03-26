@@ -19,9 +19,11 @@ import fr.linkit.api.gnom.persistence.obj.{InstanceObject, LambdaObject, Referen
 import fr.linkit.engine.gnom.persistence.context.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 
-class ObjectPool(sizes: Array[Int]) extends Freezable {
+abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
 
     private var frozen = false
+
+    def determineBuffLength(length: Int, step: Int): Int
 
     protected final val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects types

@@ -27,7 +27,7 @@ class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
         var currentIndex = 0
         var i            = 0
         while (i < length) {
-            val chunkSize = chunks(i).size
+            val chunkSize = sizes(i)
             if (chunkSize == 0)
                 array(i) = -1
             else {
@@ -38,6 +38,8 @@ class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
         }
         array
     }
+
+    override def determineBuffLength(length: Int, step: Int): Int = length
 
     def getType(globalPos: Int): Class[_] = {
         var pos = globalPos

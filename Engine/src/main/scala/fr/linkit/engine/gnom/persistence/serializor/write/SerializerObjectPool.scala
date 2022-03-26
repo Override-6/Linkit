@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
+import fr.linkit.engine.gnom.persistence.obj.PoolChunk.BuffSteps
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -31,6 +32,8 @@ class SerializerObjectPool(bundle: PersistenceBundle,
     private         val config          = bundle.config
     private         val selector        = new ObjectSelector(bundle)
     protected final val chunksPositions = new Array[Int](chunks.length)
+
+    override def determineBuffLength(length: Int, step: Int): Int = if (length < step) length else step
 
     def getChunk[T](ref: Any): PoolChunk[T] = {
         //TODO this method can be optimized
@@ -62,7 +65,7 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         var currentIndex = 0
         while (i < len) {
             val chunkSize = chunks(i).size
-            if (chunkSize == 0)
+            if (chunkSize <= 0)
                 chunksPositions(i) = -1
             else {
                 chunksPositions(i) = currentIndex
@@ -189,10 +192,10 @@ class SerializerObjectPool(bundle: PersistenceBundle,
             val nrl = nrlOpt.get
             addObj(nrl)
             val rno: ReferencedNetworkObject = new ReferencedNetworkObject {
-                override val referenceIdx         : Int                    = pos
-                override val reference            : NetworkObjectReference = nrl
-                override val value: AnyRef = ref
-                override val identity: Int = System.identityHashCode(ref)
+                override val referenceIdx: Int                    = pos
+                override val reference   : NetworkObjectReference = nrl
+                override val value       : AnyRef                 = ref
+                override val identity    : Int                    = System.identityHashCode(ref)
             }
             chunk.add(rno)
         }
