@@ -69,7 +69,7 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
         }
 
         override def isElse(right: EngineTag): (AgreementConditionAction, AgreementConditionAction) => RMIRulesAgreementBuilder = {
-            addCondition(compareNot(left, right), _, _)
+            addCondition(compare(left, right), _, _)
         }
 
         override def isNotElse(right: EngineTag): (AgreementConditionAction, AgreementConditionAction) => RMIRulesAgreementBuilder = {
@@ -85,7 +85,9 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
         val desiredEngineReturnIdentifier = context.translate(builder.desiredEngineReturn)
         val accepted                      = builder.accepted.map(context.translate).toArray
         val discarded                     = builder.discarded.map(context.translate).toArray
-        new UsageRMIRulesAgreement(context.currentID, context.ownerID, desiredEngineReturnIdentifier, acceptAllTargets, accepted, discarded)
+        new UsageRMIRulesAgreement(
+            context.currentID, context.ownerID, desiredEngineReturnIdentifier,
+            builder.acceptAllTargets, accepted, discarded)
     }
 
 }

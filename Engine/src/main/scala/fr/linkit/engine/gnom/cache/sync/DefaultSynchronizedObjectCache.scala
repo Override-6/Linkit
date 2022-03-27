@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncIns
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
-import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheFactory, SharedCacheReference}
+import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
@@ -43,6 +43,7 @@ import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 
+import java.lang.ref.WeakReference
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -50,9 +51,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                                                                 generator: SyncClassCenter,
                                                                 override val defaultContracts: ContractDescriptorData,
                                                                 override val network: Network)
-    extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
+        extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
-    private  val cacheOwnerId                                  = channel.manager.ownerID
+    private  val cacheOwnerId     : String                     = channel.manager.ownerID
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val forest           : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
@@ -65,9 +66,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val tree        = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], contracts)
         val treeProfile = ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier, contracts)
         channel.makeRequest(ChannelScopes.discardCurrent)
-            .addPacket(ObjectPacket(treeProfile))
-            .putAllAttributes(this)
-            .submit()
+                .addPacket(ObjectPacket(treeProfile))
+                .putAllAttributes(this)
+                .submit()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
         wrapperNode.synchronizedObject
@@ -86,7 +87,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val chip      = ObjectChip[A](rootContract, network, root)
         val puppeteer = ObjectPuppeteer[A](channel, this, nodeLocation)
         val presence  = forest.getPresence(nodeLocation)
-        val origin    = creator.getOrigin.orNull
+        val origin    = creator.getOrigin.map(new WeakReference(_)).orNull
         val rootNode  = (tree: DefaultSynchronizedObjectTree[A]) => {
             val data = new ObjectNodeData[A](
                 puppeteer, chip, rootContract, root, origin)(
@@ -121,7 +122,10 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val reference     = new SyncObjectReference(family, cacheID, ownerID, path)
         val puppeteer     = new ObjectPuppeteer[B](channel, this, reference)
         val presence      = forest.getPresence(reference)
-        new ObjectNodeData[B](puppeteer, chip, contract, syncObject, origin.orNull)(reference, presence, currentIdentifier, tree, Some(parent))
+        new ObjectNodeData[B](
+            puppeteer, chip, contract,
+            syncObject, origin.map(new WeakReference(_)).orNull
+        )(reference, presence, currentIdentifier, tree, Some(parent))
     }
 
     override def newUnknownObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], path: Array[Int]): NodeData[B] = {
@@ -155,19 +159,19 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
         forest
-            .findTree(path.head)
-            .flatMap(tree => {
-                if (path.length == 1)
-                    Some(tree.rootNode)
-                else
-                    tree.findNode[A](path)
-            })
+                .findTree(path.head)
+                .flatMap(tree => {
+                    if (path.length == 1)
+                        Some(tree.rootNode)
+                    else
+                        tree.findNode[A](path)
+                })
     }
 
-    private def handleRootObjectPacket(treeID: Int,
-                                       rootObject: AnyRef with SynchronizedObject[AnyRef],
-                                       owner: String,
-                                       contracts: ContractDescriptorData): Unit = {
+    private def handleNewObject(treeID: Int,
+                                rootObject: AnyRef with SynchronizedObject[AnyRef],
+                                owner: String,
+                                contracts: ContractDescriptorData): Unit = {
         if (!isRegistered(treeID)) {
             createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), contracts)
         }
@@ -186,9 +190,9 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
             } catch {
                 case NonFatal(e) =>
                     throw new SyncObjectInstantiationException(e.getMessage +
-                        s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
-                           | Try to regenerate the sync class of ${creator.tpeClass}.
-                           | """.stripMargin, e)
+                            s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
+                               | Try to regenerate the sync class of ${creator.tpeClass}.
+                               | """.stripMargin, e)
             }
         }
 
@@ -204,11 +208,11 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                     handleInvocationPacket(ip, bundle)
                 case ObjectPacket(location: SyncObjectReference) =>
                     bundle.responseSubmitter
-                        .addPacket(BooleanPacket(isObjectPresent(location)))
-                        .submit()
+                            .addPacket(BooleanPacket(isObjectPresent(location)))
+                            .submit()
 
                 case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner, contracts)) =>
-                    handleRootObjectPacket(treeID, rootObject, owner, contracts)
+                    handleNewObject(treeID, rootObject, owner, contracts)
             }
         }
 
@@ -221,7 +225,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                 val rootObject = profile.rootObject
                 val owner      = profile.treeOwner
                 val treeID     = profile.treeID
-                val contracts = profile.contracts
+                val contracts  = profile.contracts
                 //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
                 if (isRegistered(treeID)) {
                     forest.findTreeInternal(treeID).map(_.getRoot).fold {
@@ -229,9 +233,11 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
                     }(_.chip.updateObject(rootObject))
                 }
                 //it's an object that must be remotely controlled because it is chipped by another objects cache.
-                else {
-                    createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), contracts)
+                createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), contracts)
+                if (forest.isRegisteredAsUnknown(treeID)) {
+                    forest.transferUnknownTree(treeID)
                 }
+
             })
         }
 

@@ -21,11 +21,13 @@ import fr.linkit.api.gnom.cache.sync.tree.{SyncObjectReference, SynchronizedObje
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable
 
+import java.lang.ref.WeakReference
+
 class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocations
                                   val chip: Chip[A], //Reflective invocations
                                   val contract: StructureContract[A],
                                   val synchronizedObject: A with SynchronizedObject[A], //the sync object
-                                  @Nullable val origin: AnyRef) //The synchronized object's origin (the same object before it was converted to its synchronized version, if any).
+                                  @Nullable val origin: WeakReference[AnyRef]) //The synchronized object's origin (the same object before it was converted to its synchronized version, if any).
                                  (reference: SyncObjectReference, //The sync object reference
                                   presence: NetworkObjectPresence, //the sync object presence
                                   currentIdentifier: String,

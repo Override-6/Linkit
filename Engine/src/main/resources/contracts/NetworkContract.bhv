@@ -22,12 +22,9 @@ describe NetworkDataTrunk {
     newEngine(String) as broadcast
     addEngine(sync Engine)
 }
-agreement current_and_origin = {
-    discard * -> accept current and owner -> appoint current
-}
-agreement broadcast = {
-    accept * -> appoint current
-}
+agreement current_and_origin = discard * -> accept current and owner -> appoint current
+agreement broadcast = accept * -> appoint current
+
 modifier SharedCacheOriginManager {
     out: ${(cache, _) => network.transformToDistant(cache)}
 }

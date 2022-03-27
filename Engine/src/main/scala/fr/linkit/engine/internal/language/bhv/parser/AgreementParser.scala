@@ -48,7 +48,8 @@ object AgreementParser extends BehaviorLanguageParser {
     private def block[P](parser: Parser[P]): Parser[P] = BracketLeft ~> parser <~ BracketRight
 
     private val agreementParser = {
-        Agreement ~> (identifier <~ Equal) ~ block(repsep(instruction | ifInstruction, Arrow)) ^^ {
+        val instructions = repsep(instruction | ifInstruction, Arrow)
+        Agreement ~> (identifier <~ Equal) ~ (block(instructions) | instructions) ^^ {
             case name ~ instructions => AgreementBuilder(name, instructions)
         }
     }
@@ -62,5 +63,5 @@ object AgreementParser extends BehaviorLanguageParser {
         case "current"     => EngineTags.CurrentEngine
     }
 
-    private[parser] def parser: Parser[AgreementBuilder] = agreementParser
+    private[parser] val parser: Parser[AgreementBuilder] = agreementParser
 }

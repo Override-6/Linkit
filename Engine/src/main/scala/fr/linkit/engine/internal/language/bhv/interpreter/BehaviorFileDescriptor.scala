@@ -103,7 +103,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             val signature  = method.signature
             val methodDesc = file.getMethodDescFromSignature(kind, signature, classDesc)
 
-            val referentPos = foreachResult.indexWhere(_.description == methodDesc)
+            val referentPos = foreachResult.indexWhere(x => x != null && x.description == methodDesc)
             val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
             if (referentPos >= 0) {
                 //removing description in foreach statement result
@@ -248,8 +248,10 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                     case AcceptEngines(tags)      => tags.foldLeft(builder) { case (builder, tag) => builder.accept(tag) }
                     case DiscardEngines(tags)     => tags.foldLeft(builder) { case (builder, tag) => builder.discard(tag) }
 
-                    case Condition(Equals(a, b, false), ifTrue, ifFalse) => (builder assuming a isElse b) (follow(ifTrue, _), follow(ifFalse, _))
-                    case Condition(Equals(a, b, true), ifTrue, ifFalse)  => (builder assuming a isNotElse b) (follow(ifTrue, _), follow(ifFalse, _))
+                    case Condition(Equals(a, b, false), ifTrue, ifFalse) =>
+                        (builder assuming a isElse b) (follow(ifTrue, _), follow(ifFalse, _))
+                    case Condition(Equals(a, b, true), ifTrue, ifFalse)  =>
+                        (builder assuming a isNotElse b) (follow(ifTrue, _), follow(ifFalse, _))
                 }
             })
         }

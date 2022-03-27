@@ -19,8 +19,11 @@ import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
 import fr.linkit.api.gnom.network.{Engine, Network}
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.instantiation.ContentSwitcher
 import fr.linkit.engine.gnom.cache.sync.tree.node._
+import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
+import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.util.Try

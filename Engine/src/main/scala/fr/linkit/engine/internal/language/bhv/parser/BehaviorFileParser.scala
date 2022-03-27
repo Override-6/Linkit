@@ -22,7 +22,7 @@ import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.ma
 object BehaviorFileParser extends BehaviorLanguageParser {
 
     private val classParser         = acceptForeign(ClassParser.parser)
-    private val agreement           = acceptForeign(AgreementParser.parser)
+    private val agreementParser     = acceptForeign(AgreementParser.parser)
     private val importParser        = Import ~> identifier ^^ ClassImport
     private val codeBlockParser     = Scala ~> codeBlock
     private val typeModifierParser  = Modifier ~> identifier ~ modifiers ^^ { case tpe ~ modifiers => TypeModifier(tpe, modifiers.find(_.kind == In), modifiers.find(_.kind == Out)) }
@@ -30,7 +30,7 @@ object BehaviorFileParser extends BehaviorLanguageParser {
         (identifier <~ Colon) ~ (typeParser <~ Arrow) ~ modifiers ^^ { case name ~ tpe ~ modifiers => ValueModifier(name, tpe, modifiers.find(_.kind == In), modifiers.find(_.kind == Out)) }
     }
 
-    private val fileParser = phrase(rep(importParser | classParser | codeBlockParser | typeModifierParser | valueModifierParser | agreement))
+    private val fileParser = phrase(rep(importParser | classParser | codeBlockParser | typeModifierParser | valueModifierParser | agreementParser))
 
     def parse(context: ParserContext[Elem]): BehaviorFileAST = try {
         val r = try {

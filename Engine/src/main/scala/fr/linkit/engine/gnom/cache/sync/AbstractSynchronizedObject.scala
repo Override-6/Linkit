@@ -38,7 +38,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     def wrappedClass: Class[_]
 
     def initialize(node: ObjectSyncNodeImpl[A]): Unit = {
-        if (this.node != null)
+        if (isInitialized)
             throw new SyncObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
         //if (location != null && location != node.reference)
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
@@ -108,6 +108,6 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         s"Attempted to call a method on a distant object representation. This object is mirroring $reference on engine ${ownerID}"
     }
 
-    @inline override def isInitialized: Boolean = puppeteer != null
+    @inline override def isInitialized: Boolean = node != null
 
 }
