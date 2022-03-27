@@ -85,19 +85,19 @@ class BehaviorFile(val ast: BehaviorFileAST, val source: String) {
 
     def getFieldDescFromName(kind: DescriptionKind, name: String, classDesc: SyncStructureDescription[_]): SFieldDescription = {
         val clazz  = classDesc.clazz
-        val field  = {
-            try clazz.getDeclaredField(name)
-            catch {
-                case _: NoSuchFieldException => throw new BHVLanguageException(s"Unknown field $name in ${clazz}")
+        val fieldDesc  = {
+            classDesc.listFields().find(_.javaField.getName == name).getOrElse {
+                throw new BHVLanguageException(s"Unknwown field $name in $clazz")
             }
         }
+        val field = fieldDesc.javaField
         val static = Modifier.isStatic(field.getModifiers)
         kind match {
             case StaticsDescription if !static                            => throw new BHVLanguageException(s"Field $name is not static.")
             case _@MirroringDescription(_) | RegularDescription if static => throw new BHVLanguageException(s"Field $name is static. ")
             case _                                                        =>
         }
-        classDesc.findFieldDescription(SFieldDescription.computeID(field)).get
+        fieldDesc
     }
 }
 
