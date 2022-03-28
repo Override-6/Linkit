@@ -11,11 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.traffic
+package fr.linkit.engine.gnom.cache
 
+import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.CacheHandler
-import fr.linkit.api.gnom.cache.{CacheContent, CacheSearchMethod, NoSuchCacheException, SharedCacheManager}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel

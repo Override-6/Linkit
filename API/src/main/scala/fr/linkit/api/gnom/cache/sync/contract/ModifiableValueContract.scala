@@ -17,5 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
 trait ModifiableValueContract[A] extends ValueContract {
 
+    val tpe: Class[A]
+
     val modifier: Option[ValueModifier[A]]
 }

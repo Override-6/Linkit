@@ -20,10 +20,12 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
-import fr.linkit.engine.gnom.cache.sync.contract.{MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
+import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import org.jetbrains.annotations.Nullable
 
+import java.lang.reflect.Modifier
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: StructureContractDescriptor[A],
@@ -31,16 +33,95 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
                                                        @Nullable val superClass: StructureBehaviorDescriptorNodeImpl[_ >: A],
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
 
-    private val clazz        = descriptor.targetClass
+    private val clazz = descriptor.targetClass
     //private val instanceDesc = SyncObjectDescription[A](clazz)
     //private val staticsDesc  = SyncStaticsDescription[A](clazz)
 
-    override def foreachNodes(f: StructureBehaviorDescriptorNode[_ >: A] => Unit): Unit = {
-        if (superClass != null) {
-            f(superClass)
-            superClass.foreachNodes(f)
+    verify()
+
+    override def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
+        val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
+        val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
+
+        putMethods(methodMap, context)
+        putFields(fieldMap)
+
+        new StructureContractImpl(clazz, descriptor.remoteObjectInfo, methodMap.toMap, fieldMap.values.toArray)
+    }
+
+    override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {
+        new HeritageValueModifier(factory, limit)
+    }
+
+    /*
+    * performs verifications on the node to ensure that the resulted StructureContract would not
+    * throw any exception while being used by synchronized objects.
+    * */
+    private def verify(): Unit = {
+        verifyMirroringHierarchy()
+        ensureNoSyncFieldIsPrimitive()
+    }
+
+    private def ensureNoMethodContainsPrimitiveSyncComp(): Unit = {
+        descriptor.methods.foreach(method => {
+            method.parameterContracts.filter(_.isSynchronized)
+                    .foreach(param => {
+                        ensureTypeCanBeSync(param.)
+                    })
+        })
+    }
+
+    @tailrec
+    private def ensureNoSyncFieldIsPrimitive(): Unit = {
+        descriptor.fields
+                .filter(_.isSynchronized)
+                .foreach { field =>
+                    val javaField = field.desc.javaField
+                    val fieldType = javaField.getType
+                    ensureTypeCanBeSync(fieldType, s"field '${javaField.getName}' of type $fieldType")
+                }
+        if (superClass != null)
+            superClass.ensureNoSyncFieldIsPrimitive()
+    }
+
+    private def ensureTypeCanBeSync(tpe: Class[_], name: String): Unit = {
+        val mods = tpe.getModifiers
+
+        performSyncCheck(name, "primitives", tpe.isPrimitive)
+        performSyncCheck(name, "Arrays", tpe.isArray)
+        performSyncCheck(name, "Enums", tpe.isEnum)
+        performSyncCheck(name, "Annotations", tpe.isAnnotation)
+        performSyncCheck(name, "Sealed classes", tpe.isSealed)
+        import Modifier._
+        performSyncCheck(name, "Final classes", isFinal(mods))
+        performSyncCheck(name, "Private classes", isPrivate(mods))
+    }
+
+    private def performSyncCheck(desc: String, name: String, check: Boolean): Unit = {
+        if (check)
+            throw new BadContractException(s"descriptor for $clazz contains an illegal sync $desc: $name cannot be synchronized.")
+    }
+
+    /**
+     * @return true if super class or any interfaces are set as mirrorable
+     * @throws BadContractException if this node or it's upper nodes are attributed to a descriptor that does not contains
+     *                              any mirroring object information while it's upper descriptors are.
+     * */
+    private def verifyMirroringHierarchy(): Boolean = {
+        val superClassIsMirrorable  = if (superClass != null) {
+            superClass.verifyMirroringHierarchy()
+        } else false
+        var interfacesAreMirrorable = false
+        for (interface <- interfaces) {
+            val isMirrorable = interface.verifyMirroringHierarchy()
+            if (isMirrorable) interfacesAreMirrorable = true
         }
-        interfaces.foreach(f)
+        val selfIsMirrorable = descriptor.remoteObjectInfo.isDefined
+        if (!selfIsMirrorable && (superClassIsMirrorable || interfacesAreMirrorable)) {
+            val cause = if (superClassIsMirrorable) Array(superClass) else interfaces.filter(_.descriptor.remoteObjectInfo.isDefined)
+            throw new BadContractException(s"class $clazz is extending a mirrorable class (${cause.mkString("&")}) but is not set as mirrorable.\nPlease specify mirroring information for $clazz too.")
+        }
+        superClassIsMirrorable || interfacesAreMirrorable
     }
 
     private def putMethods(map: mutable.HashMap[Int, MethodContract[Any]], context: SyncObjectContext): Unit = {
@@ -71,20 +152,6 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         interfaces.foreach(_.putFields(map))
     }
 
-    override def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
-        val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
-        val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
-
-        putMethods(methodMap, context)
-        putFields(fieldMap)
-
-        new StructureContractImpl(clazz, descriptor.remoteObjectInfo, methodMap.toMap, fieldMap.values.toArray)
-    }
-
-    override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {
-        new HeritageValueModifier(factory, limit)
-    }
-
     private class HeritageValueModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]) extends ValueModifier[A] {
 
         lazy val superClassModifier: Option[ValueModifier[A]] = computeSuperClassModifier()
@@ -97,7 +164,6 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         override def toRemote(input: A, remote: Engine): A = {
             transform(input)(_.toRemote(_, remote))
         }
-
 
         def transform(start: A)(f: (ValueModifier[A], A) => A): A = {
             var acc = start
@@ -132,8 +198,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
         private def computeInterfacesModifiers(): Array[ValueModifier[A]] = {
             interfaces.asInstanceOf[Array[StructureBehaviorDescriptorNodeImpl[A]]]
-                .filter(n => limit.isAssignableFrom(n.clazz))
-                .map(_.getInstanceModifier(factory, limit))
+                    .filter(n => limit.isAssignableFrom(n.clazz))
+                    .map(_.getInstanceModifier(factory, limit))
         }
 
         private def computeSuperClassModifier(): Option[ValueModifier[A]] = {
@@ -144,6 +210,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 }
 
 object StructureBehaviorDescriptorNodeImpl {
+
     private final val DisabledValueContract = new SimpleModifiableValueContract[Any](false, None)
 
     private def defaultContract(context: SyncObjectContext, desc: MethodDescription) = {

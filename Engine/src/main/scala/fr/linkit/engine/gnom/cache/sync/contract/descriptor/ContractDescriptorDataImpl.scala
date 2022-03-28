@@ -3,21 +3,20 @@ package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, MethodContractDescriptor, StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectClassRelation
+import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.{StructureBehaviorDescriptorNodeImpl, SyncObjectClassRelation}
 import fr.linkit.engine.internal.utils.ClassMap
 
 class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[_]]) extends ContractDescriptorData {
 
-    private val nodeMap = computeNodes(descriptors)
+    private val nodeMap = computeDescriptors()
 
     override def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A] = {
         nodeMap.get(clazz).get.asInstanceOf[StructureBehaviorDescriptorNode[A]]
     }
 
-    private def computeNodes(descriptors: Array[StructureContractDescriptor[_]]): ClassMap[StructureBehaviorDescriptorNode[_]] = {
-        descriptors.sortInPlace()((a, b) => {
-            getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
-        })
+    private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
+        val descriptors      = rearrangeDescriptors()
         val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()
         val objectDescriptor = descriptors.head
         if (objectDescriptor.targetClass != classOf[Object])
@@ -25,7 +24,7 @@ class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[
 
         val objectRelation = new SyncObjectClassRelation[AnyRef](cast(objectDescriptor), null)
         relations.put(objectDescriptor.targetClass, objectRelation)
-        for (descriptor <- descriptors) {
+        for (descriptor <- descriptors.tail) {
             val clazz  = descriptor.targetClass
             val parent = relations.get(clazz).getOrElse(objectRelation) //should at least return the java.lang.Object behavior descriptor
             relations.put(clazz, cast(new SyncObjectClassRelation(cast(descriptor), cast(parent))))
@@ -39,6 +38,22 @@ class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[
         }
         val map = relations.map(pair => (pair._1, pair._2.toNode)).toMap
         new ClassMap[StructureBehaviorDescriptorNode[_]](map)
+    }
+
+    /*
+    * Sorting descriptors by their hierarchy rank, and performing
+    * checks to avoid multiple descriptors per class
+    * */
+    private def rearrangeDescriptors(): Array[StructureContractDescriptor[_]] = {
+        descriptors.foreach(a => {
+            val clazz = a.targetClass
+            val count = descriptors.count(b => clazz == b.targetClass)
+            if (count > 1)
+                throw new BadContractException(s"found $count descriptors for class ${a.targetClass}. Only one can be accepted")
+        })
+        descriptors.sorted((a, b) => {
+            getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
+        })
     }
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]

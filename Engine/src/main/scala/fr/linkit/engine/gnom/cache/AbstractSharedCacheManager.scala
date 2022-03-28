@@ -27,7 +27,6 @@ import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, TrafficInterestedNPH}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.traffic.DefaultCachePacketChannel
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
