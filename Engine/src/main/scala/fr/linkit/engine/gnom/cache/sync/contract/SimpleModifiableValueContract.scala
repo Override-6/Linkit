@@ -17,5 +17,4 @@ import fr.linkit.api.gnom.cache.sync.contract.ModifiableValueContract
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
 class SimpleModifiableValueContract[A](override val isSynchronized: Boolean,
-                                       override val tpe: Class[A],
                                        override val modifier: Option[ValueModifier[A]] = None) extends ModifiableValueContract[A]

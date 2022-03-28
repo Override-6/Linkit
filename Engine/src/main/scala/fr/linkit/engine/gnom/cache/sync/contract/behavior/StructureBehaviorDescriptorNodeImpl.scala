@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescr
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract}
 import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
@@ -36,8 +37,6 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     private val clazz = descriptor.targetClass
     //private val instanceDesc = SyncObjectDescription[A](clazz)
     //private val staticsDesc  = SyncStaticsDescription[A](clazz)
-
-    verify()
 
     override def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
@@ -58,56 +57,78 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     * throw any exception while being used by synchronized objects.
     * */
     private def verify(): Unit = {
+        ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
         verifyMirroringHierarchy()
         ensureNoSyncFieldIsPrimitive()
+        ensureNoMethodContainsPrimitiveSyncComp()
+        warnAllHiddenMethodsWithDescribedBehavior()
+    }
+
+    private def warnAllHiddenMethodsWithDescribedBehavior(): Unit = {
+        descriptor.methods
+                .filter(_.hideMessage.isDefined)
+                .filter(_.parameterContracts.nonEmpty)
+                .filter(_.returnValueContract.isDefined)
+                .foreach { method =>
+                    val javaMethod = method.description.javaMethod
+                    AppLogger.warn(s"Method $javaMethod is hidden but seems to contain behavior contracts in its return value nor its parameters")
+                }
     }
 
     private def ensureNoMethodContainsPrimitiveSyncComp(): Unit = {
         descriptor.methods.foreach(method => {
+            val javaMethod         = method.description.javaMethod
+            val paramsContracts    = method.parameterContracts
+            val paramCount         = javaMethod.getParameterCount
+            val paramContractCount = paramsContracts.length
+            if (!paramsContracts.isEmpty && paramCount != paramContractCount)
+                throw new BadContractException(s"Contract of method $javaMethod for $clazz contains a list of the method's arguments contracts with a different length as the method's parameter count (method parameter count: $paramCount vs method's params contracts count: $paramContractCount).")
             method.parameterContracts.filter(_.isSynchronized)
-                    .foreach(param => {
-                        ensureTypeCanBeSync(param.)
-                    })
+                    .zip(javaMethod.getParameters)
+                    .foreach { case (_, param) => {
+                        val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' for parameter '${param.getName}' of type ${param.getType.getName}: ${kind} cannot be synchronized."
+                        ensureTypeCanBeSync(param.getType, msg)
+                    }
+                    }
+            if (method.returnValueContract.exists(_.isSynchronized)) {
+                val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' of return type ${javaMethod.getReturnType.getName}: ${kind} cannot be synchronized."
+                ensureTypeCanBeSync(javaMethod.getReturnType, msg)
+            }
         })
     }
 
-    @tailrec
     private def ensureNoSyncFieldIsPrimitive(): Unit = {
         descriptor.fields
                 .filter(_.isSynchronized)
                 .foreach { field =>
-                    val javaField = field.desc.javaField
-                    val fieldType = javaField.getType
-                    ensureTypeCanBeSync(fieldType, s"field '${javaField.getName}' of type $fieldType")
+                    val javaField             = field.desc.javaField
+                    val fieldType             = javaField.getType
+                    val msg: String => String = kind => s"descriptor for $clazz contains an illegal sync field '${javaField.getName}' of type $fieldType: ${kind} cannot be synchronized."
+                    ensureTypeCanBeSync(fieldType, msg)
                 }
-        if (superClass != null)
-            superClass.ensureNoSyncFieldIsPrimitive()
     }
 
-    private def ensureTypeCanBeSync(tpe: Class[_], name: String): Unit = {
-        val mods = tpe.getModifiers
+    private def ensureTypeCanBeSync(tpe: Class[_], msg: String => String): Unit = {
+        if (tpe.isPrimitive) throw new BadContractException(msg("primitives"))
+        if (tpe.isArray) throw new BadContractException(msg("arrays"))
+        if (tpe.isEnum) throw new BadContractException(msg("enums"))
+        if (tpe.isAnnotation) throw new BadContractException(msg("annotations"))
+        if (tpe.isSealed) throw new BadContractException(msg("sealed classes"))
 
-        performSyncCheck(name, "primitives", tpe.isPrimitive)
-        performSyncCheck(name, "Arrays", tpe.isArray)
-        performSyncCheck(name, "Enums", tpe.isEnum)
-        performSyncCheck(name, "Annotations", tpe.isAnnotation)
-        performSyncCheck(name, "Sealed classes", tpe.isSealed)
         import Modifier._
-        performSyncCheck(name, "Final classes", isFinal(mods))
-        performSyncCheck(name, "Private classes", isPrivate(mods))
+        val mods = tpe.getModifiers
+        if (isFinal(mods)) throw new BadContractException(msg("final classes"))
+        if (isPrivate(mods)) throw new BadContractException(msg("private classes"))
     }
 
-    private def performSyncCheck(desc: String, name: String, check: Boolean): Unit = {
-        if (check)
-            throw new BadContractException(s"descriptor for $clazz contains an illegal sync $desc: $name cannot be synchronized.")
-    }
+    private var hierarchyVerifyResult: Option[Boolean] = None
 
     /**
      * @return true if super class or any interfaces are set as mirrorable
      * @throws BadContractException if this node or it's upper nodes are attributed to a descriptor that does not contains
      *                              any mirroring object information while it's upper descriptors are.
      * */
-    private def verifyMirroringHierarchy(): Boolean = {
+    private def verifyMirroringHierarchy(): Boolean = hierarchyVerifyResult.getOrElse {
         val superClassIsMirrorable  = if (superClass != null) {
             superClass.verifyMirroringHierarchy()
         } else false
@@ -118,10 +139,11 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         }
         val selfIsMirrorable = descriptor.remoteObjectInfo.isDefined
         if (!selfIsMirrorable && (superClassIsMirrorable || interfacesAreMirrorable)) {
-            val cause = if (superClassIsMirrorable) Array(superClass) else interfaces.filter(_.descriptor.remoteObjectInfo.isDefined)
+            val cause = if (superClassIsMirrorable) Seq[StructureBehaviorDescriptorNode[_]](superClass) else interfaces.filter(_.descriptor.remoteObjectInfo.isDefined).toSeq
             throw new BadContractException(s"class $clazz is extending a mirrorable class (${cause.mkString("&")}) but is not set as mirrorable.\nPlease specify mirroring information for $clazz too.")
         }
-        superClassIsMirrorable || interfacesAreMirrorable
+        hierarchyVerifyResult = Some(superClassIsMirrorable || interfacesAreMirrorable)
+        hierarchyVerifyResult.get
     }
 
     private def putMethods(map: mutable.HashMap[Int, MethodContract[Any]], context: SyncObjectContext): Unit = {
@@ -207,6 +229,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             else Some(superClass.asInstanceOf[StructureBehaviorDescriptorNodeImpl[A]].getInstanceModifier(factory, limit))
         }
     }
+
+    verify()
 }
 
 object StructureBehaviorDescriptorNodeImpl {

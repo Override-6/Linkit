@@ -51,7 +51,8 @@ class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[
             if (count > 1)
                 throw new BadContractException(s"found $count descriptors for class ${a.targetClass}. Only one can be accepted")
         })
-        descriptors.sorted((a, b) => {
+        type S = StructureContractDescriptor[_]
+        descriptors.sorted((a: S, b: S) => {
             getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
         })
     }
