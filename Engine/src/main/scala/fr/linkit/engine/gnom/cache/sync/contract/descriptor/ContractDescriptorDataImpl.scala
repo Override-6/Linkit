@@ -7,9 +7,15 @@ import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.{StructureBehaviorDescriptorNodeImpl, SyncObjectClassRelation}
 import fr.linkit.engine.internal.utils.ClassMap
 
-class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[_]]) extends ContractDescriptorData {
+class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescriptor[_]]) extends ContractDescriptorData {
 
     private val nodeMap = computeDescriptors()
+
+    private var precompiled: Boolean = false
+
+    def markAsPrecompiled(): Unit = precompiled = true
+
+    def isPrecompiled(): Boolean = precompiled
 
     override def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A] = {
         nodeMap.get(clazz).get.asInstanceOf[StructureBehaviorDescriptorNode[A]]
@@ -76,9 +82,9 @@ class ContractDescriptorDataImpl(descriptors: Array[StructureContractDescriptor[
 }
 
 object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(new StructureContractDescriptor[Object] {
-    override val targetClass     : Class[Object]                   = classOf[Object]
-    override val remoteObjectInfo: Option[RemoteObjectInfo]        = None
-    override val methods         : Array[MethodContractDescriptor] = Array()
+    override val targetClass  : Class[Object]                   = classOf[Object]
+    override val mirroringInfo: Option[RemoteObjectInfo]        = None
+    override val methods      : Array[MethodContractDescriptor] = Array()
     override val fields          : Array[FieldContract[Any]]       = Array()
     override val modifier        : Option[ValueModifier[Object]]   = None
 }))

@@ -1,6 +1,7 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.SyncObjectReference
+import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 
 class NodeData[A <: AnyRef](val reference: SyncObjectReference, //The sync object reference
@@ -8,7 +9,4 @@ class NodeData[A <: AnyRef](val reference: SyncObjectReference, //The sync objec
                             val tree: SynchronizedObjectTree[_],
                             val currentIdentifier: String,
                             val ownerID: String,
-                            val parent: Option[MutableSyncNode[_]]) {
-
-
-}
+                            val parent: Option[MutableSyncNode[_]])

@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypeProfile}
-import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject, RegistrablePoolObject}
+import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
@@ -24,7 +24,7 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
                                          content: Array[Int],
                                          controlBox: ControlBox,
                                          selector: ObjectSelector,
-                                         pool: DeserializerObjectPool) extends InstanceObject[T] with RegistrablePoolObject[T] {
+                                         pool: DeserializerObjectPool) extends ProfilePoolObject[T] with RegistrablePoolObject[T] {
 
     private var isInit      : Boolean = false
     private var isRegistered: Boolean = false

@@ -13,11 +13,11 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{SyncObjectReference, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable
 

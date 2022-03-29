@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.tree
 
+import fr.linkit.api.gnom.cache.sync.SyncObjectReference
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable
 

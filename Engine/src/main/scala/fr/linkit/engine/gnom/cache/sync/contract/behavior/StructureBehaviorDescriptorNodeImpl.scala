@@ -43,7 +43,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         putMethods(methodMap, context)
         putFields(fieldMap)
 
-        new StructureContractImpl(clazz, descriptor.remoteObjectInfo, methodMap.toMap, fieldMap.values.toArray)
+        new StructureContractImpl(clazz, descriptor.mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }
 
     override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {
@@ -135,12 +135,12 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             val isMirrorable = interface.verifyMirroringHierarchy()
             if (isMirrorable) interfacesAreMirrorable = true
         }
-        val selfIsMirrorable = descriptor.remoteObjectInfo.isDefined
+        val selfIsMirrorable = descriptor.mirroringInfo.isDefined
         if (!selfIsMirrorable && (superClassIsMirrorable || interfacesAreMirrorable)) {
-            val cause = if (superClassIsMirrorable) Seq[StructureBehaviorDescriptorNode[_]](superClass) else interfaces.filter(_.descriptor.remoteObjectInfo.isDefined).toSeq
-            throw new BadContractException(s"class $clazz is extending a mirrorable class (${cause.mkString("&")}) but is not set as mirrorable.\nPlease specify mirroring information for $clazz too.")
+            val cause = if (superClassIsMirrorable) Seq[Class[_]](superClass.clazz) else interfaces.filter(_.descriptor.mirroringInfo.isDefined).map(_.clazz).toSeq
+            throw new BadContractException(s"$clazz is extending a mirrorable super class or interface (${cause.mkString("&")}) but is not set as mirrorable.\nPlease specify mirroring information for $clazz too.")
         }
-        hierarchyVerifyResult = Some(superClassIsMirrorable || interfacesAreMirrorable)
+        hierarchyVerifyResult = Some(selfIsMirrorable || superClassIsMirrorable || interfacesAreMirrorable)
         hierarchyVerifyResult.get
     }
 
@@ -148,15 +148,15 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         val acceptAll = agreement.isAcceptAll
         if (!acceptAll && agreement.acceptedEngines.length == 0)
             throw new BadContractException(s"method agreement $method have nowhere to invoke the method.")
-        val isMirroring = descriptor.remoteObjectInfo.isDefined && context.ownerID != context.currentID //is mirrorable and is not origin
+        val isMirroring = descriptor.mirroringInfo.isDefined && context.ownerID != context.currentID //is mirrorable and is not origin
         if (!isMirroring) return
 
         if (acceptAll) {
             if (!agreement.discardedEngines.contains(context.currentID))
-                throw new BadContractException(s"method agreement $method would invoke this method on this engine while this object is mirroring original object stored on engine ${context.ownerID}.")
+                throw new BadContractException(s"method agreement $method would invoke this method on this engine while its implementation is on engine ${context.ownerID}.")
         } else {
             if (agreement.acceptedEngines.contains(context.currentID))
-                throw new BadContractException(s"method agreement $method would invoke this method on this engine while this object is mirroring original object stored on engine ${context.ownerID}.")
+                throw new BadContractException(s"method agreement $method would invoke this method on this engine while its implementation is on engine ${context.ownerID}.")
         }
     }
 

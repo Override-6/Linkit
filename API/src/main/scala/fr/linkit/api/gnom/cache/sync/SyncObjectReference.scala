@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.tree
+package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
 
@@ -21,21 +21,21 @@ import java.util
  * All the information that allows to retrieve the synchronized object node.
  * @param cacheFamily the cache family of the object cache's manager.
  * @param cacheID the object cache identifier
- * @param origin the owner of the object (the engine's identifier that created the object)
+ * @param ownerID the owner of the object (the engine's identifier that created the object)
  * @param nodePath the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]]
  */
 class SyncObjectReference(family: String,
                           cacheID: Int,
-                          val origin: String,
+                          val ownerID: String,
                           val nodePath: Array[Int]) extends SharedCacheReference(family, cacheID) {
     override def toString: String = super.toString + s"/~${nodePath.mkString("/")}"
 
-    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, origin, nodePath))
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, ownerID, nodePath))
 
     override def equals(obj: Any): Boolean = obj match {
         case ref: SyncObjectReference => ref.family == family &&
                 ref.cacheID == cacheID &&
-                ref.origin == origin &&
+                ref.ownerID == ownerID &&
                 (ref.nodePath sameElements nodePath)
         case _ => false
     }

@@ -11,8 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.read
+package fr.linkit.api.gnom.persistence.obj
 
-class UnknownObject {
+import fr.linkit.api.gnom.persistence.context.TypeProfile
+
+trait ProfilePoolObject[T <: AnyRef] extends PoolObject[T] {
+
+    val profile: TypeProfile[_]
 
 }

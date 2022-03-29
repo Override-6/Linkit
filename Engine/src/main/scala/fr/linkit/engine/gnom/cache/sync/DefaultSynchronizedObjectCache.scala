@@ -14,10 +14,10 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
-import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncObjectReference}
+import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
@@ -31,7 +31,7 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, EmptyContractDescriptorData}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageSyncObjectContext
@@ -42,13 +42,16 @@ import fr.linkit.engine.gnom.cache.sync.tree.node._
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
+import fr.linkit.engine.internal.language.bhv.interpreter.LangContractDescriptorData
 
 import java.lang.ref.WeakReference
+import java.lang.reflect.Modifier
+import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePacketChannel,
-                                                                generator: SyncClassCenter,
+                                                                classCenter: SyncClassCenter,
                                                                 override val defaultContracts: ContractDescriptorData,
                                                                 override val network: Network)
         extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
@@ -74,38 +77,13 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         wrapperNode.synchronizedObject
     }
 
-    private def createNewTree(id: Int, rootObjectOwner: String,
-                              creator: SyncInstanceCreator[A],
-                              contracts: ContractDescriptorData = defaultContracts): DefaultSynchronizedObjectTree[A] = {
-        val nodeLocation = SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
-        val context      = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
-        val factory      = SyncObjectContractFactory(contracts)
-
-        val rootContract = factory.getObjectContract[A](creator.tpeClass, context)
-        val root         = DefaultInstantiator.newSynchronizedInstance[A](creator)
-
-        val chip      = ObjectChip[A](rootContract, network, root)
-        val puppeteer = ObjectPuppeteer[A](channel, this, nodeLocation)
-        val presence  = forest.getPresence(nodeLocation)
-        val origin    = creator.getOrigin.map(new WeakReference(_)).orNull
-        val rootNode  = (tree: DefaultSynchronizedObjectTree[A]) => {
-            val data = new ObjectNodeData[A](
-                puppeteer, chip, rootContract, root, origin)(
-                nodeLocation, presence, currentIdentifier, tree, None)
-            new RootObjectSyncNodeImpl[A](data)
-        }
-        val tree      = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
-        forest.addTree(id, tree)
-        tree
-    }
-
     override def makeTree(root: SynchronizedObject[A]): Unit = {
         val reference = root.reference
         val path      = reference.nodePath
         if (path.length != 1)
             throw new IllegalArgumentException("Can only make tree from a root synchronised object.")
         val wrapper = new InstanceWrapper[A](root.asInstanceOf[A with SynchronizedObject[A]])
-        createNewTree(path.head, reference.origin, wrapper)
+        createNewTree(path.head, reference.ownerID, wrapper)
     }
 
     override def newObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef],
@@ -139,11 +117,80 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         forest.findTree(id).map(_.rootNode.synchronizedObject)
     }
 
-    def isObjectPresent(location: SyncObjectReference): Boolean = {
+    private def precompileClasses(data: ContractDescriptorData): Unit = data match {
+        case data: ContractDescriptorDataImpl if !data.isPrecompiled() =>
+            precompileClasses(data.descriptors)
+            data.markAsPrecompiled()
+        case _                                                         =>
+    }
+
+    private def precompileClasses(descs: Array[StructureContractDescriptor[_]]): Unit = {
+        var classes = mutable.HashSet.empty[Class[_]]
+
+        def addClass(clazz: Class[_]): Unit = {
+            if (!Modifier.isAbstract(clazz.getModifiers))
+                classes += clazz
+        }
+
+        descs.foreach(desc => {
+            val clazz         = desc.targetClass
+            val mirroringInfo = desc.mirroringInfo
+            if (mirroringInfo.isDefined)
+                classes += mirroringInfo.get.stubClass
+            else addClass(clazz)
+            desc.fields.filter(_.isSynchronized).foreach(f => addClass(f.desc.javaField.getType))
+            desc.methods.foreach(method => {
+                val javaMethod = method.description.javaMethod
+                if (method.returnValueContract.exists(_.isSynchronized))
+                    addClass(javaMethod.getReturnType)
+                val paramsContracts = method.parameterContracts
+                if (paramsContracts.nonEmpty)
+                    paramsContracts.zip(javaMethod.getParameterTypes)
+                            .foreach { case (desc, paramType) => if (desc.isSynchronized) addClass(paramType) }
+            })
+        })
+        classes -= classOf[Object]
+        classes = classes.filterNot(classCenter.isClassGenerated)
+        if (classes.isEmpty)
+            return
+        AppLogger.info(s"Found ${classes.size} classes to compile in their sync versions")
+        AppLogger.debug("Classes to compile :")
+        classes.foreach(clazz => AppLogger.debug(s"\tgen.${clazz}Sync"))
+        classCenter.preGenerateClasses(classes.toList)
+    }
+
+    private def isObjectPresent(location: SyncObjectReference): Boolean = {
         (location.cacheID == cacheID) && location.family == family && {
             val path = location.nodePath
             forest.findTree(path.head).exists(_.findNode(path).isDefined)
         }
+    }
+
+    private def createNewTree(id: Int, rootObjectOwner: String,
+                              creator: SyncInstanceCreator[A],
+                              contracts: ContractDescriptorData = defaultContracts): DefaultSynchronizedObjectTree[A] = {
+        precompileClasses(contracts)
+
+        val nodeLocation = SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
+        val context      = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
+        val factory      = SyncObjectContractFactory(contracts)
+
+        val rootContract = factory.getObjectContract[A](creator.tpeClass, context)
+        val root         = DefaultInstantiator.newSynchronizedInstance[A](creator)
+
+        val chip      = ObjectChip[A](rootContract, network, root)
+        val puppeteer = ObjectPuppeteer[A](channel, this, nodeLocation)
+        val presence  = forest.getPresence(nodeLocation)
+        val origin    = creator.getOrigin.map(new WeakReference(_)).orNull
+        val rootNode  = (tree: DefaultSynchronizedObjectTree[A]) => {
+            val data = new ObjectNodeData[A](
+                puppeteer, chip, rootContract, root, origin)(
+                nodeLocation, presence, currentIdentifier, tree, None)
+            new RootObjectSyncNodeImpl[A](data)
+        }
+        val tree      = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
+        forest.addTree(id, tree)
+        tree
     }
 
     private def handleInvocationPacket(ip: InvocationPacket, bundle: RequestPacketBundle): Unit = {
@@ -184,7 +231,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
     private object DefaultInstantiator extends SyncInstanceInstantiator {
 
         override def newSynchronizedInstance[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
-            val syncClass = generator.getSyncClass[B](creator.tpeClass)
+            val syncClass = classCenter.getSyncClass[B](creator.tpeClass)
             try {
                 creator.getInstance(syncClass)
             } catch {

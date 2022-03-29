@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree._
-import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
@@ -88,6 +88,8 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
             case None        => put()
         }
     }
+
+    override def toString: String = s"node $reference for sync object ${synchronizedObject.getClass.getName}"
 
     def getChild[B <: AnyRef](id: Int): Option[ObjectSyncNodeImpl[B]] = (childs.get(id): Any) match {
         case None        => None

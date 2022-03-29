@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode, SyncObjectReference, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.SyncObjectReference
+import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.tree.SynchronizedObjectException
 
 import scala.collection.mutable
@@ -55,7 +55,7 @@ class UnknownObjectSyncNode(data: NodeData[AnyRef]) extends MutableSyncNode[AnyR
         null
     }
 
-    def setToKnownObjectNode[A <: AnyRef](data: ObjectNodeData[A]): ObjectSyncNode[A] = {
+    def setAsKnownObjectNode[A <: AnyRef](data: ObjectNodeData[A]): ObjectSyncNode[A] = {
         val parent = data.parent.orNull
         val node   = new ObjectSyncNodeImpl[A](parent, data)
         parent.addChild(node)

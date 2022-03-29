@@ -18,8 +18,8 @@ import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo}
 
 trait StructureContractDescriptor[A <: AnyRef] {
 
-    val targetClass     : Class[A]
-    val remoteObjectInfo: Option[RemoteObjectInfo]
+    val targetClass  : Class[A]
+    val mirroringInfo: Option[RemoteObjectInfo]
 
     val methods : Array[MethodContractDescriptor]
     val fields  : Array[FieldContract[Any]]

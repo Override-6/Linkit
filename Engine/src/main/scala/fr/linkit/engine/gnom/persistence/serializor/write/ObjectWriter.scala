@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
+import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -121,7 +121,7 @@ ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             case Array             => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
             case Object            => foreach[SimpleObject](writeObject)
             case Lambda            => foreach[SimpleLambdaObject](writeLambdaObject)
-            case RNO               => foreach[ReferencedNetworkObject](obj => putRef(obj.referenceIdx))
+            case RNO               => foreach[ReferencedPoolObject](obj => putRef(obj.referenceIdx))
         }
     }
 

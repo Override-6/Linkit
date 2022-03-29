@@ -14,7 +14,7 @@ package $ClassPackage$
 
 import $WrappedClassName$
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
+import fr.linkit.api.gnom.cache.sync.SyncObjectReference
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.internal.utils.JavaUtils.nl
 

@@ -14,11 +14,8 @@
 package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.persistence.serializor.read.ObjectReader
 import fr.linkit.engine.gnom.persistence.serializor.write.{ObjectWriter, SerializerObjectPool}
 
@@ -36,7 +33,6 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
     }
 
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = {
-        val t0 = System.currentTimeMillis()
         val buffer = bundle.buff
         buffer.put(signature.toArray)
         val writer = new ObjectWriter(bundle)
@@ -44,7 +40,6 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         writer.writePool()
         val pool = writer.getPool
         writeEntries(objects, writer, pool)
-        val t1 = System.currentTimeMillis()
         //InvocationChoreographer.forceLocalInvocation {
             //AppLogger.debug(s"Ended serialization of ${objects.mkString(", ")} (took ${t1 - t0} ms.)")
         //}

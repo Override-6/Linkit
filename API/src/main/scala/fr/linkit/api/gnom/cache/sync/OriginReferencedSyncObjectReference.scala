@@ -11,22 +11,12 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.obj
+package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-trait ReferencedNetworkObject extends PoolObject[AnyRef] {
+case class OriginReferencedSyncObjectReference(syncReference: SyncObjectReference, originReference: NetworkObjectReference)
+        extends SyncObjectReference(syncReference.ownerID, syncReference.cacheID, syncReference.ownerID, syncReference.nodePath) {
 
-    /**
-     * The [[NetworkObjectReference]] index in the object pool.
-     * */
-    val referenceIdx: Int
-    val reference   : NetworkObjectReference
-
-    override def equals(obj: Any): Boolean = {
-        obj match {
-            case ref: PoolObject[_] => ref.value == value
-            case ref: AnyRef => ref == value
-        }
-    }
+    override def toString: String = s"sync: ${super.toString} origin: $originReference"
 }

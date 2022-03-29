@@ -76,7 +76,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
      * it explicitly defines the `reference: T` method of the interface.
      * @param clazz
      */
-    //TODO explain this further
+    //TODO explain the error further
     private def checkClassValidity(clazz: Class[_]): Unit = {
         if (!classOf[NetworkObject[_]].isAssignableFrom(clazz))
             return
@@ -96,7 +96,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
                         s"""
                            |
                            |Error: $cl does not defines method `T reference()`.
-                           |It turns out that the Linkit object synchronization system met a class that cannot be handled<...
+                           |It turns out that the Linkit object synchronization class generator met a class that cannot be handled...
                            |What turned wrong ?
                            |$clazz extends $cl ($classHierarchyPath):
                            |$cl is directly implementing ${classOf[NetworkObject[_]]}, but does not explicitly defines method `T reference()`.
@@ -108,27 +108,23 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     }
 
     override def preGenerateClasses(classes: Seq[Class[_]]): Unit = {
-        preGenerateClasses(classes.map(SyncObjectDescription(_)).toList)
-    }
-
-    override def preGenerateClasses(descriptions: List[SyncStructureDescription[_]]): Unit = {
-        val toCompile = descriptions.filter(desc => resources.findClass(desc.clazz).isEmpty)
+        val toCompile = classes.filterNot(isClassGenerated)
         if (toCompile.isEmpty)
             return
-        val ct = center.processRequest {
-            AppLogger.info(s"Compiling Sync Classes for ${toCompile.map(_.clazz.getSimpleName).mkString(", ")}...")
-            requestFactory.makeMultiRequest(toCompile)
-        }.getCompileTime
+        toCompile.foreach(checkClassValidity)
+        val result = center.processRequest {
+            AppLogger.info(s"Compiling Sync Classes for ${toCompile.map(_.getSimpleName).mkString(", ")}...")
+            requestFactory.makeMultiRequest(toCompile.map(SyncObjectDescription(_)))
+        }
+        result.getValue.get.foreach(ClassMappings.putClass)
+        val ct = result.getCompileTime
         AppLogger.info(s"Compilation done in $ct ms.")
     }
 
-    override def isWrapperClassGenerated(clazz: Class[_]): Boolean = {
+    override def isClassGenerated(clazz: Class[_]): Boolean = {
         resources.findClass[AnyRef](clazz).isDefined
     }
 
-    override def isClassGenerated[S <: SynchronizedObject[S]](clazz: Class[S]): Boolean = {
-        resources.findClass[S](clazz).isDefined
-    }
 }
 
 object DefaultSyncClassCenter {

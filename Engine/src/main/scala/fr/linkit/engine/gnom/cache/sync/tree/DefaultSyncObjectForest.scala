@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
@@ -118,7 +118,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         def castedSync[X <: AnyRef]: X with SynchronizedObject[X] = syncObj.asInstanceOf[X with SynchronizedObject[X]]
 
         if (nodeOpt.isEmpty) {
-            tree.registerSynchronizedObject(parentPath, path.last, castedSync, reference.origin, None).synchronizedObject
+            tree.registerSynchronizedObject(parentPath, path.last, castedSync, reference.ownerID, None).synchronizedObject
         } else {
             nodeOpt.get match {
                 case node: ObjectSyncNode[_]     =>
@@ -126,8 +126,8 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                         throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
                 case node: UnknownObjectSyncNode =>
                     val parent = node.parent.asInstanceOf[MutableSyncNode[AnyRef]]
-                    val data   = center.newObjectData[A](parent, node.id, castedSync, None, reference.origin)
-                    node.setToKnownObjectNode(data)
+                    val data   = center.newObjectData[A](parent, node.id, castedSync, None, reference.ownerID)
+                    node.setAsKnownObjectNode(data)
             }
         }
     }

@@ -13,10 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
-import fr.linkit.api.gnom.cache.sync._
+import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, _}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
-import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope

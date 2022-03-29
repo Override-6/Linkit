@@ -39,7 +39,6 @@ abstract class AbstractSharedCacheManager(override val family: String,
                                           override val network: Network,
                                           store: PacketInjectableStore) extends SharedCacheManager {
 
-    println(s"New SharedCacheManager created ! $family")
     protected val channel          : SimpleRequestPacketChannel  = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     protected val broadcastScope   : ChannelScope                = prepareScope(ChannelScopes.broadcast)
     protected val currentIdentifier: String                      = network.connection.currentIdentifier
@@ -122,18 +121,14 @@ abstract class AbstractSharedCacheManager(override val family: String,
         @transient private val localRegisteredHandlers = mutable.HashMap.empty[Int, RegisteredCache]
 
         def store(identifier: Int, cache: SharedCache, channel: CachePacketChannel): Unit = {
-            println(s"Registering $identifier into local cache.")
             localRegisteredHandlers.put(identifier, RegisteredCache(cache, channel))
             ManagerCachesLinker.registerReference(cache.reference)
-            println(s"Local cache is now $localRegisteredHandlers")
         }
 
         def unregister(identifier: Int): Unit = {
-            println(s"Removing cache $identifier")
             localRegisteredHandlers.remove(identifier).fold()(profile => {
                 ManagerCachesLinker.unregisterReference(profile.cache.reference)
             })
-            println(s"Cache is now $identifier")
         }
 
         def getContent(cacheID: Int): Option[CacheContent] = {
@@ -231,10 +226,6 @@ abstract class AbstractSharedCacheManager(override val family: String,
         override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SharedCacheReference]
     }
 
-    protected def println(msg: => String): Unit = {
-        AppLogger.trace(s" <$family, $ownerID> $msg")
-    }
-
     private def postInit(): Unit = {
         channel.addRequestListener(handleRequest)
     }
@@ -246,9 +237,9 @@ abstract class AbstractSharedCacheManager(override val family: String,
         val sharedCache = factory.createNew(channel)
         LocalCachesStore.store(cacheID, sharedCache, channel)
 
-        println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
+        //println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
         val baseContent = retrieveCacheContent(cacheID, method).orNull
-        println(s"CONTENT RECEIVED ($baseContent) FOR CACHE $cacheID")
+        //println(s"CONTENT RECEIVED ($baseContent) FOR CACHE $cacheID")
 
         if (baseContent != null) {
             channel.getHandler.foreach {

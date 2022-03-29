@@ -87,7 +87,7 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
         if (hideMessage.isDefined)
             throw new HiddenMethodInvocationException(hideMessage.get)
         if (syncObject.isMirroring)
-            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${syncObject.reference} on engine ${syncObject.origin}")
+            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${syncObject.reference} on engine ${syncObject.ownerID}")
         modifyParameters(origin, args)
         AppLogger.debug {
             val name     = description.javaMethod.getName

@@ -16,8 +16,8 @@ package fr.linkit.engine.gnom.cache.sync
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncObjectReference}
-import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
+import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 

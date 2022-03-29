@@ -17,11 +17,9 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
-import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject, ReferencedNetworkObject}
-import fr.linkit.api.gnom.reference.NetworkObjectReference
-import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
+import fr.linkit.api.gnom.persistence.obj.{PoolObject, ReferencedPoolObject}
 import fr.linkit.engine.gnom.persistence.context.SimpleControlBox
-import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
+import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
@@ -96,34 +94,12 @@ class ObjectReader(bundle: PersistenceBundle,
             case Array     => collectAndUpdateChunk[PoolObject[_ <: AnyRef]](ArrayPersistence.readArray(this))
             case Object    => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
             case Lambda    => collectAndUpdateChunk[NotInstantiatedLambdaObject](readLambdaObject())
-            case RNO       => collectAndUpdateChunk[ReferencedNetworkObject](readContextObject())
+            case RNO       => collectAndUpdateChunk[ReferencedPoolObject](readContextObject())
         }
     }
 
-    private def readContextObject(): ReferencedNetworkObject = {
-        val poolLoc = readNextRef
-        new ReferencedNetworkObject {
-            override      val referenceIdx: Int                    = poolLoc
-            override lazy val reference   : NetworkObjectReference = pool
-                    .getChunkFromFlag[InstanceObject[AnyRef]](Object)
-                    .get(poolLoc)
-                    .value match {
-                case l: NetworkObjectReference => l
-                case o                         =>
-                    throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
-            }
-
-            override val identity: Int = referenceIdx
-
-            override lazy val value: AnyRef = {
-                val loc = reference
-                loc.getClass.synchronized {
-                    selector.findObject(loc).getOrElse {
-                        throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
-                    }
-                }
-            }
-        }
+    private def readContextObject(): ReferencedPoolObject = {
+        new ReferencedObject(readNextRef, selector, pool)
     }
 
     private def readClass(): Class[_] = {

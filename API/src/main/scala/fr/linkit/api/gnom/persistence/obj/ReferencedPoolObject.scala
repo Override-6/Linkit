@@ -13,10 +13,20 @@
 
 package fr.linkit.api.gnom.persistence.obj
 
-import fr.linkit.api.gnom.persistence.context.TypeProfile
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-trait InstanceObject[T <: AnyRef] extends PoolObject[T] {
+trait ReferencedPoolObject extends PoolObject[AnyRef] {
 
-    val profile: TypeProfile[_]
+    /**
+     * The [[NetworkObjectReference]] index in the object pool.
+     * */
+    val referenceIdx: Int
+    val reference   : NetworkObjectReference
 
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case ref: PoolObject[_] => ref.value == value
+            case ref: AnyRef => ref == value
+        }
+    }
 }

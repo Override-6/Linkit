@@ -36,27 +36,27 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
     private def computeContracts(): Seq[StructureContractDescriptor[_]] = {
         val result = ast.classDescriptions.map {
             case ClassDescription(ClassDescriptionHead(kind, className), foreachMethod, foreachField, fieldDescs, methodDescs) => {
-                val clazz                      = file.findClass(className)
-                val (mirroringInfo, classDesc) = kind match {
+                val clazz                       = file.findClass(className)
+                val (mirroringInfo0, classDesc) = kind match {
                     case RegularDescription         => (None, SyncObjectDescription(clazz))
                     case StaticsDescription         => (None, SyncStaticsDescription(clazz))
                     case MirroringDescription(stub) => (Some(RemoteObjectInfo(file.findClass(stub))), SyncObjectDescription(clazz))
                 }
                 new StructureContractDescriptor[AnyRef] {
-                    override val targetClass      = clazz.asInstanceOf[Class[AnyRef]]
-                    override val remoteObjectInfo = mirroringInfo
-                    override val methods          = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs)
-                    override val fields           = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs)
-                    override val modifier         = typeModifiers.get(clazz)
+                    override val targetClass   = clazz.asInstanceOf[Class[AnyRef]]
+                    override val mirroringInfo = mirroringInfo0
+                    override val methods       = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs)
+                    override val fields        = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs)
+                    override val modifier      = typeModifiers.get(clazz)
                 }
             }
         }
         new StructureContractDescriptor[AnyRef] {
-            override val targetClass      = classOf[Object]
-            override val remoteObjectInfo = None
-            override val methods          = Array()
-            override val fields           = Array()
-            override val modifier         = None
+            override val targetClass   = classOf[Object]
+            override val mirroringInfo = None
+            override val methods       = Array()
+            override val fields        = Array()
+            override val modifier      = None
         } :: result
     }
 

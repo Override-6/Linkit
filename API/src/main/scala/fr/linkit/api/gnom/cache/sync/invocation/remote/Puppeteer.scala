@@ -13,8 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
-import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
+import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.gnom.network.Network
 
 import java.util.concurrent.ThreadLocalRandom
@@ -31,7 +30,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The engine's identifier that have created the synchronized object
      * */
-    val ownerID: String = nodeLocation.origin
+    val ownerID: String = nodeLocation.ownerID
 
     /**
      * The object center that stores the synchronized object.

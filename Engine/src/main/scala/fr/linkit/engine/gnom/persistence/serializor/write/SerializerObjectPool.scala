@@ -15,12 +15,9 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
+import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
-import fr.linkit.engine.gnom.persistence.obj.PoolChunk.BuffSteps
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -170,7 +167,7 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         val profile         = config.getProfile[AnyRef](ref)
         val persistence     = profile.getPersistence(ref)
         val decomposed      = persistence.toArray(ref)
-        val objPool         = getChunkFromFlag[InstanceObject[AnyRef]](Object)
+        val objPool         = getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
 
         //do not swap those two lines
         val obj = new SimpleObject(ref, selectedRefType, ref.isInstanceOf[SynchronizedObject[_]], decomposed, profile)
@@ -185,13 +182,13 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         if (nrlOpt.isEmpty) {
             addObjectAndReturnDecomposed(ref)
         } else {
-            val chunk = getChunkFromFlag[ReferencedNetworkObject](RNO)
+            val chunk = getChunkFromFlag[ReferencedPoolObject](RNO)
             if (chunk.indexOf(ref) >= 0)
                 return
             val pos = chunks(Object).size
             val nrl = nrlOpt.get
             addObj(nrl)
-            val rno: ReferencedNetworkObject = new ReferencedNetworkObject {
+            val rno: ReferencedPoolObject = new ReferencedPoolObject {
                 override val referenceIdx: Int                    = pos
                 override val reference   : NetworkObjectReference = nrl
                 override val value       : AnyRef                 = ref

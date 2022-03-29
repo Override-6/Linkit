@@ -13,8 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
+import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.context.structure.SyncObjectStructure

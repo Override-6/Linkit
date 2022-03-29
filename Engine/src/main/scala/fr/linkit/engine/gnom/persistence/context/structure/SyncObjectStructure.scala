@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.context.structure
 
-import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
+import fr.linkit.api.gnom.cache.sync.SyncObjectReference
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 
 class SyncObjectStructure(objectStruct: ObjectStructure) extends ObjectStructure {
