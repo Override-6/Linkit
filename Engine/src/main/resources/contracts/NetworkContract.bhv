@@ -15,8 +15,6 @@ scala ${
     val network = £{@network: AbstractNetwork}
 }
 
-describe String {}
-
 describe DefaultEngine {
     updateState(ExternalConnectionState) as current_and_origin
 }
