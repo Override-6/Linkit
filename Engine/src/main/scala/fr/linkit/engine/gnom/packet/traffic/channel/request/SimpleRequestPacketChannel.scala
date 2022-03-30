@@ -45,8 +45,8 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
         val coords = bundle.coords
         packet match {
             case request: RequestPacket =>
-                AppLogger.vDebug(this)
-                AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
+                //AppLogger.vDebug(this)
+                //AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
                 request.setAttributes(attr)
 
                 val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
@@ -55,7 +55,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                 requestConsumers.applyAll(DefaultRequestBundle(this, request, coords, submitter))
 
             case response: ResponsePacket =>
-                AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
+                //AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
                 response.setAttributes(attr)
 
                 val responseID = response.id

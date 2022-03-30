@@ -12,7 +12,6 @@
  */
 
 package fr.linkit.engine.gnom.persistence.obj
-/*
 
 import fr.linkit.api.gnom.persistence.Freezable
 import fr.linkit.api.gnom.persistence.obj.PoolObject
@@ -21,17 +20,17 @@ import org.jetbrains.annotations.NotNull
 
 import java.util
 import scala.reflect.ClassTag
-class PoolChunk$Scala[T](val tag: Byte,
-                   pool: ObjectPool,
-                   maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
-    private final var buff    = new Array[T](pool.determineBuffLength(maxLength, BuffSteps))
+final class PoolChunk[T](val tag: Byte,
+                         pool: ObjectPool,
+                         maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
+
+    private var buff          = new Array[T](pool.determineBuffLength(maxLength, BuffSteps))
     private final val buffMap = new util.HashMap[Int, Int]() //Buff item Identity Hash Code -> Buff Pos + 1
-    private final var pos     = 0
+    private var pos           = 0
 
-    private final var frozen = false
+    private var frozen = false
 
-    @inline
     override def isFrozen: Boolean = frozen || pool.isFrozen
 
     override def freeze(): Unit = {
@@ -46,8 +45,7 @@ class PoolChunk$Scala[T](val tag: Byte,
     def add(t: T): Unit = {
         if (t == null)
             throw new NullPointerException("Can't add null item")
-        //if (isFrozen)
-        //    throw new IllegalStateException("Could not add item in chunk: This chunk (or its pool) is frozen !")
+        val pos = this.pos
         if (pos != 0 && pos % BuffSteps == 0) {
             if (pos >= maxLength)
                 throw new IllegalStateException(s"Chunk size exceeds maxLength ('$maxLength')'")
@@ -62,7 +60,7 @@ class PoolChunk$Scala[T](val tag: Byte,
             case obj: AnyRef             =>
                 buffMap.put(System.identityHashCode(obj), pos + 1)
         }
-        pos += 1
+        this.pos += 1
     }
 
     def addIfAbsent(t: T): Unit = {
@@ -92,6 +90,6 @@ class PoolChunk$Scala[T](val tag: Byte,
 
 object PoolChunk {
 
+    @inline
     private final val BuffSteps = 200
 }
-*/

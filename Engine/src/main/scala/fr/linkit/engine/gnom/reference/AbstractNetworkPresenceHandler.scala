@@ -55,14 +55,16 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         //fixme quick wobbly fix
         if (traffic != null && traffic.currentIdentifier == engineId)
             return isLocationReferenced(location)
-
-        channel
+        AppLogger.debug(s"Asking if $location is present on engine: $engineId")
+        val isPresent = channel
             .makeRequest(ChannelScopes.include(engineId))
             .addPacket(EmptyPacket)
             .putAttribute(ReferenceAttributeKey, location)
             .submit()
             .nextResponse
             .nextPacket[BooleanPacket]
+        AppLogger.debug(s"is any network object registered at $location on engine $engineId ? $isPresent")
+        isPresent
     }
 
     private[reference] def informPresence(enginesId: Array[String], location: R, presence: ObjectPresenceType): Unit = {

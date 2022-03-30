@@ -24,7 +24,11 @@ repositories {
 }
 
 tasks.withType(ScalaCompile) {
-    scalaCompileOptions.additionalParameters = ["-feature", "-language:implicitConversions", "-opt:inline"]
+    scalaCompileOptions.additionalParameters = ["-feature",
+                                                "-language:implicitConversions",
+                                                "-opt:inline",
+                                                "-Yopt-inline-heuristics:at-inline-annotated",
+                                                "-opt:l:inline"]
 }
 
 dependencies {
