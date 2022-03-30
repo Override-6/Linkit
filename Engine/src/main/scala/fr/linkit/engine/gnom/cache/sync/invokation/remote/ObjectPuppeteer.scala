@@ -22,6 +22,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, ResponseHolder}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
+import fr.linkit.engine.gnom.cache.sync.tree.DefaultSyncObjectForest
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.utils.JavaUtils
@@ -58,8 +59,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val dispatcher       = new ObjectRMIDispatcher(scope, methodId, desiredEngineReturn) {
             override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
                 holder
-                        .nextResponse
-                        .nextPacket[Packet] match {
+                    .nextResponse
+                    .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
                         throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeLocation, executed by engine '$desiredEngineReturn' failed :\n $exceptionString")
                     case p: RefPacket[R]                     =>
@@ -71,7 +72,12 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         if (!isResultSet)
             throw new IllegalStateException("RMI dispatch has been processed asynchronously.")
-        requestResult
+        requestResult match {
+            case r: R with AnyRef =>
+                if (cache.forest.asInstanceOf[DefaultSyncObjectForest[AnyRef]].isObjectLinked(r))
+                    tree.insertObject(nodeLocation.nodePath, r, agreement.getAppointedEngineReturn).synchronizedObject
+                else r
+        }
     }
 
     override def sendInvoke(invocation: DispatchableRemoteMethodInvocation[_]): Unit = {
@@ -101,8 +107,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)
-                    .addPacket(InvocationPacket(nodeLocation.nodePath, methodID, args, returnEngine))
-                    .submit()
+                .addPacket(InvocationPacket(nodeLocation.nodePath, methodID, args, returnEngine))
+                .submit()
         }
 
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
