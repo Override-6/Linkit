@@ -12,6 +12,7 @@
  */
 
 package fr.linkit.engine.gnom.persistence.obj
+/*
 
 import fr.linkit.api.gnom.persistence.Freezable
 import fr.linkit.api.gnom.persistence.obj.PoolObject
@@ -20,8 +21,7 @@ import org.jetbrains.annotations.NotNull
 
 import java.util
 import scala.reflect.ClassTag
-
-class PoolChunk[T](val tag: Byte,
+class PoolChunk$Scala[T](val tag: Byte,
                    pool: ObjectPool,
                    maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
@@ -94,3 +94,4 @@ object PoolChunk {
 
     private final val BuffSteps = 200
 }
+*/

@@ -26,7 +26,7 @@ object AppLogger {
     var useVerbose         : Boolean = false
     var printVerbosesOnKill: Boolean = false
 
-    var printTraffic: Boolean = false
+    var printTraffic: Boolean = true
 
     val logger: Logger = Logger.getLogger(classOf[ApplicationContext])
 

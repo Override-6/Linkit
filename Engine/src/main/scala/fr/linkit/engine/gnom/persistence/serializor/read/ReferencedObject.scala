@@ -14,8 +14,8 @@
 package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
-import fr.linkit.api.gnom.cache.sync.{OriginReferencedSyncObjectReference, SyncObjectReference}
-import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject, RegistrablePoolObject}
+import fr.linkit.api.gnom.cache.sync.OriginReferencedSyncObjectReference
+import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException

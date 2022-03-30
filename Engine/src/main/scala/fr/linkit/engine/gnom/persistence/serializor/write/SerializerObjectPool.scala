@@ -96,7 +96,7 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         val tag   = chunk.tag
         var idx   = chunk.indexOf(ref)
         if (idx > -1)
-            idx += chunksPositions(chunk.tag) + 1
+            idx += chunksPositions(tag) + 1
         else
             if (tag == Object) { //it could be a referenced object
                 idx = chunks(RNO).indexOf(ref) + chunksPositions(RNO) + 1
