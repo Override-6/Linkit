@@ -88,9 +88,9 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         }
     }
 
-    override def synchronizedObj(obj: AnyRef, id: Int): SynchronizedObject[AnyRef] = {
+    override def synchronizedObj(obj: AnyRef): SynchronizedObject[AnyRef] = {
         val currentPath = nodeLocation.nodePath
-        tree.insertObject(currentPath, id, obj, currentIdentifier).synchronizedObject
+        tree.insertObject(currentPath, obj, currentIdentifier).synchronizedObject
     }
 
     class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {

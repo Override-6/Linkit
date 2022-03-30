@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.cache.sync.tree._
+import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
@@ -27,11 +27,16 @@ import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
 import scala.collection.mutable
 
 class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCache[A], omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[SyncObjectReference](omc)
-                with InitialisableNetworkObjectLinker[SyncObjectReference] with SynchronizedObjectForest[A] {
+    extends AbstractNetworkPresenceHandler[SyncObjectReference](omc)
+        with InitialisableNetworkObjectLinker[SyncObjectReference] with SynchronizedObjectForest[A] {
 
     private val trees        = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
     private val unknownTrees = new mutable.HashMap[Int, UnknownTree]()
+
+    /*
+    * used to store objects whose synchronized version must have their bound identifier.
+    * */
+    private val linkedOrigins = mutable.HashMap.empty[AnyRef, SyncObjectReference]
 
     override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SyncObjectReference]
 
@@ -63,10 +68,10 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
             return None
         val path = location.nodePath
         trees.get(path.head)
-                .flatMap(_.findNode(path).flatMap((x: SyncNode[_]) => x match {
-                    case node: ObjectSyncNode[_] => Some(node.synchronizedObject)
-                    case _                       => None
-                }))
+            .flatMap(_.findNode(path).flatMap((x: SyncNode[_]) => x match {
+                case node: ObjectSyncNode[_] => Some(node.synchronizedObject)
+                case _                       => None
+            }))
     }
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
@@ -77,6 +82,14 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
             case _                                     => throwUnknownObject(obj)
         }
     }
+
+    def linkWithReference(obj: AnyRef, ref: SyncObjectReference): Unit = {
+        linkedOrigins(obj) = ref
+    }
+
+    def removeLinkedReference(obj: AnyRef): Option[SyncObjectReference] = linkedOrigins.remove(obj)
+
+    def isObjectLinked(obj: AnyRef): Boolean = linkedOrigins.contains(obj)
 
     def isRegisteredAsUnknown(id: Int): Boolean = unknownTrees.contains(id)
 

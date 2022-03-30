@@ -103,13 +103,13 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         new ObjectNodeData[B](
             puppeteer, chip, contract,
             syncObject, origin.map(new WeakReference(_)).orNull
-        )(reference, presence, currentIdentifier, tree, Some(parent))
+        )(reference, presence, currentIdentifier, tree.asInstanceOf[DefaultSynchronizedObjectTree[B]], Some(parent))
     }
 
     override def newUnknownObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], path: Array[Int]): NodeData[B] = {
         val reference = new SyncObjectReference(family, cacheID, null, path)
         val presence  = forest.getPresence(reference)
-        val tree      = parent.tree
+        val tree      = parent.tree.asInstanceOf[DefaultSynchronizedObjectTree[_]] //TODO REMOVE THIS CAST
         new NodeData[B](reference, presence, tree, currentIdentifier, null, Some(parent))
     }
 

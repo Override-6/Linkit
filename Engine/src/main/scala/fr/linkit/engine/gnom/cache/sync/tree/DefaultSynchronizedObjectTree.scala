@@ -19,18 +19,15 @@ import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
 import fr.linkit.api.gnom.network.{Engine, Network}
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.instantiation.ContentSwitcher
 import fr.linkit.engine.gnom.cache.sync.tree.node._
-import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
-import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.util.Try
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
                                                                network: Network,
-                                                               forest: DefaultSyncObjectForest[A],
+                                                               private[sync] val forest: DefaultSyncObjectForest[A],
                                                                val instantiator: SyncInstanceInstantiator,
                                                                val dataFactory: SyncNodeDataFactory,
                                                                override val id: Int,
@@ -77,18 +74,23 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new InvalidNodePathException("Path is empty")
     }
 
-    override def insertObject[B <: AnyRef](parent: SyncNode[_], id: Int, source: B, ownerID: String): ObjectSyncNode[B] = {
+    override def insertObject[B <: AnyRef](parent: SyncNode[_], source: B, ownerID: String): ObjectSyncNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not owner by this tree's cache.")
-        insertObject[B](parent.treePath, id, source, ownerID)
+        insertObject[B](parent.treePath, source, ownerID)
     }
 
-    override def insertObject[B <: AnyRef](parentPath: Array[Int], id: Int, source: B, ownerID: String): ObjectSyncNode[B] = {
+    override def insertObject[B <: AnyRef](parentPath: Array[Int], source: B, ownerID: String): ObjectSyncNode[B] = {
         val wrapperNode = findNode[B](parentPath).getOrElse {
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
+        val id          = forest
+            .removeLinkedReference(source)
+            .map(_.nodePath.last)
+            .getOrElse(ThreadLocalRandom.current().nextInt())
         genSynchronizedObject[B](wrapperNode, id, source)(ownerID)
     }
+
 
     private def findNode0[B <: AnyRef](path: Array[Int]): Option[ObjectSyncNodeImpl[B]] = {
         if (!path.headOption.contains(root.id))
@@ -158,7 +160,9 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             }
 
             override def syncObject(obj: AnyRef): SynchronizedObject[AnyRef] = {
-                val id = ThreadLocalRandom.current().nextInt()
+                val id = forest.removeLinkedReference(obj)
+                    .map(_.nodePath.last)
+                    .getOrElse(ThreadLocalRandom.current().nextInt())
                 genSynchronizedObject(node, id, obj)(ownerID).synchronizedObject
             }
         }

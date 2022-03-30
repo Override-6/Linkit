@@ -65,7 +65,7 @@ trait Puppeteer[S <: AnyRef] {
     def sendInvoke(invocation: DispatchableRemoteMethodInvocation[_]): Unit
 
     //TODO make this for internal use only
-    def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): SynchronizedObject[AnyRef]
+    def synchronizedObj(obj: AnyRef): SynchronizedObject[AnyRef]
 
     trait RMIDispatcher {
         def broadcast(args: Array[Any]): Unit

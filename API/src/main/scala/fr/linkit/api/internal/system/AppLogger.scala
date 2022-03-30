@@ -26,7 +26,7 @@ object AppLogger {
     var useVerbose         : Boolean = false
     var printVerbosesOnKill: Boolean = false
 
-    var printTraffic: Boolean = true
+    var printTraffic: Boolean = false
 
     val logger: Logger = Logger.getLogger(classOf[ApplicationContext])
 
@@ -79,7 +79,7 @@ object AppLogger {
     def logUpload(target: String, bytes: Array[Byte]): Unit = /*verbose*/ {
         if (printTraffic) {
             val preview = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
-            debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length})")
+            logger.debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length})")
         }
     }
 

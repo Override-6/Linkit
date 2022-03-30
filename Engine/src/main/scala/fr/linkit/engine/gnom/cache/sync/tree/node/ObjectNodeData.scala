@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.engine.gnom.cache.sync.tree.DefaultSynchronizedObjectTree
 import org.jetbrains.annotations.Nullable
 
 import java.lang.ref.WeakReference
@@ -31,7 +32,7 @@ class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocati
                                  (reference: SyncObjectReference, //The sync object reference
                                   presence: NetworkObjectPresence, //the sync object presence
                                   currentIdentifier: String,
-                                  tree: SynchronizedObjectTree[_], //The node's tree
+                                  tree: DefaultSynchronizedObjectTree[_], //The node's tree
                                   parent: Option[MutableSyncNode[_]]) //identifier of the current engine.
     extends NodeData[A](reference, presence, tree, currentIdentifier, puppeteer.ownerID, parent) {
 }

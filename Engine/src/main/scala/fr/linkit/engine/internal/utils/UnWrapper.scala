@@ -14,8 +14,18 @@
 package fr.linkit.engine.internal.utils
 
 import java.lang
+import scala.collection.mutable
 
 object UnWrapper {
+
+    private final val wrapperClasses = mutable.HashSet[Class[_]](classOf[Integer],
+        classOf[lang.Byte],
+        classOf[lang.Short],
+        classOf[lang.Long],
+        classOf[lang.Double],
+        classOf[lang.Float],
+        classOf[lang.Boolean],
+        classOf[Character])
 
     def unwrap[@specialized() A <: AnyVal](value: Any, converter: PrimitiveWrapper => A): A = {
         value match {
@@ -35,13 +45,13 @@ object UnWrapper {
             case _: lang.Float   => lang.Float.TYPE
             case _: lang.Boolean => lang.Boolean.TYPE
             case _: Character    => Character.TYPE
-            case o => o.getClass
+            case o               => o.getClass
         }
     }
 
     @inline
     def isPrimitiveWrapper(obj: Any): Boolean = {
-        obj.isInstanceOf[Number] || obj.isInstanceOf[lang.Boolean] || obj.isInstanceOf[Character]
+        wrapperClasses.contains(obj.getClass)
     }
 
     sealed trait PrimitiveWrapper extends Number {
@@ -95,4 +105,5 @@ object UnWrapper {
 
         override def doubleValue: Double = n.doubleValue
     }
+
 }

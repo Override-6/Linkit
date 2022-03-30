@@ -60,7 +60,7 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @return the created node
      */
     //TODO Should be removed (or only used internally)
-    def insertObject[B <: AnyRef](parent: SyncNode[_], id: Int, source: B, ownerID: String): ObjectSyncNode[B]
+    def insertObject[B <: AnyRef](parent: SyncNode[_], source: B, ownerID: String): ObjectSyncNode[B]
 
     /**
      *
@@ -76,6 +76,6 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @tparam B the type of the object.
      * @return the created node
      */
-    def insertObject[B <: AnyRef](parentPath: Array[Int], id: Int, source: B, ownerID: String): ObjectSyncNode[B]
+    def insertObject[B <: AnyRef](parentPath: Array[Int], source: B, ownerID: String): ObjectSyncNode[B]
 
 }
