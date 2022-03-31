@@ -100,7 +100,7 @@ class ObjectSyncNodeImpl[A <: AnyRef](private var parent0: SyncNode[_],
     }
 
     @Nullable
-    def getMatchingSyncNode(nonSyncObject: AnyRef): ObjectSyncNode[_ <: AnyRef] = InvocationChoreographer.forceLocalInvocation {
+    def getMatchingSyncNode(nonSyncObject: AnyRef): ObjectSyncNode[_ <: AnyRef] = InvocationChoreographer.disableInvocations {
         val origin = if (originRef == null) null else originRef.get()
         if (origin != null && (nonSyncObject eq origin))
             return this

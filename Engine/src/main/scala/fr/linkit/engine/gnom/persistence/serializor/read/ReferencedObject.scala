@@ -61,5 +61,4 @@ class ReferencedObject(override val referenceIdx: Int,
             }
         }
     }
-
 }

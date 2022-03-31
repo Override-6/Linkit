@@ -56,7 +56,7 @@ object PacketTest {
         val buff         = serialResult.buff
         println("Packet bytes: " + ScalaUtils.toPresentableString(buff) + s" (size: ${buff.limit()} bytes)")
         buff.position(4)
-        val deserialResult = translator.translate(traffic, buff)
+        val deserialResult = translator.translate(traffic, buff, -1)
         deserialResult.makeDeserialization()
         val result = deserialResult.packet.asInstanceOf[ObjectPacket].value
         println(s"Deserialization result: $result")

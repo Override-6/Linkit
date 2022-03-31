@@ -37,7 +37,7 @@ private[concurrency] trait AbstractWorker
     override def getCurrentTask: Option[ThreadTask] = Option(currentTask)
 
     override def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit = {
-        ensureCurrentThreadEqualsThisObject()
+        ensureCurrentThreadEqualsThis()
         AppLogger.vError("Entering workflow loop...")
 
         while (loopCondition) {
@@ -106,7 +106,7 @@ private[concurrency] trait AbstractWorker
 
     override def isSleeping: Boolean = isParkingForWorkflow
 
-    private def ensureCurrentThreadEqualsThisObject(): Unit = {
+    private def ensureCurrentThreadEqualsThis(): Unit = {
         if (Thread.currentThread() != thread)
             throw IllegalThreadException("This Thread does not in its own worker.")
     }

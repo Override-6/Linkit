@@ -26,6 +26,13 @@ class DefaultPacketReader(socket: DynamicSocket,
                           traffic: PacketTraffic,
                           translator: ObjectTranslator) extends PacketReader {
 
+    private var packetOrdinal = 0
+
+    private def nextOrdinal: Int = {
+        packetOrdinal += 1
+        packetOrdinal
+    }
+
     /**
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
@@ -40,14 +47,15 @@ class DefaultPacketReader(socket: DynamicSocket,
             return
         }
 
-        val bytes = socket.read(nextLength)
+        val ordinal = nextOrdinal
+        val bytes   = socket.read(nextLength)
         //NETWORK-DEBUG-MARK
         AppLogger.logDownload(socket.boundIdentifier, bytes)
         val buff = ByteBuffer.allocate(bytes.length + 4)
         buff.put(NumberSerializer.serializeInt(nextLength))
         buff.put(bytes)
         buff.position(4)
-        val result = translator.translate(traffic, buff)
+        val result = translator.translate(traffic, buff, ordinal)
         callback(result)
     }
 }

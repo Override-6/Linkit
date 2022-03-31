@@ -77,6 +77,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
                 case b: BroadcastPacketCoordinates => b.getDedicated(currentIdentifier)
             }
             val rectifiedResult                         = new ObjectDeserializationResult {
+                override val ordinal: Int = result.ordinal
                 override def buff: ByteBuffer = result.buff
                 override def coords: PacketCoordinates = coordinates
                 override def attributes: PacketAttributes = result.attributes

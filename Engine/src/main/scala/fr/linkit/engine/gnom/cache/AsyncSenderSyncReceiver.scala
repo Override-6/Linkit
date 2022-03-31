@@ -21,7 +21,7 @@ import fr.linkit.engine.gnom.packet.traffic.channel.SyncAsyncPacketChannel
 
 import scala.reflect.ClassTag
 
-class AsyncSenderSyncReceiver(store: PacketInjectableStore, scope: ChannelScope) extends SyncAsyncPacketChannel(store, scope, true) with PacketSender with PacketSyncReceiver {
+class AsyncSenderSyncReceiver(store: PacketInjectableStore, scope: ChannelScope) extends SyncAsyncPacketChannel(store, scope) with PacketSender with PacketSyncReceiver {
 
     override def nextPacket[P <: Packet : ClassTag]: P = nextSync
 

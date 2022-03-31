@@ -19,7 +19,7 @@ import fr.linkit.api.internal.system.Reason
 import fr.linkit.engine.gnom.packet.traffic.channel.SyncPacketChannel
 
 class SystemPacketChannel(store: PacketInjectableStore, scope: ChannelScope)
-    extends SyncPacketChannel(store, scope, true) {
+    extends SyncPacketChannel(store, scope) {
 
     def sendOrder(systemOrder: SystemOrder, reason: Reason, content: Array[Byte] = Array()): Unit = {
         send(SystemPacket(systemOrder, reason, content))

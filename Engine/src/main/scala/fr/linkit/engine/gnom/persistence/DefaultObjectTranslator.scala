@@ -45,16 +45,15 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
             override def writeCoords(buff: ByteBuffer): Unit = coords match {
                 //TODO Better broadcast persistence handling
                 // <------------------------ MAINTAINED ------------------------>
-                case BroadcastPacketCoordinates(path, senderID, discardTargets, targetIDs, packetOrdinal) =>
+                case BroadcastPacketCoordinates(path, senderID, discardTargets, targetIDs) =>
                     throw new UnsupportedOperationException("Can't send broadcast packets.")
 
-                case DedicatedPacketCoordinates(path, targetID, senderID, packetOrdinal) =>
+                case DedicatedPacketCoordinates(path, targetID, senderID) =>
                     buff.put(DedicatedFlag) //set the dedicated flag
                     buff.putInt(path.length) //path length
                     path.foreach(buff.putInt) //path content
                     putString(targetID, buff) // targetID String
                     putString(senderID, buff) // senderID String
-                    buff.putInt(packetOrdinal) //packet Ordinal Int
                 case _                                                                   =>
                     throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
             }
@@ -80,9 +79,9 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
                 for (i <- path.indices) path(i) = buff.getInt() //fill path array
                 val targetID = getString(buff) //targetID string
                 val senderID = getString(buff) //senderID string
-                val packetOrdinal = buff.getInt() //packetOrdinal Int
-                DedicatedPacketCoordinates(path, targetID, senderID, packetOrdinal)
-            case unknown       => throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'.")
+                DedicatedPacketCoordinates(path, targetID, senderID)
+            case unknown       =>
+                throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'.")
         }
     }
 
@@ -97,7 +96,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         new String(array)
     }
 
-    override def translate(traffic: PacketTraffic, buffer: ByteBuffer): ObjectDeserializationResult = {
+    override def translate(traffic: PacketTraffic, buffer: ByteBuffer, ordinal: Int): ObjectDeserializationResult = {
         val coords  = readCoordinates(buffer)
         val conf    = traffic.getPersistenceConfig(coords.path)
         val network = traffic.connection.network
@@ -108,7 +107,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
             override val config    : PersistenceConfig          = conf
             override val gnol      : GeneralNetworkObjectLinker = network.gnol
         }
-        new LazyObjectDeserializationResult(buffer, coords)(serializer.deserializeObjects(bundle))
+        new LazyObjectDeserializationResult(buffer, coords, ordinal)(serializer.deserializeObjects(bundle))
     }
 
 }

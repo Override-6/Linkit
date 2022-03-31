@@ -168,7 +168,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
                 verifyAgreement(desc.description.javaMethod, agreement, context)
                 val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](false))
                 val contract   = new MethodContractImpl[Any](
-                    desc.forceLocalInnerInvocations, agreement, desc.parameterContracts,
+                    desc.skipInnerInvocations, agreement, desc.parameterContracts,
                     rvContract, desc.description, desc.hideMessage, desc.procrastinator.orNull)
                 map.put(id, contract)
             }

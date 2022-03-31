@@ -13,11 +13,8 @@
 
 package fr.linkit.engine.gnom.persistence
 
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 
@@ -25,7 +22,8 @@ import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 
 class LazyObjectDeserializationResult(override val buff: ByteBuffer,
-                                      override val coords: PacketCoordinates)
+                                      override val coords: PacketCoordinates,
+                                      override val ordinal: Int)
                                      (forEachObjects: (AnyRef => Unit) => Unit) extends ObjectDeserializationResult {
 
     private lazy val cache : Array[AnyRef]    = createCache()

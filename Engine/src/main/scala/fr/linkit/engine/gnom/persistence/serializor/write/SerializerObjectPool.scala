@@ -176,8 +176,6 @@ class SerializerObjectPool(bundle: PersistenceBundle,
         decomposed
     }
     private def addObj0(ref: AnyRef): Unit = {
-        val clazz   = ref.getClass
-
         val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
             addObjectAndReturnDecomposed(ref)

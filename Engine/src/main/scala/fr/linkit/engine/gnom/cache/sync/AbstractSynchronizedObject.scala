@@ -95,10 +95,9 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             override val puppeteer : Puppeteer[_]          = AbstractSynchronizedObject.this.puppeteer
 
             override def doSuperCall(): Any = {
-                if (isNotMirroring)
+                if (isNotMirroring) {
                     superCall(synchronizedArgs)
-                else throw new MirroringObjectInvocationException(getMirroringCallExceptionMessage)
-
+                } else throw new MirroringObjectInvocationException(getMirroringCallExceptionMessage)
             }
         }
         methodContract.executeRemoteMethodInvocation(data)

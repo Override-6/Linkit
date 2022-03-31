@@ -29,13 +29,13 @@ import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, 
 import scala.collection.mutable
 
 abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](channel: ObjectManagementChannel)
-    extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
+        extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
     private lazy val currentIdentifier = channel.traffic.currentIdentifier
     //What other engines thinks about current engine references states
-    private val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
+    private      val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
     //What current engine thinks about other engines references states
-    private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
+    private      val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
 
     @inline
     def getPresence(ref: R): NetworkObjectPresence = {
@@ -57,22 +57,23 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
             return isLocationReferenced(location)
         AppLogger.debug(s"Asking if $location is present on engine: $engineId")
         val isPresent = channel
-            .makeRequest(ChannelScopes.include(engineId))
-            .addPacket(EmptyPacket)
-            .putAttribute(ReferenceAttributeKey, location)
-            .submit()
-            .nextResponse
-            .nextPacket[BooleanPacket]
+                .makeRequest(ChannelScopes.include(engineId))
+                .addPacket(EmptyPacket)
+                .putAttribute(ReferenceAttributeKey, location)
+                .submit()
+                .nextResponse
+                .nextPacket[BooleanPacket]
+                .value
         AppLogger.debug(s"is any network object registered at $location on engine $engineId ? $isPresent")
         isPresent
     }
 
     private[reference] def informPresence(enginesId: Array[String], location: R, presence: ObjectPresenceType): Unit = {
         channel
-            .makeRequest(ChannelScopes.include(enginesId: _*))
-            .addPacket(AnyRefPacket(presence))
-            .putAttribute(ReferenceAttributeKey, location)
-            .submit()
+                .makeRequest(ChannelScopes.include(enginesId: _*))
+                .addPacket(AnyRefPacket(presence))
+                .putAttribute(ReferenceAttributeKey, location)
+                .submit()
     }
 
     def bindListener(location: R, listener: ExternalNetworkObjectPresence[R]): Unit = {
@@ -82,19 +83,19 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
     }
 
     protected def registerReference(ref: R): Unit = ref.getClass.synchronized {
-            AppLogger.info(s"Registering Network Object reference $ref (${System.identityHashCode(ref)}).")
-            var presence: InternalNetworkObjectPresence[R] = null
-            if (!internalPresences.contains(ref)) {
-                presence = new InternalNetworkObjectPresence[R](this, ref)
-                internalPresences(ref) = presence
-            } else {
-                presence = internalPresences(ref)
-            }
-            presence.setPresent()
-            val opt = externalPresences.get(ref)
-            if (opt.isDefined)
-                opt.get.onObjectSet(currentIdentifier)
+        AppLogger.info(s"Registering Network Object reference $ref (${System.identityHashCode(ref)}).")
+        var presence: InternalNetworkObjectPresence[R] = null
+        if (!internalPresences.contains(ref)) {
+            presence = new InternalNetworkObjectPresence[R](this, ref)
+            internalPresences(ref) = presence
+        } else {
+            presence = internalPresences(ref)
         }
+        presence.setPresent()
+        val opt = externalPresences.get(ref)
+        if (opt.isDefined)
+            opt.get.setToPresent(currentIdentifier)
+    }
 
     protected def unregisterReference(ref: R): Unit = {
         val opt = internalPresences.get(ref)
@@ -104,23 +105,23 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         }
         val otp2 = externalPresences.get(ref)
         if (otp2.isDefined)
-            otp2.get.onObjectRemoved(currentIdentifier)
+            otp2.get.setToNotPresent(currentIdentifier)
     }
 
     protected def handleBundle(bundle: LinkerRequestBundle): Unit = {
         val responseSubmitter = bundle.responseSubmitter
         val request           = bundle.packet
         val reference: R      = bundle.linkerReference.asInstanceOf[R]
-        val pct = request.nextPacket[Packet]
-        val senderId = bundle.coords.senderID
+        val pct               = request.nextPacket[Packet]
+        val senderId          = bundle.coords.senderID
         AppLogger.warn(s"handling bundle, request from $senderId. packet : $pct")
         pct match {
             case EmptyPacket =>
                 val isPresent = isLocationReferenced(reference)
                 AppLogger.warn(s"is $reference present in this engine : $isPresent")
                 responseSubmitter
-                    .addPacket(BooleanPacket(isPresent))
-                    .submit()
+                        .addPacket(BooleanPacket(isPresent))
+                        .submit()
                 val presence = internalPresences(reference)
                 presence.setPresenceFor(senderId, if (isPresent) PRESENT else NOT_PRESENT)
                 AppLogger.warn(s"presence information sent and modified for '$senderId' to ${if (isPresent) PRESENT else NOT_PRESENT}")
@@ -128,8 +129,8 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
             case AnyRefPacket(presence: ObjectPresenceType) =>
                 val listener = externalPresences(reference)
                 presence match {
-                    case NOT_PRESENT => listener.onObjectRemoved(senderId)
-                    case PRESENT     => listener.onObjectSet(senderId)
+                    case NOT_PRESENT => listener.setToNotPresent(senderId)
+                    case PRESENT     => listener.setToPresent(senderId)
                     case NEVER_ASKED => throw new IllegalArgumentException("Received invalid 'NEVER_ASKED' Presence Type event")
                 }
         }

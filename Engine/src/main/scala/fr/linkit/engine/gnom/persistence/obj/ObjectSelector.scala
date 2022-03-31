@@ -17,8 +17,9 @@ import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.cache.sync.{OriginReferencedSyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject}
+import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject, SystemNetworkObjectPresence}
 import fr.linkit.engine.gnom.reference.ContextObject
+import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, InternalNetworkObjectPresence}
 
 class ObjectSelector(bundle: PersistenceBundle) {
 
@@ -34,7 +35,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
             return findNonNetworkObjectReference(obj)
         }
         obj match {
-            case sync: SynchronizedObject[_] =>
+            case sync: SynchronizedObject[_]                       =>
                 findSyncObjectReference(sync)
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
                 findDynamicNetworkObjectReference(obj)
@@ -47,11 +48,24 @@ class ObjectSelector(bundle: PersistenceBundle) {
 
     private def findSyncObjectReference(obj: SynchronizedObject[_]): Option[NetworkObjectReference] = {
         val reference = obj.reference
-        if (obj.presence.isPresentOn(boundId))
+        val presence  = obj.presence
+        if (presence.isPresentOn(boundId))
             Some(reference)
         else {
             //send a reference to the object we want to synchronize
-            findNonNetworkObjectReference(obj).map(OriginReferencedSyncObjectReference(reference, _))
+            val opt = findNonNetworkObjectReference(obj).map(OriginReferencedSyncObjectReference(reference, _))
+            if (opt.isEmpty) {
+                presence match {
+                    case presence: ExternalNetworkObjectPresence[_] =>
+                        //As no reference has been found, the object will be send to the target, so we manually
+                        // set it as present for the bound identifier (the target identifier)
+                        // in order to avoid sending the same object several times when the same
+                        // object is present in several successive packets
+                        presence.setToPresent(boundId)
+                    case _                                          =>
+                }
+            }
+            opt
         }
     }
 
@@ -67,12 +81,25 @@ class ObjectSelector(bundle: PersistenceBundle) {
 
     private def findDynamicNetworkObjectReference(obj: DynamicNetworkObject[NetworkObjectReference]): Option[NetworkObjectReference] = {
         val reference = obj.reference
-        if (obj.presence.isPresentOn(boundId))
+        val presence  = obj.presence
+        if (presence.isPresentOn(boundId))
             Some(reference)
         else {
             if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
                 rnol.get.save(obj)
-            findNonNetworkObjectReference(obj) //send a reference to the object we want to synchronize
+            val opt = findNonNetworkObjectReference(obj) //send a reference to the object we want to synchronize
+            if (opt.isEmpty) {
+                presence match {
+                    case presence: ExternalNetworkObjectPresence[_] =>
+                        //As no reference has been found, the object will be send to the target, so we manually
+                        // set it as present for the bound identifier (the target identifier)
+                        // in order to avoid sending the same object several times when the same
+                        // object is present in several successive packets
+                        presence.setToPresent(boundId)
+                    case _                                          =>
+                }
+            }
+            opt
         }
     }
 
@@ -99,7 +126,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
         val reference = obj.reference
         if (reference.isInstanceOf[SharedCacheManagerReference])
             cnol.initializeObject(obj.asInstanceOf[NetworkObject[SharedCacheManagerReference]])
-        if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
+        else if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
             rnol.get.save(obj)
     }
 

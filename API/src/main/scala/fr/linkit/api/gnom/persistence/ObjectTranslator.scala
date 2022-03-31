@@ -22,6 +22,6 @@ trait ObjectTranslator {
 
     def translate(packetInfo: TransferInfo): ObjectSerializationResult
 
-    def translate(traffic: PacketTraffic, buff: ByteBuffer): ObjectDeserializationResult
+    def translate(traffic: PacketTraffic, buff: ByteBuffer, ordinal: Int): ObjectDeserializationResult
 
 }

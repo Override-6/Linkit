@@ -117,7 +117,9 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     }
 
     private def handlePacket(result: ObjectDeserializationResult, coordinates: DedicatedPacketCoordinates): Unit = {
+        //FIXME Ugly
         val rectifiedResult = new ObjectDeserializationResult {
+            override val ordinal: Int = result.ordinal
             override def makeDeserialization(): Unit = result.makeDeserialization()
             override def isDeserialized: Boolean = result.isDeserialized
             override def buff: ByteBuffer = result.buff

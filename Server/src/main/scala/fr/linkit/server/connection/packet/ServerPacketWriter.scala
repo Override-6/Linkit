@@ -27,22 +27,11 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
     override val serverIdentifier : String        = serverConnection.currentIdentifier
     override val currentIdentifier: String        = traffic.currentIdentifier
 
-    /*
-    * Incremented each time a packet is written in the socket.
-    * */
-    private var packetOrdinal = 0
-
-    private def nextOrdinal: Int = {
-        packetOrdinal += 1
-        packetOrdinal
-    }
-
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)
     }
 
     override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
-        val packetOrdinal = nextOrdinal
         targetIDs.foreach(targetID => {
             /*
              * If the targetID is the same as the server's identifier, that means that we target ourself,
@@ -50,7 +39,7 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
              * injected into the traffic.
              * */
             if (targetID == serverIdentifier) {
-                val coords = DedicatedPacketCoordinates(path, targetID, serverIdentifier, packetOrdinal)
+                val coords = DedicatedPacketCoordinates(path, targetID, serverIdentifier)
                 traffic.processInjection(packet, attributes, coords)
                 return
             }
@@ -68,6 +57,6 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discarded: Array[String]): Unit = {
-        serverConnection.broadcastPacket(packet, attributes, currentIdentifier, path, nextOrdinal, info.persistenceConfig, discarded)
+        serverConnection.broadcastPacket(packet, attributes, currentIdentifier, path, info.persistenceConfig, discarded)
     }
 }

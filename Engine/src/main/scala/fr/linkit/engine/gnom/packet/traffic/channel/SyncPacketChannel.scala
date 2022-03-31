@@ -26,21 +26,13 @@ import fr.linkit.engine.internal.utils.ScalaUtils.ensurePacketType
 import scala.reflect.ClassTag
 
 //TODO doc
-class SyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope,
-                                  useBusyLocks: Boolean) extends AbstractPacketChannel(store, scope)
-    with PacketSender with PacketSyncReceiver {
+class SyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope)
+        with PacketSender with PacketSyncReceiver {
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
-    private val queue: BlockingQueue[Packet] = {
-        if (!useBusyLocks)
-            new LinkedBlockingQueue[Packet]()
-        else {
-            WorkerPools
-                .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
-        }
-    }
+    private val queue: BlockingQueue[Packet] = WorkerPools.ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
 
     override def handleBundle(bundle: ChannelPacketBundle): Unit = {
         queue.add(bundle.packet)
@@ -81,9 +73,7 @@ class SyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelSc
 object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {
 
     override def createNew(store: PacketInjectableStore, scope: ChannelScope): SyncPacketChannel = {
-        new SyncPacketChannel(store, scope, false)
+        new SyncPacketChannel(store, scope)
     }
-
-    implicit def useBusyLocks: PacketInjectableFactory[SyncPacketChannel] = new SyncPacketChannel(_, _, true)
 
 }

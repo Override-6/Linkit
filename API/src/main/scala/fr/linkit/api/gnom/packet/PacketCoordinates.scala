@@ -17,6 +17,5 @@ trait PacketCoordinates extends Serializable {
 
     val path         : Array[Int]
     val senderID     : String
-    val packetOrdinal: Int
 
 }

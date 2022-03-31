@@ -53,7 +53,7 @@ class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
     }
 
     @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], caller: Engine): Any = {
-        syncObject.getChoreographer.forceLocalInvocation {
+        syncObject.getChoreographer.disableInvocations {
             ExecutorEngine.setCurrentEngine(caller)
             val data   = new contract.InvocationExecution {
                 override val syncObject: SynchronizedObject[_] = ObjectChip.this.syncObject

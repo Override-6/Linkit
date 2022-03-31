@@ -100,7 +100,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     //TODO write an object for this big method entry
     def broadcastPacket(packet: Packet, attributes: PacketAttributes,
-                        sender: String, path: Array[Int], ordinal: Int,
+                        sender: String, path: Array[Int],
                         config: PersistenceConfig, discarded: Array[String]): Unit = {
         if (connectionsManager.countConnections - discarded.length < 0) {
             // There is nowhere to send this packet.
@@ -109,13 +109,13 @@ class ServerConnection(applicationContext: ServerApplication,
         connectionsManager.listIdentifiers
             .filterNot(discarded.contains)
             .foreach(candidate => {
-                val coords = DedicatedPacketCoordinates(path, candidate, sender, ordinal)
+                val coords = DedicatedPacketCoordinates(path, candidate, sender)
                 val result = translator.translate(SimpleTransferInfo(coords, attributes, packet, config, network))
                 connectionsManager.broadcastPacket(result)
             })
 
         if (!discarded.contains(currentIdentifier)) {
-            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, sender, ordinal))
+            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, sender))
         }
     }
 

@@ -15,6 +15,8 @@ package fr.linkit.api.gnom.persistence
 
 trait ObjectDeserializationResult extends ObjectTransferResult {
 
+    val ordinal: Int
+
     def makeDeserialization(): Unit
 
     def isDeserialized: Boolean

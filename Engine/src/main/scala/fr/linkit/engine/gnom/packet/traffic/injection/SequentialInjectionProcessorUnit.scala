@@ -18,25 +18,30 @@ import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.concurrency.WorkerPools
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
 
+import java.util.{Comparator, PriorityQueue}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
 
     private final var executor: Thread = _
-    private final val queue            = mutable.Queue.empty[ObjectDeserializationResult]
+    private final val queue            = mutable.PriorityQueue.empty[ObjectDeserializationResult] { case (a, b) => a.ordinal - b.ordinal }
     private final val locker           = new SimpleWorkerController()
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
 
     override def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit = {
-        queue.enqueue(result)
         val methodExecutor = Thread.currentThread()
-        if (executor != null && methodExecutor != executor)
-            return
-        executor = methodExecutor
+        queue.synchronized {
+            queue.enqueue(result)
+        }
+        this.synchronized {
+            if (executor != null && methodExecutor != executor)
+                return
+            executor = methodExecutor
+        }
+        println(s"${methodExecutor} deserializing queue of sequential unit ${result.coords.path.mkString("/")}")
         // If any of the chained SIPU is processing,
         // the current unit will wait until the whole chain is complete.
         chain.foreach(_.join())
@@ -62,14 +67,24 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                 return //the current IPU is not processing any injection
             WorkerPools.currentTask.orNull
         }
-        if (currentTask == null && executor != null) this.wait()
+        if (currentTask == null && executor != null) this.synchronized(wait())
         else if (executor != null) locker.pauseTask()
     }
 
     def deserializeNextResult(injectable: PacketInjectable): Unit = {
-        val result = queue.dequeue()
-        if (result == null)
-            return
+        val result = queue.synchronized {
+            var result = queue.dequeue()
+            if (result == null)
+                return
+
+            if (queue.nonEmpty && queue.head.ordinal < result.ordinal) {
+                println("Switch !")
+                val lastResult = result
+                result = queue.dequeue()
+                queue.enqueue(lastResult)
+            }
+            result
+        }
         result.makeDeserialization()
         val bundle = new PacketBundle {
             override val packet    : Packet            = result.packet

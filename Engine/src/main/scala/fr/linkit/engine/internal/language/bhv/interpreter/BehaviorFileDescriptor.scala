@@ -82,15 +82,15 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
         methods.map { method =>
             desc match {
                 case _: DisabledMethodDescription   =>
-                    MethodContractDescriptorImpl(method, false, None, None, Array.empty, None, false, EmptyBuilder)
+                    MethodContractDescriptorImpl(method, false, None, None, Array.empty, None, true, EmptyBuilder)
                 case desc: EnabledMethodDescription =>
                     val rvContract     = if (desc.syncReturnValue.isSync) Some(new SimpleModifiableValueContract[Any](true, None)) else None
                     val agreement      = desc.agreement.map(ag => getAgreement(ag.name)).getOrElse(EmptyBuilder)
                     val procrastinator = findProcrastinator(desc.properties)
-                    MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, false, agreement)
+                    MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, true, agreement)
                 case desc: HiddenMethodDescription  =>
                     val msg = Some(desc.hideMessage.getOrElse(s"${method.javaMethod} is hidden"))
-                    MethodContractDescriptorImpl(method, false, None, None, Array(), msg, false, EmptyBuilder)
+                    MethodContractDescriptorImpl(method, false, None, None, Array(), msg, true, EmptyBuilder)
             }
         }.toArray
     }
@@ -125,11 +125,11 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             val result = (method: MethodDescription) match {
                 case _: DisabledMethodDescription  =>
                     checkParams()
-                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array.empty, None, false, EmptyBuilder)
+                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array.empty, None, true, EmptyBuilder)
                 case desc: HiddenMethodDescription =>
                     checkParams()
                     val msg = Some(desc.hideMessage.getOrElse(s"${methodDesc.javaMethod} is hidden"))
-                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array(), msg, false, EmptyBuilder)
+                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array(), msg, true, EmptyBuilder)
 
                 case desc: EnabledMethodDescription with AttributedEnabledMethodDescription =>
                     val rvContract         = {
@@ -153,7 +153,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         }.toArray
                         if (!acc.exists(x => x.isSynchronized || x.modifier.isDefined)) Array[ModifiableValueContract[Any]]() else acc
                     }
-                    MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, false, agreement)
+                    MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, true, agreement)
             }
             result
         }

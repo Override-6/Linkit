@@ -25,11 +25,11 @@ case class MethodContractDescriptorImpl(description: MethodDescription,
                                         returnValueContract: Option[ModifiableValueContract[Any]],
                                         parameterContracts: Array[ModifiableValueContract[Any]],
                                         hideMessage: Option[String],
-                                        forceLocalInnerInvocations: Boolean,
+                                        skipInnerInvocations: Boolean,
                                         agreement: RMIRulesAgreementBuilder) extends MethodContractDescriptor {
 
     def this(description: MethodDescription, other: MethodContractDescriptor) {
-        this(description, other.forced, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.forceLocalInnerInvocations, other.agreement)
+        this(description, other.forced, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.skipInnerInvocations, other.agreement)
     }
 
 }

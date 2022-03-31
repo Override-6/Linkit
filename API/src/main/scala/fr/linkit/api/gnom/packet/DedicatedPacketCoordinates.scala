@@ -15,11 +15,10 @@ package fr.linkit.api.gnom.packet
 
 case class DedicatedPacketCoordinates(override val path: Array[Int],
                                       targetID: String,
-                                      override val senderID: String,
-                                      override val packetOrdinal: Int) extends PacketCoordinates {
+                                      override val senderID: String) extends PacketCoordinates {
 
     override def toString: String = s"$productPrefix(${path.mkString("Array(", ", ", ")")}, $targetID, $senderID)"
 
-    def reversed: DedicatedPacketCoordinates = DedicatedPacketCoordinates(path, senderID, targetID, packetOrdinal)
+    def reversed: DedicatedPacketCoordinates = DedicatedPacketCoordinates(path, senderID, targetID)
 
 }

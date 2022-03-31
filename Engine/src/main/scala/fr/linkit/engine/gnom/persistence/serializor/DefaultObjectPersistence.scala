@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
 import fr.linkit.engine.gnom.persistence.serializor.read.ObjectReader
@@ -32,7 +33,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         result
     }
 
-    override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = {
+    override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disableInvocations {
         val buffer = bundle.buff
         buffer.put(signature.toArray)
         val writer = new ObjectWriter(bundle)
@@ -40,9 +41,6 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         writer.writePool()
         val pool = writer.getPool
         writeEntries(objects, writer, pool)
-        //InvocationChoreographer.forceLocalInvocation {
-            //AppLogger.debug(s"Ended serialization of ${objects.mkString(", ")} (took ${t1 - t0} ms.)")
-        //}
     }
 
     private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,
@@ -57,7 +55,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         }
     }
 
-    override def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit = {
+    override def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit = InvocationChoreographer.disableInvocations {
         val buff = bundle.buff
         checkSignature(buff)
 

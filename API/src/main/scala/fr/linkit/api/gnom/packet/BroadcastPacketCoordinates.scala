@@ -16,8 +16,7 @@ package fr.linkit.api.gnom.packet
 case class BroadcastPacketCoordinates(override val path: Array[Int],
                                       override val senderID: String,
                                       discardTargets: Boolean,
-                                      targetIDs: Seq[String],
-                                      override val packetOrdinal: Int) extends PacketCoordinates {
+                                      targetIDs: Seq[String]) extends PacketCoordinates {
 
     override def toString: String = s"BroadcastPacketCoordinates(${path.mkString("/")}, $senderID, $discardTargets, $targetIDs)"
 
@@ -32,6 +31,6 @@ case class BroadcastPacketCoordinates(override val path: Array[Int],
             throw new IllegalArgumentException(s"These coordinates does not target $target (discardTargets = $discardTargets).")
         }
 
-        DedicatedPacketCoordinates(path, target, senderID, packetOrdinal)
+        DedicatedPacketCoordinates(path, target, senderID)
     }
 }

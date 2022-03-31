@@ -27,7 +27,6 @@ class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWo
             throw new IllegalArgumentException(s"newCount < workers.size ($newCount < ${workers.size})")
         for (_ <- 0 until newCount - workers.size) {
             val worker = workerFactory(() => waitingRoom())
-            addWorker(worker)
             worker.thread.start()
         }
     }

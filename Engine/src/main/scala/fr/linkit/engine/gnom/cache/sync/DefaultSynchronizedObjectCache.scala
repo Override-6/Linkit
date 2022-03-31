@@ -197,7 +197,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         val path     = ip.path
         val node     = findNode(path)
         val senderID = bundle.coords.senderID
-        node.fold(AppLogger.error(s"Could not find root object node for synchronised object located at $reference/~${path.mkString("/")}")) {
+        node.fold(AppLogger.error(s"Could not find sync object node for synchronised object located at $reference/~${path.mkString("/")}")) {
             case node: TrafficInterestedSyncNode[_] => node.handlePacket(ip, senderID, bundle.responseSubmitter)
             case _                                  =>
                 throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedSyncNode[_]].getSimpleName} in order to handle a member rmi request.")

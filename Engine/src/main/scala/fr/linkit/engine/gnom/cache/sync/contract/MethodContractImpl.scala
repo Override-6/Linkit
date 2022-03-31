@@ -26,7 +26,7 @@ import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 import org.jetbrains.annotations.Nullable
 
-class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
+class MethodContractImpl[R](skipInnerInvocations: Boolean,
                             agreement: RMIRulesAgreement,
                             parameterContracts: Array[ModifiableValueContract[Any]],
                             returnValueContract: ModifiableValueContract[Any],
@@ -71,7 +71,7 @@ class MethodContractImpl[R](forceLocalInnerInvocations: Boolean,
             override val methodArguments: Array[Any] = args
 
             override def callSuper(): R = {
-                if (forceLocalInnerInvocations) choreographer.forceLocalInvocation[R] {
+                if (skipInnerInvocations) choreographer.disableInvocations[R] {
                     data.doSuperCall().asInstanceOf[R]
                 } else {
                     data.doSuperCall().asInstanceOf[R]

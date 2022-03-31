@@ -20,12 +20,12 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 
 trait MethodContractDescriptor {
 
-    val forced                    : Boolean
-    val description               : MethodDescription
-    val parameterContracts        : Array[ModifiableValueContract[Any]]
-    val procrastinator            : Option[Procrastinator]
-    val returnValueContract       : Option[ModifiableValueContract[Any]]
-    val hideMessage               : Option[String]
-    val forceLocalInnerInvocations: Boolean
-    val agreement                 : RMIRulesAgreementBuilder
+    val forced              : Boolean
+    val description         : MethodDescription
+    val parameterContracts  : Array[ModifiableValueContract[Any]]
+    val procrastinator      : Option[Procrastinator]
+    val returnValueContract : Option[ModifiableValueContract[Any]]
+    val hideMessage         : Option[String]
+    val skipInnerInvocations: Boolean
+    val agreement           : RMIRulesAgreementBuilder
 }

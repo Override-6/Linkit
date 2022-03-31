@@ -21,8 +21,8 @@ class InvocationChoreographer {
 
     /**
      * All threads that figures in this set are running the
-     * [[forceLocalInvocation]] method.
-     * @see [[forceLocalInvocation]] for more details
+     * [[disableInvocations]] method.
+     * @see [[disableInvocations]] for more details
      * */
     protected val markedThreads = new mutable.HashSet[Thread]
 
@@ -39,8 +39,10 @@ class InvocationChoreographer {
      * @see [[MethodInvocation]]
      * @see [[SynchronizedObject]] for more information about those 'generated methods'.
      * */
-    def forceLocalInvocation[A](action: => A): A = {
+    def disableInvocations[A](action: => A): A = {
         val thread = Thread.currentThread()
+        if (markedThreads.contains(thread)) return action
+
         markedThreads += thread
         try {
             action
@@ -51,7 +53,7 @@ class InvocationChoreographer {
 
     /**
      * @return true if the current thread is marked as a thread that must perform all SynchronizedObject's executions locally.
-     *         @see [[forceLocalInvocation()]]
+     *         @see [[disableInvocations()]]
      * */
     def isMethodExecutionForcedToLocal: Boolean = {
         val thread = Thread.currentThread()
@@ -61,6 +63,7 @@ class InvocationChoreographer {
 }
 
 object InvocationChoreographer extends InvocationChoreographer {
+
     override def isMethodExecutionForcedToLocal: Boolean = {
         markedThreads.contains(Thread.currentThread())
     }

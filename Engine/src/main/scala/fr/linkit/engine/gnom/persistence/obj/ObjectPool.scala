@@ -62,8 +62,3 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
     def getChunks: Array[PoolChunk[Any]] = chunks.asInstanceOf[Array[PoolChunk[Any]]]
 
 }
-
-object ObjectPool {
-
-}
-

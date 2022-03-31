@@ -13,33 +13,23 @@
 
 package fr.linkit.engine.gnom.packet.traffic.channel
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
-
-import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
+import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
+import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
-import fr.linkit.engine.gnom.packet.{SimplePacketAttributes, SimplePacketBundle}
 import fr.linkit.engine.internal.utils.ConsumerContainer
 import fr.linkit.engine.internal.utils.ScalaUtils.ensurePacketType
-import org.jetbrains.annotations.Nullable
 
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag
 
 class SyncAsyncPacketChannel(store: PacketInjectableStore,
-                             scope: ChannelScope,
-                             busy: Boolean)
+                             scope: ChannelScope)
     extends AbstractPacketChannel(store, scope) {
 
-    private val sync: BlockingQueue[Packet] = {
-        if (!busy) {
-            new LinkedBlockingQueue[Packet]()
-        } else {
-            WorkerPools
-                .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
-        }
-    }
+    private val sync: BlockingQueue[Packet] = WorkerPools.ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
 
     private val asyncListeners = new ConsumerContainer[PacketBundle]
 
@@ -95,9 +85,7 @@ object SyncAsyncPacketChannel extends PacketInjectableFactory[SyncAsyncPacketCha
     val Attribute: Int = 5
 
     override def createNew(store: PacketInjectableStore, scope: ChannelScope): SyncAsyncPacketChannel = {
-        new SyncAsyncPacketChannel(store, scope, false)
+        new SyncAsyncPacketChannel(store, scope)
     }
-
-    def busy: PacketInjectableFactory[SyncAsyncPacketChannel] = new SyncAsyncPacketChannel(_, _, true)
 
 }
