@@ -40,11 +40,15 @@ class ExternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
     }
 
     def onObjectSet(engineId: String): Unit = {
+        if (engineId == null)
+            throw new NullPointerException()
         AppLogger.warn(s"Presence set to present for engine $engineId, for location $reference")
         presences(engineId) = PRESENT
     }
 
     def onObjectRemoved(engineId: String): Unit = {
+        if (engineId == null)
+            throw new NullPointerException()
         presences(engineId) = NOT_PRESENT
     }
 }

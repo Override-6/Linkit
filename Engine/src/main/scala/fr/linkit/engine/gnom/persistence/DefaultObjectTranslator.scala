@@ -45,23 +45,17 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
             override def writeCoords(buff: ByteBuffer): Unit = coords match {
                 //TODO Better broadcast persistence handling
                 // <------------------------ MAINTAINED ------------------------>
-                case BroadcastPacketCoordinates(path, senderID, discardTargets, targetIDs) =>
+                case BroadcastPacketCoordinates(path, senderID, discardTargets, targetIDs, packetOrdinal) =>
                     throw new UnsupportedOperationException("Can't send broadcast packets.")
-                /*buff.put(BroadcastedFlag) //set the broadcast flag
-                buff.putInt(path.length) //path length
-                path.foreach(buff.putInt) //path content
-                putString(senderID, buff) //senderID String
-                buff.put((if (discardTargets) 1 else 0): Byte) //discardTargets boolean
-                buff.putInt(targetIDs.length) //targetIds length
-                targetIDs.foreach(putString(_, buff)) //targetIds content
-                */
-                case DedicatedPacketCoordinates(path, targetID, senderID) =>
+
+                case DedicatedPacketCoordinates(path, targetID, senderID, packetOrdinal) =>
                     buff.put(DedicatedFlag) //set the dedicated flag
                     buff.putInt(path.length) //path length
                     path.foreach(buff.putInt) //path content
                     putString(targetID, buff) // targetID String
                     putString(senderID, buff) // senderID String
-                case _                                                    =>
+                    buff.putInt(packetOrdinal) //packet Ordinal Int
+                case _                                                                   =>
                     throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
             }
         }
@@ -86,7 +80,8 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
                 for (i <- path.indices) path(i) = buff.getInt() //fill path array
                 val targetID = getString(buff) //targetID string
                 val senderID = getString(buff) //senderID string
-                DedicatedPacketCoordinates(path, targetID, senderID)
+                val packetOrdinal = buff.getInt() //packetOrdinal Int
+                DedicatedPacketCoordinates(path, targetID, senderID, packetOrdinal)
             case unknown       => throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'.")
         }
     }
@@ -107,11 +102,11 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         val conf    = traffic.getPersistenceConfig(coords.path)
         val network = traffic.connection.network
         val bundle  = new PersistenceBundle {
-            override val buff        : ByteBuffer                 = buffer
-            override val boundId     : String                     = coords.senderID
-            override val packetPath  : Array[Int]                 = coords.path
-            override val config      : PersistenceConfig          = conf
-            override val gnol        : GeneralNetworkObjectLinker = network.gnol
+            override val buff      : ByteBuffer                 = buffer
+            override val boundId   : String                     = coords.senderID
+            override val packetPath: Array[Int]                 = coords.path
+            override val config    : PersistenceConfig          = conf
+            override val gnol      : GeneralNetworkObjectLinker = network.gnol
         }
         new LazyObjectDeserializationResult(buffer, coords)(serializer.deserializeObjects(bundle))
     }

@@ -15,7 +15,8 @@ package fr.linkit.api.gnom.packet
 
 trait PacketCoordinates extends Serializable {
 
-    val path    : Array[Int]
-    val senderID: String
+    val path         : Array[Int]
+    val senderID     : String
+    val packetOrdinal: Int
 
 }

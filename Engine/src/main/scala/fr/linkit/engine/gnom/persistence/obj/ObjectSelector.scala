@@ -50,8 +50,6 @@ class ObjectSelector(bundle: PersistenceBundle) {
         if (obj.presence.isPresentOn(boundId))
             Some(reference)
         else {
-            if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
-                rnol.get.save(obj)
             //send a reference to the object we want to synchronize
             findNonNetworkObjectReference(obj).map(OriginReferencedSyncObjectReference(reference, _))
         }

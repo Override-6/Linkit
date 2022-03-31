@@ -31,7 +31,7 @@ import scala.collection.mutable
 abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](channel: ObjectManagementChannel)
     extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
-    private val currentIdentifier = channel.traffic.currentIdentifier
+    private lazy val currentIdentifier = channel.traffic.currentIdentifier
     //What other engines thinks about current engine references states
     private val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
     //What current engine thinks about other engines references states

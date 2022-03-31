@@ -24,6 +24,7 @@ import static fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.*;
  */
 public enum BasicInvocationRule implements RemoteInvocationRule {
 
+
     /**
      * Blocks every engines from remote invocation.<br>
      * The invocation will only be performed on the local object.<br>

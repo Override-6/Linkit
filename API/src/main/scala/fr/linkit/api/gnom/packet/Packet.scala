@@ -13,39 +13,5 @@
 
 package fr.linkit.api.gnom.packet
 
-import fr.linkit.api.gnom.packet.Packet.nextPacketID
-
 //TODO Doc
-trait Packet extends Serializable {
-
-    @transient private var id = nextPacketID
-
-    def className: String = getClass.getSimpleName
-
-    def number: Int = id
-
-    /**
-     * If the packet has been instantiated using Unsafe.allocateInstance
-     * The constructor will not be called thus its number identifier is not attributed.
-     * This method will manually give this packet an identifier, but calling this method
-     * takes effect only once.
-     *
-     * The number is used by traffic classes and more specifically during Injection.
-     * */
-    def prepare(): this.type = {
-        if (id <= 0) {
-            id = nextPacketID
-        }
-        this
-    }
-
-}
-
-object Packet {
-    @volatile private var packetID = 0
-
-    private def nextPacketID: Int = {
-        packetID += 1
-        packetID
-    }
-}
+trait Packet extends Serializable

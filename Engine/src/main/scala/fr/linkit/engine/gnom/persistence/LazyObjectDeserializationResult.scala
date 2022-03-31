@@ -52,13 +52,8 @@ class LazyObjectDeserializationResult(override val buff: ByteBuffer,
     override def makeDeserialization(): Unit = this.synchronized {
         if (isDeserialized)
             throw new IllegalStateException("Already deserialized !")
-        val t0 = System.currentTimeMillis()
         attributes0 = extract[PacketAttributes](SimplePacketAttributes.empty)
-        packet0 = extract[Packet](EmptyPacket).prepare()
-        val t1 = System.currentTimeMillis()
-        InvocationChoreographer.forceLocalInvocation {
-            //AppLogger.debug(s"Deserialization has been performed $coords, $packet0, $attributes0 (took ${t1 - t0} ms.)")
-        }
+        packet0 = extract[Packet](EmptyPacket)
     }
 
     override def isDeserialized: Boolean = attributes0 != null && packet0 != null
