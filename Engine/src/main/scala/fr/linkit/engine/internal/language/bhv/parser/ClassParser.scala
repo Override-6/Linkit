@@ -35,7 +35,7 @@ object ClassParser extends BehaviorLanguageParser {
             }
         }
         val returnvalueState           = syncOrNot <~ ReturnValue | success(SynchronizeState(false, false))
-        val as                         = As ~> identifier ^^ AgreementReference
+        val as                         = Following ~> identifier ^^ AgreementReference
         val foreachMethodEnable        = {
             val notModifiers = not(rep1(methodModifierParser)) withFailureMessage "Global method description can't have any modifier"
             (properties <~ Foreach <~ Method <~ Enable) ~ as.? ~ (BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight).? ^^ {

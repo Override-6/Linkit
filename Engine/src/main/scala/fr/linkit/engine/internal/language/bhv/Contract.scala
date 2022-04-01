@@ -21,9 +21,8 @@ import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, Behavio
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 
-import java.io.File
 import java.net.URL
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
 
@@ -67,8 +66,8 @@ object Contract {
     private def completeAST(ast: BehaviorFileAST, filePath: String, propertyClass: PropertyClass, app: ApplicationContext): LangContractDescriptorData = {
         if (propertyClass == null)
             throw new NullPointerException("property class cannot be null. ")
-        val file          = new BehaviorFile(ast, filePath)
-        val extractor     = new BehaviorFileLambdaExtractor(file, filePath, center)
+        val file          = new BehaviorFile(ast, filePath, center)
+        val extractor     = new BehaviorFileLambdaExtractor(file, filePath)
         val callerFactory = extractor.compileLambdas(app)
         val partial       = new PartialContractDescriptorData(file, app, callerFactory)
         contracts.put(filePath, partial)
@@ -83,7 +82,7 @@ object Contract {
                 val interpreter = new BehaviorFileDescriptor(file, app, propertyClass, caller)
                 interpreter.data
             } catch {
-                case e: BHVLanguageException => throw new BHVLanguageException(s"in: ${file.source}: ${e.getMessage}", e)
+                case e: BHVLanguageException => throw new BHVLanguageException(s"in: ${file.filePath}: ${e.getMessage}", e)
             }
         }
 

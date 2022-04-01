@@ -1,8 +1,15 @@
+name "NetworkContract"
 
-import fr.linkit.api.gnom.**
-import fr.linkit.engine.gnom.**
+import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.engine.gnom.network.DefaultEngine
+import fr.linkit.engine.gnom.network.NetworkDataTrunk
+import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.Engine
 import java.nio.file.Path
 import java.net.URI
+import fr.linkit.api.gnom.network.ExternalConnectionState
+import fr.linkit.engine.gnom.network.AbstractNetwork
+import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 
 scala ${
     val network = £{@network: AbstractNetwork}

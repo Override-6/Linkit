@@ -21,16 +21,13 @@ import fr.linkit.engine.internal.language.bhv.PropertyClass
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.integration.{FileIntegratedLambdas, LambdaCaller}
 
-class BehaviorFileLambdaExtractor(file: BehaviorFile, fileName: String, center: CompilerCenter) {
+class BehaviorFileLambdaExtractor(file: BehaviorFile, fileName: String) {
 
     private val ast     = file.ast
-    private val blocks  = ast.codeBlocks.map(_.sourceCode)
-    private val lambdas = new FileIntegratedLambdas(fileName, center, file.imports.values.toSeq, blocks)
+    private val lambdas = file.lambdas
 
     ast.typesModifiers.foreach(t => submitAll("type", t.typeName, t))
-
     ast.valueModifiers.foreach(v => submitAll(s"value_${v.name}", v.typeName, v))
-
     ast.classDescriptions.foreach(classDesc => {
         classDesc.methods.foreach {
             case desc: AttributedEnabledMethodDescription => extractMethodModifiers(desc, classDesc)

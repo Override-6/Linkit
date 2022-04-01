@@ -41,7 +41,6 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                 return
             executor = methodExecutor
         }
-        println(s"${methodExecutor} deserializing queue of sequential unit ${result.coords.path.mkString("/")}")
         // If any of the chained SIPU is processing,
         // the current unit will wait until the whole chain is complete.
         chain.foreach(_.join())
@@ -78,7 +77,6 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                 return
 
             if (queue.nonEmpty && queue.head.ordinal < result.ordinal) {
-                println("Switch !")
                 val lastResult = result
                 result = queue.dequeue()
                 queue.enqueue(lastResult)

@@ -21,16 +21,17 @@ import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.ma
 
 object BehaviorFileParser extends BehaviorLanguageParser {
 
+    private val nameParser          = Name ~> literal ^^ FileName
     private val classParser         = acceptForeign(ClassParser.parser)
     private val agreementParser     = acceptForeign(AgreementParser.parser)
-    private val importParser        = Import ~> identifier ^^ ClassImport
+    private val importParser        = Import ~> identifier ~ repNM(0, 2, Star) ^^ { case id ~ stars => ClassImport(if (stars.nonEmpty) id.dropRight(1) else id, stars.length) }
     private val codeBlockParser     = Scala ~> codeBlock
     private val typeModifierParser  = Modifier ~> identifier ~ modifiers ^^ { case tpe ~ modifiers => TypeModifier(tpe, modifiers.find(_.kind == In), modifiers.find(_.kind == Out)) }
     private val valueModifierParser = {
         (identifier <~ Colon) ~ (typeParser <~ Arrow) ~ modifiers ^^ { case name ~ tpe ~ modifiers => ValueModifier(name, tpe, modifiers.find(_.kind == In), modifiers.find(_.kind == Out)) }
     }
 
-    private val fileParser = phrase(rep(importParser | classParser | codeBlockParser | typeModifierParser | valueModifierParser | agreementParser))
+    private val fileParser = phrase(rep(nameParser | importParser | classParser | codeBlockParser | typeModifierParser | valueModifierParser | agreementParser))
 
     def parse(context: ParserContext[Elem]): BehaviorFileAST = try {
         val r = try {
@@ -50,7 +51,7 @@ object BehaviorFileParser extends BehaviorLanguageParser {
     private def unpack(roots: List[Product]): BehaviorFileAST = {
         val (imports, classes, blocks, tpeMods, valMods, agreements) = roots.foldLeft(
             (List[ClassImport](), List[ClassDescription](), List[ScalaCodeBlock](),
-                    List[TypeModifier](), List[ValueModifier](), List[AgreementBuilder]())
+                List[TypeModifier](), List[ValueModifier](), List[AgreementBuilder]())
         ) {
             case ((imports, b, c, d, e, f), imp: ClassImport)           => (imp :: imports, b, c, d, e, f)
             case ((a, classes, c, d, e, f), clazz: ClassDescription)    => (a, clazz :: classes, c, d, e, f)

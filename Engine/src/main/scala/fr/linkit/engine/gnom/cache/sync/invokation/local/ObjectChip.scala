@@ -86,11 +86,11 @@ object ObjectChip {
 
     def apply[S <: AnyRef](contract: StructureContract[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
-            throw new NullPointerException("puppet is null !")
+            throw new NullPointerException("sync object is null !")
         val clazz = wrapper.getClass
 
         if (Modifier.isFinal(clazz.getModifiers))
-            throw new CanNotSynchronizeException("Puppet can't be final.")
+            throw new CanNotSynchronizeException("sync object class can't be final.")
 
         new ObjectChip[S](contract, wrapper, network)
     }

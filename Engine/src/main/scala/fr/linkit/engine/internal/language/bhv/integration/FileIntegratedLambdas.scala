@@ -21,16 +21,19 @@ import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
 import fr.linkit.engine.internal.language.bhv.PropertyClass
+import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
 
 import scala.collection.mutable
-import scala.reflect.ClassTag
 
 class FileIntegratedLambdas(fileName: String,
                             center: CompilerCenter,
-                            imports: Seq[Class[_]],
-                            classBlocks: Seq[String]) {
+                            ast: BehaviorFileAST) {
 
+    private val imports     = mutable.HashSet.empty[Class[_]]
+    private val classBlocks = ast.codeBlocks.map(_.sourceCode)
     private val expressions = mutable.HashMap.empty[String, LambdaExpressionInfo]
+
+    def addClass(clazz: Class[_]): Unit = imports += clazz
 
     /**
      * convert a lambda expression to an actual lambda object.
@@ -48,7 +51,7 @@ class FileIntegratedLambdas(fileName: String,
             expressions.values.toArray,
             classBlocks.toArray,
             Thread.currentThread().getContextClassLoader,
-            imports)
+            imports.toSeq)
 
         val resource = app.getAppResources
             .getOrOpen[LocalResourceFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))

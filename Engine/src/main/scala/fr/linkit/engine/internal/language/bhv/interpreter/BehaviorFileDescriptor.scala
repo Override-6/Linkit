@@ -27,7 +27,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
 
     lazy val data = {
         new ContractDescriptorDataImpl(contracts.toArray) with LangContractDescriptorData {
-            override val filePath     : String             = file.source
+            override val filePath     : String             = file.filePath
             override val propertyClass: PropertyClass      = BehaviorFileDescriptor.this.propertyClass
             override val app          : ApplicationContext = BehaviorFileDescriptor.this.app
         }

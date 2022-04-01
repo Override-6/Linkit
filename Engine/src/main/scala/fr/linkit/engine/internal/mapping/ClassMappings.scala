@@ -32,6 +32,7 @@ object ClassMappings {
         //println(s"Class put ! ($className) of hash code ${className.hashCode}")
         val clazz = Class.forName(className, false, loader)
         classes.put(className.hashCode, createMapValue(clazz))
+        MappedClassesTree.addClass(clazz)
     }
 
     def putUnknownClass(info: MappedClassInfo): Unit = {

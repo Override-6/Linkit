@@ -41,7 +41,6 @@ final class SharedCacheOriginManager @Persist()(family: String,
         val coords        = requestBundle.coords
         val requestPacket = requestBundle.packet
         val response      = requestBundle.responseSubmitter
-        println(s"HANDLING REQUEST $requestPacket, $coords")
         requestPacket.nextPacket[Packet] match {
             case IntPacket(cacheID)                           => handleContentRetrievalRequest(requestBundle, cacheID)
             case ObjectPacket((id: Int, cacheType: Class[_])) => handlePreCacheOpeningRequest(id, cacheType, coords.senderID, response)
@@ -107,8 +106,6 @@ final class SharedCacheOriginManager @Persist()(family: String,
 
         val senderID: String = coords.senderID
         val behavior         = request.getAttribute[CacheSearchMethod]("behavior").get //TODO orElse throw an exception
-        println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
-        println(s"Behavior = $behavior")
 
         def failRequest(msg: String): Nothing = {
             response.addPacket(StringPacket(msg))
@@ -128,7 +125,6 @@ final class SharedCacheOriginManager @Persist()(family: String,
                     //If the requester is not the owner, wait the owner to open the cache.
                     if (senderID != ownerID) {
                         channel.storeBundle(requestBundle)
-                        println(s"Await open ($cacheID)...")
                         return
                     }
                     //The sender is the owner : this class must create the cache content.
