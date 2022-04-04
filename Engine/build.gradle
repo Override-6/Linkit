@@ -42,5 +42,5 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.9.0'
     implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
 
-    api project(':API')
+    implementation project(':API')
 }

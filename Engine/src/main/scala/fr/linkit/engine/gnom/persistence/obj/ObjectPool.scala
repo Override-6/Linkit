@@ -21,8 +21,6 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
 
     private var frozen = false
 
-    def determineBuffLength(length: Int, step: Int): Int
-
     protected final val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects types
         new PoolChunk[Class[_]](Class, this, sizes(Class)),

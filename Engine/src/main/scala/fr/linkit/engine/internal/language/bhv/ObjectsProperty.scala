@@ -28,7 +28,7 @@ object ObjectsProperty {
         new ObjectsProperty(null, map)
     }
 
-    implicit def default(network: Network): ObjectsProperty = {
+    def defaults(network: Network): ObjectsProperty = {
         apply(Map(
             "network" -> network,
             "connection" -> network.connection,

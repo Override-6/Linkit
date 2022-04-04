@@ -27,7 +27,7 @@ import scala.reflect.ClassTag
 
 class SyncAsyncPacketChannel(store: PacketInjectableStore,
                              scope: ChannelScope)
-    extends AbstractPacketChannel(store, scope) {
+        extends AbstractPacketChannel(store, scope) {
 
     private val sync: BlockingQueue[Packet] = WorkerPools.ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
 
@@ -35,8 +35,8 @@ class SyncAsyncPacketChannel(store: PacketInjectableStore,
 
     @workerExecution
     override def handleBundle(bundle: ChannelPacketBundle): Unit = {
-        val attr        = bundle.attributes
-        val packet      = bundle.packet
+        val attr   = bundle.attributes
+        val packet = bundle.packet
         attr.getAttribute[Boolean](Attribute) match {
             case Some(isAsync) =>
                 if (isAsync)
@@ -54,7 +54,11 @@ class SyncAsyncPacketChannel(store: PacketInjectableStore,
         ensurePacketType[P](take)
     }
 
-    def sendAsync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
+    def sendAsync(packet: Packet): Unit = {
+        sendSync(packet, SimplePacketAttributes.empty)
+    }
+
+    def sendAsync(packet: Packet, attributes: PacketAttributes): Unit = {
         attributes.putAttribute(Attribute, true)
         drainAllAttributes(attributes)
         scope.sendToAll(packet, attributes)
@@ -72,10 +76,14 @@ class SyncAsyncPacketChannel(store: PacketInjectableStore,
         scope.sendTo(packet, targets)
     }
 
-    def sendSync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
+    def sendSync(packet: Packet, attributes: PacketAttributes): Unit = {
         attributes.putAttribute(Attribute, false)
         drainAllAttributes(attributes)
         scope.sendToAll(packet, attributes)
+    }
+
+    def sendSync(packet: Packet): Unit = {
+        sendSync(packet, SimplePacketAttributes.empty)
     }
 
 }

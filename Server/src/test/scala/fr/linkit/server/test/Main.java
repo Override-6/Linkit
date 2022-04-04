@@ -11,16 +11,14 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.profile.persistence
+package fr.linkit.server.test;
 
-import fr.linkit.api.gnom.persistence.context.Deconstructible
-import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
+public class Main {
 
-import java.lang.reflect.Constructor
-
-class DeconstructiveTypePersistence[D <: AnyRef with Deconstructible](constructor: Constructor[D])
-        extends ConstructorTypePersistence[D](constructor, (_: D).deconstruct()) {
-    def this(clazz: Class[_]) {
-        this(getConstructor[D](clazz))
+    public static void main(String[] args) {
+        Class<?> a = JavaObject.Inner.class;
+        Class<?> b = JavaObject.Nested.class;
+        System.out.println("zqzdzdqz");
     }
+
 }

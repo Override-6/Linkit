@@ -17,7 +17,7 @@ import java.util.regex.Pattern
 
 object Rules {
 
-    final val MaxConnectionIDLength: Int  = 16
+    final val MaxConnectionIDLength: Int  = 128
     final val ConnectionRefused    : Byte = 1
     final val ConnectionAccepted   : Byte = 2
 

@@ -101,7 +101,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         candidates.foreach(connection => {
             if (connection.canHandlePacketInjection(result))
                 connection.send(buff)
-            else throw new NoSuchElementException(s"Unable to send packet to ${connection.boundIdentifier}: Could not find any traffic presence at ${new TrafficObjectReference(result.coords.path)} in the receiver engine that could inject this packet.")
+            //else throw new NoSuchElementException(s"Unable to send packet to ${connection.boundIdentifier}: Could not find any traffic presence at ${new TrafficObjectReference(result.coords.path)} in the receiver engine that could inject this packet.")
         })
     }
 

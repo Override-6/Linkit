@@ -121,7 +121,12 @@ object ClassMapEngine {
                     .replace('/', '.')
                     .dropRight(".class".length)
             if (filters.canMap(className)) {
-                ClassMappings.putClass(className, classLoader)
+                try {
+                    ClassMappings.putClass(className, classLoader)
+                } catch {
+                    case e: NoClassDefFoundError =>
+                        AppLogger.warn(s"$className is not a valid class")
+                }
             }
         }
     }

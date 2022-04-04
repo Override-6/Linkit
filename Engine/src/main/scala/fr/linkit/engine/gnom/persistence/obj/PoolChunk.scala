@@ -23,9 +23,10 @@ import scala.reflect.ClassTag
 
 final class PoolChunk[T](val tag: Byte,
                          pool: ObjectPool,
-                         maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
+                         length: Int) //-1 if no limit
+                        (implicit cTag: ClassTag[T]) extends Freezable {
 
-    private var buff          = new Array[T](pool.determineBuffLength(maxLength, BuffSteps))
+    private var buff          = new Array[T](if (length < 0) BuffSteps else length)
     private final val buffMap = new util.HashMap[Int, Int]() //Buff item Identity Hash Code -> Buff Pos + 1
     private var pos           = 0
 
@@ -42,14 +43,16 @@ final class PoolChunk[T](val tag: Byte,
 
     def array: Array[T] = buff
 
+
     def add(t: T): Unit = {
         if (t == null)
             throw new NullPointerException("Can't add null item")
         val pos = this.pos
         if (pos != 0 && pos % BuffSteps == 0) {
-            if (pos >= maxLength)
-                throw new IllegalStateException(s"Chunk size exceeds maxLength ('$maxLength')'")
-            val extendedBuff = new Array[T](Math.min(pos + BuffSteps, maxLength))
+            if (length > 0 && pos >= length)
+                throw new IllegalStateException(s"Chunk size exceeds maxLength ('$length')'")
+            val newSize = pos + BuffSteps
+            val extendedBuff = if (length < 0) new Array[T](newSize) else new Array[T](Math.min(newSize, length))
             System.arraycopy(buff, 0, extendedBuff, 0, pos)
             buff = extendedBuff
         }

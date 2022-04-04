@@ -30,7 +30,6 @@ class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
         this
     }
 
-
     def setTConverter[B : ClassTag](fTo: T => B)(fFrom: B => T): this.type = {
         val clazz = classTag[B].runtimeClass
         val persistor = new TypePersistence[T] {
@@ -49,7 +48,6 @@ class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
         persistors += persistor
         this
     }
-
 
     def build(store: TypeProfileStore): TypeProfile[T] = {
         val clazz = tag.runtimeClass

@@ -105,7 +105,6 @@ object ClientLauncher {
         } else {
             args(index + 1)
         }
-
     }
 
     def launch(mainPluginFolder: String,

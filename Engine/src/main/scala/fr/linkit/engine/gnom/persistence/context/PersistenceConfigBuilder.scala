@@ -72,6 +72,8 @@ class PersistenceConfigBuilder {
         this
     }
 
+
+
     def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A, procrastinator: => Procrastinator = null): this.type = {
         val fromClass                     = classTag[A].runtimeClass
         val toClass                       = classTag[B].runtimeClass

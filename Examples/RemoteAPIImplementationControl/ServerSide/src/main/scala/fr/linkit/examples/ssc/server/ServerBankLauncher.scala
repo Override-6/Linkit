@@ -45,7 +45,7 @@ object ServerBankLauncher {
         val global     = network.globalCache
         val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer]())
         val app        = connection.getApp
-        val contract   = Contract(classOf[UserWallet].getResource("/behavior.bhv"))(app, ObjectsProperty.default(network))
+        val contract   = Contract(classOf[UserWallet].getResource("/behavior.bhv"))(app, ObjectsProperty.defaults(network))
         cache.syncObject(0, Constructor[UserAccountContainerImpl](), contract)
     }
 

@@ -39,7 +39,6 @@ class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
         array
     }
 
-    override def determineBuffLength(length: Int, step: Int): Int = length
 
     def getType(globalPos: Int): Class[_] = {
         var pos = globalPos

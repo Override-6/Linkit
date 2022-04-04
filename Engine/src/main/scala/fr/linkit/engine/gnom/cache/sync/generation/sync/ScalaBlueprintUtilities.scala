@@ -15,7 +15,8 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 
-import java.lang.reflect.TypeVariable
+import java.lang.reflect.{Modifier, TypeVariable}
+import scala.collection.immutable.HashSet
 
 object ScalaBlueprintUtilities {
 
@@ -37,12 +38,15 @@ object ScalaBlueprintUtilities {
         if (clazz.isArray) {
             return s"Array[${toScalaString(clazz.componentType())}]"
         }
-        val name = {
+        val name   = {
             val fullName   = clazz.getTypeName
             val simpleName = clazz.getSimpleName
-            fullName.dropRight(simpleName.length).replace("$", ".") + simpleName
+            val s          = fullName.dropRight(simpleName.length)
+                    .replace("$", ".")
+            if (s.lastOption.contains('.')) s.dropRight(1) + (if (isInnerClass(clazz)) "#" else ".") + simpleName
+            else s + simpleName
         }
-        if (clazz.isPrimitive) {
+        val result = if (clazz.isPrimitive) {
             name match {
                 case "void" => "Unit"
                 case _      => name(0).toUpper + name.drop(1)
@@ -52,6 +56,20 @@ object ScalaBlueprintUtilities {
             if (tParams.nonEmpty) name + tParams.map(_ => "Nothing").mkString("[", ",", "]")
             else name
         }
+        val r      = result.split('.').map(fixClashWord).mkString(".")
+        r
+    }
+
+    def isInnerClass(clazz: Class[_]): Boolean = {
+        val enclosing = clazz.getEnclosingClass
+        enclosing != null && !Modifier.isStatic(clazz.getModifiers)
+    }
+
+    private final val keyWords = HashSet("case", "else", "type", "if", "class", "def", "val", "var", "match", "for", "import", "package", "object", "trait", "sealed", "true", "false", "override", "catch", "forSome", "package", "try", "private", "protected", "lazy", "while", "extends", "with", "this", "super", "yield", "final", "finally", "null", "throw")
+
+    private def fixClashWord(word: String): String = {
+        if (keyWords.contains(word)) s"`$word`"
+        else word
     }
 
     def getParameters(desc: MethodDescription, withTypes: Boolean): String = {

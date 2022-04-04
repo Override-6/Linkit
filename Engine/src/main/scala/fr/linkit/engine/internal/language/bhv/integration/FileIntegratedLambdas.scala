@@ -33,7 +33,7 @@ class FileIntegratedLambdas(fileName: String,
     private val classBlocks = ast.codeBlocks.map(_.sourceCode)
     private val expressions = mutable.HashMap.empty[String, LambdaExpressionInfo]
 
-    def addClass(clazz: Class[_]): Unit = imports += clazz
+    def addImportedClass(clazz: Class[_]): Unit = imports += clazz
 
     /**
      * convert a lambda expression to an actual lambda object.

@@ -31,7 +31,14 @@ subprojects {
     apply plugin: 'scala'
     apply plugin: 'maven-publish'
 
+    task dist(type: Jar, dependsOn: configurations.runtimeClasspath){
+        from files(sourceSets.main.output.classesDirs)
+        from files(sourceSets.main.output.resourcesDir)
+        from {configurations.runtimeClasspath.collect{ it.isDirectory() ? it : zipTree(it) }}
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
+        archiveFileName = "${project.name}-Alpha-1.0.jar"
+    }
 
     sourceCompatibility = 16
     targetCompatibility = 16
@@ -54,6 +61,7 @@ subprojects {
     test {
         useJUnitPlatform()
     }
+
 
 
     tasks.withType(ScalaCompile) {

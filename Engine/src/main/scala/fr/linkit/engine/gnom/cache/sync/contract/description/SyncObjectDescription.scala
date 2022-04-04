@@ -3,15 +3,16 @@ package fr.linkit.engine.gnom.cache.sync.contract.description
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.SyntheticMod
 
-import java.lang.reflect.{Executable, Modifier}
+import java.lang.reflect.{Executable, Method, Modifier}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
 
-    def listMethods[L >: A ](limit: Class[L]): Iterable[MethodDescription] = {
+    def listMethods[L >: A](limit: Class[L]): Iterable[MethodDescription] = {
         listMethods().filter(m => limit.isAssignableFrom(m.javaMethod.getDeclaringClass))
     }
 
@@ -20,7 +21,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) ext
     }
 
     override protected def applyNotFilter(e: Executable): Boolean = {
-        isNotOverridable(e) ||
+        isNotOverridable(e) || containsNotAccessibleElements(e) ||
                 //FIXME Weird bug due to scala's Any and AnyRef stuff...
                 (e.getName == "equals" && e.getParameterTypes.length == 1) ||
                 //FIXME Bug occurred for objects that extends NetworkObject[A].
@@ -37,6 +38,26 @@ class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) ext
         val mods = e.getModifiers
         import Modifier._
         isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods) || isNative(mods)
+    }
+
+    private def containsNotAccessibleElements(e: Executable): Boolean = {
+        def isNotAccessible(clazz: Class[_], tpe: String): Boolean = {
+            if (clazz.isPrimitive)
+                return false
+            val mods = clazz.getModifiers
+            import Modifier._
+            val notAccessible = isPrivate(mods) || !(isProtected(mods) || isPublic(mods))
+            if (notAccessible)
+                AppLogger.warn(s"Could not handle method ${e} because $tpe '${clazz.getName}' is not accessible for the generated Sync implementation class of '${this.clazz}'")
+            notAccessible
+        }
+
+        e match {
+            case method: Method =>
+                isNotAccessible(method.getReturnType, "return type") ||
+                        method.getParameterTypes.exists(isNotAccessible(_, "parameter type"))
+            case _              => false
+        }
     }
 }
 

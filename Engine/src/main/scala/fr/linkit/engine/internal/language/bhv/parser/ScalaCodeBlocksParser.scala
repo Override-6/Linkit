@@ -17,21 +17,23 @@ object ScalaCodeBlocksParser extends Parsers {
     private val identifierParser = accept("identifier", { case Identifier(identifier) => identifier }).+ ^^ (_.mkString(" "))
     private val valueParser      = ValueOpen ~> identifierParser ~ (Colon ~> identifierParser).? <~ ValueClose ^^ {
         case name ~ types =>
-            LambdaRepositoryClassBlueprint.getPropertyAccessCodeString(name, types.getOrElse("scala.Any"))
+            val tpe = types.getOrElse("scala.Any")
+            (LambdaRepositoryClassBlueprint.getPropertyAccessCodeString(name, tpe), tpe)
     }
     private val fragmentParser   = accept("code fragment", { case CodeFragment(fragment) => fragment })
-
-    /*private def parser: Parser[List[String]] = {
-        val p = fragmentParser | valueParser
-        p ~ parser ^^ {case s ~ hd => s :: hd} | p ^^ (List(_))
-    }*/
 
     def parse(input: CharSequenceReader): ScalaCodeBlock = {
         val tokens = ScalaCodeBlocksLexer.tokenize(input, "<scala block>")
         phrase(rep(fragmentParser | valueParser)).apply(new TokenReader(tokens)) match {
             case NoSuccess(msg, _) => throw new BHVLanguageException(s"Failure with scala block external access value: $msg")
             case Success(x, _)     =>
-                ScalaCodeBlock(x.mkString("").dropRight(1))
+                val blocks = for (it <- x) yield {
+                    it match {
+                        case (propertyAccess: String, propertyTpe: String) => (propertyAccess, propertyTpe)
+                        case blockPart: String                             => (blockPart, null)
+                    }
+                }
+                ScalaCodeBlock(blocks.map(_._1).mkString("").dropRight(1), blocks.map(_._2).filter(_ != null).toArray)
         }
     }
 

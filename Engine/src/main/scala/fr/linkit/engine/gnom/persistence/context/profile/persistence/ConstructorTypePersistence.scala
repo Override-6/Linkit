@@ -27,7 +27,7 @@ class ConstructorTypePersistence[T <: AnyRef](constructor: Constructor[T], decon
         this(getConstructor[T](clazz), deconstructor.deconstruct(_: T))
     }
 
-    def this(clazz: Class[_], constructor: Constructor[T], deconstructor: Deconstructor[T]) {
+    def this(constructor: Constructor[T], deconstructor: Deconstructor[T]) {
         this(constructor, deconstructor.deconstruct(_: T))
     }
 

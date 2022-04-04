@@ -23,14 +23,17 @@ import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
 
-class SerializerObjectPool(bundle: PersistenceBundle,
-                           sizes: Array[Int]) extends ObjectPool(sizes) {
+class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Array[Int](ChunkCount).mapInPlace(_ => -1)) {
 
     private         val config          = bundle.config
     private         val selector        = new ObjectSelector(bundle)
     protected final val chunksPositions = new Array[Int](chunks.length)
 
-    override def determineBuffLength(length: Int, step: Int): Int = if (length < step) length else step
+    def size: Int = {
+        var s = 0
+        for (chunk <- chunks) s += chunk.size
+        s
+    }
 
     def getChunk[T](ref: Any): PoolChunk[T] = {
         //TODO this method can be optimized

@@ -29,6 +29,9 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
     val imports = computeImports()
     val lambdas = new FileIntegratedLambdas(filePath, center, ast)
 
+
+    ast.codeBlocks.foreach(_.valueTypes.foreach(findClass))
+
     private def computeImports(): Seq[PartialFunction[String, Class[_]]] = {
         ast.classImports.map {
             case ClassImport(className, 0) =>
@@ -37,7 +40,7 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
                     case name if array.lastOption.contains(name) => Class.forName(className)
                 }
             case ClassImport(pck, 1)       => {
-                case name if Try(Class.forName(pck + name)).isSuccess => Class.forName(pck + name)
+                case name if Try(Class.forName(pck + "." + name)).isSuccess => Class.forName(pck + "." + name)
             }
             case ClassImport(rootPck, 2)   => {
                 case name if MappedClassesTree.getClass(rootPck, name).isDefined =>
@@ -59,6 +62,7 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
             .getOrElse {
                 throw new BHVLanguageException(s"Unknown class '$pureName' ${if (!pureName.contains(".")) ", is it imported ?" else ""}")
             }
+        lambdas.addImportedClass(clazz)
         (0 until arrayDepth).foldLeft[Class[_]](clazz)((cl, _) => cl.arrayType())
     }
 

@@ -210,7 +210,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         ensureCurrentThreadOwned()
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
-        AppLogger.vError(s"$currentTasksId current task is about to pause indefinitely...")
+        //AppLogger.vError(s"$currentTasksId current task is about to pause indefinitely...")
         currentTask.setPaused()
         executeRemainingTasksWhilePaused()
 
@@ -218,7 +218,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
             executeRemainingTasksWhilePaused()
         }
         currentTask.setContinue()
-        AppLogger.vError(s"$currentTasksId task '${currentTask.taskID}' is continuing")
+        //AppLogger.vError(s"$currentTasksId task '${currentTask.taskID}' is continuing")
     }
 
     def haveMoreTasks: Boolean

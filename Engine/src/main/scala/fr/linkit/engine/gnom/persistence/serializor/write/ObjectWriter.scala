@@ -18,7 +18,6 @@ import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
-import fr.linkit.engine.gnom.persistence.serializor.write.ObjectWriter.{Sizes2B, Sizes4B}
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
@@ -29,8 +28,8 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     val buff: ByteBuffer = bundle.buff
     private val config     = bundle.config
-    private val widePacket = config.widePacket
-    private val pool       = new SerializerObjectPool(bundle, if (widePacket) Sizes4B else Sizes2B)
+    private var widePacket = config.widePacket
+    private val pool       = new SerializerObjectPool(bundle)
 
     def addObjects(roots: Array[AnyRef]): Unit = {
         val pool = this.pool
@@ -52,6 +51,8 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         if (pool.isFrozen)
             throw new IllegalStateException("Pool is frozen.")
         pool.freeze() //Ensure that the pool is no more susceptible to be updated.
+
+        widePacket = widePacket || pool.size > java.lang.Short.MAX_VALUE
 
         //Informs the deserializer if we sent a wide packet or not.
         //This means that for wide packets, pool references index are ints, and
@@ -192,10 +193,4 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         putRef(idx)
     }
 
-}
-
-object ObjectWriter {
-
-    private val Sizes2B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Char.MaxValue)
-    private val Sizes4B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Int.MaxValue)
 }

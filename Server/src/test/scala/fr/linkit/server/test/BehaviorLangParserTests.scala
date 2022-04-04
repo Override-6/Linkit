@@ -11,7 +11,7 @@ class BehaviorLangParserTests {
 
     @Test
     def parse(): Unit = {
-        Contract("contracts/NetworkContract.bhv")(app, ObjectsProperty.default(network))
+        Contract("contracts/NetworkContract.bhv")(app, ObjectsProperty.defaults(network))
     }
 
 }
