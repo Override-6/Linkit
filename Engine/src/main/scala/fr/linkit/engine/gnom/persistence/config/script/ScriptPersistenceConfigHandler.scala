@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.script
+package fr.linkit.engine.gnom.persistence.config.script
 
 import fr.linkit.api.internal.script.ScriptContext
 import fr.linkit.engine.internal.script.SimpleScriptHandler

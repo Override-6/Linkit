@@ -11,17 +11,27 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.structure
+package fr.linkit.engine.gnom.persistence.config.structure
 
-import fr.linkit.api.gnom.cache.sync.SyncObjectReference
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 
-class SyncObjectStructure(objectStruct: ObjectStructure) extends ObjectStructure {
-    override def isAssignable(args: Array[Class[_]], from: Int, to: Int): Boolean = {
-        args.last.isAssignableFrom(classOf[SyncObjectReference]) && objectStruct.isAssignable(args, 0, args.length - 1)
+import scala.collection.mutable.ListBuffer
+
+class ObjectStructureBuilder {
+
+    private val types = ListBuffer.empty[Class[_]]
+
+    def >(cl: Class[_]): this.type = {
+        types += cl
+        this
     }
 
-    override def isAssignable(args: Array[Any], from: Int, to: Int): Boolean = {
-        args.last.isInstanceOf[SyncObjectReference] && objectStruct.isAssignable(args, 0, args.length - 1)
+}
+
+object ObjectStructureBuilder {
+    implicit def build(builder: ObjectStructureBuilder): ObjectStructure = {
+        new ArrayObjectStructure {
+            override val types: Array[Class[_]] = builder.types.toArray
+        }
     }
 }

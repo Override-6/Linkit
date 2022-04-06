@@ -11,13 +11,13 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.profile
+package fr.linkit.engine.gnom.persistence.config.profile
 
 import fr.linkit.api.gnom.persistence.context.{TypePersistence, TypeProfile, TypeProfileStore}
 
 class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                                       store: TypeProfileStore,
-                                      private[context] val persists: Array[TypePersistence[T]]) extends TypeProfile[T] {
+                                      private[config] val persists: Array[TypePersistence[T]]) extends TypeProfile[T] {
 
     private lazy val declaredParent: TypeProfile[_ >: T] = {
         val superClass = typeClass.getSuperclass

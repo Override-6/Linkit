@@ -11,27 +11,9 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.structure
+package fr.linkit.engine.gnom.persistence.config.script
 
-import fr.linkit.api.gnom.persistence.obj.ObjectStructure
+import fr.linkit.api.internal.script.ScriptFile
+import fr.linkit.engine.gnom.persistence.config.PersistenceConfigBuilder
 
-import scala.collection.mutable.ListBuffer
-
-class ObjectStructureBuilder {
-
-    private val types = ListBuffer.empty[Class[_]]
-
-    def >(cl: Class[_]): this.type = {
-        types += cl
-        this
-    }
-
-}
-
-object ObjectStructureBuilder {
-    implicit def build(builder: ObjectStructureBuilder): ObjectStructure = {
-        new ArrayObjectStructure {
-            override val types: Array[Class[_]] = builder.types.toArray
-        }
-    }
-}
+abstract class PersistenceScriptConfig extends PersistenceConfigBuilder() with ScriptFile

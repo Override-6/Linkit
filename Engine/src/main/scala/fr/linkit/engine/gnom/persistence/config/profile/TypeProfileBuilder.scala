@@ -11,11 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.profile
+package fr.linkit.engine.gnom.persistence.config.profile
 
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
+import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 
 import scala.collection.mutable.ListBuffer

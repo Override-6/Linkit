@@ -29,7 +29,7 @@ import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.injection.SequentialInjectionProcessorUnit
-import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
+import fr.linkit.engine.gnom.persistence.config.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.reference.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.internal.utils.ClassMap
 

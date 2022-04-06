@@ -11,15 +11,15 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.profile.persistence
+package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
-import fr.linkit.engine.gnom.persistence.context.structure.ClassObjectStructure
+import fr.linkit.engine.gnom.persistence.config.structure.ClassObjectStructure
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 
 import java.lang.reflect.Field
 
-class UnsafeTypePersistence[T](override val structure: ClassObjectStructure) extends TypePersistence[T]() {
+class RegularTypePersistence[T](override val structure: ClassObjectStructure) extends TypePersistence[T]() {
 
     private final val fields: Array[Field] = structure.fields
 

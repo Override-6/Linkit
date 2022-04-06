@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.instantiation
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor.getAssignableConstructor
-import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
+import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 
 import java.lang.reflect.{Modifier, Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}

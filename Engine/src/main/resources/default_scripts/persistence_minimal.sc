@@ -1,13 +1,11 @@
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.engine.gnom.network.{NetworkDataBundle, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
-import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
+import fr.linkit.engine.gnom.persistence.config.PersistenceConfigBuilder
 import fr.linkit.engine.gnom.persistence.defaults._
 import fr.linkit.engine.internal.language.bhv.interpreter.LangContractDescriptorData
 import fr.linkit.engine.internal.language.bhv.{Contract, PropertyClass}
 import fr.linkit.engine.internal.utils.Identity
-
-import java.net.URL
 
 //Start Of Context
 val builder: PersistenceConfigBuilder = null

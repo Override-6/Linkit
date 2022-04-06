@@ -11,16 +11,16 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context
+package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
-import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
-import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
-import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
+import fr.linkit.engine.gnom.persistence.config.profile.DefaultTypeProfile
+import fr.linkit.engine.gnom.persistence.config.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectPersistence, RegularTypePersistence}
+import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ClassMap
 
 import scala.collection.mutable
@@ -72,7 +72,7 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         val nonSyncClass                    = if (isSync) getSyncOriginClass(clazz) else clazz
         var persistence: TypePersistence[T] = determinePersistence(nonSyncClass)
         if (isSync) {
-            persistence = new SynchronizedObjectsPersistence[Nothing](persistence).asInstanceOf[TypePersistence[T]]
+            persistence = new SynchronizedObjectPersistence[Nothing](persistence).asInstanceOf[TypePersistence[T]]
         }
         new DefaultTypeProfile[T](nonSyncClass, this, Array(persistence))
     }
@@ -81,7 +81,7 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         val constructor = context.findConstructor[T](clazz)
         if (classOf[Deconstructible].isAssignableFrom(clazz)) {
             constructor.fold(new DeconstructiveTypePersistence[T with Deconstructible](clazz)) {
-                ctr => new DeconstructiveTypePersistence[T with Deconstructible](clazz, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
+                ctr => new DeconstructiveTypePersistence[T with Deconstructible](ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
             }
         }.asInstanceOf[TypePersistence[T]] else {
             val deconstructor = context.findDeconstructor[T](clazz)
@@ -89,9 +89,9 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
                 if (deconstructor.isEmpty) {
                     if (!useUnsafe)
                         throw new NoSuchElementException(s"Could not find constructor: A Deconstructor must be set for the class '${clazz.getName}' in order to create a safe TypePersistence.")
-                    new UnsafeTypePersistence[T](clazz)
+                    new RegularTypePersistence[T](clazz)
                 } else {
-                    new ConstructorTypePersistence[T](clazz, ctr, deconstructor.get)
+                    new ConstructorTypePersistence[T](ctr, deconstructor.get)
                 }
             }
         }
@@ -107,13 +107,13 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         if (constructor.isEmpty || deconstructor.isEmpty) {
             //FIXME if (!useUnsafe)
             //    throw new NoSuchElementException(s"Could not find constructor: A Constructor and a Deconstructor must be set for the '${clazz}' in order to create a safe TypePersistence.")
-            return new UnsafeTypePersistence[T](clazz)
+            return new RegularTypePersistence[T](clazz)
         }
-        new ConstructorTypePersistence[T](clazz, constructor.get, deconstructor.get)
+        new ConstructorTypePersistence[T](constructor.get, deconstructor.get)
     }
 
     private def warpTypePersistencesWithSyncPersist[T <: AnyRef](profile: TypeProfile[T]): TypeProfile[T] = {
-        val persistences = profile.getPersistences.map(new SynchronizedObjectsPersistence[Nothing](_).asInstanceOf[TypePersistence[T]])
+        val persistences = profile.getPersistences.map(new SynchronizedObjectPersistence[Nothing](_).asInstanceOf[TypePersistence[T]])
         new DefaultTypeProfile[T](profile.typeClass, this, persistences)
     }
 

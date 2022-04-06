@@ -11,10 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.profile.persistence
+package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
 import fr.linkit.api.gnom.persistence.context.Deconstructible
-import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
+import fr.linkit.engine.gnom.persistence.config.profile.persistence.ConstructorTypePersistence.getConstructor
 
 import java.lang.reflect.Constructor
 

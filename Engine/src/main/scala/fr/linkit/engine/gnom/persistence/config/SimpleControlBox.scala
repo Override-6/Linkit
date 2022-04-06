@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context
+package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.persistence.context.ControlBox
 import fr.linkit.api.internal.concurrency.WorkerPools

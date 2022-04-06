@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context
+package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.persistence.context.{Deconstructor, PersistenceContext}
 import fr.linkit.engine.internal.utils.ClassMap

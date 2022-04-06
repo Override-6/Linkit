@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.structure
+package fr.linkit.engine.gnom.persistence.config.structure
 
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.internal.utils.UnWrapper

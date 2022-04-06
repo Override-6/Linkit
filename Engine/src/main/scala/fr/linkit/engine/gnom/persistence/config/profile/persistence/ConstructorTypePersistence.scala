@@ -11,12 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.profile.persistence
+package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, Deconstructor, Persist, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
-import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
+import fr.linkit.engine.gnom.persistence.config.profile.persistence.ConstructorTypePersistence.getConstructor
+import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.manipulation.invokation.ConstructorInvoker
 
 import java.lang.reflect.Constructor

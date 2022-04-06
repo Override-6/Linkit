@@ -34,14 +34,11 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     def boundIdentifier: String
 
     def write(buff: ByteBuffer): Unit = {
-        val array = if (buff.hasArray) buff.array().take(buff.limit()) else {
-            val a   = new Array[Byte](buff.limit())
-            val pos = buff.position()
-            buff.position(0)
-            buff.get(a)
-            buff.position(pos)
-            a
-        }
+        val array = new Array[Byte](buff.limit())
+        val pos   = buff.position()
+        buff.position(0)
+        buff.get(array)
+        buff.position(pos)
         write(array)
     }
 

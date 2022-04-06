@@ -3,7 +3,7 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.network.statics.ClassStaticAccessor
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
-import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
+import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 abstract class SimpleClassStaticAccessor[A <: AnyRef] @Persist()(desc: SyncStructureDescription[A]) extends ClassStaticAccessor[A] with Deconstructible {

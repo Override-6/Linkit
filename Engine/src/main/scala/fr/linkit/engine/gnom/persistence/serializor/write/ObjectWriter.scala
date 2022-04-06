@@ -54,7 +54,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
         widePacket = widePacket || pool.size > java.lang.Short.MAX_VALUE
 
-        //Informs the deserializer if we sent a wide packet or not.
+        //Informs the deserializer if we send a wide packet or not.
         //This means that for wide packets, pool references index are ints, and
         //for "non wide packets", references index are unsigned shorts
         buff.put((if (widePacket) 1 else 0): Byte)
@@ -65,26 +65,39 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     @inline
     private def writeChunks(): Unit = {
         //println(s"Write chunks : ${buff.array().mkString(", ")}")
-        val pos     = buff.position()
-        val refSize = if (widePacket) 4 else 2
-        buff.position(pos + ChunkCount * refSize)
+        //let a hole for placing in chunk sizes
 
-        var i        : Byte = 0
-        val chunks          = pool.getChunks
-        val len             = chunks.length.toByte
-        var totalSize: Long = 0
+        val chunks    = pool.getChunks
+        val len       = chunks.length.toByte
+        var totalSize = 0
 
+        val announcedChunksPos = buff.position()
+        buff.position(announcedChunksPos + 4)
+
+        //Announcing what chunk has been used by the packet and writing their sizes in the buff
+        var announcedChunksNumber = 0x0000 //0b00000000
+        var i                     = 0
         while (i < len) {
             val chunk = chunks(i)
             val size  = chunk.size
             if (size > 0) {
-                putRef(pos + i * refSize, size) //set the size of the chunk
                 totalSize += size
-                //println(s"Write chunk. pos of ${chunk.tag} = ${buff.position()}")
-                writeChunk(i, chunk)
-                //println(s"End Write chunk. end pos of ${chunk.tag} = ${buff.position()}")
+                //Tag's announcement mark is appended to the announced chunks number
+                announcedChunksNumber |= (0x0001 << chunk.tag)
+
+                putRef(size) //append the size of the chunk
             }
-            i = (i + 1).toByte
+            i += 1
+        }
+        buff.putInt(announcedChunksPos, announcedChunksNumber)
+        i = 0
+        while (i < len) {
+            val chunk = chunks(i)
+            val size  = chunk.size
+            if (size > 0) {
+                writeChunk(i.toByte, chunk)
+            }
+            i += 1
         }
         //just here to check if the total pool size is not larger than Char.MaxValue if (widePacket == false)
         //or if the total size is not larger than Int.MaxValue (if widePacket == true)

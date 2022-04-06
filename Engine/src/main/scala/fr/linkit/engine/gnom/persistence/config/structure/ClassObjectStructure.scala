@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.context.structure
+package fr.linkit.engine.gnom.persistence.config.structure
 
 import fr.linkit.engine.internal.utils.ScalaUtils
 import java.lang.reflect.{Field, Modifier}

@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, ReferencedPoolObject}
-import fr.linkit.engine.gnom.persistence.context.SimpleControlBox
+import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -120,9 +120,13 @@ class ObjectReader(bundle: PersistenceBundle,
     private def readPoolStructure(): (Boolean, Array[Int], DeserializerObjectPool) = {
         val widePacket = buff.get() == 1
         val sizes      = new Array[Int](ChunkCount)
-        var i          = 0
+
+        var i: Int          = 0
+        val announcedChunksNumber = buff.getInt
         while (i < ChunkCount) {
-            sizes(i) = readNextRef
+            val chunkBit = (announcedChunksNumber >> i) & 1
+            if (chunkBit == 1)
+                sizes(i) = readNextRef
             i += 1
         }
         (widePacket, sizes, new DeserializerObjectPool(sizes))
@@ -131,7 +135,8 @@ class ObjectReader(bundle: PersistenceBundle,
     private def readLambdaObject(): NotInstantiatedLambdaObject = {
         //val isSerializable                             = buff.get() == 1
         //val persistence = if (isSerializable) SerializableLambdasTypePersistence else NotSerializableLambdasTypePersistence
-        new NotInstantiatedLambdaObject(readObject(), SerializableLambdasTypePersistence.asInstanceOf[LambdaTypePersistence[AnyRef]])
+        val persistence = SerializableLambdasTypePersistence.asInstanceOf[LambdaTypePersistence[AnyRef]]
+        new NotInstantiatedLambdaObject(readObject(), persistence)
     }
 
     private def readObject(): NotInstantiatedObject[AnyRef] = {
