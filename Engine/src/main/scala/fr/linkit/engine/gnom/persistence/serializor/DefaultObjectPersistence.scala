@@ -42,6 +42,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         buffer.putShort(ConstantProtocol.ProtocolVersion)
         val writer = new ObjectWriter(bundle)
         writer.addObjects(objects)
+        buffer.limit(buffer.capacity())
         writer.writePool()
         val pool = writer.getPool
         writeEntries(objects, writer, pool)
@@ -70,7 +71,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
 
         val reader = new ObjectReader(bundle, center)
         reader.readAndInit()
-        val contentSize = buff.getChar
+        val contentSize = reader.readNextRef
         val pool        = reader.getPool
         for (_ <- 0 until contentSize) {
             val pos = reader.readNextRef

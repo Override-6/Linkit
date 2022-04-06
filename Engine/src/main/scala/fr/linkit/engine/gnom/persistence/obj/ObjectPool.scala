@@ -23,27 +23,27 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
 
     protected final val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects types
-        new PoolChunk[Class[_]](Class, this, sizes(Class)),
-        new PoolChunk[Class[_]](SyncClass, this, sizes(SyncClass)),
+        new PoolChunk[Class[_]](Class, true, this, sizes(Class)),
+        new PoolChunk[Class[_]](SyncClass, true, this, sizes(SyncClass)),
         // Strings
-        new PoolChunk[String](String, this, sizes(String)),
+        new PoolChunk[String](String, false, this, sizes(String)),
         // Primitives (excepted primitives stored into primitives arrays)
-        new PoolChunk[Int](Int, this, sizes(Int)),
-        new PoolChunk[Short](Short, this, sizes(Short)),
-        new PoolChunk[Long](Long, this, sizes(Long)),
-        new PoolChunk[Byte](Byte, this, sizes(Byte)),
-        new PoolChunk[Double](Double, this, sizes(Double)),
-        new PoolChunk[Float](Float, this, sizes(Float)),
-        new PoolChunk[Boolean](Boolean, this, sizes(Boolean)),
-        new PoolChunk[Char](Char, this, sizes(Char)),
+        new PoolChunk[Int](Int, true, this, sizes(Int)),
+        new PoolChunk[Short](Short, true, this, sizes(Short)),
+        new PoolChunk[Long](Long, true, this, sizes(Long)),
+        new PoolChunk[Byte](Byte, true, this, sizes(Byte)),
+        new PoolChunk[Double](Double, true, this, sizes(Double)),
+        new PoolChunk[Float](Float, true, this, sizes(Float)),
+        new PoolChunk[Boolean](Boolean, true, this, sizes(Boolean)),
+        new PoolChunk[Char](Char, true, this, sizes(Char)),
         // Objects
-        new PoolChunk[Enum[_]](Enum, this, sizes(Enum)),
-        new PoolChunk[ProfilePoolObject[AnyRef]](Object, this, sizes(Object)),
-        new PoolChunk[LambdaObject](Lambda, this, sizes(Lambda)),
+        new PoolChunk[Enum[_]](Enum, true, this, sizes(Enum)),
+        new PoolChunk[ProfilePoolObject[AnyRef]](Object, false, this, sizes(Object)),
+        new PoolChunk[LambdaObject](Lambda, false,this, sizes(Lambda)),
         // Arrays
-        new PoolChunk[Array[_]](Array, this, sizes(Array)),
+        new PoolChunk[Array[_]](Array, false, this, sizes(Array)),
         // Context Objects Locations
-        new PoolChunk[ReferencedPoolObject](RNO, this, sizes(RNO))
+        new PoolChunk[ReferencedPoolObject](RNO, false, this, sizes(RNO))
     )
 
     override def freeze(): Unit = frozen = true

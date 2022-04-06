@@ -22,6 +22,7 @@ import java.util
 import scala.reflect.ClassTag
 
 final class PoolChunk[T](val tag: Byte,
+                         val isData: Boolean,
                          pool: ObjectPool,
                          length: Int) //-1 if no limit
                         (implicit cTag: ClassTag[T]) extends Freezable {
@@ -43,7 +44,6 @@ final class PoolChunk[T](val tag: Byte,
 
     def array: Array[T] = buff
 
-
     def add(t: T): Unit = {
         if (t == null)
             throw new NullPointerException("Can't add null item")
@@ -51,13 +51,15 @@ final class PoolChunk[T](val tag: Byte,
         if (pos != 0 && pos % BuffSteps == 0) {
             if (length > 0 && pos >= length)
                 throw new IllegalStateException(s"Chunk size exceeds maxLength ('$length')'")
-            val newSize = pos + BuffSteps
+            val newSize      = pos + BuffSteps
             val extendedBuff = if (length < 0) new Array[T](newSize) else new Array[T](Math.min(newSize, length))
             System.arraycopy(buff, 0, extendedBuff, 0, pos)
             buff = extendedBuff
         }
         buff(pos) = t
-        t match {
+        if (isData) {
+            buffMap.put(t.hashCode(), pos + 1)
+        } else t match {
             case obj: PoolObject[AnyRef] =>
                 buffMap.put(obj.identity, pos + 1)
             case obj: AnyRef             =>
@@ -84,7 +86,8 @@ final class PoolChunk[T](val tag: Byte,
     def indexOf(t: Any): Int = {
         if (t == null)
             return -1
-        buffMap.get(System.identityHashCode(t)) - 1
+        if (isData) buffMap.get(t.hashCode()) - 1
+        else buffMap.get(System.identityHashCode(t)) - 1
     }
 
     def size: Int = pos

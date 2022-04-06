@@ -54,7 +54,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
                     path.foreach(buff.putInt) //path content
                     putString(targetID, buff) // targetID String
                     putString(senderID, buff) // senderID String
-                case _                                                                   =>
+                case _                                                    =>
                     throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
             }
         }

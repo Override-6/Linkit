@@ -126,7 +126,7 @@ class ObjectReader(bundle: PersistenceBundle,
         while (i < ChunkCount) {
             val chunkBit = (announcedChunksNumber >> i) & 1
             if (chunkBit == 1)
-                sizes(i) = readNextRef
+                sizes(i) = if (widePacket) buff.getInt() else buff.getChar()
             i += 1
         }
         (widePacket, sizes, new DeserializerObjectPool(sizes))
