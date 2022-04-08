@@ -9,7 +9,7 @@ import java.net.InetSocketAddress
 import java.nio.file.{CopyOption, Files, Path}
 
 object RSFCClient {
-
+/*
     def main(args: Array[String]): Unit = {
         val serverStatics = launchApp("x").network.serverEngine.staticAccess
         val path: Path    = serverStatics[Path].of("D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\Linkit\\StaticsFTPTest\\Server\\testServer.txt", Array[String]())
@@ -33,5 +33,5 @@ object RSFCClient {
             .get
     }
 
-
+*/
 }
