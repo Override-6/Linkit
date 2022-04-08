@@ -15,13 +15,12 @@ package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.internal.language.bhv.PropertyClass
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.integration.{FileIntegratedLambdas, LambdaCaller}
+import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
 
-class BehaviorFileLambdaExtractor(file: BehaviorFile, fileName: String) {
+class BehaviorFileLambdaExtractor(file: BehaviorFile) {
 
     private val ast     = file.ast
     private val lambdas = file.lambdas

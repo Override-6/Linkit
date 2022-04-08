@@ -24,7 +24,8 @@ import fr.linkit.engine.application.resource.external.{LocalResourceFactories, L
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.internal.mapping.ClassMapEngine
+import fr.linkit.engine.internal.language.bhv.Contract
+import fr.linkit.engine.internal.mapping.MappingEngine
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
 
 import java.nio.file.{Files, Path}
@@ -84,16 +85,8 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             throw new AppException("Client is already started")
         }
         alive = true
-        val pluginFolder = configuration.pluginFolder match {
-            case Some(path) => Path.of(path)
-            case None       => null
-        }
-
-        if (pluginFolder != null) {
-            /*  val pluginCount = pluginManager.loadAll(pluginFolder).length
-              configuration.fsAdapter.getAdapter(pluginFolder)
-              AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")*/
-        }
+        AppLogger.info("parsing found behavior contracts...")
+        Contract.precompute(this)
     }
 
 }
@@ -157,6 +150,7 @@ object LinkitApplication {
                 Files.write(res.getPath, getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes())
                 res
             }
+        AppLogger.info("Loading properties...")
         properties.load(Files.newInputStream(propertiesResources.getPath))
         AppLogger.info("Loading Native Libraries...")
         InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
@@ -166,9 +160,9 @@ object LinkitApplication {
     }
 
     def mapEnvironment(otherSources: Seq[Class[_]]): Unit = {
-        ClassMapEngine.mapAllSourcesOfClasses(Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
-        ClassMapEngine.mapJDK()
-        ClassMapEngine.mapAllSourcesOfClasses(otherSources)
+        MappingEngine.mapAllSourcesOfClasses(Seq(getClass, MappingEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
+        MappingEngine.mapJDK()
+        MappingEngine.mapAllSourcesOfClasses(otherSources)
     }
 
     private def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {

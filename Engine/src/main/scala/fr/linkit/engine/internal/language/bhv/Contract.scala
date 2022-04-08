@@ -15,63 +15,45 @@ package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
 import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
 import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 
-import java.net.URL
-import java.nio.file.{Files, Path}
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
 
 object Contract {
 
-    private final val contracts = mutable.HashMap.empty[String, PartialContractDescriptorData]
-    private final val center    = new DefaultCompilerCenter
+    private final val contracts    = mutable.HashMap.empty[String, PartialContractDescriptorData]
+    private final val toPrecompute = mutable.ListBuffer.empty[(String, String)]
+    private final val center       = new DefaultCompilerCenter
 
-    def apply(url: URL)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(url.getFile) match {
+    def precompute(application: ApplicationContext): Unit = {
+        toPrecompute.foreach { case (text, filePath) => partialize(text, filePath, application) }
+        toPrecompute.clear()
+    }
+
+    private[linkit] def addToPrecompute(text: String, filePath: String): Unit = toPrecompute += ((text, filePath))
+
+    def apply(name: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(name) match {
         case Some(partial) =>
             partial(propertyClass)
         case None          =>
-            val stream = url.openStream()
-            val result = fromText(new String(stream.readAllBytes()), url.getFile)
-            stream.close()
-            result
+            throw new NoSuchElementException(s"Could not find any behavior contract bound with the name '$name'")
     }
 
-    //FIXME Using a source URL is ok but when a contract must be sent to another computer,
-    // it becomes complex to handle where to find the computer's equivalent source
-    // as the bhv file is certainly not stored at the same path.
-    def apply(url: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = {
-        val loader = Thread.currentThread().getContextClassLoader
-        contracts.get(url) match {
-            case Some(partial) => partial(propertyClass)
-            case None          =>
-                if (url.contains(":")) { //it's an absolute file path
-                    val pathStr = if (url.head == '/') url.tail else url
 
-                    fromText(Files.readString(Path.of(pathStr)), url)
-                } else apply(loader.getResource(url))
-        }
-    }
-
-    private def fromText(text: String, source: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = {
-        val tokens = BehaviorLanguageLexer.tokenize(new CharSequenceReader(text), source)
-        val ast    = BehaviorFileParser.parse(tokens)
-        completeAST(ast, source, propertyClass, app)
-    }
-
-    private def completeAST(ast: BehaviorFileAST, filePath: String, propertyClass: PropertyClass, app: ApplicationContext): LangContractDescriptorData = {
-        if (propertyClass == null)
-            throw new NullPointerException("property class cannot be null. ")
+    private def partialize(text: String, filePath: String, app: ApplicationContext): PartialContractDescriptorData = {
+        val tokens        = BehaviorLanguageLexer.tokenize(new CharSequenceReader(text), filePath)
+        val ast           = BehaviorFileParser.parse(tokens)
         val file          = new BehaviorFile(ast, filePath, center)
-        val extractor     = new BehaviorFileLambdaExtractor(file, filePath)
+        val extractor     = new BehaviorFileLambdaExtractor(file)
         val callerFactory = extractor.compileLambdas(app)
+        val fileName      = ast.fileName
         val partial       = new PartialContractDescriptorData(file, app, callerFactory)
-        contracts.put(filePath, partial)
-        partial(propertyClass)
+        contracts.put(fileName, partial)
+        partial
     }
 
     private class PartialContractDescriptorData(file: BehaviorFile, app: ApplicationContext, callerFactory: PropertyClass => LambdaCaller) {

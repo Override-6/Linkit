@@ -1,8 +1,6 @@
 package fr.linkit.engine.internal.mapping
 
-import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.math
 
 object MappedClassesTree {
 
@@ -13,8 +11,7 @@ object MappedClassesTree {
     }
 
     def getClass(rootPackage: String, className: String): Option[Class[_]] = {
-        val o = root.findPackage(rootPackage).flatMap(_.findClass(className))
-        o
+        root.findPackage(rootPackage).flatMap(_.findClass(className))
     }
 
     case class PackageItem(name: String) {

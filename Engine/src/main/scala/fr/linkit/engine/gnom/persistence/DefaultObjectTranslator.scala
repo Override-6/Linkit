@@ -13,10 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence
 
-import java.nio.ByteBuffer
-
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.gnom.persistence._
@@ -27,6 +24,7 @@ import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter,
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
 
+import java.nio.ByteBuffer
 import scala.annotation.switch
 
 class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator {

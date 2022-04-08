@@ -13,7 +13,6 @@
 
 package fr.linkit.client.network
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{CacheSearchMethod, SharedCacheManager}
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
@@ -23,8 +22,8 @@ import fr.linkit.engine.gnom.packet.traffic.SocketPacketTraffic
 
 class ClientSideNetwork(traffic: SocketPacketTraffic) extends AbstractNetwork(traffic) {
 
-    override protected def retrieveDataTrunk(contracts: ContractDescriptorData): NetworkDataTrunk = {
-        val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](contracts, this), CacheSearchMethod.GET_OR_CRASH)
+    override protected def retrieveDataTrunk(): NetworkDataTrunk = {
+        val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this), CacheSearchMethod.GET_OR_CRASH)
                 .findObject(0)
                 .getOrElse {
                     throw new NoSuchElementException("netork data trunk not found.")

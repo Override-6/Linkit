@@ -14,14 +14,15 @@
 package fr.linkit.engine.internal.mapping
 
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.internal.language.bhv.Contract
 import org.jetbrains.annotations.Nullable
 
 import java.io.InputStream
-import java.nio.file.{Files, Path}
+import java.nio.file.{FileSystemNotFoundException, Files, Path}
 import java.security.CodeSource
 import java.util.zip.ZipFile
 
-object ClassMapEngine {
+object MappingEngine {
 
     val ZipFileExtensions: Array[String] = Array(".jar", ".zip", ".rar", ".jmod")
 
@@ -32,17 +33,22 @@ object ClassMapEngine {
     val DefaultFilter = new MapEngineFilters(getClass.getResourceAsStream("/mapEngineFilter.txt"))
 
     def mapAllSources(sources: (CodeSource, ClassLoader)*): Unit = {
-        sources.foreach(pair => {
-            val source      = pair._1
-            val classLoader = pair._2
-            val url         = source.getLocation
-            val root        = Path.of(url.toURI)
-            val rootPath    = root.toString
+        sources.foreach { case (source, classLoader) =>
+            val url      = source.getLocation
+            val root     = Path.of(url.toURI)
+            val rootPath = root.toString
             AppLogger.debug(s"Mapping source $rootPath...")
             ClassMappings.addClassPath(source)
 
             mapDirectory(rootPath, root, classLoader, EmptyFilter)
-        })
+            classLoader.resources("").forEach(url => try {
+                val root     = Path.of(url.toURI)
+                val rootPath = root.toString
+                mapDirectory(rootPath, root, classLoader, EmptyFilter)
+            } catch {
+                case _: FileSystemNotFoundException => //ignore
+            })
+        }
     }
 
     def mapAllSourcesOfClasses(classes: Seq[Class[_]]): Unit = {
@@ -93,12 +99,12 @@ object ClassMapEngine {
             val isInJMod = dirPath.endsWith(".jmod")
             val jarFile  = new ZipFile(dirPath)
             jarFile.entries()
-                    .asIterator()
-                    .forEachRemaining(entry => {
-                        val entryName = entry.getName
-                        val classPath = if (isInJMod) entryName.drop(JModRelativeClassesDirectory.length) else entryName
-                        mapPath(0, classLoader, classPath, filters)
-                    })
+                .asIterator()
+                .forEachRemaining(entry => {
+                    val entryName = entry.getName
+                    val classPath = if (isInJMod) entryName.drop(JModRelativeClassesDirectory.length) else entryName
+                    mapPath(0, classLoader, classPath, filters)
+                })
             jarFile.close()
             return
         }
@@ -114,13 +120,14 @@ object ClassMapEngine {
     }
 
     private def mapPath(rootCutLength: Int, classLoader: ClassLoader, path: String, filters: MapEngineFilters): Unit = {
+        val relativePath = path.substring(rootCutLength)
         if (path.endsWith(".class")) {
-            val classPath = path.substring(rootCutLength)
-            val className = classPath
-                    .replace('\\', '.')
-                    .replace('/', '.')
-                    .dropRight(".class".length)
-            if (filters.canMap(className)) {
+            val relativePath = path.substring(rootCutLength)
+            val className    = relativePath
+                .replace('\\', '.')
+                .replace('/', '.')
+                .dropRight(".class".length)
+            if (filters.canMap(className)) try {
                 try {
                     ClassMappings.putClass(className, classLoader)
                 } catch {
@@ -128,6 +135,11 @@ object ClassMapEngine {
                         AppLogger.warn(s"$className is not a valid class")
                 }
             }
+        } else if (path.endsWith(".bhv")) {
+            val stream = classLoader.getResourceAsStream(relativePath)
+            val text   = new String(stream.readAllBytes())
+            stream.close()
+            Contract.addToPrecompute(text, path)
         }
     }
 
@@ -135,11 +147,11 @@ object ClassMapEngine {
 
         lazy val filters: Array[MapEngineFilter] = {
             new String(in.readAllBytes(), "ASCII")
-                    .split('\n')
-                    .filterNot(_.isBlank)
-                    .filterNot(_.strip().startsWith("#"))
-                    .map(_.takeWhile(!_.isControl))
-                    .map(MapEngineFilter)
+                .split('\n')
+                .filterNot(_.isBlank)
+                .filterNot(_.strip().startsWith("#"))
+                .map(_.takeWhile(!_.isControl))
+                .map(MapEngineFilter)
         }
 
         def canMap(className: String): Boolean = {

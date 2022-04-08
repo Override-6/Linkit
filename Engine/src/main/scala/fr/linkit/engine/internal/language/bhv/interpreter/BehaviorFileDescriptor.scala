@@ -28,6 +28,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
     lazy val data = {
         new ContractDescriptorDataImpl(contracts.toArray) with LangContractDescriptorData {
             override val filePath     : String             = file.filePath
+            override val fileName     : String             = ast.fileName
             override val propertyClass: PropertyClass      = BehaviorFileDescriptor.this.propertyClass
             override val app          : ApplicationContext = BehaviorFileDescriptor.this.app
         }
@@ -66,8 +67,8 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-                .map(new FieldContractImpl[Any](_, desc.state.isSync))
-                .toArray
+            .map(new FieldContractImpl[Any](_, desc.state.isSync))
+            .toArray
     }
 
     private def foreachMethods(classDesc: SyncStructureDescription[_])
@@ -141,9 +142,9 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         }
                     }
                     val agreement          = desc.agreement
-                            .map(ag => getAgreement(ag.name))
-                            .orElse(referent.map(_.agreement))
-                            .getOrElse(EmptyBuilder)
+                        .map(ag => getAgreement(ag.name))
+                        .orElse(referent.map(_.agreement))
+                        .getOrElse(EmptyBuilder)
                     val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                     val parameterContracts = {
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
@@ -192,7 +193,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
 
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {
         agreementBuilders
-                .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
+            .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
     }
 
     private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {

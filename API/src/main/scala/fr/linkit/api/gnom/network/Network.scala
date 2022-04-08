@@ -14,12 +14,14 @@
 package fr.linkit.api.gnom.network
 
 import java.sql.Timestamp
-
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.reference.StaticNetworkObject
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+
+import scala.reflect.ClassTag
 
 trait Network extends StaticNetworkObject[NetworkReference] {
 
@@ -28,6 +30,8 @@ trait Network extends StaticNetworkObject[NetworkReference] {
     val objectManagementChannel: ObjectManagementChannel //TODO remove from public !!!
 
     val gnol: GeneralNetworkObjectLinker
+
+    //def newStaticAccess[T : ClassTag](contracts: ContractDescriptorData): Unit
 
     def connectionEngine: Engine
 

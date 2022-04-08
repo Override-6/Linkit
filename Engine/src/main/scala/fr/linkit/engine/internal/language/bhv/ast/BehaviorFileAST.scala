@@ -2,6 +2,7 @@ package fr.linkit.engine.internal.language.bhv.ast
 
 trait BehaviorFileAST {
 
+    val fileName         : String
     val classDescriptions: List[ClassDescription]
     val typesModifiers   : List[TypeModifier]
     val codeBlocks       : List[ScalaCodeBlock]

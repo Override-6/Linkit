@@ -27,7 +27,7 @@ import scala.util.Try
 class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: CompilerCenter) {
 
     val imports = computeImports()
-    val lambdas = new FileIntegratedLambdas(filePath, center, ast)
+    val lambdas = new FileIntegratedLambdas(center, ast)
 
 
     ast.codeBlocks.foreach(_.valueTypes.foreach(findClass))

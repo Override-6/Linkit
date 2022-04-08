@@ -13,6 +13,8 @@
 
 package fr.linkit.api.gnom.persistence.context
 
+import fr.linkit.api.internal.concurrency.Procrastinator
+
 /**
  * The Control box is used during object deserialisation, meant to handle object deserialisation
  * */
@@ -22,12 +24,7 @@ trait ControlBox {
     /**
      * informs the control box that an async task will be performed.
      * */
-    def beginTask(): Unit
-
-    /**
-     * Informs the control box that an async tas has ended.
-     * */
-    def releaseTask(): Unit
+    def warpTask(procrastinator: Procrastinator)(task: => Unit): Unit
 
     /**
      * The thread that executes the method will wait until all signaled async tasks are terminated.

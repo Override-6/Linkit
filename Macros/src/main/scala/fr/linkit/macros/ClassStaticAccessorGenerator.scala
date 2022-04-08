@@ -20,20 +20,23 @@ object ClassStaticAccessorGenerator {
 
     def newStaticAccessor[T <: AnyRef]: Any = macro newStaticAccessorMacro[T]
 
+    def test[T <: Singleton](x: T): T with Singleton = x
+
     def newStaticAccessorMacro[T <: AnyRef : c.WeakTypeTag](c: whitebox.Context): c.Expr[Any] = {
         import c.universe._
         //println("Hello, i'm executed at build time !")
         val tpe = implicitly[WeakTypeTag[T]].tpe.companion
         println(s"tpe = ${tpe}")
-        val staticMembers = tpe.members.filter(_.isStatic).filter(_.isMethod)
+        println(s"test = ${c.enclosingMethod}")
+        val staticMembers      = tpe.members.filter(_.isStatic).filter(_.isMethod)
         //println(s"tpe.members.filter(_.isStatic).filter(_.isMethod) = $staticMembers")
         val generatedClassCode =
             s"""
                |class generatedClass() {
                |                ${
                 staticMembers
-                        .map(member => s"def ${member.name.encodedName}${member.typeSignature} = ???")
-                        .mkString("\n")
+                    .map(member => s"def ${member.name.encodedName}${member.typeSignature} = ???")
+                    .mkString("\n")
             }
                |}""".stripMargin
         //println(s"generatedClassCode = ${generatedClassCode}")

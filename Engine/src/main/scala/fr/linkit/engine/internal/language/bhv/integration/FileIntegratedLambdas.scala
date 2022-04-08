@@ -25,13 +25,13 @@ import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
 
 import scala.collection.mutable
 
-class FileIntegratedLambdas(fileName: String,
-                            center: CompilerCenter,
+class FileIntegratedLambdas(center: CompilerCenter,
                             ast: BehaviorFileAST) {
 
     private val imports     = mutable.HashSet.empty[Class[_]]
     private val classBlocks = ast.codeBlocks.map(_.sourceCode)
     private val expressions = mutable.HashMap.empty[String, LambdaExpressionInfo]
+    private val fileName = ast.fileName
 
     def addImportedClass(clazz: Class[_]): Unit = imports += clazz
 

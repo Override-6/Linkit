@@ -76,7 +76,8 @@ class PersistenceConfigBuilder {
         val fromClass                     = classTag[A].runtimeClass
         val toClass                       = classTag[B].runtimeClass
         val persistor: TypePersistence[A] = new TypePersistence[A] {
-            private  def fields(clazz: Class[_])                     = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
+            private def fields(clazz: Class[_]) = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
+
             override val structure: ObjectStructure = new ArrayObjectStructure {
                 override val types: Array[Class[_]] = Array(toClass)
             }
@@ -85,19 +86,17 @@ class PersistenceConfigBuilder {
                 if (procrastinator eq null)
                     initInstance0(allocatedObject, args)
                 else {
-                    box.beginTask()
-                    procrastinator.runLater {
+                    box.warpTask(procrastinator) {
                         initInstance0(allocatedObject, args)
-                        box.releaseTask()
                     }
                 }
             }
 
             private def initInstance0(allocatedObject: A, args: Array[Any]): Unit = {
-                val t: B   = args.head.asInstanceOf[B]
-                val from   = fFrom(t)
+                val t: B        = args.head.asInstanceOf[B]
+                val from        = fFrom(t)
                 val classFields = fields(from.getClass)
-                val values = ObjectCreator.getAllFields(from, classFields)
+                val values      = ObjectCreator.getAllFields(from, classFields)
                 ObjectCreator.pasteAllFields(allocatedObject, classFields, values)
             }
 
@@ -169,15 +168,15 @@ class PersistenceConfigBuilder {
 
         persistors.foreachEntry((clazz, persistence) => {
             map.getOrElseUpdate(clazz, new TypeProfileBuilder()(ClassTag(clazz)))
-                    .addPersistence(cast(persistence))
+                .addPersistence(cast(persistence))
         })
         val finalMap = map.toSeq
-                .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
-                .map(pair => {
-                    val clazz   = pair._1
-                    val profile = pair._2.build(store)
-                    (clazz, profile)
-                }).toMap
+            .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
+            .map(pair => {
+                val clazz   = pair._1
+                val profile = pair._2.build(store)
+                (clazz, profile)
+            }).toMap
         new ClassMap[TypeProfile[_]](finalMap)
     }
 
@@ -198,8 +197,8 @@ object PersistenceConfigBuilder {
     def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
         val application = traffic.application
         val script      = ScriptExecutor
-                .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
-                .newScript(application, traffic)
+            .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
+            .newScript(application, traffic)
         script.execute()
         script
     }

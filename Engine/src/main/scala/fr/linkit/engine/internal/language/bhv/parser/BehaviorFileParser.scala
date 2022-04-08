@@ -44,12 +44,18 @@ object BehaviorFileParser extends BehaviorLanguageParser {
             case NoSuccess(msg, n) =>
                 throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, context.fileSource, context.filePath))
             case Success(x, _)     =>
-                unpack(x)
+                val fileName = context.filePath.drop(context.filePath.lastIndexOf('\\'))
+                unpack(fileName, x)
         }
     }
 
-    private def unpack(roots: List[Product]): BehaviorFileAST = {
-        val (imports, classes, blocks, tpeMods, valMods, agreements) = roots.foldLeft(
+    private def unpack(defaultFileName: String, roots: List[Product]): BehaviorFileAST = {
+        val fileName0 = roots.headOption.map {
+            case FileName(name) => name
+            case _              => defaultFileName
+        }.getOrElse(defaultFileName)
+
+        val (imports, classes, blocks, tpeMods, valMods, agreements) = roots.tail.foldLeft(
             (List[ClassImport](), List[ClassDescription](), List[ScalaCodeBlock](),
                 List[TypeModifier](), List[ValueModifier](), List[AgreementBuilder]())
         ) {
@@ -59,8 +65,10 @@ object BehaviorFileParser extends BehaviorLanguageParser {
             case ((a, b, c, tpeMods, e, f), mod: TypeModifier)          => (a, b, c, mod :: tpeMods, e, f)
             case ((a, b, c, d, valMods, f), mod: ValueModifier)         => (a, b, c, d, mod :: valMods, f)
             case ((a, b, c, d, e, agreements), value: AgreementBuilder) => (a, b, c, d, e, value :: agreements)
+            case (_, name: FileName)                                    => throw new BHVLanguageException(s"Unexpected 'name '\"$name\"' statement: must be present at the beginning of the file")
         }
         new BehaviorFileAST {
+            override val fileName: String  = fileName0
             override val classDescriptions = classes
             override val typesModifiers    = tpeMods
             override val codeBlocks        = blocks

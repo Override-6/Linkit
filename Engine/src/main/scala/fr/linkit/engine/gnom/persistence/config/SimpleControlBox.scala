@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.persistence.context.ControlBox
-import fr.linkit.api.internal.concurrency.WorkerPools
+import fr.linkit.api.internal.concurrency.{Procrastinator, WorkerPools}
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
 
 class SimpleControlBox extends ControlBox {
@@ -25,18 +25,27 @@ class SimpleControlBox extends ControlBox {
     /**
      * informs the control box that an async task will be performed.
      * */
-    override def beginTask(): Unit = this.synchronized {
+    private def beginTask(): Unit = this.synchronized {
         asyncTasks += 1
     }
 
     /**
      * Informs the control box that an async tas has ended.
      * */
-    override def releaseTask(): Unit = this.synchronized {
+    private def releaseTask(): Unit = this.synchronized {
         asyncTasks -= 1
         if (asyncTasks == 0) {
             locker.wakeupAllTasks()
             this.notifyAll()
+        }
+    }
+
+
+    override def warpTask(procrastinator: Procrastinator)(task: => Unit): Unit = {
+        beginTask()
+        procrastinator.runLater {
+            task
+            releaseTask()
         }
     }
 

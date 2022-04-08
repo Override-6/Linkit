@@ -11,6 +11,7 @@ trait LangContractDescriptorData extends ContractDescriptorData {
      * The language source content
      * */
     val filePath     : String
+    val fileName: String
     /**
      * property class that goes with the language source.
      * */

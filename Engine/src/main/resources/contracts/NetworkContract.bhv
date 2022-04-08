@@ -1,4 +1,4 @@
-
+name "NetworkContract"
 import fr.linkit.api.gnom.**
 import fr.linkit.engine.gnom.**
 import java.nio.file.Path

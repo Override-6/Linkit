@@ -18,7 +18,7 @@ putContextReference(1, EmptyPacket)
 putContextReference(2, Identity(Nil))
 putContextReference(3, None)
 setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.fromData)
-setTConverter[LangContractDescriptorData, (ApplicationContext, String, PropertyClass)](d => (d.app, d.filePath, d.propertyClass)){case (app, url, p) => Contract(url)(app, p)}
+setTConverter[LangContractDescriptorData, (ApplicationContext, String, PropertyClass)](d => (d.app, d.fileName, d.propertyClass)){case (app, name, p) => Contract(name)(app, p)}
 //putPersistence(new ScalaIterableTypePersistence)
 //putPersistence(new ScalaMapTypePersistence)
 putPersistence(new JavaArrayListTypePersistence)

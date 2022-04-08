@@ -51,7 +51,7 @@ object ClientLauncher {
             print("Nothing = 1 > ")
             scanner.nextLine()
         }
-        val raidCount   = if (numberEntry.isEmpty) 1 else Try(numberEntry.toInt).getOrElse(0)
+        val raidCount   = if (numberEntry.isEmpty) 1 else Try(numberEntry.toInt).getOrElse(1)
 
         val resourcesFolder = getOrElse(args, "--home-path")(getDefaultLinkitHome)
 
