@@ -35,9 +35,8 @@ class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStr
 
         bindSubScope(new SyncMethodBlueprint.ValueScope("INHERITED_METHODS", _, _), (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
-                    .toSeq
-                    .distinctBy(_.methodId)
-                    // .filterNot(m => m.symbol.isSetter || m.symbol.isGetter)
+                    /*.toSeq
+                    .distinctBy(_.methodId)*/
                     .foreach(action)
         })
 

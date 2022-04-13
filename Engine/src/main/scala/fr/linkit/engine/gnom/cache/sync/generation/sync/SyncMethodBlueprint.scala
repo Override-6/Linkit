@@ -20,7 +20,6 @@ import fr.linkit.engine.internal.language.cbp.AbstractValueScope
 object SyncMethodBlueprint {
 
     class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, pos, blueprint) {
-
         bindValue("ReturnType" ~> getReturnType)
         bindValue("MethodName" ~> (_.javaMethod.getName))
         bindValue("MethodID" ~> (m => m.methodId.toString))
@@ -28,7 +27,6 @@ object SyncMethodBlueprint {
         bindValue("ParamsOut" ~> (getParameters(_, false)))
         bindValue("ParamsOutLambda" ~> getParamsOutLambda)
         bindValue("Override" ~> chooseOverride)
-
     }
 
     private def getParamsOutLambda(desc: MethodDescription): String = {

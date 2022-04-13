@@ -6,6 +6,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescripti
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, RemoteObjectInfo}
+import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
@@ -13,11 +14,10 @@ import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorD
 import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, PropertyClass}
 import fr.linkit.engine.internal.utils.ClassMap
 
-class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, propertyClass: PropertyClass, caller: LambdaCaller) {
+class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, propertyClass: PropertyClass, caller: MethodCaller) {
 
     private val ast                                                            = file.ast
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()

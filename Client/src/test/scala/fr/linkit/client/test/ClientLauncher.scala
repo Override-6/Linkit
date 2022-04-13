@@ -58,6 +58,7 @@ object ClientLauncher {
         launch(userDefinedPluginFolder, address, identifier, resourcesFolder, raidCount)
     }
 
+
     private def getDefaultLinkitHome: String = {
         val homePath = System.getenv(HomeProperty)
         if (homePath != null)

@@ -2,7 +2,7 @@ package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast.ScalaCodeBlock
-import fr.linkit.engine.internal.language.bhv.integration.LambdaRepositoryClassBlueprint
+import fr.linkit.engine.internal.language.bhv.integration.LambdaCallerClassBlueprint
 import fr.linkit.engine.internal.language.bhv.lexer.code.ScalaCodeBlockSymbol._
 import fr.linkit.engine.internal.language.bhv.lexer.code.ScalaCodeBlockValues.{Identifier, _}
 import fr.linkit.engine.internal.language.bhv.lexer.code.{ScalaCodeBlockToken, ScalaCodeBlocksLexer}
@@ -18,7 +18,7 @@ object ScalaCodeBlocksParser extends Parsers {
     private val valueParser      = ValueOpen ~> identifierParser ~ (Colon ~> identifierParser).? <~ ValueClose ^^ {
         case name ~ types =>
             val tpe = types.getOrElse("scala.Any")
-            (LambdaRepositoryClassBlueprint.getPropertyAccessCodeString(name, tpe), tpe)
+            (LambdaCallerClassBlueprint.getPropertyAccessCodeString(name, tpe), tpe)
     }
     private val fragmentParser   = accept("code fragment", { case CodeFragment(fragment) => fragment })
 

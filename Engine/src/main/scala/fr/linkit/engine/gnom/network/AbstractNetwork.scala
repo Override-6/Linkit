@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.network
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
+import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
@@ -23,11 +24,13 @@ import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
+import fr.linkit.engine.gnom.network.statics.{StaticAccessImpl, StaticAccessorImpl}
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
 import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 
 import java.sql.Timestamp
+import scala.reflect.ClassTag
 
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
@@ -82,6 +85,12 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         newCacheManager(family)
     }
 
+
+    override def newStaticAccess(contracts: ContractDescriptorData): StaticAccess = {
+        val cache = globalCache.getCacheInStore()
+        new StaticAccessImpl()
+    }
+
     protected def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
         trunk.addCacheManager(manager, storePath)
     }
@@ -123,10 +132,6 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         val family = cache.family
         val store  = networkStore.createStore(family.hashCode)
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
-    }
-
-    private def getEngineStoreContracts: ContractDescriptorData = {
-        Contract("contracts/NetworkContract.bhv")(connection.getApp, ObjectsProperty.defaults(this))
     }
 }
 

@@ -70,4 +70,9 @@ object ArrayObjectStructure {
             override val types: Array[Class[_]] = typess.toArray
         }
     }
+    def apply(typess: Array[Class[_]]): ArrayObjectStructure = {
+        new ArrayObjectStructure {
+            override val types: Array[Class[_]] = typess
+        }
+    }
 }

@@ -1,17 +1,18 @@
 package macros.test
 
-import fr.linkit.macros.ClassStaticAccessorGenerator
-import org.junit.jupiter.api.Test
-
-import java.nio.file.Path
+import fr.linkit.macros.ClassStaticAccessorGenerator.property
 
 class MacroTests {
 
+    class Test() {
+        @property("test")
+        val x: String = ""
+    }
+
     @Test
     def test(): Unit = {
-        scala.language.reflectiveCalls
-        val x = ClassStaticAccessorGenerator.newStaticAccessor[Path]
-        x.of("XXXX")
+        val x = "ClassStaticAccessorGenerator.newStaticAccessor[Path]"
+        println("x")
     }
 
 }

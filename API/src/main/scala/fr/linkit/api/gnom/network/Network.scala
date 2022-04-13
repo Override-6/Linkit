@@ -17,6 +17,7 @@ import java.sql.Timestamp
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
+import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.reference.StaticNetworkObject
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
@@ -31,7 +32,7 @@ trait Network extends StaticNetworkObject[NetworkReference] {
 
     val gnol: GeneralNetworkObjectLinker
 
-    //def newStaticAccess[T : ClassTag](contracts: ContractDescriptorData): Unit
+    def newStaticAccess(contracts: ContractDescriptorData): StaticAccess
 
     def connectionEngine: Engine
 

@@ -10,21 +10,22 @@
  *  questions.
  */
 package $ClassPackage$
-import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
+import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.engine.internal.language.bhv.PropertyClass
+
 import scala.annotation.switch
 
 $Imports$
 
-class $ClassName$(properties: PropertyClass) extends LambdaCaller {
+class $ClassName$(properties: PropertyClass) extends MethodCaller {
 
     $Blocks$
 
     override def call(id: String, args: Array[Any]): Any = {
         (id: @switch) match {
-            !!LAMBDA_METHODS!! {
-                case "$MethodName$" => _$MethodName$($ParamsOut$)
-            }
+        !!LAMBDA_METHODS!! {
+            case $MethodName$ => _$MethodName$($ParamsOut$)
+        }
             case _ => throw new NoSuchMethodException("Could not find lambda method with id '" + id + "' into this lambda repository.")
         }
     }

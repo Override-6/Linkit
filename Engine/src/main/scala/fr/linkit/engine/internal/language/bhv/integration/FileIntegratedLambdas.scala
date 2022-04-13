@@ -14,6 +14,7 @@
 package fr.linkit.engine.internal.language.bhv.integration
 
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.application.LinkitApplication
@@ -44,7 +45,7 @@ class FileIntegratedLambdas(center: CompilerCenter,
         expressions.put(name, LambdaExpressionInfo(name, expression, lambdaParams.toArray))
     }
 
-    def compileLambdas(app: ApplicationContext): PropertyClass => LambdaCaller = {
+    def compileLambdas(app: ApplicationContext): PropertyClass => MethodCaller = {
 
         val name    = fileName.reverse.takeWhile(_ != '/').reverse.takeWhile(_ != '.')
         val context = LambdaRepositoryContext(name,
@@ -56,7 +57,7 @@ class FileIntegratedLambdas(center: CompilerCenter,
         val resource = app.getAppResources
             .getOrOpen[LocalResourceFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
             .getEntry
-            .getOrAttachRepresentation[CachedClassFolderResource[LambdaCaller]]("lambdas")
+            .getOrAttachRepresentation[CachedClassFolderResource[MethodCaller]]("lambdas")
 
         val clazz       = resource
             .findClass(context.classPackage + "." + context.className, context.parentLoader)
@@ -65,7 +66,7 @@ class FileIntegratedLambdas(center: CompilerCenter,
         constructor.newInstance(_)
     }
 
-    private def genClass(context: LambdaRepositoryContext): Class[_ <: LambdaCaller] = {
+    private def genClass(context: LambdaRepositoryContext): Class[_ <: MethodCaller] = {
         val result = center
             .processRequest {
                 AppLogger.info(s"Compiling Lambdas Class for behavior file '$fileName'...")
@@ -79,6 +80,6 @@ class FileIntegratedLambdas(center: CompilerCenter,
 
 object FileIntegratedLambdas {
 
-    private final val Blueprint                 = new LambdaRepositoryClassBlueprint(getClass.getResourceAsStream("/generation/scala_lambda_repository.scbp"))
-    private final val CompilationRequestFactory = new ClassCompilationRequestFactory[LambdaRepositoryContext, LambdaCaller](Blueprint)
+    private final val Blueprint                 = new LambdaCallerClassBlueprint(getClass.getResourceAsStream("/generation/scala_lambda_repository.scbp"))
+    private final val CompilationRequestFactory = new ClassCompilationRequestFactory[LambdaRepositoryContext, MethodCaller](Blueprint)
 }

@@ -14,8 +14,8 @@
 package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.internal.language.bhv.integration.LambdaCaller
 import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
@@ -56,7 +56,7 @@ object Contract {
         partial
     }
 
-    private class PartialContractDescriptorData(file: BehaviorFile, app: ApplicationContext, callerFactory: PropertyClass => LambdaCaller) {
+    private class PartialContractDescriptorData(file: BehaviorFile, app: ApplicationContext, callerFactory: PropertyClass => MethodCaller) {
 
         def apply(propertyClass: PropertyClass): LangContractDescriptorData = {
             val caller = callerFactory(propertyClass)

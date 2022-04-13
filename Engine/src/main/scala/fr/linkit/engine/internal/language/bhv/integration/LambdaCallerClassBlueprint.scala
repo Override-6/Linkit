@@ -20,7 +20,7 @@ import fr.linkit.engine.internal.language.cbp.{AbstractClassBlueprint, AbstractV
 
 import java.io.InputStream
 
-class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBlueprint[LambdaRepositoryContext](bp) {
+class LambdaCallerClassBlueprint(bp: InputStream) extends AbstractClassBlueprint[LambdaRepositoryContext](bp) {
 
     override val compilerType: CompilerType   = CommonCompilerType.Scalac
     override val rootScope   : RootValueScope = new RootValueScope {
@@ -41,7 +41,7 @@ class LambdaRepositoryClassBlueprint(bp: InputStream) extends AbstractClassBluep
 
 }
 
-object LambdaRepositoryClassBlueprint {
+object LambdaCallerClassBlueprint {
 
     def getPropertyAccessCodeString(name: String, tpe: String): String = {
         s"getProperty[$tpe](\"${name.replaceAll("\"", "\\\"")}\")"
