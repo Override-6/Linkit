@@ -58,4 +58,7 @@ trait Network extends StaticNetworkObject[NetworkReference] {
 
     def findCacheManager(family: String): Option[SharedCacheManager]
 
+    def getStaticAccess(id: Int): StaticAccess
+
+    def newStaticAccess(id: Int, contract: ContractDescriptorData = EmptyContractDescriptorData): StaticAccess
 }

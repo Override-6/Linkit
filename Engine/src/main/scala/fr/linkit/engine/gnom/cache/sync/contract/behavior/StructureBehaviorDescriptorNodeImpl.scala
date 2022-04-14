@@ -28,11 +28,11 @@ import java.lang.reflect.{Method, Modifier}
 import scala.collection.mutable
 
 class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: StructureContractDescriptor[A],
-                                                       @Nullable val modifier: ValueModifier[A],
                                                        @Nullable val superClass: StructureBehaviorDescriptorNodeImpl[_ >: A],
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
 
     private val clazz = descriptor.targetClass
+    @Nullable val modifier: ValueModifier[A] = descriptor.modifier.orNull
     //private val instanceDesc = SyncObjectDescription[A](clazz)
     //private val staticsDesc  = SyncStaticsDescription[A](clazz)
 

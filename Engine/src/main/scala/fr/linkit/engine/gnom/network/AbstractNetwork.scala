@@ -15,22 +15,22 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
+import fr.linkit.api.gnom.cache.{CacheAlreadyDeclaredException, CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
+import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
-import fr.linkit.engine.gnom.network.statics.{StaticAccessImpl, StaticAccessorImpl}
+import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
-import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 
 import java.sql.Timestamp
-import scala.reflect.ClassTag
 
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
@@ -46,6 +46,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override lazy      val globalCache            : SharedCacheManager         = createGlobalCache
     protected lazy     val trunk                  : NetworkDataTrunk           = initDataTrunk()
     private var engine0                           : Engine                     = _
+    private var staticAccesses                    : StaticAccesses             = _
 
     private var trunkInitializing = false
 
@@ -86,9 +87,12 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
 
 
-    override def newStaticAccess(contracts: ContractDescriptorData): StaticAccess = {
-        val cache = globalCache.getCacheInStore()
-        new StaticAccessImpl()
+    override def getStaticAccess(id: Int): StaticAccess = {
+        staticAccesses.getStaticAccess(id)
+    }
+
+    override def newStaticAccess(id: Int, contract: ContractDescriptorData = EmptyContractDescriptorData): StaticAccess = {
+        staticAccesses.newStaticAccess(id, contract)
     }
 
     protected def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
@@ -121,6 +125,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         gnol
         globalCache
         trunk.reinjectEngines()
+        staticAccesses = new StaticAccesses(this)
 
         engine0 = trunk.newEngine(currentIdentifier)
         ExecutorEngine.initDefaultEngine(connectionEngine)

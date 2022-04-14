@@ -31,7 +31,7 @@ class SyncObjectClassRelation[A <: AnyRef](descriptor: StructureContractDescript
 
     def toNode: StructureBehaviorDescriptorNodeImpl[A] = {
         val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.toNode
-        new StructureBehaviorDescriptorNodeImpl[A](descriptor, modifier, nextSuperNode, interfaceRelation.map(_.toNode).toArray)
+        new StructureBehaviorDescriptorNodeImpl[A](descriptor, nextSuperNode, interfaceRelation.map(_.toNode).toArray)
     }
 
 }
