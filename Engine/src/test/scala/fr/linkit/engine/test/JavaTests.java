@@ -13,9 +13,12 @@
 
 package fr.linkit.engine.test;
 
-import java.io.Serializable;
-
 public class JavaTests {
 
+
+    public void test() {
+        Runnable x = () -> System.out.println("hey ! " + this);
+        x.run();
+    }
 
 }

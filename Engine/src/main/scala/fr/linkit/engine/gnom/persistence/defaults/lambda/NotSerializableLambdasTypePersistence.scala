@@ -26,7 +26,8 @@ object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPR
     private final val LambdaMark = "$$Lambda$"
 
     override def toRepresentation(lambdaObject: AnyRef): JLTPRepresentation = {
-        val clazz              = lambdaObject.getClass
+        throw new UnsupportedOperationException("Can't serialize non serializable lambdas.")
+        /*val clazz              = lambdaObject.getClass
         val fields             = clazz.getDeclaredFields
         val name               = clazz.getName
         val markIdx            = name.indexOf(LambdaMark)
@@ -34,13 +35,14 @@ object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPR
         val enclosingClass     = Class.forName(enclosingClassName)
 
         val implMethodId = name.slice(markIdx + LambdaMark.length, name.indexOf('/') - 1)
-        val fieldValues    = ObjectCreator.getAllFields(lambdaObject, fields)
-        val fieldTypes     = fields.map(_.getType)
-        JLTPRepresentation(enclosingClass, fieldTypes, fieldValues, clazz.getInterfaces.head, implMethodId)
+        val fieldValues  = ObjectCreator.getAllFields(lambdaObject, fields)
+        val fieldTypes   = fields.map(_.getType)
+        JLTPRepresentation(enclosingClass, fieldTypes, fieldValues, clazz.getInterfaces.head, implMethodId)*/
     }
 
     override def toLambda(representation: JLTPRepresentation): AnyRef = {
-        val enclosing       = representation.enclosingClass
+        ???
+        /*val enclosing       = representation.enclosingClass
         val interface       = representation.interface
         val interfaceMethod = interface.getDeclaredMethods.find(m => Modifier.isAbstract(m.getModifiers)).get
         val t               = MethodType.methodType(interfaceMethod.getReturnType, interfaceMethod.getParameterTypes)
@@ -51,7 +53,7 @@ object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPR
         val factory         = site.getTarget
         val fieldsValues    = representation.lambdaFieldValues
         val lambda          = MethodHandleInvoker.invoke(factory, fieldsValues)
-        lambda
+        lambda*/
     }
 }
 
