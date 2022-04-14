@@ -29,6 +29,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     private val engines = mutable.HashMap.empty[String, Engine]
     private val caches  = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
 
+
     def this(network: AbstractNetwork) {
         this(network, new Timestamp(System.currentTimeMillis()))
     }
@@ -42,7 +43,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         CacheManagerInfo(manager.family, manager.ownerID, storePath)
     }
 
-    def newEngine(engineIdentifier: String): Engine = {
+    def newEngine(engineIdentifier: String): Engine = engines.synchronized {
         if (engines.contains(engineIdentifier))
             throw new IllegalArgumentException("This engine already exists !")
         val current      = ExecutorEngine.currentEngine
@@ -65,9 +66,11 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         caches.put(manager.family, (manager, storePath))
     }
 
-    def findEngine(identifier: String): Option[Engine] = engines.get(identifier)
+    def findEngine(identifier: String): Option[Engine] = engines.synchronized {
+        engines.get(identifier)
+    }
 
-    def listEngines: List[Engine] = engines.values.toList
+    def listEngines: List[Engine] = engines.synchronized(engines.values.toList)
 
     def countConnection: Int = engines.size
 
@@ -85,7 +88,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     //When the trunk gets deserialized, due to the TypePersistence that will deserialize the trunk,
     // the engines in it will not get in their synchronized version,
     // so for each engines already present on the object's creation,
-    def reinjectEngines(): this.type = {
+    def reinjectEngines(): this.type = engines.synchronized {
         if (engines.nonEmpty)
             engines.values.foreach(addEngine)
         this

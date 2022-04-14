@@ -80,10 +80,10 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     private def determinePersistence[T <: AnyRef](clazz: Class[_]): TypePersistence[T] = {
         val constructor = context.findConstructor[T](clazz)
         if (classOf[Deconstructible].isAssignableFrom(clazz)) {
-            constructor.fold(new DeconstructiveTypePersistence[T with Deconstructible](clazz)) {
-                ctr => new DeconstructiveTypePersistence[T with Deconstructible](ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
-            }
-        }.asInstanceOf[TypePersistence[T]] else {
+            constructor.fold(new DeconstructiveTypePersistence[T with Deconstructible](clazz)) { ctr =>
+                new DeconstructiveTypePersistence[T with Deconstructible](ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
+            }.asInstanceOf[TypePersistence[T]]
+        } else {
             val deconstructor = context.findDeconstructor[T](clazz)
             constructor.fold(getSafestTypeProfileOfAnyClass[T](clazz, deconstructor)) { ctr =>
                 if (deconstructor.isEmpty) {
@@ -103,7 +103,7 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     }
 
     private def getSafestTypeProfileOfAnyClass[T <: AnyRef](clazz: Class[_], deconstructor: Option[Deconstructor[T]]): TypePersistence[T] = {
-        val constructor = ConstructorTypePersistence.findPersistConstructor[T](clazz)
+        val constructor = if (classOf[Deconstructible].isAssignableFrom(clazz)) ConstructorTypePersistence.findPersistConstructor[T](clazz) else None
         if (constructor.isEmpty || deconstructor.isEmpty) {
             //FIXME if (!useUnsafe)
             //    throw new NoSuchElementException(s"Could not find constructor: A Constructor and a Deconstructor must be set for the '${clazz}' in order to create a safe TypePersistence.")

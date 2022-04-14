@@ -24,7 +24,7 @@ class $ClassName$(properties: PropertyClass) extends MethodCaller {
     override def call(id: String, args: Array[Any]): Any = {
         (id: @switch) match {
         !!LAMBDA_METHODS!! {
-            case $MethodName$ => _$MethodName$($ParamsOut$)
+            case "$MethodName$" => _$MethodName$($ParamsOut$)
         }
             case _ => throw new NoSuchMethodException("Could not find lambda method with id '" + id + "' into this lambda repository.")
         }

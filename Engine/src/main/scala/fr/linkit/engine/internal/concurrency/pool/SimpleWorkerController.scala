@@ -56,7 +56,7 @@ class SimpleWorkerController extends WorkerController {
 
     @workerExecution
     override def wakeupAnyTask(): Unit = this.synchronized {
-        AppLogger.vError(s" entertainedThreads = " + workingThreads)
+        //AppLogger.debug(s" entertainedThreads = " + workingThreads)
         val opt = workingThreads.find(entry => entry._2.isConditionFalse)
         if (opt.isEmpty)
             return
@@ -71,10 +71,10 @@ class SimpleWorkerController extends WorkerController {
 
     @workerExecution
     override def wakeupTasks(taskIds: Seq[Int]): Unit = this.synchronized {
-        AppLogger.vError(s" entertainedThreads = " + workingThreads)
+        //AppLogger.debug(s" entertainedThreads = " + workingThreads)
 
         if (workingThreads.isEmpty) {
-            AppLogger.vError("THREADS ARE EMPTY !")
+            AppLogger.debug("THREADS ARE EMPTY !")
             return //Instructions below could throw NoSuchElementException when removing unamused list to entertainedThreads.
         }
 

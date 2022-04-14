@@ -32,8 +32,6 @@ trait Network extends StaticNetworkObject[NetworkReference] {
 
     val gnol: GeneralNetworkObjectLinker
 
-    def newStaticAccess(contracts: ContractDescriptorData): StaticAccess
-
     def connectionEngine: Engine
 
     def globalCache: SharedCacheManager
@@ -60,5 +58,7 @@ trait Network extends StaticNetworkObject[NetworkReference] {
 
     def getStaticAccess(id: Int): StaticAccess
 
-    def newStaticAccess(id: Int, contract: ContractDescriptorData = EmptyContractDescriptorData): StaticAccess
+    def newStaticAccess(id: Int, contract: ContractDescriptorData): StaticAccess
+
+    def newStaticAccess(id: Int): StaticAccess
 }

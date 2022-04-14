@@ -224,6 +224,10 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
         }
     }
 
+    override def content: List[A with SynchronizedObject[A]] = {
+        forest.snapshotContent.array.map(_.rootObject).toList
+    }
+
     override def isRegistered(id: Int): Boolean = {
         forest.findTree(id).isDefined
     }
@@ -314,9 +318,9 @@ object DefaultSynchronizedObjectCache {
 
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
-    implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A]] = apply()
+    implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A]] = apply
 
-    implicit def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCache[A]] = {
+    implicit def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A]] = {
         apply[A](EmptyContractDescriptorData)
     }
 
@@ -348,6 +352,8 @@ object DefaultSynchronizedObjectCache {
     case class ObjectTreeProfile[A <: AnyRef](treeID: Int,
                                               rootObject: A with SynchronizedObject[A],
                                               treeOwner: String,
-                                              contracts: ContractDescriptorData) extends Serializable
+                                              contracts: ContractDescriptorData) extends Serializable {
+        private val notSerializableLambdaWooooooo: Runnable = () => println(s"finally ! '$treeOwner', $contracts, $this")
+    }
 
 }

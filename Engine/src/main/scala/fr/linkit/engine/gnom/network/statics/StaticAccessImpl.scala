@@ -8,7 +8,7 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder._
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncStaticsDescription
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
-import fr.linkit.engine.gnom.network.statics.StaticAccess.CompilationRequestFactory
+import fr.linkit.engine.gnom.network.statics.StaticAccessImpl.CompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource.factory
@@ -49,7 +49,7 @@ class StaticAccessImpl(cache: SynchronizedObjectCache[MethodCaller]) extends Sta
 
 }
 
-object StaticAccess {
+object StaticAccessImpl {
     private final val Blueprint                 = new StaticsCallerClassBlueprint(getClass.getResourceAsStream("/generation/sync_statics.scbp"))
     private final val CompilationRequestFactory = new ClassCompilationRequestFactory[SyncStaticsDescription[_], MethodCaller](Blueprint)
 }

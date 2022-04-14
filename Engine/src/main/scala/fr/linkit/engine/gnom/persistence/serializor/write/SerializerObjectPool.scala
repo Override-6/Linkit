@@ -100,10 +100,9 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         var idx   = chunk.indexOf(ref)
         if (idx > -1)
             idx += chunksPositions(tag) + 1
-        else
-            if (tag == Object) { //it could be a referenced object
-                idx = chunks(RNO).indexOf(ref) + chunksPositions(RNO) + 1
-            }
+        else if (tag == Object) { //it could be a referenced object
+            idx = chunks(RNO).indexOf(ref) + chunksPositions(RNO) + 1
+        }
         idx
     }
 
@@ -125,6 +124,12 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     }
 
     private def addLambda(lambdaObject: AnyRef): Unit = {
+        val nrlOpt = selector.findObjectReference(lambdaObject)
+        if (nrlOpt.nonEmpty) {
+            addReferencedObject(lambdaObject, nrlOpt.get)
+            return
+        }
+
         val ltp            = lambdaObject match {
             case _: Serializable => SerializableLambdasTypePersistence
             case _               => NotSerializableLambdasTypePersistence
@@ -178,25 +183,29 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         addAll(decomposed)
         decomposed
     }
+
     private def addObj0(ref: AnyRef): Unit = {
         val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
             addObjectAndReturnDecomposed(ref)
         } else {
-            val chunk = getChunkFromFlag[ReferencedPoolObject](RNO)
-            if (chunk.indexOf(ref) >= 0)
-                return
-            val pos = chunks(Object).size
-            val nrl = nrlOpt.get
-            addObj(nrl)
-            val rno: ReferencedPoolObject = new ReferencedPoolObject {
-                override val referenceIdx: Int                    = pos
-                override val reference   : NetworkObjectReference = nrl
-                override val value       : AnyRef                 = ref
-                override val identity    : Int                    = System.identityHashCode(ref)
-            }
-            chunk.add(rno)
+            addReferencedObject(ref, nrlOpt.get)
         }
+    }
+
+    private def addReferencedObject(ref: AnyRef, nrl: NetworkObjectReference): Unit = {
+        val chunk = getChunkFromFlag[ReferencedPoolObject](RNO)
+        if (chunk.indexOf(ref) >= 0)
+            return
+        val pos = chunks(Object).size
+        addObj(nrl)
+        val rno: ReferencedPoolObject = new ReferencedPoolObject {
+            override val referenceIdx: Int                    = pos
+            override val reference   : NetworkObjectReference = nrl
+
+            override def value: AnyRef = ref
+        }
+        chunk.add(rno)
     }
 
     private def addTypeOfIfAbsent(ref: AnyRef): Class[_] = ref match {

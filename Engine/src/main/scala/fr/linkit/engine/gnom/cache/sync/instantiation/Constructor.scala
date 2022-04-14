@@ -21,7 +21,7 @@ import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import java.lang.reflect.{Modifier, Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}
 
-class Constructor[A <: AnyRef] private(clazz: Class[A], arguments: Array[Any]) extends SyncInstanceCreator[A] {
+class Constructor[A <: AnyRef] (clazz: Class[A], arguments: Array[Any]) extends SyncInstanceCreator[A] {
 
     override val tpeClass: Class[A] = clazz
 

@@ -71,13 +71,15 @@ private[concurrency] trait AbstractWorker
     }
 
     override def wakeup(task: ThreadTask): Unit = {
-        AppLogger.vDebug(s"Waking up thread $this for task ${task.taskID}")
+        //AppLogger.vDebug(s"Waking up thread $this for task ${task.taskID}")
         val blocker = LockSupport.getBlocker(thread)
-        AppLogger.vDebug(s"Thread $this is parking on blocker $blocker")
+        //AppLogger.vDebug(s"Thread $this is parking on blocker $blocker")
         if (blocker == task) {
-            AppLogger.vError(s"$this <- This thread will be unparked.")
+            //AppLogger.vError(s"$this <- This thread will be unparked.")
             LockSupport.unpark(thread)
             task.setContinue()
+        } else {
+            AppLogger.error(s"Could not wakeup task ${task.taskID}. ($this)")
         }
     }
 

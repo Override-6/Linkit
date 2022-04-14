@@ -47,6 +47,7 @@ case class SimpleResponseHolder(override val id: Int,
         this.synchronized {
             responseSetCount += 1
         }
+
         queue.add(response)
         responseConsumer.applyAllLater(response)
     }

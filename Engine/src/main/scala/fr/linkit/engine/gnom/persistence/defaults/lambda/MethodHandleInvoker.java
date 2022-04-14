@@ -11,24 +11,14 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.obj
+package fr.linkit.engine.gnom.persistence.defaults.lambda;
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import java.lang.invoke.MethodHandle;
 
-trait ReferencedPoolObject extends PoolObject[AnyRef] {
+public class MethodHandleInvoker {
 
-    /**
-     * The [[NetworkObjectReference]] index in the chunk tag.
-     * */
-    val referenceIdx: Int
-    val reference   : NetworkObjectReference
-
-    override def equals(obj: Any): Boolean = {
-        obj match {
-            case ref: PoolObject[_] => ref.value == value
-            case ref: AnyRef        => ref == value
-        }
+    static Object invoke(MethodHandle handle, Object[] args) throws Throwable {
+        return handle.invoke(args);
     }
 
-    override val identity: Int = System.identityHashCode(value)
 }

@@ -11,24 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.obj
+package fr.linkit.engine.test
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+class ScalaTests {
 
-trait ReferencedPoolObject extends PoolObject[AnyRef] {
+    private val notSerializableLambdaWooooooo: Runnable = () => println(s"finally ! $this")
 
-    /**
-     * The [[NetworkObjectReference]] index in the chunk tag.
-     * */
-    val referenceIdx: Int
-    val reference   : NetworkObjectReference
-
-    override def equals(obj: Any): Boolean = {
-        obj match {
-            case ref: PoolObject[_] => ref.value == value
-            case ref: AnyRef        => ref == value
-        }
-    }
-
-    override val identity: Int = System.identityHashCode(value)
 }

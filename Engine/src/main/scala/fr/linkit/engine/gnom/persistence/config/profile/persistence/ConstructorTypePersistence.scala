@@ -35,6 +35,7 @@ class ConstructorTypePersistence[T <: AnyRef](constructor: Constructor[T], decon
     private  val invoker                    = new ConstructorInvoker(constructor)
 
     override def initInstance(allocatedObject: T, args: Array[Any], box: ControlBox): Unit = {
+        constructor
         invoker.invoke(allocatedObject, args)
     }
 
@@ -48,9 +49,9 @@ object ConstructorTypePersistence {
 
     def getConstructor[T](clazz: Class[_]): Constructor[T] = {
         findPersistConstructor(clazz)
-            .getOrElse {
-                throw new NoSuchElementException(s"No Constructor is annotated for $clazz, please specify a constructor in your configuration or annotate one using @${classOf[Persist].getSimpleName}")
-            }.asInstanceOf[Constructor[T]]
+                .getOrElse {
+                    throw new NoSuchElementException(s"No Constructor is annotated for $clazz, please specify a constructor in your configuration or annotate one using @${classOf[Persist].getSimpleName}")
+                }.asInstanceOf[Constructor[T]]
     }
 
     def findPersistConstructor[T](clazz: Class[_]): Option[Constructor[T]] = {

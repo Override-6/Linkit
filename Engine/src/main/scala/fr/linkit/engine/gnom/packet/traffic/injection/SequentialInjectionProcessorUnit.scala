@@ -20,7 +20,6 @@ import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
 
-import java.util.{Comparator, PriorityQueue}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -33,6 +32,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
 
     override def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit = {
         val methodExecutor = Thread.currentThread()
+        //AppLogger.debug(s"posting serialization result in sipu, executor = $executor")
         queue.synchronized {
             queue.enqueue(result)
         }
@@ -49,7 +49,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
         while (queue.nonEmpty) {
             deserializeNextResult(injectable)
         }
-        //everythin deserialized, new realising this deserialization unit.
+        //everything deserialized, now realising this deserialization unit.
         this.synchronized {
             executor = null
             locker.wakeupAllTasks()

@@ -86,13 +86,16 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         newCacheManager(family)
     }
 
-
     override def getStaticAccess(id: Int): StaticAccess = {
         staticAccesses.getStaticAccess(id)
     }
 
-    override def newStaticAccess(id: Int, contract: ContractDescriptorData = EmptyContractDescriptorData): StaticAccess = {
+    override def newStaticAccess(id: Int, contract: ContractDescriptorData): StaticAccess = {
         staticAccesses.newStaticAccess(id, contract)
+    }
+
+    override def newStaticAccess(id: Int): StaticAccess = {
+        newStaticAccess(id, EmptyContractDescriptorData)
     }
 
     protected def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
@@ -125,7 +128,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         gnol
         globalCache
         trunk.reinjectEngines()
-        staticAccesses = new StaticAccesses(this)
+        //staticAccesses = new StaticAccesses(this)
 
         engine0 = trunk.newEngine(currentIdentifier)
         ExecutorEngine.initDefaultEngine(connectionEngine)

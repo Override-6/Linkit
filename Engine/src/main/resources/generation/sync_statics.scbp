@@ -30,7 +30,7 @@ class $ClassName$ extends AbstractSynchronizedObject[$WrappedClassSimpleName$] w
 
     override def wrappedClass: Class[_] = classOf[$WrappedClassSimpleName$]
 
-    override def call(name: String, args: Array[Any]): Any = {
+    override final def call(name: String, args: Array[Any]): Any = {
         (name: @switch) match {
         !!INHERITED_METHODS!! {
             case "$MethodName$" => _$MethodName($ParamsOutMatch$)
@@ -41,7 +41,7 @@ class $ClassName$ extends AbstractSynchronizedObject[$WrappedClassSimpleName$] w
 
 !!INHERITED_METHODS!! {
     $Override$ def _$MethodName$($ParamsIn$): $ReturnType$ = {
-        handleCall[$ReturnType$]($MethodID$)(Array($ParamsOut$))(args => Array(this: Any $ParamsOutLambda$): Any)
+        ???//$WrappedClassSimpleName$.$MethodName$
     }
 }
 

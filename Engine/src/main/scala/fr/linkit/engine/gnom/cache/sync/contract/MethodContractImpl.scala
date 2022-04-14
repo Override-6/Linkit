@@ -144,6 +144,11 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
                 makeDispatch(puppeteer, dispatcher, localInvocation)
             }
         }
+        AppLogger.debug {
+            val name     = description.javaMethod.getName
+            val methodID = description.methodId
+            s"RMI - performing method invocation $methodID $name(${localInvocation.methodArguments.mkString(", ")})"
+        }
         if (currentMustReturn) {
             puppeteer.sendInvoke(remoteInvocation)
             result = localResult
