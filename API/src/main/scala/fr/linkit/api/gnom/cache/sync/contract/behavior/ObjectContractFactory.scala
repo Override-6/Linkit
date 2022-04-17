@@ -23,7 +23,7 @@ trait ObjectContractFactory {
 
     def getObjectContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext): StructureContract[A]
 
-    def getStaticContract[A <: AnyRef](clazz: Class[A]): StructureContract[A]
+    def getStaticContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext): StructureContract[A]
 
     def getInstanceModifier[A <: AnyRef](clazz: Class[A], limit: Class[_ >: A]): ValueModifier[A]
 

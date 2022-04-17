@@ -1,8 +1,7 @@
 package fr.linkit.engine.gnom.network.statics
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor}
+import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor, SynchronizedStaticsCache}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder._
@@ -15,7 +14,7 @@ import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFold
 
 import scala.reflect.{ClassTag, classTag}
 
-class StaticAccessImpl(cache: SynchronizedObjectCache[MethodCaller]) extends StaticAccess {
+class StaticAccessImpl(cache: SynchronizedStaticsCache) extends StaticAccess {
 
     private val app      = cache.network.connection.getApp
     private val center   = app.compilerCenter
@@ -32,10 +31,12 @@ class StaticAccessImpl(cache: SynchronizedObjectCache[MethodCaller]) extends Sta
 
     private def getMethodCaller(clazz: Class[_]): Constructor[MethodCaller] = {
         val staticsDesc = SyncStaticsDescription(clazz)
-        val cl = resource.findClass[MethodCaller](staticsDesc.classPackage + "." + staticsDesc.className, staticsDesc.parentLoader).getOrElse {
+        val cl          = resource.findClass[MethodCaller](staticsDesc.classPackage + "." + staticsDesc.className, staticsDesc.parentLoader).getOrElse {
             genClass(staticsDesc)
         }
-        Constructor()(ClassTag(cl))
+        new Constructor(clazz, Array()) {
+            override val tpeClass: Class[A] = clazz.asInstanceOf[Class[A]]
+        }
     }
 
     private def genClass(context: SyncStaticsDescription[_]): Class[_ <: MethodCaller] = {

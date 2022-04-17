@@ -21,6 +21,7 @@ trait StructureBehaviorDescriptorNode[A <: AnyRef] {
 
     val descriptor: StructureContractDescriptor[A]
 
+    def getStaticsContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A]
 
     def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A]
 

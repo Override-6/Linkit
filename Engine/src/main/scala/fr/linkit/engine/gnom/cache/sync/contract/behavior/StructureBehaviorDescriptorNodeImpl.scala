@@ -40,10 +40,19 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
         val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
 
-        putMethods(methodMap, context)
+        putMethods(methodMap, false, context)
         putFields(fieldMap)
 
         new StructureContractImpl(clazz, descriptor.mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
+    }
+
+
+    override def getStaticsContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
+        val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
+
+        putMethods(methodMap, true, context)
+
+        new StructureContractImpl(clazz, descriptor.mirroringInfo, methodMap.toMap, Array())
     }
 
     override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {
@@ -58,8 +67,14 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
         verifyMirroringHierarchy()
         ensureNoSyncFieldIsPrimitive()
+        ensureNoSyncFieldIsSynchronized()
         ensureNoMethodContainsPrimitiveSyncComp()
         warnAllHiddenMethodsWithDescribedBehavior()
+    }
+
+    private def ensureNoSyncFieldIsSynchronized(): Unit = {
+        if (descriptor.fields.exists(fc => fc.isSynchronized && Modifier.isStatic(fc.desc.javaField.getModifiers)))
+            throw new BadContractException(s"in $clazz: static synchronized fields are not supported.")
     }
 
     private def warnAllHiddenMethodsWithDescribedBehavior(): Unit = {
@@ -160,8 +175,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         }
     }
 
-    private def putMethods(map: mutable.HashMap[Int, MethodContract[Any]], context: SyncObjectContext): Unit = {
-        for (desc <- descriptor.methods) {
+    private def putMethods(map: mutable.HashMap[Int, MethodContract[Any]], static: Boolean, context: SyncObjectContext): Unit = {
+        for (desc <- descriptor.methods if Modifier.isStatic(desc.description.javaMethod.getModifiers) == static) {
             val id = desc.description.methodId
             if (!map.contains(id)) {
                 val agreement = desc.agreement.result(context)
@@ -174,8 +189,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             }
         }
         if (superClass != null)
-            superClass.putMethods(map, context)
-        interfaces.foreach(_.putMethods(map, context))
+            superClass.putMethods(map, static, context)
+        interfaces.foreach(_.putMethods(map, static, context))
     }
 
     private def putFields(map: mutable.HashMap[Int, FieldContract[Any]]): Unit = {

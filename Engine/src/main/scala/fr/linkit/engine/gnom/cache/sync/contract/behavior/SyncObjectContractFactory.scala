@@ -25,9 +25,8 @@ class SyncObjectContractFactory(override val data: ContractDescriptorData) exten
         data.getNode[A](clazz).getObjectContract(clazz, context: SyncObjectContext)
     }
 
-    override def getStaticContract[A <: AnyRef](clazz: Class[A]): StructureContract[A] = {
-        //TODO data.getNode(clazz).getStaticContract()
-        ???
+    override def getStaticContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext): StructureContract[A] = {
+        data.getNode(clazz).getStaticsContract(clazz, context)
     }
 
     override def getInstanceModifier[A <: AnyRef](clazz: Class[A], limit: Class[_ >: A]): ValueModifier[A] = {
