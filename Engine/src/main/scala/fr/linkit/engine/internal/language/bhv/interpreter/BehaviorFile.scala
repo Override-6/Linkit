@@ -29,15 +29,19 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
     val imports = computeImports()
     val lambdas = new FileIntegratedLambdas(center, ast)
 
-
     ast.codeBlocks.foreach(_.valueTypes.foreach(findClass))
 
     private def computeImports(): Seq[PartialFunction[String, Class[_]]] = {
         ast.classImports.map {
-            case ClassImport(className, 0) =>
+            case ClassImport(className, 0) if Try(Class.forName(className)).isSuccess =>
                 val array = className.split('.');
                 {
                     case name if array.lastOption.contains(name) => Class.forName(className)
+                }
+            case ClassImport(packageName, 0) =>
+                val array = packageName.split('.');
+                {
+                    case s"$prefix.$name" if array.lastOption.contains(prefix) => Class.forName(packageName + "." + name)
                 }
             case ClassImport(pck, 1)       => {
                 case name if Try(Class.forName(pck + "." + name)).isSuccess => Class.forName(pck + "." + name)

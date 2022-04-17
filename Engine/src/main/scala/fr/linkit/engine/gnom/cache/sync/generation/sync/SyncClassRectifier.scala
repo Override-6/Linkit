@@ -13,16 +13,17 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.gnom.cache.sync.invocation.local.AbstractMethodInvocationException
+import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{SuperMethodModifiers, getMethodDescriptor}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{JavaKeywords, SuperMethodModifiers, getMethodDescriptor}
 import javassist._
 import javassist.bytecode.MethodInfo
 
 import java.lang.reflect.{Method, Modifier}
+import scala.collection.immutable.HashSet
 import scala.collection.mutable.ListBuffer
 
 class SyncClassRectifier(desc: SyncStructureDescription[_],
@@ -100,12 +101,16 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
         implicit def extractModifiers(m: Method): Int = m.getModifiers
 
         val methodDescs      = desc.listMethods()
+                .toSeq
+                .distinctBy(x => (x.javaMethod.getParameterTypes.toList, x.getName))
         val superDescriptors = ListBuffer.empty[String]
         val methodNames      = ListBuffer.empty[String]
 
         def fixMethod(desc: MethodDescription): Unit = {
-            val javaMethod   = desc.javaMethod
-            val name         = javaMethod.getName
+            val javaMethod = desc.javaMethod
+            val name       = javaMethod.getName
+            if (JavaKeywords.contains(name))
+                throw new UnsupportedOperationException(s"Can't generate method rectification for method $javaMethod: this method's name is a java token.")
             val superfunName = s"super$$$name$$"
             val superfunInfo = new MethodInfo(ctClass.getClassFile.getConstPool, superfunName, getMethodDescriptor(javaMethod))
             if (superDescriptors.contains(superfunName + superfunInfo.getDescriptor))
@@ -115,7 +120,8 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
             superfun.setModifiers(SuperMethodModifiers)
 
             ctClass.addMethod(superfun)
-            superfun.setBody(getSuperFunBody(javaMethod))
+            val source = getSuperFunBody(javaMethod)
+            superfun.setBody(source)
             val body = getAnonFunBody(javaMethod, superfun)
             anonfun.setBody(body)
 
@@ -199,7 +205,10 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
                |""".stripMargin
         } else {
             val str = {
-                s"super.${javaMethod.getName}(${(1 to javaMethod.getParameterCount).map(i => s"$$$i").mkString(",")});".stripMargin
+                val declaringClass = javaMethod.getDeclaringClass
+                val enclosing      = if (declaringClass.isInterface) s"${superClass.getName}." else ""
+
+                s"${enclosing}super.${javaMethod.getName}(${(1 to javaMethod.getParameterCount).map(i => s"$$$i").mkString(",")});".stripMargin
             }
             if (javaMethod.getReturnType == Void.TYPE) str
             else s"return $str"
@@ -216,7 +225,7 @@ object SyncClassRectifier {
 
     import java.{lang => l}
 
-    val StringToPrimitiveClass =
+    private final val StringToPrimitiveClass =
         Map(
             "int" -> Integer.TYPE,
             "double" -> l.Double.TYPE,
@@ -229,7 +238,7 @@ object SyncClassRectifier {
             "byte" -> l.Byte.TYPE
         )
 
-    val StringToPrimitiveID =
+    private final val StringToPrimitiveID =
         Map(
             "int" -> "I",
             "double" -> "D",
@@ -241,6 +250,12 @@ object SyncClassRectifier {
             "short" -> "S",
             "byte" -> "B"
         )
+
+    final val JavaKeywords = HashSet("default", "if", "for", "abstract", "assert", "boolean", "int", "float",
+        "byte", "case", "switch", "break", "continue", "return", "try", "catch", "var", "goto", "const", "do", "while",
+        "else", "enum", "interface", "final", "record", "sealed", "implements", "finally", "float", "double", "char",
+        "import", "instanceof", "long", "native", "new", "package", "private", "public", "protected", "isinstance",
+        "short", "static", "strictfp", "super", "this", "synchronized", "throw", "throws", "transient", "void", "volatile")
 
     def getMethodDescriptor(method: Method): String = {
         getMethodDescriptor(method.getParameterTypes, method.getReturnType)
@@ -292,4 +307,5 @@ object SyncClassRectifier {
         val arrayString = java.lang.reflect.Array.newInstance(clazz, 0).toString
         arrayString.slice(1, arrayString.indexOf('@')).replace(".", "/")
     }
+
 }

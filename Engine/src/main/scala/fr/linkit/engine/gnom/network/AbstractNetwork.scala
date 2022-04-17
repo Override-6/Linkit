@@ -76,7 +76,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         trunk.findCache(family)
     }
 
-    override def getCacheManager(family: String): SharedCacheManager = {
+    override def attachToCacheManager(family: String): SharedCacheManager = {
         findCacheManager(family).getOrElse(declareNewCacheManager(family))
     }
 
@@ -128,9 +128,9 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         gnol
         globalCache
         trunk.reinjectEngines()
-        //staticAccesses = new StaticAccesses(this)
-
         engine0 = trunk.newEngine(currentIdentifier)
+        staticAccesses = trunk.staticAccesses
+
         ExecutorEngine.initDefaultEngine(connectionEngine)
         this
     }

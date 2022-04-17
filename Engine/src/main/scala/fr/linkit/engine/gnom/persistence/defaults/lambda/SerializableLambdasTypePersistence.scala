@@ -21,15 +21,18 @@ object SerializableLambdasTypePersistence extends LambdaTypePersistence[Serializ
 
     override def toRepresentation(lambdaObject: AnyRef): SerializedLambda = {
         val lambdaClass = lambdaObject.getClass
-        val m           = lambdaClass.getDeclaredMethod("writeReplace")
+        val m           = try lambdaClass.getDeclaredMethod("writeReplace") catch {
+            case _:NoSuchMethodException =>
+                throw new NoSuchMethodException(s"Could not find 'writeReplace' instance method for serializable lambda ($lambdaClass)")
+        }
         m.setAccessible(true)
         m.invoke(lambdaObject).asInstanceOf[SerializedLambda]
     }
 
     override def toLambda(representation: SerializedLambda): AnyRef = {
         val capturingClassName = representation.getCapturingClass.replace('/', '.')
-        val enclosingClass   = Class.forName(capturingClassName)
-        val m                = enclosingClass.getDeclaredMethod("$deserializeLambda$", classOf[SerializedLambda])
+        val enclosingClass     = Class.forName(capturingClassName)
+        val m                  = enclosingClass.getDeclaredMethod("$deserializeLambda$", classOf[SerializedLambda])
         m.setAccessible(true)
         m.invoke(null, representation)
     }

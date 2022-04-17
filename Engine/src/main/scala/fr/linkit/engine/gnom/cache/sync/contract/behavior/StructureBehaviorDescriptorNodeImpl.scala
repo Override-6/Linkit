@@ -64,7 +64,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     * throw any exception while being used by synchronized objects.
     * */
     private def verify(): Unit = {
-        ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
+        //ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
         verifyMirroringHierarchy()
         ensureNoSyncFieldIsPrimitive()
         ensureNoSyncFieldIsSynchronized()
@@ -266,10 +266,5 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 object StructureBehaviorDescriptorNodeImpl {
 
     private final val DisabledValueContract = new SimpleModifiableValueContract[Any](false, None)
-
-    private def defaultContract(context: SyncObjectContext, desc: MethodDescription) = {
-        new MethodContractImpl[Any](false, EmptyBuilder.result(context),
-            Array(), DisabledValueContract, desc, None, null)
-    }
 }
 

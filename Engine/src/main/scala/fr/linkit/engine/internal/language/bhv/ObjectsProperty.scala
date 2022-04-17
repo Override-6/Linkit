@@ -6,7 +6,7 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 class ObjectsProperty private(parent: PropertyClass,
                               private val map: Map[String, AnyRef]) extends PropertyClass {
     override def get(refName: String): AnyRef = {
-        map.get(refName.drop(1)) match {
+        map.get(refName) match {
             case Some(value)            => value
             case None if parent != null => parent.get(refName)
             case None                   => throw new NoSuchElementException(s"Unknown object $refName.")
@@ -27,6 +27,8 @@ object ObjectsProperty {
     def apply(map: Map[String, AnyRef]): ObjectsProperty = {
         new ObjectsProperty(null, map)
     }
+
+    implicit def empty: ObjectsProperty = apply(Map())
 
     def defaults(network: Network): ObjectsProperty = {
         apply(Map(

@@ -18,19 +18,23 @@ import scala.util.matching.Regex;
 
 public enum ScalaCodeBlockSymbol implements ScalaCodeBlockToken, Symbol {
 
-    ValueOpen("£{"), ValueClose("}"), Colon(":");
+    ValueOpen("£{"), ValueClose("}"), Colon(":"), At("@");
 
-    private final String rep;
+    private final String symbol;
 
     public static final Regex RegexSymbols = Symbol.makeRegex(values());
 
-    ScalaCodeBlockSymbol(String rep) {
-        this.rep = rep;
+    ScalaCodeBlockSymbol(String symbol) {
+        this.symbol = symbol;
     }
 
     @Override
-    public String representation() {
-        return rep;
+    public String value() {
+        return symbol;
     }
 
+    @Override
+    public String toString() {
+        return value();
+    }
 }

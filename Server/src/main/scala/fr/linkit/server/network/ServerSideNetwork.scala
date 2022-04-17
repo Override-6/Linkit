@@ -23,16 +23,16 @@ import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 
 class ServerSideNetwork(traffic: AbstractPacketTraffic)
-    extends AbstractNetwork(traffic) {
+        extends AbstractNetwork(traffic) {
 
     addCacheManager(globalCache, networkStore.trafficPath :+ globalCache.family.hashCode)
 
     override def serverIdentifier: String = traffic.currentIdentifier
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
-        val contracts = Contract("NetworkContract")(connection.getApp, ObjectsProperty.defaults(this))
+        val contracts = Contract("NetworkContract", connection.getApp, ObjectsProperty.defaults(this))
         globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this))
-            .syncObject(0, Constructor[NetworkDataTrunk](this), contracts)
+                .syncObject(0, Constructor[NetworkDataTrunk](this), contracts)
     }
 
     override protected def createGlobalCache: SharedCacheManager = {

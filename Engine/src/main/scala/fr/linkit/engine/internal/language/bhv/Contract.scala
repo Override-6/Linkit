@@ -15,6 +15,7 @@ package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
@@ -36,13 +37,16 @@ object Contract {
 
     private[linkit] def addToPrecompute(text: String, filePath: String): Unit = toPrecompute += ((text, filePath))
 
-    def apply(name: String)(implicit app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(name) match {
+    def apply(name: String, app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(name) match {
         case Some(partial) =>
             partial(propertyClass)
         case None          =>
             throw new NoSuchElementException(s"Could not find any behavior contract bound with the name '$name'")
     }
 
+    def apply(name: String)(implicit network: Network): LangContractDescriptorData = {
+        apply(name, network.connection.getApp, ObjectsProperty.defaults(network))
+    }
 
     private def partialize(text: String, filePath: String, app: ApplicationContext): PartialContractDescriptorData = {
         val tokens        = BehaviorLanguageLexer.tokenize(new CharSequenceReader(text), filePath)

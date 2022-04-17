@@ -148,12 +148,6 @@ object WorkerPools {
         currentWorker.getController.getCurrentTask
     }
 
-    def currentTasksId: String = {
-        if (isCurrentThreadWorker)
-            currentWorker.prettyPrintPrefix
-        else "?"
-    }
-
     private def currentThread: Thread = Thread.currentThread()
 
 }

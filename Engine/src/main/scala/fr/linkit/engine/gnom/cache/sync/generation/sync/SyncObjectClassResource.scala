@@ -33,8 +33,8 @@ class SyncObjectClassResource(resource: ResourceFolder) extends CachedClassFolde
 
 object SyncObjectClassResource extends ResourceRepresentationFactory[SyncObjectClassResource, ResourceFolder] {
 
-    val WrapperSuffixName = "Sync"
-    val WrapperPackage    = "gen."
+    val SyncSuffixName          = "Sync"
+    val GeneratedClassesPackage = "gen."
 
     override def apply(resource: ResourceFolder): SyncObjectClassResource = new SyncObjectClassResource(resource)
 }

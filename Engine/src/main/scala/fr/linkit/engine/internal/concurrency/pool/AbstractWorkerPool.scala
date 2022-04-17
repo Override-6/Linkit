@@ -236,7 +236,6 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         //ensureCurrentThreadOwned()
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
-        AppLogger.vError(s"$currentTasksId current task is about to pause for at least $timeoutMillis ms...")
 
         if (timeoutMillis == 0) {
             pauseCurrentTask()

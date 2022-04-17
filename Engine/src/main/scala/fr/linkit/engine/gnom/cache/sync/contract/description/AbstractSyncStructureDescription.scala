@@ -25,9 +25,9 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz:
     private val fieldDescriptions : Map[Int, FieldDescription]  = collectFields()
 
     //The generated class name
-    override def classPackage: String = WrapperPackage + clazz.getPackageName
+    override def classPackage: String = GeneratedClassesPackage + clazz.getPackageName
 
-    override def className: String = clazz.getSimpleName + WrapperSuffixName
+    override def className: String = clazz.getSimpleName + SyncSuffixName
 
     override def parentLoader: ClassLoader = clazz.getClassLoader
 

@@ -30,7 +30,7 @@ class LambdaCallerClassBlueprint(bp: InputStream) extends AbstractClassBlueprint
     }
 
     private class LambdaMethodScope(bp: String, pos: Int)
-        extends AbstractValueScope[LambdaExpressionInfo]("LAMBDA_METHODS", pos, bp) {
+        extends AbstractValueScope[LambdaExpressionInfo]("LAMBDA_METHODS", bp, pos) {
 
         bindValue("MethodName" ~> (_.name))
         bindValue("ParamsIn" ~> (e => getParameters(e.paramTypes, true)))

@@ -34,12 +34,17 @@ public enum BehaviorLanguageSymbol implements BehaviorLanguageToken, Symbol {
 
     public static final Regex RegexSymbols = Symbol.makeRegex(values());
 
-    BehaviorLanguageSymbol(String rep) {
-        this.rep = rep;
+    BehaviorLanguageSymbol(String symbol) {
+        this.rep = symbol;
     }
 
     @Override
-    public String representation() {
+    public String value() {
         return rep;
+    }
+
+    @Override
+    public String toString() {
+        return value();
     }
 }

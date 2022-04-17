@@ -31,7 +31,7 @@ abstract class AbstractClassBlueprint[V <: CompilationContext] private(protected
 
     override def toClassSource(v: V): String = rootScope.getSourceCode(v)
 
-    abstract class RootValueScope extends AbstractValueScope[V]("ROOT", 0, blueprint) {
+    abstract class RootValueScope extends AbstractValueScope[V]("ROOT", blueprint, 0) {
         bindValue("CompileTime" ~~> System.currentTimeMillis())
         bindValue("ClassName" ~> (_.className))
         bindValue("ClassPackage" ~> (_.classPackage))

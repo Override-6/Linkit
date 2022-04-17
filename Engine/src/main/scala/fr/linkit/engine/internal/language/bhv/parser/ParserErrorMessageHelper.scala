@@ -28,7 +28,8 @@ object ParserErrorMessageHelper {
         val identCount = line.takeWhile(_ == ' ').length
         val cursor     = " " * (start - 1 - identCount) + "^" * (end - start + 1)
         s"""
-           |$kind at ${filePath.tail}:$pos: ${unescape(msg)}
+           |$kind in ${filePath.tail}: $pos:
+           |${unescape(msg)}
            |${line.trim}
            |$cursor
            |""".stripMargin

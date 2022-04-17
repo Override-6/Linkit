@@ -35,7 +35,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient private final var ownerID          : String  = _
     @transient private final var isNotMirroring   : Boolean = _
 
-    def wrappedClass: Class[_]
+    def originClass: Class[_]
 
     def initialize(node: ObjectSyncNodeImpl[A]): Unit = {
         if (isInitialized)
@@ -63,7 +63,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def presence: NetworkObjectPresence = presenceOnNetwork
 
-    override def getSourceClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
+    override def getSourceClass: Class[A] = originClass.asInstanceOf[Class[A]]
 
     override def getChoreographer: InvocationChoreographer = choreographer
 
@@ -78,7 +78,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         }
         val methodContract   = {
             val opt = contract.findMethodContract(id)
-            if (opt.isEmpty) {
+            if (opt.isEmpty) { //no contract specified so we just execute the method.
                 return superCall(args).asInstanceOf[R]
             }
             opt.get
@@ -87,7 +87,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         val synchronizedArgs = methodContract.synchronizeArguments(args, puppeteer.synchronizedObj(_))
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
         if (!methodContract.isRMIActivated || choreographer.isMethodExecutionForcedToLocal) {
-            return superCall(synchronizedArgs).asInstanceOf[R]
+            return methodContract.synchronizeReturnValue(superCall(synchronizedArgs), puppeteer.synchronizedObj(_)).asInstanceOf[R]
         }
         val data = new methodContract.RemoteInvocationExecution {
             override val syncObject: SynchronizedObject[_] = AbstractSynchronizedObject.this

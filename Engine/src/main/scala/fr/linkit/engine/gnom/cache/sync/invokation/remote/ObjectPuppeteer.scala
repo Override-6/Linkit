@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
-import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, _}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
+import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, _}
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
@@ -59,8 +59,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val dispatcher       = new ObjectRMIDispatcher(scope, methodId, desiredEngineReturn) {
             override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
                 holder
-                    .nextResponse
-                    .nextPacket[Packet] match {
+                        .nextResponse
+                        .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
                         throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeLocation, executed by engine '$desiredEngineReturn' failed :\n $exceptionString")
                     case p: RefPacket[R]                     =>
@@ -94,9 +94,9 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         }
     }
 
-    override def synchronizedObj(obj: AnyRef): SynchronizedObject[AnyRef] = {
+    override def synchronizedObj(obj: Any): SynchronizedObject[AnyRef] = {
         val currentPath = nodeLocation.nodePath
-        tree.insertObject(currentPath, obj, currentIdentifier).synchronizedObject
+        tree.insertObject(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier).synchronizedObject
     }
 
     class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {
@@ -107,8 +107,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)
-                .addPacket(InvocationPacket(nodeLocation.nodePath, methodID, args, returnEngine))
-                .submit()
+                    .addPacket(InvocationPacket(nodeLocation.nodePath, methodID, args, returnEngine))
+                    .submit()
         }
 
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()

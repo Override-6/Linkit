@@ -50,7 +50,7 @@ trait Network extends StaticNetworkObject[NetworkReference] {
 
     def startUpDate: Timestamp
 
-    def getCacheManager(family: String): SharedCacheManager
+    def attachToCacheManager(family: String): SharedCacheManager
 
     def declareNewCacheManager(family: String): SharedCacheManager
 

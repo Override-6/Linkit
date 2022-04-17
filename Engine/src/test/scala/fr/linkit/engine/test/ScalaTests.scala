@@ -15,6 +15,4 @@ package fr.linkit.engine.test
 
 class ScalaTests {
 
-    private val notSerializableLambdaWooooooo: Runnable = () => println(s"finally ! $this")
-
 }

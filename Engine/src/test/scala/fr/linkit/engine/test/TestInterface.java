@@ -11,22 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.internal.concurrency
+package fr.linkit.engine.test;
 
-trait Worker {
+public interface TestInterface {
 
-    val pool: WorkerPool
-
-    val thread: Thread
-
-    def taskRecursionDepth: Int
-
-    def isSleeping: Boolean
-
-    def getCurrentTask: Option[AsyncTask[_]]
-
-    def getCurrentTaskID: Int = getCurrentTask.map(_.taskID).getOrElse(-1)
-
-    def getController: WorkerThreadController
+    void test();
 
 }

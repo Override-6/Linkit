@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
+import fr.linkit.engine.gnom.network.statics.StaticAccesses
 
 import java.sql.Timestamp
 import scala.collection.mutable
@@ -26,9 +27,9 @@ import scala.collection.mutable
 //FIXME OriginManagers and DistantManagers can be bypassed
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
-    private val engines = mutable.HashMap.empty[String, Engine]
-    private val caches  = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
-
+    private          val engines        = mutable.HashMap.empty[String, Engine]
+    private          val caches         = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
+    private[network] lazy val staticAccesses = new StaticAccesses(network)
 
     def this(network: AbstractNetwork) {
         this(network, new Timestamp(System.currentTimeMillis()))

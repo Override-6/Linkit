@@ -24,15 +24,15 @@ abstract class AbstractLexer extends RegexParsers {
     protected def symbolsRegex: Regex
 
     protected lazy val keywordParser   : Parser[PosToken] = {
-        val keywords = this.keywords.map(x => (x.representation, x)).toMap
+        val keywords = this.keywords.map(x => (x.value, x)).toMap
         pos("\\w+".r.filter(keywords.contains) ^^ keywords.apply)
     }
     protected lazy val symbolParser    : Parser[PosToken] = {
-        val symbols = this.symbols.map(x => (x.representation, x)).toMap
+        val symbols = this.symbols.map(x => (x.value, x)).toMap
         pos(symbolsRegex.filter(symbols.contains) ^^ symbols)
     }
     protected lazy val identifierParser: Parser[String]   = {
-        (s"[^\\s${symbols.map(_.representation.map("\\" + (_: Char)).mkString("")).mkString("")}]+").r
+        (s"[^\\s${symbols.map(_.value.map("\\" + (_: Char)).mkString("")).mkString("")}]+").r
     }
 
     override protected def handleWhiteSpace(source: CharSequence, offset: Int): Int = {

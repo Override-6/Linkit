@@ -30,7 +30,9 @@ trait MethodContract[R] {
 
     def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: AnyRef => SynchronizedObject[AnyRef]): Any
 
-    def synchronizeArguments(args: Array[Any], syncAction: AnyRef => SynchronizedObject[AnyRef]): Array[Any]
+    def synchronizeArguments(args: Array[Any], syncAction: Any => SynchronizedObject[AnyRef]): Array[Any]
+
+    def synchronizeReturnValue(rv: Any, syncAction: Any => SynchronizedObject[AnyRef]): Any
 
     def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R
 

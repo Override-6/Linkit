@@ -4,7 +4,8 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.SyntheticMod
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.{SyntheticMod, isNotOverridable}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.JavaKeywords
 
 import java.lang.reflect.{Executable, Method, Modifier}
 import scala.collection.mutable
@@ -21,23 +22,23 @@ class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) ext
     }
 
     override protected def applyNotFilter(e: Executable): Boolean = {
-        isNotOverridable(e) || containsNotAccessibleElements(e) ||
-            //FIXME Weird bug due to scala's Any and AnyRef stuff...
-            (e.getName == "equals" && e.getParameterTypes.length == 1) ||
-            //FIXME Bug occurred for objects that extends NetworkObject[A].
-            // as SynchronizedObject trait also extends NetworkObject[SyncObjectReference],
-            // a collision may occur as the generated method would be
-            // syncClass#reference: A, which overrides SynchronizedObject#reference: SyncObjectReference (there is an incompatible type definition)
-            // Maybe making the GNOLinkage able to support multiple references to an object would help, but certainly overkill
-            (e.getName == "reference" && e.getParameterTypes.isEmpty)
+        isNotOverridable(e.getModifiers) || containsNotAccessibleElements(e) || isIllegal(e) ||
+                //FIXME Weird bug due to scala's Any and AnyRef stuff...
+                (e.getName == "equals" && e.getParameterTypes.length == 1) ||
+                //FIXME Bug occurred for objects that extends NetworkObject[A].
+                // as SynchronizedObject trait also extends NetworkObject[SyncObjectReference],
+                // a collision may occur as the generated method would be
+                // syncClass#reference: A, which overrides SynchronizedObject#reference: SyncObjectReference (there is an incompatible type definition)
+                // Maybe making the GNOLinkage able to support multiple references to an object would help, but certainly overkill
+                (e.getName == "reference" && e.getParameterTypes.isEmpty)
     }
 
     override def deconstruct(): Array[Any] = Array(clazz)
 
-    private def isNotOverridable(e: Executable): Boolean = {
-        val mods = e.getModifiers
-        import Modifier._
-        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods) || isNative(mods)
+    private def isIllegal(e: Executable): Boolean = {
+        val isNameJKeyword = JavaKeywords(e.getName)
+        if (isNameJKeyword) AppLogger.warn(s"Could not handle method ${e} because its name is a java keyword.")
+        isNameJKeyword
     }
 
     private def containsNotAccessibleElements(e: Executable): Boolean = {
@@ -55,7 +56,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) ext
         e match {
             case method: Method =>
                 isNotAccessible(method.getReturnType, "return type") ||
-                    method.getParameterTypes.exists(isNotAccessible(_, "parameter type"))
+                        method.getParameterTypes.exists(isNotAccessible(_, "parameter type"))
             case _              => false
         }
     }
@@ -74,7 +75,10 @@ object SyncObjectDescription {
         new SyncObjectDescription[A](AClass)
     }).asInstanceOf[SyncObjectDescription[A]]
 
-
     implicit def fromTag[A <: AnyRef : ClassTag]: SyncObjectDescription[A] = apply[A](classTag[A].runtimeClass)
 
+    def isNotOverridable(mods: Int): Boolean = {
+        import Modifier._
+        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods) || isNative(mods)
+    }
 }

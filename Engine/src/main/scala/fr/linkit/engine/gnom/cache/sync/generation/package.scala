@@ -18,10 +18,10 @@ package object generation {
 
     def adaptClassName(wrappedClassName: String): String = {
         var result = wrappedClassName
-        if (!wrappedClassName.startsWith(WrapperPackage))
-            result = WrapperPackage + result
-        if (!wrappedClassName.endsWith(WrapperSuffixName))
-            result = result + WrapperSuffixName
+        if (!wrappedClassName.startsWith(GeneratedClassesPackage))
+            result = GeneratedClassesPackage + result
+        if (!wrappedClassName.endsWith(SyncSuffixName))
+            result = result + SyncSuffixName
         result
     }
 

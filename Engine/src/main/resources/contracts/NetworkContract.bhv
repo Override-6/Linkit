@@ -4,7 +4,7 @@ import fr.linkit.engine.gnom.**
 import java.nio.file.Path
 import java.net.URI
 
-scala ${
+code ${
     val network = £{@network: AbstractNetwork}
 }
 
@@ -15,8 +15,15 @@ describe DefaultEngine {
     updateState(ExternalConnectionState) following current_and_origin
 }
 describe NetworkDataTrunk {
+    staticAccesses() {
+        sync returnvalue
+    }
     newEngine(String) following broadcast
     addEngine(sync Engine)
+}
+
+describe StaticAccesses {
+    newStaticAccess0(int, ContractDescriptorData) following broadcast
 }
 
 modifier SharedCacheOriginManager {

@@ -17,7 +17,8 @@ import scala.annotation.switch
 
 $Imports$
 
-class $ClassName$(properties: PropertyClass) extends MethodCaller {
+                //weird and unconventional name in order to reduce clashes with the user's code.
+class $ClassName$(__pRoperTiEs_8: PropertyClass) extends MethodCaller {
 
     $Blocks$
 
@@ -30,7 +31,7 @@ class $ClassName$(properties: PropertyClass) extends MethodCaller {
         }
     }
 
-    private def getProperty[P](name: String): P = properties.get(name).asInstanceOf[P]
+    private def getProperty[P](name: String): P = __pRoperTiEs_8.get(name).asInstanceOf[P]
 
     !!LAMBDA_METHODS!! {
         private final val _$MethodName$: ($ParamTypes$) => Any = {

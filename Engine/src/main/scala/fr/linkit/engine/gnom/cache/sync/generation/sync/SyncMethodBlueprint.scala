@@ -19,7 +19,7 @@ import fr.linkit.engine.internal.language.cbp.AbstractValueScope
 
 object SyncMethodBlueprint {
 
-    class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, pos, blueprint) {
+    class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, blueprint, pos) {
         bindValue("ReturnType" ~> getReturnType)
         bindValue("MethodName" ~> (_.javaMethod.getName))
         bindValue("MethodID" ~> (m => m.methodId.toString))

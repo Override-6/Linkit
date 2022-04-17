@@ -12,7 +12,7 @@
 
 package $ClassPackage$
 
-import $WrappedClassName$
+import $OriginClassName$
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.SyncObjectReference
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
@@ -26,23 +26,18 @@ import scala.annotation.switch
 * and methods required for a SynchronizedObject
 * */
 @SerialVersionUID($CompileTime$L)
-class $ClassName$ extends AbstractSynchronizedObject[$WrappedClassSimpleName$] with MethodCaller {
-
-    override def wrappedClass: Class[_] = classOf[$WrappedClassSimpleName$]
+class $ClassName$ extends MethodCaller {
 
     override final def call(name: String, args: Array[Any]): Any = {
         (name: @switch) match {
         !!INHERITED_METHODS!! {
-            case "$MethodName$" => _$MethodName($ParamsOutMatch$)
+            case "$MethodNameID$" => _$MethodNameID$($ParamsOutMatch$)
         }
             case _ => throw new NoSuchMethodException("Could not find method with id '" + id + "' in this static method caller.")
         }
     }
 
 !!INHERITED_METHODS!! {
-    $Override$ def _$MethodName$($ParamsIn$): $ReturnType$ = {
-        ???//$WrappedClassSimpleName$.$MethodName$
-    }
+    protected def _$MethodNameID$($ParamsIn$): $ReturnType$ = $OriginClassSimpleName$.$MethodName$($ParamsOut$)
 }
-
 }

@@ -27,16 +27,16 @@ class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStr
     override val compilerType: CompilerType = CommonCompilerType.Scalac
 
     override val rootScope: RootValueScope = new RootValueScope {
-        bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
-        bindValue("WrappedClassName" ~> (_.clazz.getTypeName))
+        bindValue("OriginClassSimpleName" ~> (_.clazz.getSimpleName))
+        bindValue("OriginClassName" ~> (_.clazz.getTypeName))
         bindValue("TParamsIn" ~> (getGenericParams(_, typeToScalaDeclaration)))
         bindValue("TParamsOut" ~> (getGenericParams(_, _.getName)))
         bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))
 
         bindSubScope(new SyncMethodBlueprint.ValueScope("INHERITED_METHODS", _, _), (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
-                    /*.toSeq
-                    .distinctBy(_.methodId)*/
+                    .toSeq
+                    .distinctBy(x => (x.javaMethod.getParameterTypes.toList, x.getName))
                     .foreach(action)
         })
 

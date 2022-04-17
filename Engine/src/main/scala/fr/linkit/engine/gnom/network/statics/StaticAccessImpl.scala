@@ -6,7 +6,6 @@ import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder._
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncStaticsDescription
-import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 import fr.linkit.engine.gnom.network.statics.StaticAccessImpl.CompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
@@ -29,14 +28,12 @@ class StaticAccessImpl(cache: SynchronizedStaticsCache) extends StaticAccess {
         new StaticAccessorImpl(caller, clazz)
     }
 
-    private def getMethodCaller(clazz: Class[_]): Constructor[MethodCaller] = {
+    private def getMethodCaller(clazz: Class[_]): SyncStaticAccessInstanceCreator = {
         val staticsDesc = SyncStaticsDescription(clazz)
-        val cl          = resource.findClass[MethodCaller](staticsDesc.classPackage + "." + staticsDesc.className, staticsDesc.parentLoader).getOrElse {
+        val mcClass     = resource.findClass[MethodCaller](staticsDesc.classPackage + "." + clazz.getSimpleName + "StaticsCaller", staticsDesc.parentLoader).getOrElse {
             genClass(staticsDesc)
-        }
-        new Constructor(clazz, Array()) {
-            override val tpeClass: Class[A] = clazz.asInstanceOf[Class[A]]
-        }
+        }.asInstanceOf[Class[MethodCaller]]
+        new SyncStaticAccessInstanceCreator(mcClass, Array(), clazz)
     }
 
     private def genClass(context: SyncStaticsDescription[_]): Class[_ <: MethodCaller] = {
@@ -51,6 +48,7 @@ class StaticAccessImpl(cache: SynchronizedStaticsCache) extends StaticAccess {
 }
 
 object StaticAccessImpl {
+
     private final val Blueprint                 = new StaticsCallerClassBlueprint(getClass.getResourceAsStream("/generation/sync_statics.scbp"))
     private final val CompilationRequestFactory = new ClassCompilationRequestFactory[SyncStaticsDescription[_], MethodCaller](Blueprint)
 }

@@ -11,22 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.internal.concurrency
+package fr.linkit.server.test.sync
 
-trait Worker {
-
-    val pool: WorkerPool
-
-    val thread: Thread
-
-    def taskRecursionDepth: Int
-
-    def isSleeping: Boolean
-
-    def getCurrentTask: Option[AsyncTask[_]]
-
-    def getCurrentTaskID: Int = getCurrentTask.map(_.taskID).getOrElse(-1)
-
-    def getController: WorkerThreadController
+class ServerSyncStatics {
 
 }

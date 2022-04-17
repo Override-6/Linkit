@@ -33,6 +33,7 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverridable
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, EmptyContractDescriptorData}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
@@ -55,7 +56,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                                                             classCenter: SyncClassCenter,
                                                             override val defaultContracts: ContractDescriptorData,
                                                             override val network: Network)
-    extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
+        extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
     private  val cacheOwnerId     : String                     = channel.manager.ownerID
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
@@ -70,9 +71,9 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val tree        = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], contracts)
         val treeProfile = ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier, contracts)
         channel.makeRequest(ChannelScopes.discardCurrent)
-            .addPacket(ObjectPacket(treeProfile))
-            .putAllAttributes(this)
-            .submit()
+                .addPacket(ObjectPacket(treeProfile))
+                .putAllAttributes(this)
+                .submit()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
         wrapperNode.synchronizedObject
@@ -147,11 +148,11 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                 val paramsContracts = method.parameterContracts
                 if (paramsContracts.nonEmpty)
                     paramsContracts.zip(javaMethod.getParameterTypes)
-                        .foreach { case (desc, paramType) => if (desc.isSynchronized) addClass(paramType) }
+                            .foreach { case (desc, paramType) => if (desc.isSynchronized) addClass(paramType) }
             })
         })
         classes -= classOf[Object]
-        classes = classes.filterNot(classCenter.isClassGenerated)
+        classes = classes.filterNot(classCenter.isClassGenerated).filterNot(c => isNotOverridable(c.getModifiers))
         if (classes.isEmpty)
             return
         AppLogger.info(s"Found ${classes.size} classes to compile in their sync versions")
@@ -160,6 +161,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         classCenter.preGenerateClasses(classes.toList)
     }
 
+
     private def isObjectPresent(location: SyncObjectReference): Boolean = {
         (location.cacheID == cacheID) && location.family == family && {
             val path = location.nodePath
@@ -167,8 +169,8 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         }
     }
 
-    protected def getRootContract(factory: SyncObjectContractFactory)(clazz: Class[A], context: SyncObjectContext): StructureContract[A] = {
-        factory.getObjectContract[A](clazz, context)
+    protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[A], context: SyncObjectContext): StructureContract[A] = {
+        factory.getObjectContract[A](creator.tpeClass, context)
     }
 
     private def createNewTree(id: Int, rootObjectOwner: String,
@@ -180,7 +182,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val context      = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
         val factory      = SyncObjectContractFactory(contracts)
 
-        val rootContract = getRootContract(factory)(creator.tpeClass, context)
+        val rootContract = getRootContract(factory)(creator, context)
         val root         = DefaultInstantiator.newSynchronizedInstance[A](creator)
 
         val chip      = ObjectChip[A](rootContract, network, root)
@@ -211,13 +213,13 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
         forest
-            .findTree(path.head)
-            .flatMap(tree => {
-                if (path.length == 1)
-                    Some(tree.rootNode)
-                else
-                    tree.findNode[A](path)
-            })
+                .findTree(path.head)
+                .flatMap(tree => {
+                    if (path.length == 1)
+                        Some(tree.rootNode)
+                    else
+                        tree.findNode[A](path)
+                })
     }
 
     private def handleNewObject(treeID: Int,
@@ -246,9 +248,9 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
             } catch {
                 case NonFatal(e) =>
                     throw new SyncObjectInstantiationException(e.getMessage +
-                        s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
-                           | Try to regenerate the sync class of ${creator.tpeClass}.
-                           | """.stripMargin, e)
+                            s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
+                               | Try to regenerate the sync class of ${creator.tpeClass}.
+                               | """.stripMargin, e)
             }
         }
 
@@ -264,8 +266,8 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                     handleInvocationPacket(ip, bundle)
                 case ObjectPacket(location: SyncObjectReference) =>
                     bundle.responseSubmitter
-                        .addPacket(BooleanPacket(isObjectPresent(location)))
-                        .submit()
+                            .addPacket(BooleanPacket(isObjectPresent(location)))
+                            .submit()
 
                 case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner, contracts)) =>
                     handleNewObject(treeID, rootObject, owner, contracts)

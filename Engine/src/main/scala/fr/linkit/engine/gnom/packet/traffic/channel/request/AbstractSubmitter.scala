@@ -16,13 +16,10 @@ package fr.linkit.engine.gnom.packet.traffic.channel.request
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{ResponseHolder, Submitter}
-import fr.linkit.api.internal.concurrency.WorkerPool
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
-import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
-import java.util.concurrent.BlockingQueue
 
+import java.util.concurrent.BlockingQueue
 import scala.collection.mutable.ListBuffer
 
 sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends SimplePacketAttributes with Submitter[P] {

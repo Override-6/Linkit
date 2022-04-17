@@ -22,8 +22,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 abstract class AbstractValueScope[A](override val name: String,
-                                     override val position: Int,
-                                     upperBlueprint: String) extends ValueScope[A] {
+                                     upperBlueprint: String,
+                                     override val position: Int) extends ValueScope[A] {
 
     private val subBlocks  = {
         LexerUtils

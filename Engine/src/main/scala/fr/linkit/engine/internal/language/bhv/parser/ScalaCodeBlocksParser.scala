@@ -15,11 +15,11 @@ object ScalaCodeBlocksParser extends Parsers {
     override type Elem = ScalaCodeBlockToken
 
     private val identifierParser = accept("identifier", { case Identifier(identifier) => identifier }).+ ^^ (_.mkString(" "))
-    private val valueParser      = ValueOpen ~> identifierParser ~ (Colon ~> identifierParser).? <~ ValueClose ^^ {
+    private val valueParser      = ValueOpen ~> At ~> identifierParser ~ (Colon ~> identifierParser).? <~ ValueClose ^^ {
         case name ~ types =>
             val tpe = types.getOrElse("scala.Any")
             (LambdaCallerClassBlueprint.getPropertyAccessCodeString(name, tpe), tpe)
-    }
+    } withFailureMessage("external value access syntax is wrong. Syntax must be: £{@<value>: <valueType>}")
     private val fragmentParser   = accept("code fragment", { case CodeFragment(fragment) => fragment })
 
     def parse(input: CharSequenceReader): ScalaCodeBlock = {

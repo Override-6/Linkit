@@ -16,7 +16,7 @@ package fr.linkit.engine.internal.language.bhv.lexer.file;
 import fr.linkit.engine.internal.language.bhv.lexer.Keyword;
 
 public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
-    Import, Describe, Method, Scala, Enable, Stub, Name,
+    Import, Describe, Method, Code, Enable, Stub, Name,
     Mirroring, Disable, Statics, Hide, Following, Modifier,
     Sync, ReturnValue, Foreach,
     //Agreements
@@ -25,7 +25,7 @@ public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
     ;
 
     @Override
-    public String representation() {
+    public String value() {
         return name().toLowerCase();
     }
 }

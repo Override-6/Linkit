@@ -41,7 +41,6 @@ object Equals {
 
 case class Condition(test: Equals, ifTrue: Seq[AgreementInstruction], ifFalse: Seq[AgreementInstruction]) extends AgreementInstruction
 
-
 case class AgreementBuilder(name: String, instructions: Seq[AgreementInstruction])
 
 case class AgreementReference(name: String)

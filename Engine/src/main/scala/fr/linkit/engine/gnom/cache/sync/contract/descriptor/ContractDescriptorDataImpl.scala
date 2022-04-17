@@ -1,10 +1,9 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, MethodContractDescriptor, StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.{StructureBehaviorDescriptorNodeImpl, SyncObjectClassRelation}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo}
+import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectClassRelation
 import fr.linkit.engine.internal.utils.ClassMap
 
 class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescriptor[_]]) extends ContractDescriptorData {
@@ -28,12 +27,18 @@ class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescrip
         if (objectDescriptor.targetClass != classOf[Object])
             throw new IllegalArgumentException("Descriptions sequence's first element must be the java.lang.Object type behavior description.")
 
-        val objectRelation = new SyncObjectClassRelation[AnyRef](cast(objectDescriptor), null)
+        val objectRelation = new SyncObjectClassRelation[AnyRef](objectDescriptor.targetClass, null)
         relations.put(objectDescriptor.targetClass, objectRelation)
         for (descriptor <- descriptors.tail) {
             val clazz  = descriptor.targetClass
-            val parent = relations.get(clazz).getOrElse(objectRelation) //should at least return the java.lang.Object behavior descriptor
-            relations.put(clazz, cast(new SyncObjectClassRelation(cast(descriptor), cast(parent))))
+            val up = relations.get(clazz).getOrElse(objectRelation) //should at least return the java.lang.Object behavior descriptor
+            if (up.targetClass == clazz)
+                up.addDescriptor(descriptor)
+            else {
+                val rel = new SyncObjectClassRelation[AnyRef](clazz, up)
+                rel.addDescriptor(descriptor)
+                relations.put(clazz, cast(rel))
+            }
         }
         for ((clazz, relation) <- relations) {
             val interfaces = clazz.getInterfaces
@@ -42,7 +47,7 @@ class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescrip
                 relation.addInterface(cast(interfaceRelation))
             }
         }
-        val map = relations.map(pair => (pair._1, pair._2.toNode)).toMap
+        val map = relations.map(pair => (pair._1, pair._2.asNode)).toMap
         new ClassMap[StructureBehaviorDescriptorNode[_]](map)
     }
 
@@ -50,17 +55,17 @@ class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescrip
     * Sorting descriptors by their hierarchy rank, and performing
     * checks to avoid multiple descriptors per class
     * */
-    private def rearrangeDescriptors(): Array[StructureContractDescriptor[_]] = {
-        descriptors.foreach(a => {
+    private def rearrangeDescriptors(): Array[StructureContractDescriptor[AnyRef]] = {
+        /*descriptors.foreach(a => {
             val clazz = a.targetClass
             val count = descriptors.count(b => clazz == b.targetClass)
             if (count > 1)
                 throw new BadContractException(s"found $count descriptors for class ${a.targetClass}. Only one can be accepted")
-        })
+        })*/
         type S = StructureContractDescriptor[_]
         descriptors.sorted((a: S, b: S) => {
             getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
-        })
+        }).asInstanceOf[Array[StructureContractDescriptor[AnyRef]]]
     }
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]
@@ -85,6 +90,6 @@ object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(new 
     override val targetClass  : Class[Object]                   = classOf[Object]
     override val mirroringInfo: Option[RemoteObjectInfo]        = None
     override val methods      : Array[MethodContractDescriptor] = Array()
-    override val fields          : Array[FieldContract[Any]]       = Array()
-    override val modifier        : Option[ValueModifier[Object]]   = None
+    override val fields       : Array[FieldContract[Any]]       = Array()
+    override val modifier     : Option[ValueModifier[Object]]   = None
 }))

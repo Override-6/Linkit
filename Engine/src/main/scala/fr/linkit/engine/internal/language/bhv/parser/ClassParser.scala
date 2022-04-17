@@ -21,7 +21,6 @@ import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageToken
 
 object ClassParser extends BehaviorLanguageParser {
 
-    override type Elem = BehaviorLanguageToken
     private val classParser = {
         val syncOrNot                  = (Exclamation.? <~ Sync ^^ (_.isEmpty)).? ^^ (s => SynchronizeState(s.isDefined, s.getOrElse(false)))
         val properties                 = {

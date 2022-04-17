@@ -71,11 +71,8 @@ private[concurrency] trait AbstractWorker
     }
 
     override def wakeup(task: ThreadTask): Unit = {
-        //AppLogger.vDebug(s"Waking up thread $this for task ${task.taskID}")
         val blocker = LockSupport.getBlocker(thread)
-        //AppLogger.vDebug(s"Thread $this is parking on blocker $blocker")
         if (blocker == task) {
-            //AppLogger.vError(s"$this <- This thread will be unparked.")
             LockSupport.unpark(thread)
             task.setContinue()
         } else {
@@ -86,9 +83,7 @@ private[concurrency] trait AbstractWorker
     private def pushTask(task: ThreadTask): Unit = {
         workingTasks.put(task.taskID, TaskProfile(task))
         currentTask = task
-        //tasksIdStr = getUpdatedTasksID
     }
-
 
     private def removeTask(task: AsyncTask[_]): Unit = {
         val id = task.taskID
@@ -98,9 +93,6 @@ private[concurrency] trait AbstractWorker
             .map(_._2.task)
             .orNull
     }
-
-
-    override def prettyPrintPrefix: String = ""
 
     override def taskRecursionDepth: Int = taskRecursionDepthCount
 

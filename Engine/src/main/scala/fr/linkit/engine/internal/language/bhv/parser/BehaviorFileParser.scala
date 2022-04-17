@@ -25,7 +25,7 @@ object BehaviorFileParser extends BehaviorLanguageParser {
     private val classParser         = acceptForeign(ClassParser.parser)
     private val agreementParser     = acceptForeign(AgreementParser.parser)
     private val importParser        = Import ~> identifier ~ repNM(0, 2, Star) ^^ { case id ~ stars => ClassImport(if (stars.nonEmpty) id.dropRight(1) else id, stars.length) }
-    private val codeBlockParser     = Scala ~> codeBlock
+    private val codeBlockParser     = Code ~> codeBlock
     private val typeModifierParser  = Modifier ~> identifier ~ modifiers ^^ { case tpe ~ modifiers => TypeModifier(tpe, modifiers.find(_.kind == In), modifiers.find(_.kind == Out)) }
     private val valueModifierParser = {
         (identifier <~ Colon) ~ (typeParser <~ Arrow) ~ modifiers ^^ { case name ~ tpe ~ modifiers => ValueModifier(name, tpe, modifiers.find(_.kind == In), modifiers.find(_.kind == Out)) }
@@ -38,11 +38,11 @@ object BehaviorFileParser extends BehaviorLanguageParser {
             fileParser.apply(new TokenReader(context))
         } catch {
             case e: BHVLanguageException =>
-                throw new BHVLanguageException(s"in ${context.filePath}: " + e.getMessage)
+                throw new BHVLanguageException(s"in ${context.filePath}: \n" + e.getMessage)
         }
         r match {
             case NoSuccess(msg, n) =>
-                throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, context.fileSource, context.filePath))
+                throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, context.fileSource, context.filePath.drop(1)))
             case Success(x, _)     =>
                 val fileName = context.filePath.drop(context.filePath.lastIndexOf('\\'))
                 unpack(fileName, x)

@@ -36,7 +36,7 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
 
     override val isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
 
-    override def synchronizeArguments(args: Array[Any], syncAction: AnyRef => SynchronizedObject[AnyRef]): Array[Any] = {
+    override def synchronizeArguments(args: Array[Any], syncAction: Any => SynchronizedObject[AnyRef]): Array[Any] = {
         if (parameterContracts.isEmpty)
             return args
         var i = -1
@@ -49,6 +49,11 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
                 case other                                     => other
             }
         })
+    }
+
+    override def synchronizeReturnValue(rv: Any, syncAction: Any => SynchronizedObject[AnyRef]): Any = {
+        if (returnValueContract.isSynchronized) syncAction(rv)
+        else rv
     }
 
     override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: AnyRef => SynchronizedObject[AnyRef]): Any = {

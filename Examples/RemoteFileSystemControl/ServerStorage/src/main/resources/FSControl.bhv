@@ -1,19 +1,37 @@
+name "FSControl"
+
 import java.nio.file.Path
 import java.nio.file.Files
-import java.lang.String
-
-describe class Path as @full_remote {
-    forall methods enable as only_cache_owner
+import fr.linkit.**
+import java.net.URI
+import scala.collection.mutable
+code ${
+    import scala.collection.mutable
+    import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
+    lazy val properties = £{@network: Network}.globalCache
+             .attachToCache(40, DefaultSynchronizedObjectCache[mutable.HashMap[String, String]])
+             .findObject(0).get
 }
-describe static class Path {
-    enable method of(String, String[]) {
-        modify 1 & 2 {
-            distant_to_current -> ${(param, _, remote) => remote.getProperty("FS_HOME") + s"/$param"}
+
+agreement only_cache_owner = accept cache_owner
+agreement broadcast = accept*
+
+describe mutable.HashMap {
+    put(Object, Object) following broadcast
+}
+
+describe mirroring Path {
+    foreach method enable following only_cache_owner
+}
+describe statics Path {
+    of(path: String, String[]) {
+        path -> {
+            out: ${(path, remote) => properties("FS_HOME_" + remote.identifier) + s"/$path"}
         }
-        synchronized returnvalue
+        sync returnvalue
     }
     hide method of(URI) "Please use method of(String, String[]) instead."
 }
-describe static class Files {
-    forall methods enable as only_cache_owner
+describe statics Files {
+    foreach method enable following only_cache_owner
 }

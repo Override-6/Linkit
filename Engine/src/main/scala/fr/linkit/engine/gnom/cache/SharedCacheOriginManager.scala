@@ -117,8 +117,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
             response.addPacket(RefPacket[Option[CacheContent]](content)).submit()
         }
 
-        def handleContentNotAvailable(): Unit = {
-            behavior match {
+        def handleContentNotAvailable(): Unit = behavior match {
                 case GET_OR_CRASH =>
                     failRequest(s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
                 case GET_OR_WAIT  =>
@@ -132,7 +131,6 @@ final class SharedCacheOriginManager @Persist()(family: String,
                 case GET_OR_OPEN  =>
                     sendContent(None)
             }
-        }
 
         LocalCachesStore.findCache(cacheID)
                 .fold(handleContentNotAvailable()) { storedCache =>
