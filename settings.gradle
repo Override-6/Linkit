@@ -21,7 +21,6 @@ include 'Examples:RemoteAPIImplementationControl:ClientSide'
 include 'Examples:RemoteAPIImplementationControl:API'
 include 'Examples:RemoteFileSystemControl:ServerStorage'
 include 'Examples:RemoteFileSystemControl:ClientSide'
-include 'Tests'
 
 findProject(':Examples:RemoteAPIImplementationControl:ServerSide')?.name = 'ServerSide'
 findProject(':Examples:RemoteAPIImplementationControl:ClientSide')?.name = 'ClientSide'
