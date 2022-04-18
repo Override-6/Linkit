@@ -19,9 +19,10 @@ class StaticsCallerClassBlueprint(bp: InputStream) extends AbstractClassBlueprin
         bindValue("ClassName" ~> (_.clazz.getSimpleName + "StaticsCaller"))
 
         bindSubScope(new SyncMethodBlueprint.ValueScope("INHERITED_METHODS", _, _) {
+            bindValue("OriginClassSimpleName" ~> (_.classDesc.clazz.getSimpleName))
             bindValue("MethodNameID" ~> getMethodNameID)
             bindValue("ParamsOutMatch" ~> getParamsOutMatch)
-            bindValue("ParamsOut" ~> (getParameters(_, false)))
+            bindValue("ParamsOut" ~> (getParameters(_, false, true)))
         }, (c, f: MethodDescription => Unit) => c.listMethods().foreach(f))
     }
 

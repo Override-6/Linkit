@@ -16,6 +16,7 @@ package fr.linkit.engine.internal.generation.compilation.access.common
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.engine.internal.generation.compilation.access.{AbstractCompilerAccess, CommonCompilerType}
 
+import java.io.File
 import java.nio.file.Path
 import javax.tools.ToolProvider
 
@@ -29,7 +30,7 @@ object JavacCompilerAccess extends AbstractCompilerAccess {
 
     override def compile(sourceFiles: Seq[Path], destination: Path, classPaths: Seq[Path], additionalArguments: Seq[String]): Seq[Path] = {
         val javac                = ToolProvider.getSystemJavaCompiler
-        val cpStrings            = classPaths.mkString(";")
+        val cpStrings            = classPaths.mkString(File.pathSeparator)
         val options: Seq[String] =
             Seq[String]("-d", destination.toString, "-Xlint:none", "-classpath", cpStrings) ++
                     sourceFiles.map(_.toString) ++

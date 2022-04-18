@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.cbp
 
-class BlueprintValueSupplier[A](name: String, bp: String, supplier: A => String) extends AbstractBlueprintValue[A](name, bp) {
+class BlueprintValueSupplier[A](name: String, bp: String, val supplier: A => String) extends AbstractBlueprintValue[A](name, bp) {
 
     override def getValue(a: A): String = supplier(a)
 

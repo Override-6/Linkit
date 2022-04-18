@@ -21,4 +21,5 @@ trait ValueScope[A] {
 
     def getSourceCode(value: A): String
 
+    def bindValue(pair: (String, A => String)): Unit
 }

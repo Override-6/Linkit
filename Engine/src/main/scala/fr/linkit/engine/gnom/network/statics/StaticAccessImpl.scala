@@ -22,7 +22,7 @@ class StaticAccessImpl(cache: SynchronizedStaticsCache) extends StaticAccess {
         app.getAppResources.getOrOpenThenRepresent[CachedClassFolderResource[MethodCaller]](prop)
     }
 
-    override def of[S: ClassTag]: StaticAccessor = {
+    override def apply[S: ClassTag]: StaticAccessor = {
         val clazz  = classTag[S].runtimeClass
         val caller = cache.getOrSynchronize(clazz.getName.hashCode)(getMethodCaller(clazz))
         new StaticAccessorImpl(caller, clazz)
@@ -38,7 +38,7 @@ class StaticAccessImpl(cache: SynchronizedStaticsCache) extends StaticAccess {
 
     private def genClass(context: SyncStaticsDescription[_]): Class[_ <: MethodCaller] = {
         val result = center.processRequest {
-            AppLogger.info(s"Compiling Sync Statics Class for class '${context.clazz.getName}'...")
+            AppLogger.info(s"Compiling Statics method caller for class '${context.clazz.getName}'...")
             CompilationRequestFactory.makeRequest(context)
         }
         AppLogger.info(s"Compilation done in ${result.getCompileTime} ms.")

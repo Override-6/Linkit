@@ -23,8 +23,9 @@ object SyncMethodBlueprint {
         bindValue("ReturnType" ~> getReturnType)
         bindValue("MethodName" ~> (_.javaMethod.getName))
         bindValue("MethodID" ~> (m => m.methodId.toString))
-        bindValue("ParamsIn" ~> (getParameters(_, true)))
-        bindValue("ParamsOut" ~> (getParameters(_, false)))
+        bindValue("ParamsIn" ~> (getParameters(_, true, false)))
+        bindValue("ParamsOut" ~> (getParameters(_, false, true)))
+        bindValue("ParamsOutArray" ~> (getParameters(_, false, false)))
         bindValue("ParamsOutLambda" ~> getParamsOutLambda)
         bindValue("Override" ~> chooseOverride)
     }

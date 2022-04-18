@@ -51,8 +51,12 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         val opt   = resources.findClass[S](clazz)
         if (opt.isDefined) opt.get
         else {
-            Try(Class.forName(desc.classPackage + '.' + desc.className)).getOrElse(genClass[S](desc))
+            val genClassFullName = desc.classPackage + '.' + desc.className
+            val result = Try(clazz.getClassLoader.loadClass(genClassFullName)).getOrElse(genClass[S](desc))
                     .asInstanceOf[Class[S with SynchronizedObject[S]]]
+            if (result == null)
+                throw new ClassNotFoundException(s"Could not load generated class '$genClassFullName'")
+            result
         }
     }
 

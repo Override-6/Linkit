@@ -9,6 +9,8 @@ import scala.reflect.{ClassTag, classTag}
 
 class SyncStaticsDescription[A <: AnyRef]@Persist()(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
 
+    override def className: String = clazz.getSimpleName + "StaticsCaller"
+
     override protected def applyNotFilter(e: Executable): Boolean = {
         val mods = e.getModifiers
         !Modifier.isStatic(mods) || e.isSynthetic

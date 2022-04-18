@@ -41,6 +41,8 @@ class GeneratedClassLoader(val classRootFolder: Path, parent: ClassLoader, mates
                     }
                     i += 1
                 }
+                if (clazz == null)
+                    throw new ClassNotFoundException(name)
                 clazz
             }
         }

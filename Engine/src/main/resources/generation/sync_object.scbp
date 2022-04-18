@@ -30,7 +30,7 @@ class $ClassName$$TParamsIn$ extends AbstractSynchronizedObject[$OriginClassSimp
 
 !!INHERITED_METHODS!! {
     $Override$ def $MethodName$($ParamsIn$): $ReturnType$ = {
-        handleCall[$ReturnType$]($MethodID$)(Array($ParamsOut$))(args => Array(this: Any $ParamsOutLambda$): Any)
+        handleCall[$ReturnType$]($MethodID$)(Array($ParamsOutArray$))(args => Array(this: Any $ParamsOutLambda$): Any)
     }
 }
 

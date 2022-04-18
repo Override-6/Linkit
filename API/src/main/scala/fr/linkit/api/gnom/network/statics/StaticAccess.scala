@@ -3,5 +3,5 @@ import scala.reflect.ClassTag
 
 trait StaticAccess {
 
-    def of[S: ClassTag]: StaticAccessor
+    def apply[S: ClassTag]: StaticAccessor
 }

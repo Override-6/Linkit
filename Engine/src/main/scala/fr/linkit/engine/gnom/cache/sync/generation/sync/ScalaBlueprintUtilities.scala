@@ -72,15 +72,17 @@ object ScalaBlueprintUtilities {
         else word
     }
 
-    def getParameters(desc: MethodDescription, withTypes: Boolean): String = {
-        getParameters(desc.javaMethod.getParameterTypes, withTypes)
+    def getParameters(desc: MethodDescription, withTypes: Boolean, withVarargsInlines: Boolean): String = {
+        val params = desc.javaMethod.getParameters
+        params.zipWithIndex
+                .map { case (param, idx) => s"arg${idx+1}" + (if (withTypes) ": " + toScalaString(param.getType)
+                else if (withVarargsInlines && param.isVarArgs) ":_*" else "") }
+                .mkString(", ")
     }
 
     def getParameters(params: Array[Class[_]], withTypes: Boolean): String = {
         params.zipWithIndex
-                .map(pair => s"arg${
-                    pair._2 + 1
-                }" + (if (withTypes) ": " + toScalaString(pair._1) else ""))
+                .map { case (clazz, idx) => s"arg${idx+1}" + (if (withTypes) ": " + toScalaString(clazz) else "") }
                 .mkString(", ")
     }
 

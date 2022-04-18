@@ -3,9 +3,9 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.statics.StaticAccessor
-import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
+import fr.linkit.engine.internal.utils.UnWrapper
 
-import java.lang.reflect.Modifier
+import java.lang.reflect.{Method, Modifier}
 import scala.language.dynamics
 import scala.reflect.{ClassTag, classTag}
 
@@ -13,25 +13,46 @@ class StaticAccessorImpl(staticCaller: MethodCaller, staticClass: Class[_]) exte
 
     private val staticMethods = {
         staticClass
-            .getDeclaredMethods
-            .filter(m => Modifier.isStatic(m.getModifiers))
-            .tapEach(_.setAccessible(true))
+                .getDeclaredMethods
+                .filter(m => Modifier.isStatic(m.getModifiers))
+                .tapEach(_.setAccessible(true))
     }
 
     override def applyDynamic[T: ClassTag](name: String)(params: Any*): T = {
-        val returnType  = classTag[T].runtimeClass
-        val arrayParams = params.toArray
-        val methodName  = getMethodName(name, returnType, arrayParams)
-        staticCaller.call(methodName, arrayParams).asInstanceOf[T]
+        val returnType                    = classTag[T].runtimeClass
+        val arrayParams                   = params.toArray
+        val (methodName, rectifiedParams) = getMethod(name, returnType, arrayParams)
+        staticCaller.call(methodName, rectifiedParams).asInstanceOf[T]
     }
 
-    private def getMethodName(name: String, returnType: Class[_], params: Array[Any]): String = {
-        val method = staticMethods.find(m => m.getName == name && m.getReturnType == returnType &&
-            ArrayObjectStructure(m.getParameterTypes).isAssignable(params))
-            .getOrElse(throw new NoSuchElementException(s"Could not find static method '$name(${params.mkString("Array(", ", ", ")")}): ${returnType.getName}' in class $staticClass"))
+    private def getMethod(name: String, returnType: Class[_], params: Array[Any]): (String, Array[Any]) = {
+        val method   = staticMethods.find(m => m.getName == name && m.getReturnType == returnType && isAssignable(params, m))
+                .getOrElse(throw new NoSuchElementException(s"Could not find static method '$name(${params.mkString("Array(", ", ", ")")}): ${returnType.getName}' in class $staticClass"))
         val methodID = MethodDescription.computeID(method)
-        if (methodID < 0) s"_${methodID.abs}" else methodID.toString
+        val nameID = if (methodID < 0) s"_${methodID.abs}" else methodID.toString
+        val lastParameter = method.getParameters.lastOption
+        val rectifiedParams = if (lastParameter.exists(_.isVarArgs)) params :+ Array()(ClassTag(lastParameter.get.getType.componentType())) else params
+        (nameID, rectifiedParams)
     }
 
+    private def isAssignable(args: Array[Any], method: Method): Boolean = {
+        val params        = method.getParameters
+        val types         = params.map(_.getType)
+        val lastIsVarargs = params.lastOption.exists(_.isVarArgs)
+        if (!lastIsVarargs && params.length != types.length)
+            return false
+        val argsLength = args.length
+        var i          = 0
+        while (i < argsLength) {
+            val value = args(i)
+            if (value != null) {
+                val tpe = if (lastIsVarargs && i >= types.length) types.last else types(i)
+                if (!(tpe.isAssignableFrom(value.getClass) || tpe.isAssignableFrom(UnWrapper.getPrimitiveClass(value))))
+                    return false
+            }
+            i += 1
+        }
+        true
+    }
 
 }

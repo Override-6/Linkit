@@ -31,7 +31,7 @@ abstract class AbstractValueScope[A](override val name: String,
                 .map(getScopeBlock)
     }
     private val conditions = findFlowControllers()
-    private val values     = mutable.Map.empty[String, BlueprintValue[A]]
+    private val values     = mutable.Map.empty[String, BlueprintValueSupplier[A]]
     private val subScopes  = mutable.Map.empty[String, AbstractValueScope[A]#SubScopeCategory[_]]
     private val bindingLogics = ListBuffer.empty[AbstractValueScope[A] => Unit]
 
@@ -56,7 +56,7 @@ abstract class AbstractValueScope[A](override val name: String,
         ScopeBlock(name, pos, LexerUtils.nextBlock(upperBlueprint, pos))
     }
 
-    protected def bindValue(pair: (String, A => String)): Unit = {
+    override def bindValue(pair: (String, A => String)): Unit = {
         bindingLogics += (_.bindValue(pair))
         values.put(pair._1, BlueprintValueSupplier[A](pair)(upperBlueprint))
     }
@@ -149,7 +149,7 @@ abstract class AbstractValueScope[A](override val name: String,
     case class ScopeBlock(name: String, startPos: Int, blockBlueprint: String) {
 
         val blockLength: Int = {
-            upperBlueprint.indexOf('{', startPos) - startPos + blockBlueprint.length + 2
+            (upperBlueprint.indexOf('{', startPos) - startPos) + blockBlueprint.length + 2
         }
     }
 
