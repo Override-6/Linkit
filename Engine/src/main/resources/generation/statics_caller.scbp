@@ -15,8 +15,8 @@ package $ClassPackage$
 import $OriginClassName$
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.SyncObjectReference
-import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
+import fr.linkit.engine.gnom.network.statics.StaticsCaller
 import fr.linkit.engine.internal.utils.JavaUtils.nl
 
 import scala.annotation.switch
@@ -26,7 +26,9 @@ import scala.annotation.switch
 * and methods required for a SynchronizedObject
 * */
 @SerialVersionUID($CompileTime$L)
-class $ClassName$ extends MethodCaller {
+class $ClassName$ extends StaticsCaller {
+
+    override final val staticsTarget: Class[_] = classOf[$OriginClassSimpleName$]
 
     override final def call(nameId: String, args: Array[Any]): Any = {
         (nameId: @switch) match {
@@ -40,6 +42,8 @@ class $ClassName$ extends MethodCaller {
 !!INHERITED_METHODS!! {
     protected def _$MethodNameID$($ParamsIn$): $ReturnType$ = $OriginClassSimpleName$.$MethodName$($ParamsOut$)
 }
+}
 
-
+final object $ClassName$ {
+    final val staticsTarget: Class[_] = classOf[$OriginClassSimpleName$]
 }

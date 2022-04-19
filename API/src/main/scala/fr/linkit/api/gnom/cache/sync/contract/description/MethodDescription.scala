@@ -18,7 +18,13 @@ import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription.comp
 import java.lang.reflect.{InaccessibleObjectException, Method, Parameter}
 
 case class MethodDescription(javaMethod: Method,
-                             classDesc: SyncStructureDescription[_ <: AnyRef]) {
+                             classDesc: SyncStructureDescription[_ <: AnyRef],
+                             methodId: Int) {
+
+    def this(javaMethod: Method, classDesc: SyncStructureDescription[_ <: AnyRef]) = {
+        this(javaMethod, classDesc, computeID(javaMethod))
+    }
+
     //TODO native method that cals any method reflectively; this is a fast fix.
     try {
         javaMethod.setAccessible(true)
@@ -29,7 +35,6 @@ case class MethodDescription(javaMethod: Method,
     def getName: String = javaMethod.getName
 
     val params  : Array[Parameter] = javaMethod.getParameters
-    val methodId: Int              = computeID(javaMethod)
 }
 
 object MethodDescription {

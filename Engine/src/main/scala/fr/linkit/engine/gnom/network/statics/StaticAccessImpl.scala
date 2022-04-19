@@ -49,6 +49,6 @@ class StaticAccessImpl(cache: SynchronizedStaticsCache) extends StaticAccess {
 
 object StaticAccessImpl {
 
-    private final val Blueprint                 = new StaticsCallerClassBlueprint(getClass.getResourceAsStream("/generation/sync_statics.scbp"))
+    private final val Blueprint                 = new StaticsCallerClassBlueprint(getClass.getResourceAsStream("/generation/statics_caller.scbp"))
     private final val CompilationRequestFactory = new ClassCompilationRequestFactory[SyncStaticsDescription[_], MethodCaller](Blueprint)
 }

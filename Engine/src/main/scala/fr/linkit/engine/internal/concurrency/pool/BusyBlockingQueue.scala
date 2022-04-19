@@ -13,12 +13,11 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.AppLogger
+
 import java.util
 import java.util.concurrent.{BlockingQueue, TimeUnit}
-
 import scala.collection.mutable.ListBuffer
 
 /**

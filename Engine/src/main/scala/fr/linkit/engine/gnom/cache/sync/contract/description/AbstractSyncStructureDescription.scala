@@ -57,10 +57,12 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz:
 
     private def collectMethods(): Map[Int, MethodDescription] = {
         getFiltered
-                .map(MethodDescription(_, this))
+                .map(toMethodDesc)
                 .map(desc => (desc.methodId, desc))
                 .toMap
     }
+
+    protected def toMethodDesc(method: Method): MethodDescription = new MethodDescription(method, this)
 
     private def getAllMethods: ListBuffer[Method] = {
         val buff = ListBuffer.from[Method](clazz.getMethods)

@@ -20,7 +20,6 @@ import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.{AppLogger, Reason}
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence

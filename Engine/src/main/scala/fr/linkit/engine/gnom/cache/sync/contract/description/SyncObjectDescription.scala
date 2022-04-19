@@ -11,7 +11,7 @@ import java.lang.reflect.{Executable, Method, Modifier}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-class SyncObjectDescription[A <: AnyRef] @Persist() private(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
+class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
 
     def listMethods[L >: A](limit: Class[L]): Iterable[MethodDescription] = {
         listMethods().filter(m => limit.isAssignableFrom(m.javaMethod.getDeclaringClass))

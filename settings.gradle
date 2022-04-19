@@ -27,3 +27,5 @@ findProject(':Examples:RemoteAPIImplementationControl:ClientSide')?.name = 'Clie
 findProject(':Examples:RemoteAPIImplementationControl:API')?.name = 'API'
 findProject(':Examples:RemoteFileSystemControl:ServerStorage')?.name = 'ServerStorage'
 findProject(':Examples:RemoteFileSystemControl:ClientSide')?.name = 'ClientSide'
+include 'Misc-Codebin'
+

@@ -75,7 +75,7 @@ object ScalaUtils {
 
     def getValue(instance: Any, field: Field): Any = {
         val clazz  = field.getType
-        val offset = TheUnsafe.objectFieldOffset(field)
+        val offset = if (Modifier.isStatic(field.getModifiers)) TheUnsafe.staticFieldOffset(field) else TheUnsafe.objectFieldOffset(field)
         if (clazz.isPrimitive) {
             (clazz.getName: @switch) match {
                 case "int"     => TheUnsafe.getInt(instance, offset)
@@ -103,7 +103,7 @@ object ScalaUtils {
             else
                 TheUnsafe.objectFieldOffset(field)
         }
-        val cookie = if (instance == null) TheUnsafe.staticFieldBase(field) else instance
+        val cookie      = if (instance == null) TheUnsafe.staticFieldBase(field) else instance
         import UnWrapper.unwrap
 
         import java.lang

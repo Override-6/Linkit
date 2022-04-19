@@ -14,9 +14,6 @@
 package fr.linkit.engine.internal.utils
 
 import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
-import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
-import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
