@@ -68,7 +68,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
             return None
         val path = location.nodePath
         trees.get(path.head)
-            .flatMap(_.findNode(path).flatMap((x: SyncNode[_]) => x match {
+            .flatMap(_.findNode(path).flatMap((x: ObjectNode[_]) => x match {
                 case node: ObjectSyncNode[_] => Some(node.synchronizedObject)
                 case _                       => None
             }))

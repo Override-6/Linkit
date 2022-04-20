@@ -14,13 +14,16 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.tree.SyncNode
 
 trait SyncNodeDataFactory {
 
-    def newObjectData[A <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], id: Int,
-                                   syncObject: A with SynchronizedObject[A], origin: Option[AnyRef],
-                                   ownerID: String): ObjectNodeData[A]
+    def newChippedObjectData[A <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], id: Int,
+                                          origin: Option[AnyRef],
+                                          ownerID: String): ChippedObjectNodeData[A]
+
+    def newSyncObjectData[A <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], id: Int,
+                                       syncObject: A with SynchronizedObject[A], origin: Option[AnyRef],
+                                       ownerID: String): SyncObjectNodeData[A]
 
     def newUnknownObjectData[A <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], path: Array[Int]): NodeData[A]
 }

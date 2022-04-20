@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
-import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode}
+import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, ObjectNode}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
@@ -88,11 +88,11 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         createNewTree(path.head, reference.ownerID, wrapper)
     }
 
-    override def newObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef],
+    override def newSyncObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef],
                                             id: Int,
                                             syncObject: B with SynchronizedObject[B],
                                             origin: Option[AnyRef],
-                                            ownerID: String): ObjectNodeData[B] = {
+                                            ownerID: String): SyncObjectNodeData[B] = {
         val tree          = parent.tree
         val path          = parent.treePath :+ id
         val behaviorStore = tree.contractFactory
@@ -102,7 +102,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val reference     = new SyncObjectReference(family, cacheID, ownerID, path)
         val puppeteer     = new ObjectPuppeteer[B](channel, this, reference)
         val presence      = forest.getPresence(reference)
-        new ObjectNodeData[B](
+        new SyncObjectNodeData[B](
             puppeteer, chip, contract,
             syncObject, origin.map(new WeakReference(_)).orNull
         )(reference, presence, currentIdentifier, tree.asInstanceOf[DefaultSynchronizedObjectTree[B]], Some(parent))
@@ -211,7 +211,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         }
     }
 
-    private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
+    private def findNode(path: Array[Int]): Option[ObjectNode[A]] = {
         forest
                 .findTree(path.head)
                 .flatMap(tree => {

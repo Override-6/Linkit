@@ -24,7 +24,7 @@ import scala.collection.mutable.ListBuffer
  *
  * @tparam A the super type of the synchronized object
  */
-trait SyncNode[A <: AnyRef] {
+trait ObjectNode[A <: AnyRef] {
 
     val tree: SynchronizedObjectTree[_]
 
@@ -46,10 +46,10 @@ trait SyncNode[A <: AnyRef] {
     /**
      * This node's parent (null if this node is a root node)
      */
-    @Nullable def parent: SyncNode[_]
+    @Nullable def parent: ObjectNode[_]
 
     lazy val treePath: Array[Int] = {
-        var parent: SyncNode[_] = this
+        var parent: ObjectNode[_] = this
         val buff                = ListBuffer.empty[Int]
         while (parent != null) {
             buff += parent.id

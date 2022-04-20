@@ -15,14 +15,17 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode}
+import fr.linkit.api.gnom.cache.sync.tree.{ChippedObjectNode, ObjectNode, ObjectSyncNode}
 
-sealed trait InternalSyncNode[A <: AnyRef] extends MutableSyncNode[A] with TrafficInterestedSyncNode[A] with SyncNode[A] {
+sealed trait InternalSyncNode[A <: AnyRef] extends MutableSyncNode[A] with TrafficInterestedSyncNode[A] with ObjectNode[A] {
 
 }
 
-trait InternalObjectSyncNode[A <: AnyRef] extends InternalSyncNode[A] with ObjectSyncNode[A] {
-    val puppeteer: Puppeteer[A]
-
+trait InternalChippedObjectNode[A <: AnyRef] extends InternalSyncNode[A] with ChippedObjectNode[A] {
     val chip: Chip[A]
 }
+
+trait InternalObjectSyncNode[A <: AnyRef] extends InternalChippedObjectNode[A] with ObjectSyncNode[A] {
+    val puppeteer: Puppeteer[A]
+}
+

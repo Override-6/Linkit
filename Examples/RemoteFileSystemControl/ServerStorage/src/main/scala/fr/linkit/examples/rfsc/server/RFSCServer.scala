@@ -15,7 +15,7 @@ object RFSCServer {
 
     private def createConnection(identifier0: String): CentralConnection = {
         val config = new ServerApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = "C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = identifier0
@@ -37,7 +37,7 @@ object RFSCServer {
                 .attachToCache(40, DefaultSynchronizedObjectCache[mutable.HashMap[String, String]])
                 .syncObject(0, Constructor[mutable.HashMap[String, String]](), contracts)
         val statics    = network.newStaticAccess(1, contracts)
-        val wtf = statics[Path].of[Path]("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\CompilationCenter")
+        val wtf = statics[Path].of[Path]("C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home\\CompilationCenter")
         println(wtf)
     }
 

@@ -41,7 +41,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
 
     /**
      * Once an object [[A]] gets posted, it will create a [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]],
-     * in which the root node ([[fr.linkit.api.gnom.cache.sync.tree.SyncNode]]) will contains sub nodes for inner synchronized objects. <br>
+     * in which the root node ([[fr.linkit.api.gnom.cache.sync.tree.ObjectNode]]) will contains sub nodes for inner synchronized objects. <br>
      * The inner objects can be synchronized fields, synchronized method parameters and return values of the object.<br>
      * If a field, a parameter or whatever contains sub synchronized objects, other nodes will be set as their child.
      * Here is an example :
@@ -56,7 +56,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * }}}
      * Each node contains an ID, the path is an array of ids from the root's id to the node id
      *
-     * @see [[fr.linkit.api.gnom.cache.sync.tree.SyncNode]]
+     * @see [[fr.linkit.api.gnom.cache.sync.tree.ObjectNode]]
      * @see [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]]
      * */
     val forest: SynchronizedObjectForest[A]

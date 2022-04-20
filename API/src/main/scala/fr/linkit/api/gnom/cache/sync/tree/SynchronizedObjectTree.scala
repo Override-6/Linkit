@@ -43,11 +43,11 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @tparam B the type of the node's synchronized object
      * @return Some(SyncNode) if found, None instead.
      */
-    def findNode[B <: AnyRef](path: Array[Int]): Option[SyncNode[B]]
+    def findNode[B <: AnyRef](path: Array[Int]): Option[ObjectNode[B]]
 
     /**
      *
-     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[SyncNode]]
+     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ObjectNode]]
      *
      * @throws CanNotSynchronizeException if the object is already synchronized.
      * @throws IllegalArgumentException   if the given parent does not belongs to this tree.
@@ -60,11 +60,11 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @return the created node
      */
     //TODO Should be removed (or only used internally)
-    def insertObject[B <: AnyRef](parent: SyncNode[_], source: B, ownerID: String): ObjectSyncNode[B]
+    def insertObject[B <: AnyRef](parent: ObjectNode[_], source: B, ownerID: String): ObjectSyncNode[B]
 
     /**
      *
-     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[SyncNode]]
+     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ObjectNode]]
      *
      * @throws CanNotSynchronizeException if the object is already synchronized.
      * @throws IllegalArgumentException   if the given parent is does not belongs to this tree.

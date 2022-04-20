@@ -18,7 +18,7 @@ import fr.linkit.engine.internal.language.bhv.lexer.Keyword;
 public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
     Import, Describe, Method, Code, Enable, Stub, Name,
     Mirroring, Disable, Statics, Hide, Following, Modifier,
-    Sync, ReturnValue, Foreach,
+    Sync, ReturnValue, Foreach, In, Out,
     //Agreements
     Agreement,
     Discard, Accept, And, Appoint, If, Else, Is, Not

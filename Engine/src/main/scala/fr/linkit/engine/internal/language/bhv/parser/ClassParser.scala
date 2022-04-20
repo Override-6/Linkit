@@ -13,11 +13,11 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import fr.linkit.engine.internal.language.bhv.BHVLanguageException
+import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ast}
 import fr.linkit.engine.internal.language.bhv.ast._
+import fr.linkit.engine.internal.language.bhv.ast
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
-import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageToken
 
 object ClassParser extends BehaviorLanguageParser {
 
@@ -30,7 +30,7 @@ object ClassParser extends BehaviorLanguageParser {
         val methodModifierParser       = {
             ((identifier | ReturnValue ^^^ "returnvalue") <~ Arrow) ~ (identifier | modifiers) ^^ {
                 case target ~ (ref: String)                 => ValueModifierReference(target, ref)
-                case target ~ (mods: Seq[LambdaExpression]) => ModifierExpression(target, mods.find(_.kind == In), mods.find(_.kind == Out))
+                case target ~ (mods: Seq[LambdaExpression]) => ModifierExpression(target, mods.find(_.kind == ast.In), mods.find(_.kind == ast.Out))
             }
         }
         val returnvalueState           = syncOrNot <~ ReturnValue | success(SynchronizeState(false, false))

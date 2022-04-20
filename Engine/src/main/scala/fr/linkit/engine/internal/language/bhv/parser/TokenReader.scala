@@ -25,6 +25,12 @@ class TokenReader[T <: Token]private(tokens: Seq[(T, Position)],
         this(context.fileTokens, context.fileSource, context.filePath)
     }
 
+    override def toString: String = {
+        val core = tokens.map(_._1).take(5).mkString(" ")
+        if (tokens.length > 5) core + "..."
+        else core
+    }
+
     override def first: T = tokens.head._1
 
     override def rest: Reader[T] = new TokenReader(tokens.tail, source,  filePath)

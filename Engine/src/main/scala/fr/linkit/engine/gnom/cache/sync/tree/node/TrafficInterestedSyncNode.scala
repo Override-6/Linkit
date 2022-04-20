@@ -13,12 +13,12 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.tree.SyncNode
+import fr.linkit.api.gnom.cache.sync.tree.ObjectNode
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.packet.traffic.channel.request.ResponseSubmitter
 
-trait TrafficInterestedSyncNode[A <: AnyRef] extends SyncNode[A] {
+trait TrafficInterestedSyncNode[A <: AnyRef] extends ObjectNode[A] {
 
     def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit
 

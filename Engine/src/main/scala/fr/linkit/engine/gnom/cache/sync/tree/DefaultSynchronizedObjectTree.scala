@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync.contract.SyncObjectFieldManipulation
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SyncNode, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, ObjectNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.engine.gnom.cache.sync.instantiation.ContentSwitcher
@@ -74,7 +74,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new InvalidNodePathException("Path is empty")
     }
 
-    override def insertObject[B <: AnyRef](parent: SyncNode[_], source: B, ownerID: String): ObjectSyncNode[B] = {
+    override def insertObject[B <: AnyRef](parent: ObjectNode[_], source: B, ownerID: String): ObjectSyncNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not owner by this tree's cache.")
         insertObject[B](parent.treePath, source, ownerID)
