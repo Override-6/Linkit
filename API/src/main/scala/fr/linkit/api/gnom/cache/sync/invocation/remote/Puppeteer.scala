@@ -26,11 +26,11 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The synchronized object's node informations.
      */
-    val nodeLocation: SyncObjectReference
+    val nodeReference: SyncObjectReference
     /**
      * The engine's identifier that have created the synchronized object
      * */
-    val ownerID: String = nodeLocation.ownerID
+    val ownerID: String = nodeReference.ownerID
 
     /**
      * The object center that stores the synchronized object.

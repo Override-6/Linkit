@@ -33,7 +33,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                                                                override val id: Int,
                                                                override val contractFactory: ObjectContractFactory) extends SynchronizedObjectTree[A] {
 
-    private var root: RootObjectSyncNodeImpl[A] = _
+    private var root: RootObjectNodeImpl[A] = _
 
     def this(currentIdentifier: String,
              network: Network,
@@ -41,7 +41,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
              id: Int,
              instantiator: SyncInstanceInstantiator,
              dataFactory: SyncNodeDataFactory,
-             behaviorTree: ObjectContractFactory)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNodeImpl[A]) = {
+             behaviorTree: ObjectContractFactory)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectNodeImpl[A]) = {
         this(currentIdentifier, network, center, instantiator, dataFactory, id, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)
@@ -52,7 +52,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         scanSyncObjectFields(root, currentIdentifier, root.synchronizedObject)
     }
 
-    def getRoot: RootObjectSyncNodeImpl[A] = root
+    def getRoot: RootObjectNodeImpl[A] = root
 
     override def rootNode: ObjectSyncNode[A] = root
 

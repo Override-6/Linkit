@@ -88,24 +88,28 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         createNewTree(path.head, reference.ownerID, wrapper)
     }
 
-    override def newSyncObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef],
-                                            id: Int,
-                                            syncObject: B with SynchronizedObject[B],
-                                            origin: Option[AnyRef],
-                                            ownerID: String): SyncObjectNodeData[B] = {
-        val tree          = parent.tree
+    override def newChippedObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], id: Int, origin: Option[AnyRef], originClass: Class[_], ownerID: String): ChippedObjectNodeData[B] = {
+        val tree          = parent.tree.asInstanceOf[DefaultSynchronizedObjectTree[B]]
         val path          = parent.treePath :+ id
         val behaviorStore = tree.contractFactory
         val context       = UsageSyncObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId)
-        val contract      = behaviorStore.getObjectContract[B](syncObject.getSourceClass, context)
+        val contract      = behaviorStore.getObjectContract[B](originClass.asInstanceOf[Class[B]], context)
         val chip          = ObjectChip[B](contract, network, syncObject)
         val reference     = new SyncObjectReference(family, cacheID, ownerID, path)
-        val puppeteer     = new ObjectPuppeteer[B](channel, this, reference)
         val presence      = forest.getPresence(reference)
-        new SyncObjectNodeData[B](
-            puppeteer, chip, contract,
-            syncObject, origin.map(new WeakReference(_)).orNull
-        )(reference, presence, currentIdentifier, tree.asInstanceOf[DefaultSynchronizedObjectTree[B]], Some(parent))
+        new ChippedObjectNodeData[B](
+            network, chip, contract, origin.map(new WeakReference(_)).orNull
+        )(new NodeData[B](reference, presence, tree, currentIdentifier, ownerID, Some(parent)))
+    }
+
+    override def newSyncObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef],
+                                                id: Int,
+                                                syncObject: B with SynchronizedObject[B],
+                                                origin: Option[AnyRef],
+                                                ownerID: String): SyncObjectNodeData[B] = {
+        val chippedData = newChippedObjectData[B](parent, id, origin, syncObject.getSourceClass, ownerID)
+        val puppeteer   = new ObjectPuppeteer[B](channel, this, chippedData.reference)
+        new SyncObjectNodeData[B](puppeteer, syncObject)(chippedData)
     }
 
     override def newUnknownObjectData[B <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], path: Array[Int]): NodeData[B] = {
@@ -161,7 +165,6 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         classCenter.preGenerateClasses(classes.toList)
     }
 
-
     private def isObjectPresent(location: SyncObjectReference): Boolean = {
         (location.cacheID == cacheID) && location.family == family && {
             val path = location.nodePath
@@ -178,22 +181,22 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                               contracts: ContractDescriptorData = defaultContracts): DefaultSynchronizedObjectTree[A] = {
         precompileClasses(contracts)
 
-        val nodeLocation = SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
-        val context      = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
-        val factory      = SyncObjectContractFactory(contracts)
+        val nodeReference = SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
+        val context       = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
+        val factory       = SyncObjectContractFactory(contracts)
 
         val rootContract = getRootContract(factory)(creator, context)
         val root         = DefaultInstantiator.newSynchronizedInstance[A](creator)
 
         val chip      = ObjectChip[A](rootContract, network, root)
-        val puppeteer = ObjectPuppeteer[A](channel, this, nodeLocation)
-        val presence  = forest.getPresence(nodeLocation)
+        val puppeteer = ObjectPuppeteer[A](channel, this, nodeReference)
+        val presence  = forest.getPresence(nodeReference)
         val origin    = creator.getOrigin.map(new WeakReference(_)).orNull
         val rootNode  = (tree: DefaultSynchronizedObjectTree[A]) => {
-            val data = new ObjectNodeData[A](
-                puppeteer, chip, rootContract, root, origin)(
-                nodeLocation, presence, currentIdentifier, tree, None)
-            new RootObjectSyncNodeImpl[A](data)
+            val regularData = new NodeData[A](nodeReference, presence, tree, currentIdentifier, rootObjectOwner, None)
+            val chipData    = new ChippedObjectNodeData[A](network, chip, rootContract, origin)(regularData)
+            val syncData    = new SyncObjectNodeData[A](puppeteer, root)(chipData)
+            new RootObjectNodeImpl[A](syncData)
         }
         val tree      = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
         forest.addTree(id, tree)

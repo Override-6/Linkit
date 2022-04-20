@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 trait SyncNodeDataFactory {
 
     def newChippedObjectData[A <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], id: Int,
-                                          origin: Option[AnyRef],
+                                          origin: Option[AnyRef], originClass: Class[_],
                                           ownerID: String): ChippedObjectNodeData[A]
 
     def newSyncObjectData[A <: AnyRef](parent: MutableSyncNode[_ <: AnyRef], id: Int,

@@ -30,9 +30,9 @@ import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val cache: SynchronizedObjectCache[_],
-                                   override val nodeLocation: SyncObjectReference) extends Puppeteer[S] {
+                                   override val nodeReference: SyncObjectReference) extends Puppeteer[S] {
 
-    private lazy val tree                       = cache.forest.findTree(nodeLocation.nodePath.head).get
+    private lazy val tree                       = cache.forest.findTree(nodeReference.nodePath.head).get
     override     val network          : Network = cache.network
     private      val traffic                    = channel.traffic
     override     val currentIdentifier: String  = traffic.currentIdentifier
@@ -62,7 +62,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                         .nextResponse
                         .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
-                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeLocation, executed by engine '$desiredEngineReturn' failed :\n $exceptionString")
+                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeReference, executed by engine '$desiredEngineReturn' failed :\n $exceptionString")
                     case p: RefPacket[R]                     =>
                         requestResult = p.value
                         isResultSet = true
@@ -75,7 +75,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         requestResult match {
             case r: R with AnyRef =>
                 if (cache.forest.asInstanceOf[DefaultSyncObjectForest[AnyRef]].isObjectLinked(r))
-                    tree.insertObject(nodeLocation.nodePath, r, agreement.getAppointedEngineReturn).synchronizedObject
+                    tree.insertObject(nodeReference.nodePath, r, agreement.getAppointedEngineReturn).synchronizedObject
                 else r
         }
     }
@@ -95,7 +95,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     }
 
     override def synchronizedObj(obj: Any): SynchronizedObject[AnyRef] = {
-        val currentPath = nodeLocation.nodePath
+        val currentPath = nodeReference.nodePath
         tree.insertObject(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier).synchronizedObject
     }
 
@@ -107,7 +107,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)
-                    .addPacket(InvocationPacket(nodeLocation.nodePath, methodID, args, returnEngine))
+                    .addPacket(InvocationPacket(nodeReference.nodePath, methodID, args, returnEngine))
                     .submit()
         }
 
