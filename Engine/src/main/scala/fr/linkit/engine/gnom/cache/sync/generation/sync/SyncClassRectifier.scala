@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.gnom.cache.sync.invocation.local.AbstractMethodInvocationException
-import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{JavaKeywords, SuperMethodModifiers, getMethodDescriptor}
 import javassist._
@@ -62,7 +62,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
 
         // Removes a potential 'reference' method that overrides the actual superClass's reference method and returns the wrong reference object
         val met = ctClass.getDeclaredMethods
-                .find(m => m.getName == "reference" && m.getReturnType.getName != classOf[SyncObjectReference].getName)
+                .find(m => m.getName == "reference" && m.getReturnType.getName != classOf[ConnectedObjectReference].getName)
                 .get
         ctClass.removeMethod(met)
         addMethod("reference", s"()L${slashDot(classOf[NetworkObjectReference])};")

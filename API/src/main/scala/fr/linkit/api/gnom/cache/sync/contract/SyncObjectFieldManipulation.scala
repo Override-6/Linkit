@@ -13,17 +13,17 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.ConnectedObject
 import fr.linkit.api.gnom.network.Engine
 
 trait SyncObjectFieldManipulation {
 
     val engine: Engine
 
-    def findSynchronizedVersion(origin: Any): Option[SynchronizedObject[AnyRef]]
+    def findConnectedVersion(origin: Any): Option[ConnectedObject[AnyRef]]
 
-    def initSyncObject(sync: SynchronizedObject[AnyRef]): Unit
+    def initObject(sync: ConnectedObject[AnyRef]): Unit
 
-    def syncObject(obj: AnyRef): SynchronizedObject[AnyRef]
+    def createConnectedObject(obj: AnyRef, kind: RegistrationKind): ConnectedObject[AnyRef]
 
 }

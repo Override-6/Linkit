@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
-import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.SyncObjectStructure
@@ -24,11 +24,11 @@ class SynchronizedObjectPersistence[T <: SynchronizedObject[T]](objectPersistenc
     override val structure: ObjectStructure = new SyncObjectStructure(objectPersistence.structure)
 
     override def initInstance(syncObj: T, args: Array[Any], box: ControlBox): Unit = {
-        setReference(syncObj, args.last.asInstanceOf[SyncObjectReference])
+        setReference(syncObj, args.last.asInstanceOf[ConnectedObjectReference])
         objectPersistence.initInstance(syncObj, args.dropRight(1), box)
     }
 
-    private def setReference(syncObj: SynchronizedObject[T], reference: SyncObjectReference): Unit = {
+    private def setReference(syncObj: SynchronizedObject[T], reference: ConnectedObjectReference): Unit = {
         val field = syncObj.getClass.getDeclaredField("location")
         ScalaUtils.setValue(syncObj, field, reference)
     }

@@ -17,18 +17,18 @@ import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
-import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SyncObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectReference, ConnectedObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    protected final          var location         : SyncObjectReference     = _
-    @transient private final var puppeteer        : Puppeteer[A]            = _
-    @transient private final var contract         : StructureContract[A]    = _
-    @transient private final var choreographer    : InvocationChoreographer = _
-    @transient private final var presenceOnNetwork: NetworkObjectPresence   = _
-    @transient private final var node             : ObjectSyncNode[A]       = _
+    protected final          var location         : ConnectedObjectReference = _
+    @transient private final var puppeteer        : Puppeteer[A]             = _
+    @transient private final var contract         : StructureContract[A]     = _
+    @transient private final var choreographer    : InvocationChoreographer  = _
+    @transient private final var presenceOnNetwork: NetworkObjectPresence    = _
+    @transient private final var node             : ObjectSyncNode[A]        = _
 
     //cached values for handleCall
     @transient private final var currentIdentifier: String  = _
@@ -39,7 +39,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     def initialize(node: ObjectSyncNodeImpl[A]): Unit = {
         if (isInitialized)
-            throw new SyncObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
+            throw new ConnectedObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
         //if (location != null && location != node.reference)
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
         val puppeteer = node.puppeteer
@@ -59,7 +59,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def isMirroring: Boolean = !isNotMirroring
 
-    override def reference: SyncObjectReference = location
+    override def reference: ConnectedObjectReference = location
 
     override def presence: NetworkObjectPresence = presenceOnNetwork
 
@@ -84,19 +84,19 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             opt.get
         }
         //Arguments that must be synchronized wil be synchronized according to method contract.
-        val synchronizedArgs = methodContract.synchronizeArguments(args, puppeteer.synchronizedObj(_))
+        methodContract.connectArguments(args, puppeteer.createConnectedObj)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
         if (!methodContract.isRMIActivated || choreographer.isMethodExecutionForcedToLocal) {
-            return methodContract.synchronizeReturnValue(superCall(synchronizedArgs), puppeteer.synchronizedObj(_)).asInstanceOf[R]
+            return methodContract.connectReturnValue(superCall(args), puppeteer.createConnectedObj).asInstanceOf[R]
         }
         val data = new methodContract.RemoteInvocationExecution {
-            override val syncObject: SynchronizedObject[_] = AbstractSynchronizedObject.this
-            override val arguments : Array[Any]            = synchronizedArgs
-            override val puppeteer : Puppeteer[_]          = AbstractSynchronizedObject.this.puppeteer
+            override val obj      : ChippedObject[_] = AbstractSynchronizedObject.this
+            override val arguments: Array[Any]            = args
+            override val puppeteer: Puppeteer[_]          = AbstractSynchronizedObject.this.puppeteer
 
             override def doSuperCall(): Any = {
                 if (isNotMirroring) {
-                    superCall(synchronizedArgs)
+                    superCall(args)
                 } else throw new MirroringObjectInvocationException(getMirroringCallExceptionMessage)
             }
         }

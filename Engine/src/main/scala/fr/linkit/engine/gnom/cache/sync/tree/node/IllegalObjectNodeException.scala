@@ -11,12 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync
+package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.engine.gnom.cache.sync.tree.SynchronizedObjectException
 
-case class OriginReferencedSyncObjectReference(syncReference: SyncObjectReference, originReference: NetworkObjectReference)
-        extends SyncObjectReference(syncReference.ownerID, syncReference.cacheID, syncReference.ownerID, syncReference.nodePath) {
+class IllegalObjectNodeException(msg: String, cause: Throwable = null) extends SynchronizedObjectException(msg, cause) {
 
-    override def toString: String = s"sync: ${super.toString} origin: $originReference"
 }

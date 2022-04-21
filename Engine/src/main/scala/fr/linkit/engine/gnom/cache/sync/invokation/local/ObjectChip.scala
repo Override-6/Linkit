@@ -16,22 +16,23 @@ package fr.linkit.engine.gnom.cache.sync.invokation.local
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, StructureContract}
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
-import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, InvocationChoreographer, MirroringObjectInvocationException}
+import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.internal.utils.ScalaUtils
 
-import java.lang.reflect.Modifier
+class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
+                                      network: Network, chippedObject: ChippedObject[A])
+        extends Chip[A] {
 
-class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
-                                      network: Network)
-                                     (chipped: S, isOrigin: Boolean, sourceClass: Class[_], choreographer: InvocationChoreographer)
-        extends Chip[S] {
+    private val chipped       = chippedObject.connected
+    private val choreographer = chippedObject.getChoreographer
+    private val sourceClass   = chippedObject.getConnectedObjectClass
+    private val isDistant     = contract.remoteObjectInfo.isDefined
+    private val isOrigin      = chippedObject.isOrigin
 
-    private final val isDistant = contract.remoteObjectInfo.isDefined
-
-    override def updateObject(obj: S): Unit = {
+    override def updateObject(obj: A): Unit = {
         ScalaUtils.pasteAllFields(chipped, obj)
     }
 
@@ -43,7 +44,7 @@ class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
         if (hideMsg.isDefined)
             throw new HiddenMethodInvocationException(hideMsg.get)
         if (!isOrigin && isDistant)
-            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring ${chipped.reference} on engine ${chipped.ownerID}")
+            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring ${chippedObject.reference} on engine ${chippedObject.ownerID}")
         val procrastinator = methodContract.procrastinator
         if (procrastinator != null) {
             callMethodProcrastinator(methodContract, params, caller)
@@ -56,8 +57,8 @@ class ObjectChip[S <: AnyRef] private(contract: StructureContract[S],
         choreographer.disableInvocations {
             ExecutorEngine.setCurrentEngine(caller)
             val data   = new contract.InvocationExecution {
-                override val syncObject: SynchronizedObject[_] = ObjectChip.this.chipped
-                override val arguments : Array[Any]            = params
+                override val obj: ChippedObject[_] = ObjectChip.this.chippedObject
+                override val arguments : Array[Any]       = params
             }
             val result = contract.executeMethodInvocation(caller, data)
             ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
@@ -84,10 +85,10 @@ object ObjectChip {
 
     object NoResult
 
-    def apply[S <: AnyRef](contract: StructureContract[S], network: Network, chipped: S): ObjectChip[S] = {
-        if (chipped == null)
-            throw new NullPointerException("sync object is null !")
-        new ObjectChip[S](contract, chipped, network)
+    def apply[S <: AnyRef](contract: StructureContract[S], network: Network, chippedObject: ChippedObject[S]): ObjectChip[S] = {
+        if (chippedObject == null)
+            throw new NullPointerException("chipped object is null !")
+        new ObjectChip[S](contract, network, chippedObject)
     }
 
 }

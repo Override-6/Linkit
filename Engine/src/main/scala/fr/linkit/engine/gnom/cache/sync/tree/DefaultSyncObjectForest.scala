@@ -14,12 +14,12 @@
 package fr.linkit.engine.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.tree._
-import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
-import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableSyncNode, UnknownObjectSyncNode}
+import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, UnknownObjectSyncNode}
 import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
@@ -27,35 +27,35 @@ import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
 import scala.collection.mutable
 
 class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCache[A], omc: ObjectManagementChannel)
-    extends AbstractNetworkPresenceHandler[SyncObjectReference](omc)
-        with InitialisableNetworkObjectLinker[SyncObjectReference] with SynchronizedObjectForest[A] {
+    extends AbstractNetworkPresenceHandler[ConnectedObjectReference](omc)
+        with InitialisableNetworkObjectLinker[ConnectedObjectReference] with SynchronizedObjectForest[A] {
 
     private val trees        = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
     private val unknownTrees = new mutable.HashMap[Int, UnknownTree]()
 
     /*
-    * used to store objects whose synchronized version must have their bound identifier.
+    * used to store objects whose synchronized version of keys already have bound references.
     * */
-    private val linkedOrigins = mutable.HashMap.empty[AnyRef, SyncObjectReference]
+    private val linkedOrigins = mutable.HashMap.empty[AnyRef, ConnectedObjectReference]
 
-    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SyncObjectReference]
+    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ConnectedObjectReference]
 
     override def findTree(id: Int): Option[SynchronizedObjectTree[A]] = {
         trees.get(id)
     }
 
-    override def registerReference(ref: SyncObjectReference): Unit = {
+    override def registerReference(ref: ConnectedObjectReference): Unit = {
         super.registerReference(ref)
     }
 
-    override def unregisterReference(ref: SyncObjectReference): Unit = {
+    override def unregisterReference(ref: ConnectedObjectReference): Unit = {
         super.unregisterReference(ref)
     }
 
     override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {
             val node       = tree.rootNode
-            val syncObject = node.synchronizedObject
+            val syncObject = node.obj
             ObjectTreeProfile[A](tree.id, syncObject, node.ownerID, tree.contractFactory.data)
         }
 
@@ -63,31 +63,31 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         new CacheRepoContent[A](array)
     }
 
-    override def findObject(location: SyncObjectReference): Option[NetworkObject[SyncObjectReference]] = {
+    override def findObject(location: ConnectedObjectReference): Option[NetworkObject[ConnectedObjectReference]] = {
         if (location.cacheID != center.cacheID || location.family != center.family)
             return None
         val path = location.nodePath
         trees.get(path.head)
-            .flatMap(_.findNode(path).flatMap((x: ObjectNode[_]) => x match {
-                case node: ObjectSyncNode[_] => Some(node.synchronizedObject)
+            .flatMap(_.findNode(path).flatMap((x: ConnectedObjectNode[_]) => x match {
+                case node: ObjectSyncNode[_] => Some(node.obj)
                 case _                       => None
             }))
     }
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
 
-    override def initializeObject(obj: NetworkObject[_ <: SyncObjectReference]): Unit = {
+    override def initializeObject(obj: NetworkObject[_ <: ConnectedObjectReference]): Unit = {
         obj match {
             case syncObj: A with SynchronizedObject[A] => initializeSyncObject(syncObj)
             case _                                     => throwUnknownObject(obj)
         }
     }
 
-    def linkWithReference(obj: AnyRef, ref: SyncObjectReference): Unit = {
+    def linkWithReference(obj: AnyRef, ref: ConnectedObjectReference): Unit = {
         linkedOrigins(obj) = ref
     }
 
-    def removeLinkedReference(obj: AnyRef): Option[SyncObjectReference] = linkedOrigins.remove(obj)
+    def removeLinkedReference(obj: AnyRef): Option[ConnectedObjectReference] = linkedOrigins.remove(obj)
 
     def isObjectLinked(obj: AnyRef): Boolean = linkedOrigins.contains(obj)
 
@@ -131,15 +131,15 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         def castedSync[X <: AnyRef]: X with SynchronizedObject[X] = syncObj.asInstanceOf[X with SynchronizedObject[X]]
 
         if (nodeOpt.isEmpty) {
-            tree.registerSynchronizedObject(parentPath, path.last, castedSync, reference.ownerID, None).synchronizedObject
+            tree.registerSynchronizedObject(parentPath, path.last, castedSync, reference.ownerID, None).obj
         } else {
             nodeOpt.get match {
                 case node: ObjectSyncNode[_]     =>
-                    if (node.synchronizedObject ne syncObj)
+                    if (node.obj ne syncObj)
                         throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
                 case node: UnknownObjectSyncNode =>
-                    val parent = node.parent.asInstanceOf[MutableSyncNode[AnyRef]]
-                    val data   = center.newObjectData[A](parent, node.id, castedSync, None, reference.ownerID)
+                    val parent = node.parent.asInstanceOf[MutableNode[AnyRef]]
+                    val data   = center.newSyncObjectData[A](parent, node.id, castedSync, None, reference.ownerID)
                     node.setAsKnownObjectNode(data)
             }
         }

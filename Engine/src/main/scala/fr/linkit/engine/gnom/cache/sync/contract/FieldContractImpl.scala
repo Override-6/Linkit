@@ -13,29 +13,34 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncObjectFieldManipulation}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RegistrationKind, SyncObjectFieldManipulation}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, SynchronizedObject}
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 class FieldContractImpl[A](val desc: FieldDescription,
-                           val isSynchronized: Boolean) extends FieldContract[A] {
+                           val registrationKind: RegistrationKind) extends FieldContract[A] {
+
+    private val isRegistered = registrationKind != RegistrationKind.NotRegistered
 
     override def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manip: SyncObjectFieldManipulation): Unit = {
         val field      = desc.javaField
         var fieldValue = ScalaUtils.getValue(obj, field)
         //As the given object is being synchronized,
-        fieldValue = manip.findSynchronizedVersion(fieldValue).getOrElse(fieldValue)
-        if (isSynchronized && fieldValue != null) {
-            fieldValue = fieldValue match {
-                case sync: SynchronizedObject[AnyRef] =>
-                    if (!sync.isInitialized) {
-                        manip.initSyncObject(sync)
-                    }
-                    sync
-                case fieldValue: AnyRef               =>
-                    manip.syncObject(fieldValue)
-            }
+        fieldValue = manip.findConnectedVersion(fieldValue).getOrElse(fieldValue)
+        if (fieldValue == null) {
+            ScalaUtils.setValue(obj, field, null)
+            return
+        }
+
+        fieldValue = fieldValue match {
+            case conn: ConnectedObject[AnyRef]      =>
+                if (!conn.isInitialized) {
+                    manip.initObject(conn)
+                }
+                conn
+            case fieldValue: AnyRef if isRegistered => manip.createConnectedObject(fieldValue, registrationKind)
+            case _                                  => fieldValue
         }
         ScalaUtils.setValue(obj, field, fieldValue)
     }

@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
-import fr.linkit.api.gnom.cache.sync.{OriginReferencedSyncObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{OriginReferencedConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject, SystemNetworkObjectPresence}
@@ -53,7 +53,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
             Some(reference)
         else {
             //send a reference to the object we want to synchronize
-            val opt = findNonNetworkObjectReference(obj).map(OriginReferencedSyncObjectReference(reference, _))
+            val opt = findNonNetworkObjectReference(obj).map(OriginReferencedConnectedObjectReference(reference, _))
             if (opt.isEmpty) {
                 presence match {
                     case presence: ExternalNetworkObjectPresence[_] =>

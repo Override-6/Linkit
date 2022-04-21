@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ast}
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.ast
@@ -22,7 +23,8 @@ import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol.
 object ClassParser extends BehaviorLanguageParser {
 
     private val classParser = {
-        val syncOrNot                  = (Exclamation.? <~ Sync ^^ (_.isEmpty)).? ^^ (s => SynchronizeState(s.isDefined, s.getOrElse(false)))
+        val syncParser                 = (Exclamation.? ~ (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly) ^^ (t => (t._1.isDefined, t._2))).? ^^
+                (s => RegistrationState(s.isDefined, s.map(_._2).getOrElse(NotRegistered)))
         val properties                 = {
             val property = SquareBracketLeft ~> (identifier <~ Equal) ~ identifier <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
             repsep(property, Comma.?)
@@ -33,25 +35,25 @@ object ClassParser extends BehaviorLanguageParser {
                 case target ~ (mods: Seq[LambdaExpression]) => ModifierExpression(target, mods.find(_.kind == ast.In), mods.find(_.kind == ast.Out))
             }
         }
-        val returnvalueState           = syncOrNot <~ ReturnValue | success(SynchronizeState(false, false))
+        val returnvalueState           = syncParser <~ ReturnValue | success(RegistrationState(false, NotRegistered))
         val as                         = Following ~> identifier ^^ AgreementReference
         val foreachMethodEnable        = {
             val notModifiers = not(rep1(methodModifierParser)) withFailureMessage "Global method description can't have any modifier"
             (properties <~ Foreach <~ Method <~ Enable) ~ as.? ~ (BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight).? ^^ {
-                case properties ~ ref ~ rvState => new EnabledMethodDescription(properties, ref, rvState.getOrElse(SynchronizeState(false, false)))
+                case properties ~ ref ~ rvState => new EnabledMethodDescription(properties, ref, rvState.getOrElse(RegistrationState(false, NotRegistered)))
             }
         }
         val foreachMethodDisable       = Foreach ~ Method ~> Disable ^^^ new DisabledMethodDescription()
         val foreachMethod              = foreachMethodEnable | foreachMethodDisable
-        val foreachFields              = syncOrNot <~ Star ^^ (new FieldDescription(_))
+        val foreachFields              = syncParser <~ Star ^^ (new FieldDescription(_))
         val methodSignature            = {
-            val param  = syncOrNot ~ (identifier <~ Colon).? ~ typeParser ^^ { case sync ~ name ~ id => MethodParam(sync, name, id) }
+            val param  = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case sync ~ name ~ id => MethodParam(sync, name, id) }
             val params = repsep(param, Comma)
 
             identifier ~ (ParenLeft ~> params <~ ParenRight).? ^^ { case name ~ params => MethodSignature(name, params.getOrElse(Seq())) }
         }
         val enabledMethodCore          = {
-            (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ SynchronizeState(false, false))
+            (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ RegistrationState(false, NotRegistered))
         }
         val enabledMethodParser        = {
             properties ~ (Enable.? ~> methodSignature) ~ as.? ~ enabledMethodCore ^^ {
@@ -65,12 +67,12 @@ object ClassParser extends BehaviorLanguageParser {
             Hide ~> Method ~> methodSignature ~ literal.? ^^ { case sig ~ msg => HiddenMethodDescription(msg)(sig) }
         }
         val methodsParser              = enabledMethodParser | disabledMethodParser | hiddenMethodParser
-        val fieldsParser               = syncOrNot ~ identifier ^^ { case state ~ name => AttributedFieldDescription(name, state) }
+        val fieldsParser               = syncParser ~ identifier ^^ { case state ~ name => AttributedFieldDescription(name, state) }
         val classHead                  = Describe ~> (Statics | Mirroring).? ~ identifier ~ (Stub ~> identifier).? ^^ {
-            case Some(Mirroring) ~ className ~ stubClass => ClassDescriptionHead(MirroringDescription(stubClass.getOrElse(className)), className)
-            case None ~ className ~ None                 => ClassDescriptionHead(RegularDescription, className)
-            case Some(Statics) ~ className ~ None        => ClassDescriptionHead(StaticsDescription, className)
-            case _@(Some(Statics) | None) ~ className ~ Some(_)  =>
+            case Some(Mirroring) ~ className ~ stubClass        => ClassDescriptionHead(MirroringDescription(stubClass.getOrElse(className)), className)
+            case None ~ className ~ None                        => ClassDescriptionHead(RegularDescription, className)
+            case Some(Statics) ~ className ~ None               => ClassDescriptionHead(StaticsDescription, className)
+            case _@(Some(Statics) | None) ~ className ~ Some(_) =>
                 throw new BHVLanguageException(s"statics or regular description '${className}' cannot define a stub class.")
         }
         val attributedFieldsAndMethods = rep(methodsParser | fieldsParser) ^^ { x =>

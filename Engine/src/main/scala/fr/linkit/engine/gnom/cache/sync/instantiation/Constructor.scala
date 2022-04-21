@@ -30,7 +30,7 @@ class Constructor[A <: AnyRef] (clazz: Class[A], arguments: Array[Any]) extends 
         constructor.newInstance(arguments: _*)
     }
 
-    override def getOrigin: Option[AnyRef] = None
+    override def getOrigin: Option[A] = None
 }
 
 object Constructor {

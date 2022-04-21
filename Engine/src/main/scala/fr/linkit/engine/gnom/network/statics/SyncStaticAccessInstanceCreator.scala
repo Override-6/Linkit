@@ -14,5 +14,5 @@ class SyncStaticAccessInstanceCreator(override val tpeClass: Class[MethodCaller]
         constructor.newInstance(arguments: _*)
     }
 
-    override def getOrigin: Option[AnyRef] = None
+    override def getOrigin: Option[MethodCaller] = None
 }

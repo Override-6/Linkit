@@ -50,9 +50,14 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
                     case paramName =>
                         file.findClass(signature.params.find(_.name.contains(paramName)).get.tpe).getName
                 }
-                submitAll(s"method_${exp.target}_${signature.methodName}_${signature.hashCode()}", className, exp)
+                submitAll(s"method_${exp.target}_${signature.methodName}_${encodedIntMethodString(signature.hashCode())}", className, exp)
             case _ => //fallback will be for modifier references, they don't hold any lambda expression so let's skip them
         }
+    }
+
+    private def encodedIntMethodString(i: Int): String = {
+        if (i > 0) i.toString
+        else "_" + i.abs.toString
     }
 
     private def submitAll(tpe: String, className: String, holder: LambdaExpressionHolder): Unit = {

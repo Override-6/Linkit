@@ -11,15 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree.node
+package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.tree.ObjectNode
-import fr.linkit.api.gnom.packet.channel.request.Submitter
-import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
-import fr.linkit.engine.gnom.packet.traffic.channel.request.ResponseSubmitter
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-trait TrafficInterestedSyncNode[A <: AnyRef] extends ObjectNode[A] {
+case class OriginReferencedConnectedObjectReference(syncReference: ConnectedObjectReference, originReference: NetworkObjectReference)
+        extends ConnectedObjectReference(syncReference.ownerID, syncReference.cacheID, syncReference.ownerID, syncReference.nodePath) {
 
-    def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit
-
+    override def toString: String = s"sync: ${super.toString} origin: $originReference"
 }

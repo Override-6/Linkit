@@ -13,6 +13,18 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-class SyncObjectAlreadyInitialisedException(msg: String) extends RuntimeException(msg) {
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
+import fr.linkit.api.gnom.cache.sync.tree.ChippedObjectNode
+
+trait ChippedObject[A <: AnyRef] extends ConnectedObject[A] {
+
+    override def getNode: ChippedObjectNode[A]
+
+    /**
+     * @return the invocation choreographer of this object
+     * @see InvocationChoreographer
+     */
+    def getChoreographer: InvocationChoreographer
+
 
 }

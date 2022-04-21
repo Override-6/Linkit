@@ -9,6 +9,6 @@ trait ObjectSyncNode[A <: AnyRef] extends ChippedObjectNode[A] {
     /**
      * The synchronized object.
      */
-    val synchronizedObject: A with SynchronizedObject[A]
+    def obj: A with SynchronizedObject[A]
 
 }

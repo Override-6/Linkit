@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.SyncObjectReference
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.SynchronizedObjectException
@@ -24,15 +24,18 @@ class UnknownObjectSyncNode(data: NodeData[AnyRef]) extends MutableSyncNode[AnyR
 
     override val tree          : SynchronizedObjectTree[_] = data.tree
     override val objectPresence: NetworkObjectPresence     = data.presence
-    override val reference     : SyncObjectReference       = data.reference
+    override val reference     : ConnectedObjectReference  = data.reference
     override val ownerID       : String                    = data.ownerID
     override val id            : Int                       = reference.nodePath.last
-    private  val childs                                    = mutable.HashMap.empty[Int, MutableSyncNode[_]]
-    private var parent0        : MutableSyncNode[_]        = data.parent.getOrElse {
+    private  val childs                                    = mutable.HashMap.empty[Int, MutableNode[_]]
+
+    private var parent0        : MutableNode[_]            = data.parent.getOrElse {
         throw new SynchronizedObjectException("Unexpected Unknown Object sync node with no parent")
     }
 
-    override def parent: MutableSyncNode[_] = parent0
+    override def obj: ConnectedObject[AnyRef] = throw new NoSuchElementException(s"Unknown connected Object referenced at '$reference'")
+
+    override def parent: MutableNode[_] = parent0
 
     override def discoverParent(node: ObjectSyncNodeImpl[_]): Unit = {
         if (!parent.isInstanceOf[UnknownObjectSyncNode])
@@ -40,24 +43,25 @@ class UnknownObjectSyncNode(data: NodeData[AnyRef]) extends MutableSyncNode[AnyR
         parent0 = node
     }
 
-    override def addChild(child: MutableSyncNode[_]): Unit = {
+    override def addChild(child: MutableNode[_]): Unit = {
         if (child eq this)
             throw new IllegalArgumentException("can't add self as child")
         childs.put(child.id, child)
     }
 
-    override def getMatchingSyncNode(nonSyncObject: AnyRef): ObjectSyncNode[_ <: AnyRef] = {
-        for (child <- childs.values) {
-            val found = child.getMatchingSyncNode(nonSyncObject)
-            if (found != null)
-                return found
+    override def getMatchingSyncNode(origin: AnyRef): MutableSyncNode[_ <: AnyRef] = {
+        for (child <- childs.values) child match {
+            case child: MutableSyncNode[_] =>
+                val found = child.getMatchingSyncNode(origin)
+                if (found != null)
+                    return found
         }
         null
     }
 
-    def setAsKnownObjectNode[A <: AnyRef](data: ObjectNodeData[A]): ObjectSyncNode[A] = {
+    def setAsKnownObjectNode[A <: AnyRef](data: SyncObjectNodeData[A]): ObjectSyncNode[A] = {
         val parent = data.parent.orNull
-        val node   = new ObjectSyncNodeImpl[A](parent, data)
+        val node   = new ObjectSyncNodeImpl[A](data)
         parent.addChild(node)
         childs.values.foreach(_.discoverParent(node))
         node

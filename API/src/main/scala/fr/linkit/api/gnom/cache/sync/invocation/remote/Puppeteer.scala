@@ -13,10 +13,9 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, SynchronizedObject, SynchronizedObjectCache}
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference, SynchronizedObjectCache}
 import fr.linkit.api.gnom.network.Network
-
-import java.util.concurrent.ThreadLocalRandom
 
 /**
  * The puppeteer of a SynchronizedObject creates all RMI requests and handles the results.
@@ -26,7 +25,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The synchronized object's node informations.
      */
-    val nodeReference: SyncObjectReference
+    val nodeReference: ConnectedObjectReference
     /**
      * The engine's identifier that have created the synchronized object
      * */
@@ -65,7 +64,7 @@ trait Puppeteer[S <: AnyRef] {
     def sendInvoke(invocation: DispatchableRemoteMethodInvocation[_]): Unit
 
     //TODO make this for internal use only
-    def synchronizedObj(obj: Any): SynchronizedObject[AnyRef]
+    def createConnectedObj(obj: Any, registrationKind: RegistrationKind): ConnectedObject[AnyRef]
 
     trait RMIDispatcher {
         def broadcast(args: Array[Any]): Unit

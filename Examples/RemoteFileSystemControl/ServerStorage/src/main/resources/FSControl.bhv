@@ -26,11 +26,7 @@ describe mirroring Path {
 describe statics Path {
     of(path: String, String[]) {
         path -> out: ${(path, remote) => properties("FS_HOME_" + remote.identifier) + s"/$path"}
-        flow {
-            following only_cache_owner;
-            current -> chip returnvalue;
-            not current -> sync (returnvalue, path);
-        }
+        chip returnvalue
     }
     hide method of(URI) "Please use method of(String, String[]) instead."
 }

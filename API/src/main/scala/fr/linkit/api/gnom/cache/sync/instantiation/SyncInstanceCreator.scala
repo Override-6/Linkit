@@ -21,6 +21,6 @@ trait SyncInstanceCreator[A <: AnyRef] {
 
     def getInstance(syncClass: Class[A with SynchronizedObject[A]]): A with SynchronizedObject[A]
 
-    def getOrigin: Option[AnyRef]
+    def getOrigin: Option[A]
 
 }

@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
-import fr.linkit.api.gnom.cache.sync.OriginReferencedSyncObjectReference
+import fr.linkit.api.gnom.cache.sync.OriginReferencedConnectedObjectReference
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
@@ -41,7 +41,7 @@ class ReferencedObject(override val referenceIdx: Int,
         val loc = reference
         loc.getClass.synchronized {
             loc match {
-                case OriginReferencedSyncObjectReference(syncRef, originRef) =>
+                case OriginReferencedConnectedObjectReference(syncRef, originRef) =>
                     val cacheRef = new SharedCacheReference(syncRef.family, syncRef.cacheID)
                     selector.findObject(cacheRef).map {
                         case cache: DefaultSynchronizedObjectCache[AnyRef] =>

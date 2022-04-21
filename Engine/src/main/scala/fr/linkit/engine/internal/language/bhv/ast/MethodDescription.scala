@@ -1,5 +1,7 @@
 package fr.linkit.engine.internal.language.bhv.ast
 
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
+
 trait MethodDescription
 
 trait AttributedMethodDescription extends MethodDescription {
@@ -18,13 +20,13 @@ class HiddenMethodDescription(val hideMessage: Option[String]) extends MethodDes
 
 class EnabledMethodDescription(val properties: List[MethodProperty],
                                val agreement: Option[AgreementReference],
-                               val syncReturnValue: SynchronizeState) extends MethodDescription
+                               val syncReturnValue: RegistrationState) extends MethodDescription
 
 object EnabledMethodDescription {
 
     def apply(properties: List[MethodProperty],
               agreement: Option[AgreementReference],
-              syncReturnValue: SynchronizeState)
+              syncReturnValue: RegistrationState)
              (sig: MethodSignature, mods: List[CompModifier]): EnabledMethodDescription with AttributedMethodDescription = {
         new EnabledMethodDescription(properties, agreement, syncReturnValue) with AttributedEnabledMethodDescription {
             override val signature = sig
@@ -53,9 +55,13 @@ case object DisabledMethodDescription {
 
 case class MethodProperty(name: String, value: String)
 
-case class MethodParam(syncState: SynchronizeState, name: Option[String], tpe: String) {
+case class MethodParam(syncState: RegistrationState, name: Option[String], tpe: String) {
 
-    override def toString: String = (if (syncState.isSync) "sync " else "") + tpe
+    override def toString: String = (syncState.kind match {
+        case RegistrationKind.NotRegistered => ""
+        case RegistrationKind.ChippedOnly   => "chip"
+        case RegistrationKind.Synchronized  => "sync"
+    }) + tpe
 }
 
 case class MethodSignature(methodName: String, params: Seq[MethodParam]) {
@@ -66,6 +72,7 @@ case class MethodSignature(methodName: String, params: Seq[MethodParam]) {
 case class MethodComponentsModifier(paramsModifiers: Map[Int, CompModifier], rvModifiers: Seq[CompModifier])
 
 trait CompModifier {
+
     val target: String
 }
 

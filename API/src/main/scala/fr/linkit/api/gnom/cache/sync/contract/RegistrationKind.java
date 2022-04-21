@@ -11,27 +11,23 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invocation
+package fr.linkit.api.gnom.cache.sync.contract;
 
-import fr.linkit.api.gnom.cache.sync.tree.ChippedObjectNode
-
-/**
- * The invocation information for a synchronized object's method.
- *
- * @tparam R the return type of the method invoked
- * */
-trait MethodInvocation[R] {
+public enum RegistrationKind {
 
     /**
-     * The synchronized object on which the method is called.
+     * don't register the targeted object, ignore it.
      * */
-    val objectNode: ChippedObjectNode[_]
-
+    NotRegistered,
     /**
-     * The method's identifier.
+     * Register the object and make the object become a chipped object.
+     * see {@link fr.linkit.api.gnom.cache.sync.ChippedObject}
      * */
-    val methodID: Int
-
-    var debug: Boolean = true
+    ChippedOnly,
+    /**
+     * Register and start synchronized object registration / generation process for the targeted object.
+     * The object is also chipped, see {@link fr.linkit.api.gnom.cache.sync.SynchronizedObject}
+     * */
+    Synchronized
 
 }

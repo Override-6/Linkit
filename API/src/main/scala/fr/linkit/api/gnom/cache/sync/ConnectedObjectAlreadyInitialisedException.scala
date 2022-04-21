@@ -11,10 +11,8 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract
+package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.{ModifiableValueContract, RegistrationKind}
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
+class ConnectedObjectAlreadyInitialisedException(msg: String) extends RuntimeException(msg) {
 
-class SimpleModifiableValueContract[A](override val registrationKind: RegistrationKind,
-                                       override val modifier: Option[ValueModifier[A]] = None) extends ModifiableValueContract[A]
+}

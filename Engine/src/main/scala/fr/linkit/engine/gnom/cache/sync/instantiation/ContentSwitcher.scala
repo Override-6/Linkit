@@ -28,5 +28,5 @@ class ContentSwitcher[T <: AnyRef](source: T) extends SyncInstanceCreator[T] {
         instance
     }
 
-    override def getOrigin: Option[AnyRef] = Some(source)
+    override def getOrigin: Option[T] = Some(source)
 }

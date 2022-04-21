@@ -26,5 +26,5 @@ class InstanceWrapper[T <: AnyRef](obj: T with SynchronizedObject[T]) extends Sy
         obj
     }
 
-    override def getOrigin: Option[AnyRef] = Some(obj)
+    override def getOrigin: Option[T] = Some(obj)
 }

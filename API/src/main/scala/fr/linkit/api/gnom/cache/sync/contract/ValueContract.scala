@@ -13,10 +13,9 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-
 trait ValueContract {
 
-    val isSynchronized: Boolean
+    val registrationKind: RegistrationKind
 
 }
+

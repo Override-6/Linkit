@@ -13,12 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncObjectFieldManipulation
+import fr.linkit.api.gnom.cache.sync._
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
+import fr.linkit.api.gnom.cache.sync.contract.{RegistrationKind, SyncObjectFieldManipulation}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, ObjectNode, SynchronizedObjectTree}
-import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.tree.{ChippedObjectNode, ConnectedObjectNode, ObjectSyncNode, SynchronizedObjectTree}
 import fr.linkit.api.gnom.network.{Engine, Network}
+import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.cache.sync.instantiation.ContentSwitcher
 import fr.linkit.engine.gnom.cache.sync.tree.node._
 
@@ -45,27 +47,30 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         this(currentIdentifier, network, center, instantiator, dataFactory, id, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)
-            throw new IllegalWrapperNodeException("Root node's tree != this")
+            throw new IllegalObjectNodeException("Root node's tree != this")
         if (root.id != id)
-            throw new IllegalWrapperNodeException("Root's identifier is not equals to this tree's identifier.")
+            throw new IllegalObjectNodeException("Root's identifier is not equals to this tree's identifier.")
         this.root = root
-        scanSyncObjectFields(root, currentIdentifier, root.synchronizedObject)
+        scanSyncObjectFields(root, currentIdentifier, root.obj)
     }
 
     def getRoot: RootObjectNodeImpl[A] = root
 
     override def rootNode: ObjectSyncNode[A] = root
 
-    override def findNode[B <: AnyRef](path: Array[Int]): Option[MutableSyncNode[B]] = {
+    override def findNode[B <: AnyRef](path: Array[Int]): Option[MutableNode[B]] = {
         checkPath(path)
         findNode0[B](path)
     }
 
     private[tree] def findMatchingSyncNode(nonSyncObject: AnyRef): Option[ObjectSyncNode[_ <: AnyRef]] = {
         nonSyncObject match {
-            case sync: SynchronizedObject[_] => findNode0(sync.reference.nodePath)
+            case sync: SynchronizedObject[_] => Some(sync.getNode)
             case _                           =>
-                Option(root.getMatchingSyncNode(nonSyncObject))
+                root.getMatchingSyncNode(nonSyncObject) match {
+                    case node: InternalObjectSyncNode[_] => Some(node)
+                    case _                               => None
+                }
         }
     }
 
@@ -74,23 +79,22 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new InvalidNodePathException("Path is empty")
     }
 
-    override def insertObject[B <: AnyRef](parent: ObjectNode[_], source: B, ownerID: String): ObjectSyncNode[B] = {
+    override def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: B, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not owner by this tree's cache.")
-        insertObject[B](parent.treePath, source, ownerID)
+        insertObject[B](parent.treePath, source, ownerID, insertionKind)
     }
 
-    override def insertObject[B <: AnyRef](parentPath: Array[Int], source: B, ownerID: String): ObjectSyncNode[B] = {
-        val wrapperNode = findNode[B](parentPath).getOrElse {
+    override def insertObject[B <: AnyRef](parentPath: Array[Int], source: B, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B] = {
+        val parentNode = findNode[B](parentPath).getOrElse {
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
-        val id          = forest
-            .removeLinkedReference(source)
-            .map(_.nodePath.last)
-            .getOrElse(ThreadLocalRandom.current().nextInt())
-        genSynchronizedObject[B](wrapperNode, id, source)(ownerID)
+        val id         = forest
+                .removeLinkedReference(source)
+                .map(_.nodePath.last)
+                .getOrElse(ThreadLocalRandom.current().nextInt())
+        genConnectedObject[B](parentNode, id, source, insertionKind)(ownerID)
     }
-
 
     private def findNode0[B <: AnyRef](path: Array[Int]): Option[ObjectSyncNodeImpl[B]] = {
         if (!path.headOption.contains(root.id))
@@ -111,31 +115,59 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         }
     }
 
-    private def genSynchronizedObject[B <: AnyRef](parent: MutableSyncNode[_], id: Int, source: B)(ownerID: String): ObjectSyncNode[B] = {
+    private def genConnectedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, source: B, insertionKind: RegistrationKind)(ownerID: String): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not present in this tree.")
+        if (insertionKind == NotRegistered)
+            throw new IllegalArgumentException("insertionKind = NotRegistered.")
 
         if (source.isInstanceOf[SynchronizedObject[_]])
-            throw new CanNotSynchronizeException("This object is already wrapped.")
+            throw new CanNotSynchronizeException("This object is already synchronized.")
 
         forest.findMatchingNode(source) match {
-            case Some(value: ObjectSyncNode[B]) =>
+            case Some(value: ObjectSyncNode[B])    =>
+                if (insertionKind != RegistrationKind.Synchronized)
+                    throw new IllegalObjectNodeException(s"requested $insertionKind object node but the source object '$source' is bound to a SynchronizedObject node")
                 value
-            case None                           =>
-                val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))
-                val node       = initSynchronizedObject[B](parent, id, syncObject, source, ownerID)
-                node
+            case Some(value: ChippedObjectNode[B]) =>
+                if (insertionKind != RegistrationKind.ChippedOnly)
+                    throw new IllegalObjectNodeException(s"requested $insertionKind object node but the source object '$source' is bound to a ChippedObject node")
+                value
+            case None                              =>
+                insertionKind match {
+                    case RegistrationKind.ChippedOnly  =>
+                        newChippedObject(parent, id, source, ownerID)
+                    case RegistrationKind.Synchronized =>
+                        val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))
+                        initSynchronizedObject[B](parent, id, syncObject, Some(source), ownerID)
+                }
+
         }
     }
 
-    private def initSynchronizedObject[B <: AnyRef](parent: MutableSyncNode[_], id: Int,
-                                                    syncObject: B with SynchronizedObject[B], origin: AnyRef,
+    private def newChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chipped: B, ownerID: String): ChippedObjectNode[B] = {
+        if (ownerID != currentIdentifier)
+            throw new IllegalConnectedObjectRegistration("Attempted to create a chipped object that is not owned by the current engine. Chipped Objects can only exists on their origin engines.")
+        val adapter = new ChippedObjectAdapter[B](chipped)
+        initChippedObject(parent, id, adapter, ownerID)
+    }
+
+    private def initChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, adapter: ChippedObjectAdapter[B], ownerID: String): ChippedObjectNode[B] = {
+        val data = dataFactory.newChippedObjectData(parent, id, adapter, ownerID)
+        val node = new ChippedObjectNodeImpl[B](data)
+        parent.addChild(node)
+        adapter.initialize(node)
+        node
+    }
+
+    private def initSynchronizedObject[B <: AnyRef](parent: MutableNode[_], id: Int,
+                                                    syncObject: B with SynchronizedObject[B], origin: Option[B],
                                                     ownerID: String): ObjectSyncNodeImpl[B] = {
         if (syncObject.isInitialized)
-            throw new IllegalSyncObjectRegistration(s"Could not register syncObject '${syncObject.getClass.getName}' : Object already initialized.")
+            throw new ConnectedObjectAlreadyInitialisedException(s"Could not register synchronized object '${syncObject.getClass.getName}' : Object already initialized.")
 
-        val data = dataFactory.newObjectData(parent.asInstanceOf[MutableSyncNode[AnyRef]], id, syncObject, Some(origin), ownerID)
-        val node = new ObjectSyncNodeImpl[B](parent, data)
+        val data = dataFactory.newSyncObjectData[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerID)
+        val node = new ObjectSyncNodeImpl[B](data)
         forest.registerReference(node.reference)
         parent.addChild(node)
 
@@ -150,20 +182,25 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val manipulation   = new SyncObjectFieldManipulation {
             override val engine: Engine = engine0
 
-            override def findSynchronizedVersion(origin: Any): Option[SynchronizedObject[AnyRef]] = {
-                cast(findMatchingSyncNode(cast(origin)).map(_.synchronizedObject))
+            override def findConnectedVersion(origin: Any): Option[ConnectedObject[AnyRef]] = {
+                cast(findMatchingSyncNode(cast(origin)).map(_.obj))
             }
 
-            override def initSyncObject(sync: SynchronizedObject[AnyRef]): Unit = {
+            override def initObject(sync: ConnectedObject[AnyRef]): Unit = {
                 val id = sync.reference.nodePath.last
-                initSynchronizedObject(node, id, sync, sync, ownerID)
+                sync match {
+                    case sync: SynchronizedObject[AnyRef]         =>
+                        initSynchronizedObject[AnyRef](node, id, sync, Some(sync), ownerID)
+                    case chippedObj: ChippedObjectAdapter[AnyRef] =>
+                        initChippedObject[AnyRef](node, id, chippedObj, ownerID)
+                }
             }
 
-            override def syncObject(obj: AnyRef): SynchronizedObject[AnyRef] = {
+            override def createConnectedObject(obj: AnyRef, kind: RegistrationKind): ConnectedObject[AnyRef] = {
                 val id = forest.removeLinkedReference(obj)
-                    .map(_.nodePath.last)
-                    .getOrElse(ThreadLocalRandom.current().nextInt())
-                genSynchronizedObject(node, id, obj)(ownerID).synchronizedObject
+                        .map(_.nodePath.last)
+                        .getOrElse(ThreadLocalRandom.current().nextInt())
+                genConnectedObject(node, id, obj, kind)(ownerID).obj
             }
         }
         node.contract.applyFieldsContracts(syncObject, manipulation)
@@ -171,15 +208,15 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]
 
-    private def createUnknownObjectNode[B <: AnyRef](path: Array[Int]): MutableSyncNode[B] = {
+    private def createUnknownObjectNode[B <: AnyRef](path: Array[Int]): MutableNode[B] = {
         val parent = getParent(path.dropRight(1))
         val data   = dataFactory.newUnknownObjectData[AnyRef](parent, path)
         val node   = new UnknownObjectSyncNode(data)
         parent.addChild(node)
-        node.asInstanceOf[MutableSyncNode[B]]
+        node.asInstanceOf[MutableNode[B]]
     }
 
-    private def getParent[B <: AnyRef](parentPath: Array[Int]): MutableSyncNode[B] = {
+    private def getParent[B <: AnyRef](parentPath: Array[Int]): MutableNode[B] = {
         findNode[B](parentPath).getOrElse {
             createUnknownObjectNode(parentPath)
         }
@@ -187,7 +224,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     private[tree] def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int,
                                                               syncObject: B with SynchronizedObject[B], ownerID: String,
-                                                              origin: Option[AnyRef]): ObjectSyncNode[B] = {
+                                                              origin: Option[B]): ObjectSyncNode[B] = {
         val wrapperNode = getParent[B](parentPath)
         initSynchronizedObject[B](wrapperNode, id, syncObject, origin, ownerID)
     }

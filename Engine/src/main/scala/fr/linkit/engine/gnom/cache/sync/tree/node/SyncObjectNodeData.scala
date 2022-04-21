@@ -1,15 +1,20 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 
+import java.lang.ref.WeakReference
+
 class SyncObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A],
-                                      val synchronizedObject: A with SynchronizedObject[A])
-                                     (data: ChippedObjectNodeData[A])
+                                      synchronizedObject: A with SynchronizedObject[A],
+                                      val origin: Option[WeakReference[A]])
+                                     (private val data: ChippedObjectNodeData[A])
         extends ChippedObjectNodeData[A](data) {
 
     def this(other: SyncObjectNodeData[A]) = {
-        this(other.puppeteer, other.synchronizedObject)(other.data)
+        this(other.puppeteer, other.obj, other.origin)(other.data)
     }
+
+    override def obj: A with SynchronizedObject[A] = synchronizedObject
 
 }

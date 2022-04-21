@@ -15,6 +15,6 @@ package fr.linkit.engine.gnom.cache.sync.tree
 
 import fr.linkit.api.internal.system.AppException
 
-class IllegalSyncObjectRegistration(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+class IllegalConnectedObjectRegistration(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

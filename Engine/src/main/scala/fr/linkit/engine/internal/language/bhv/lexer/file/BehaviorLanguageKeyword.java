@@ -16,16 +16,18 @@ package fr.linkit.engine.internal.language.bhv.lexer.file;
 import fr.linkit.engine.internal.language.bhv.lexer.Keyword;
 
 public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
-    Import, Describe, Method, Code, Enable, Stub, Name,
-    Mirroring, Disable, Statics, Hide, Following, Modifier,
-    Sync, ReturnValue, Foreach, In, Out,
+    Import, Describe, Code, Stub, Name,
+    Mirroring, Statics,
+    Method, Following, Enable, Disable, Hide, ReturnValue,
+    Sync, Chip,
+    Modifier, In, Out, Foreach,
     //Agreements
     Agreement,
-    Discard, Accept, And, Appoint, If, Else, Is, Not
-    ;
+    Discard, Accept, And, Appoint, If, Else, Is, Not;
 
     @Override
     public String value() {
         return name().toLowerCase();
     }
+
 }

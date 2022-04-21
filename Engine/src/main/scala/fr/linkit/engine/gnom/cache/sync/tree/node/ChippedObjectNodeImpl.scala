@@ -1,10 +1,9 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
-import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, ObjectNode}
-import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SyncObjectReference}
+import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
+import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, ChippedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
@@ -13,17 +12,18 @@ import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.cache.sync.tree.DefaultSynchronizedObjectTree
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
-import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.InvocationTargetException
 import scala.collection.mutable
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
-class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
-                                         data: ChippedObjectNodeData[A]) extends InternalChippedObjectNode[A] {
+class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends InternalChippedObjectNode[A] {
 
-    override  val reference        : SyncObjectReference              = data.reference
+    //Note: The parent can be of type `UnknownSyncObjectNode`. In this case, this node have an unknown parent
+    //and the method `discoverParent(ObjectSyncNodeImpl)` can be called at any time by the system.
+    private var parent0            : ConnectedObjectNode[_]           = data.parent.orNull
+    override  val reference        : ConnectedObjectReference         = data.reference
     override  val id               : Int                              = reference.nodePath.last
     override  val chip             : Chip[A]                          = data.chip
     override  val tree             : DefaultSynchronizedObjectTree[_] = data.tree
@@ -36,17 +36,21 @@ class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
      * This map contains all the synchronized object of the parent object
      * including method return values and parameters and class fields
      * */
-    protected val childs                                              = new mutable.HashMap[Int, MutableSyncNode[_]]
+    protected val childs                                              = new mutable.HashMap[Int, MutableNode[_]]
     private   val currentIdentifier: String                           = data.currentIdentifier
     /**
      * This set stores every engine where this object is synchronized.
      * */
     override  val objectPresence   : NetworkObjectPresence            = data.presence
-    private   val originRef                                           = data.origin
 
+    override def obj: ChippedObject[A] = data.obj
 
-    override def parent: ObjectNode[_] = parent0
+    override def parent: ConnectedObjectNode[_] = parent0
 
+    /**
+     * Replace the unknown parent by the known one.
+     * @throws IllegalStateException if the current parent is not an [[UnknownObjectSyncNode]]
+     * */
     override def discoverParent(node: ObjectSyncNodeImpl[_]): Unit = {
         if (!parent.isInstanceOf[UnknownObjectSyncNode])
             throw new IllegalStateException("Parent already known !")
@@ -54,7 +58,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
         this.parent0 = parent0
     }
 
-    override def addChild(node: MutableSyncNode[_]): Unit = {
+    override def addChild(node: MutableNode[_]): Unit = {
         if (node.parent ne this)
             throw new CanNotSynchronizeException("Attempted to add a child to this node that does not define this node as its parent.")
         if (node eq this)
@@ -72,7 +76,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
         }
     }
 
-    override def toString: String = s"node $reference for chipped object ${originRef}"
+    override def toString: String = s"node $reference for chipped object ${obj}"
 
     def getChild[B <: AnyRef](id: Int): Option[ObjectSyncNodeImpl[B]] = (childs.get(id): Any) match {
         case None        => None
@@ -82,20 +86,6 @@ class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
         }
     }
 
-    @Nullable
-    def getMatchingSyncNode(nonSyncObject: AnyRef): MutableSyncNode[_ <: AnyRef] = InvocationChoreographer.disableInvocations {
-        val origin = if (originRef == null) null else originRef.get()
-        if (origin != null && (nonSyncObject eq origin))
-            return this
-
-        for (child <- childs.values) {
-            val found = child.getMatchingSyncNode(nonSyncObject)
-            if (found != null)
-                return found
-        }
-        null
-    }
-
     override def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
         if (!(packet.path sameElements treePath)) {
             val packetPath = packet.path
@@ -103,10 +93,10 @@ class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
                 throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ${packetPath.mkString("/")}.")
 
             tree.findNode[AnyRef](packetPath.drop(treePath.length))
-                .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
-                    case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, senderID, response)
-                    case _                                  =>
-                }
+                    .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
+                        case node: TrafficInterestedNode[_] => node.handlePacket(packet, senderID, response)
+                        case _                              =>
+                    }
         }
         makeMemberInvocation(packet, senderID, response)
     }
@@ -130,7 +120,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
 
     private def scanParams(params: Array[Any]): Unit = {
         params.mapInPlace { case param: AnyRef => if (tree.forest.isObjectLinked(param)) {
-            tree.insertObject(this, param, currentIdentifier).synchronizedObject
+            ??? //tree.insertObject(this, param, currentIdentifier).obj
         } else param
         }
     }
@@ -140,8 +130,8 @@ class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
         val sb = new StringBuilder(ex.toString).append("\n")
         while (ex != null && (ex.getCause ne ex)) {
             sb.append("caused by: ")
-                .append(ex.toString)
-                .append("\n")
+                    .append(ex.toString)
+                    .append("\n")
             ex = ex.getCause
         }
         response.addPacket(RMIExceptionString(sb.toString)).submit()
@@ -153,13 +143,12 @@ class ChippedObjectNodeImpl[A <: AnyRef](private var parent0: ObjectNode[_],
             val methodContract = contract.findMethodContract[Any](packet.methodID).getOrElse {
                 throw new NoSuchElementException(s"Could not find method contract with identifier #$id for ${contract.clazz}.")
             }
-            result = methodContract.handleInvocationResult(initialResult, engine)(ref => {
-                tree.insertObject(this, ref, ownerID)
-                    .synchronizedObject
+            result = methodContract.handleInvocationResult(initialResult, engine)((ref, registrationKind) => {
+                tree.insertObject(this, ref, ownerID, registrationKind).obj
             })
             response
-                .addPacket(RefPacket[Any](result))
-                .submit()
+                    .addPacket(RefPacket[Any](result))
+                    .submit()
         }
     }
 }

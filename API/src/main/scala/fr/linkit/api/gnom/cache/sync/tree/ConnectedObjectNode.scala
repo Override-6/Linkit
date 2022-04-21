@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.SyncObjectReference
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable
 
@@ -24,13 +24,13 @@ import scala.collection.mutable.ListBuffer
  *
  * @tparam A the super type of the synchronized object
  */
-trait ObjectNode[A <: AnyRef] {
+trait ConnectedObjectNode[A <: AnyRef] {
 
     val tree: SynchronizedObjectTree[_]
 
     val objectPresence: NetworkObjectPresence
 
-    val reference: SyncObjectReference
+    val reference: ConnectedObjectReference
 
     /**
      * This node's identifier
@@ -46,10 +46,12 @@ trait ObjectNode[A <: AnyRef] {
     /**
      * This node's parent (null if this node is a root node)
      */
-    @Nullable def parent: ObjectNode[_]
+    @Nullable def parent: ConnectedObjectNode[_]
+
+    def obj: ConnectedObject[A]
 
     lazy val treePath: Array[Int] = {
-        var parent: ObjectNode[_] = this
+        var parent: ConnectedObjectNode[_] = this
         val buff                = ListBuffer.empty[Int]
         while (parent != null) {
             buff += parent.id

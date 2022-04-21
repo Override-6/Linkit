@@ -13,9 +13,10 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
-import fr.linkit.api.gnom.cache.sync.{SyncObjectReference, _}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, _}
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
@@ -30,7 +31,7 @@ import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val cache: SynchronizedObjectCache[_],
-                                   override val nodeReference: SyncObjectReference) extends Puppeteer[S] {
+                                   override val nodeReference: ConnectedObjectReference) extends Puppeteer[S] {
 
     private lazy val tree                       = cache.forest.findTree(nodeReference.nodePath.head).get
     override     val network          : Network = cache.network
@@ -75,7 +76,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         requestResult match {
             case r: R with AnyRef =>
                 if (cache.forest.asInstanceOf[DefaultSyncObjectForest[AnyRef]].isObjectLinked(r))
-                    tree.insertObject(nodeReference.nodePath, r, agreement.getAppointedEngineReturn).synchronizedObject
+                    ???///tree.insertObject(nodeReference.nodePath, r, agreement.getAppointedEngineReturn).obj.connected
                 else r
         }
     }
@@ -94,9 +95,9 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         }
     }
 
-    override def synchronizedObj(obj: Any): SynchronizedObject[AnyRef] = {
+    override def createConnectedObj(obj: Any, kind: RegistrationKind): ConnectedObject[AnyRef] = {
         val currentPath = nodeReference.nodePath
-        tree.insertObject(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier).synchronizedObject
+        tree.insertObject(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier, kind).obj
     }
 
     class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {
@@ -135,5 +136,5 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
 object ObjectPuppeteer {
 
-    def apply[S <: AnyRef](channel: RequestPacketChannel, cache: SynchronizedObjectCache[_], nodeLocation: SyncObjectReference): ObjectPuppeteer[S] = new ObjectPuppeteer(channel, cache, nodeLocation)
+    def apply[S <: AnyRef](channel: RequestPacketChannel, cache: SynchronizedObjectCache[_], nodeLocation: ConnectedObjectReference): ObjectPuppeteer[S] = new ObjectPuppeteer(channel, cache, nodeLocation)
 }

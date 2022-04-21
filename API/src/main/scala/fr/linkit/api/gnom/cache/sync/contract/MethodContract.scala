@@ -13,9 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
@@ -28,19 +27,20 @@ trait MethodContract[R] {
 
     val isRMIActivated: Boolean
 
-    def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: AnyRef => SynchronizedObject[AnyRef]): Any
+    def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, RegistrationKind) => ConnectedObject[AnyRef]): Any
 
-    def synchronizeArguments(args: Array[Any], syncAction: Any => SynchronizedObject[AnyRef]): Array[Any]
+    def connectArguments(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit
 
-    def synchronizeReturnValue(rv: Any, syncAction: Any => SynchronizedObject[AnyRef]): Any
+    def connectReturnValue(rv: Any, syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Any
 
     def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R
 
     def executeMethodInvocation(sender: Engine, data: InvocationExecution): Any
 
     trait InvocationExecution {
-        val syncObject: SynchronizedObject[_]
-        val arguments : Array[Any]
+
+        val obj      : ChippedObject[_]
+        val arguments: Array[Any]
     }
 
     trait RemoteInvocationExecution extends InvocationExecution {

@@ -13,15 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, RMIRulesAgreement, SyncObjectContext}
-import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, StructureContract}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, RegistrationKind, StructureContract}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
-import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.{Method, Modifier}
@@ -45,7 +44,6 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
         new StructureContractImpl(clazz, descriptor.mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }
-
 
     override def getStaticsContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
@@ -73,19 +71,19 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     }
 
     private def ensureNoSyncFieldIsSynchronized(): Unit = {
-        if (descriptor.fields.exists(fc => fc.isSynchronized && Modifier.isStatic(fc.desc.javaField.getModifiers)))
+        if (descriptor.fields.exists(fc => fc.registrationKind != NotRegistered && Modifier.isStatic(fc.desc.javaField.getModifiers)))
             throw new BadContractException(s"in $clazz: static synchronized fields are not supported.")
     }
 
     private def warnAllHiddenMethodsWithDescribedBehavior(): Unit = {
         descriptor.methods
-            .filter(_.hideMessage.isDefined)
-            .filter(_.parameterContracts.nonEmpty)
-            .filter(_.returnValueContract.isDefined)
-            .foreach { method =>
-                val javaMethod = method.description.javaMethod
-                AppLogger.warn(s"Method $javaMethod is hidden but seems to contain behavior contracts in its return value nor its parameters")
-            }
+                .filter(_.hideMessage.isDefined)
+                .filter(_.parameterContracts.nonEmpty)
+                .filter(_.returnValueContract.isDefined)
+                .foreach { method =>
+                    val javaMethod = method.description.javaMethod
+                    AppLogger.warn(s"Method $javaMethod is hidden but seems to contain behavior contracts in its return value nor its parameters")
+                }
     }
 
     private def ensureNoMethodContainsPrimitiveSyncComp(): Unit = {
@@ -96,14 +94,14 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             val paramContractCount = paramsContracts.length
             if (!paramsContracts.isEmpty && paramCount != paramContractCount)
                 throw new BadContractException(s"Contract of method $javaMethod for $clazz contains a list of the method's arguments contracts with a different length as the method's parameter count (method parameter count: $paramCount vs method's params contracts count: $paramContractCount).")
-            method.parameterContracts.filter(_.isSynchronized)
-                .zip(javaMethod.getParameters)
-                .foreach { case (_, param) => {
-                    val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' for parameter '${param.getName}' of type ${param.getType.getName}: ${kind} cannot be synchronized."
-                    ensureTypeCanBeSync(param.getType, msg)
-                }
-                }
-            if (method.returnValueContract.exists(_.isSynchronized)) {
+            method.parameterContracts.filter(_.registrationKind == Synchronized)
+                    .zip(javaMethod.getParameters)
+                    .foreach { case (_, param) => {
+                        val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' for parameter '${param.getName}' of type ${param.getType.getName}: ${kind} cannot be synchronized."
+                        ensureTypeCanBeSync(param.getType, msg)
+                    }
+                    }
+            if (method.returnValueContract.exists(_.registrationKind == Synchronized)) {
                 val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' of return type ${javaMethod.getReturnType.getName}: ${kind} cannot be synchronized."
                 ensureTypeCanBeSync(javaMethod.getReturnType, msg)
             }
@@ -112,13 +110,13 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
     private def ensureNoSyncFieldIsPrimitive(): Unit = {
         descriptor.fields
-            .filter(_.isSynchronized)
-            .foreach { field =>
-                val javaField             = field.desc.javaField
-                val fieldType             = javaField.getType
-                val msg: String => String = kind => s"descriptor for $clazz contains an illegal sync field '${javaField.getName}' of type $fieldType: ${kind} cannot be synchronized."
-                ensureTypeCanBeSync(fieldType, msg)
-            }
+                .filter(_.registrationKind == Synchronized)
+                .foreach { field =>
+                    val javaField             = field.desc.javaField
+                    val fieldType             = javaField.getType
+                    val msg: String => String = kind => s"descriptor for $clazz contains an illegal sync field '${javaField.getName}' of type $fieldType: ${kind} cannot be synchronized."
+                    ensureTypeCanBeSync(fieldType, msg)
+                }
     }
 
     private def ensureTypeCanBeSync(tpe: Class[_], msg: String => String): Unit = {
@@ -181,7 +179,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             if (!map.contains(id)) {
                 val agreement = desc.agreement.result(context)
                 verifyAgreement(desc.description.javaMethod, agreement, context)
-                val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](false))
+                val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](NotRegistered))
                 val contract   = new MethodContractImpl[Any](
                     desc.skipInnerInvocations, agreement, desc.parameterContracts,
                     rvContract, desc.description, desc.hideMessage, desc.procrastinator.orNull)
@@ -250,8 +248,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
         private def computeInterfacesModifiers(): Array[ValueModifier[A]] = {
             interfaces.asInstanceOf[Array[StructureBehaviorDescriptorNodeImpl[A]]]
-                .filter(n => limit.isAssignableFrom(n.clazz))
-                .map(_.getInstanceModifier(factory, limit))
+                    .filter(n => limit.isAssignableFrom(n.clazz))
+                    .map(_.getInstanceModifier(factory, limit))
         }
 
         private def computeSuperClassModifier(): Option[ValueModifier[A]] = {
@@ -262,9 +260,3 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
     verify()
 }
-
-object StructureBehaviorDescriptorNodeImpl {
-
-    private final val DisabledValueContract = new SimpleModifiableValueContract[Any](false, None)
-}
-

@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-class RootObjectNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends ObjectSyncNodeImpl[A](null, data) {
+class RootObjectNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends ObjectSyncNodeImpl[A](data) {
     override def discoverParent(node: ObjectSyncNodeImpl[_]): Unit = {
         throw new UnsupportedOperationException("Can't set any parent to root object node.")
     }

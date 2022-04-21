@@ -24,25 +24,25 @@ import java.util
  * @param ownerID the owner of the object (the engine's identifier that created the object)
  * @param nodePath the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]]
  */
-class SyncObjectReference(family: String,
-                          cacheID: Int,
-                          val ownerID: String,
-                          val nodePath: Array[Int]) extends SharedCacheReference(family, cacheID) {
+class ConnectedObjectReference(family: String,
+                               cacheID: Int,
+                               val ownerID: String,
+                               val nodePath: Array[Int]) extends SharedCacheReference(family, cacheID) {
     override def toString: String = super.toString + s"/~${nodePath.mkString("/")}"
 
     override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, ownerID, nodePath))
 
     override def equals(obj: Any): Boolean = obj match {
-        case ref: SyncObjectReference => ref.family == family &&
+        case ref: ConnectedObjectReference => ref.family == family &&
                 ref.cacheID == cacheID &&
                 ref.ownerID == ownerID &&
                 (ref.nodePath sameElements nodePath)
-        case _ => false
+        case _                             => false
     }
 
 }
 
-object SyncObjectReference {
+object ConnectedObjectReference {
 
-    def apply(family: String, cacheID: Int, owner: String, nodePath: Array[Int]): SyncObjectReference = new SyncObjectReference(family, cacheID, owner, nodePath)
+    def apply(family: String, cacheID: Int, owner: String, nodePath: Array[Int]): ConnectedObjectReference = new ConnectedObjectReference(family, cacheID, owner, nodePath)
 }

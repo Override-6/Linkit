@@ -15,10 +15,10 @@ package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.invocation.MethodInvocation
 import fr.linkit.api.gnom.cache.sync.invocation.local.LocalMethodInvocation
-import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
+import fr.linkit.api.gnom.cache.sync.tree.{ChippedObjectNode, ObjectSyncNode}
 
 abstract class AbstractMethodInvocation[R](override val methodID: Int,
-                                           override val objectNode: ObjectSyncNode[_]) extends MethodInvocation[R] {
+                                           override val objectNode: ChippedObjectNode[_]) extends MethodInvocation[R] {
 
     def this(local: LocalMethodInvocation[R]) = {
         this(local.methodID, local.objectNode)

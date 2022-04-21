@@ -13,51 +13,33 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
-import fr.linkit.api.gnom.reference.DynamicNetworkObject
-
-import java.io.Serializable
 
 /**
  * This interface depicts a synchronized object. <br>
- * SynchronizedObject classes are dynamically generated and extends the class [[T]] <br>
+ * SynchronizedObject classes are dynamically generated and extends the class [[A]] <br>
  * Handwritten classes may not implement this interface.
  *
  * @see fr.linkit.api.gnom.cache.obj.generation.SyncClassCenter
  * @see SyncInstanceInstantiator
  */
-trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectReference] with Serializable {
+trait SynchronizedObject[A <: AnyRef] extends ChippedObject[A] {
 
-    def reference: SyncObjectReference
+    override final def connected: A = this.asInstanceOf[A]
+
+    override final def getConnectedObjectClass: Class[A] = getSourceClass
 
     /**
      * @return The used [[Puppeteer]] of this object.
      * @see Puppeteer
      */
-    def getPuppeteer: Puppeteer[T]
-
-    def getNode: ObjectSyncNode[T]
+    def getPuppeteer: Puppeteer[A]
 
     /**
-     * @return the invocation choreographer of this object
-     * @see InvocationChoreographer
-     */
-    def getChoreographer: InvocationChoreographer
-
-    /**
-     * Note: a synchronized object is always initialized if it was retrieved normally.
-     *
-     * @return true if the object is initialized.
-     */
-    def isInitialized: Boolean
-
-    /**
-     * @return true if this object is the original among other copies of the same object on other clients.<br>
-     *         An original object can <b>ONLY</b> be present on the current engine.
-     */
-    def isOrigin: Boolean
+     * this object's node.
+     * */
+    override def getNode: ObjectSyncNode[A]
 
     /**
      * @return true if this object is a distant object that is mirroring on current engine a distant implementation
@@ -67,6 +49,6 @@ trait SynchronizedObject[T <: AnyRef] extends DynamicNetworkObject[SyncObjectRef
     /**
      * @return the original type of the synchronized object
      */
-    def getSourceClass: Class[T]
+    def getSourceClass: Class[A]
 
 }

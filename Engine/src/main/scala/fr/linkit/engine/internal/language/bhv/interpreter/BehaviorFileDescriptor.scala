@@ -1,6 +1,7 @@
 package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
@@ -67,8 +68,8 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-            .map(new FieldContractImpl[Any](_, desc.state.isSync))
-            .toArray
+                .map(new FieldContractImpl[Any](_, desc.state.kind))
+                .toArray
     }
 
     private def foreachMethods(classDesc: SyncStructureDescription[_])
@@ -85,7 +86,9 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                 case _: DisabledMethodDescription   =>
                     MethodContractDescriptorImpl(method, false, None, None, Array.empty, None, true, EmptyBuilder)
                 case desc: EnabledMethodDescription =>
-                    val rvContract     = if (desc.syncReturnValue.isSync) Some(new SimpleModifiableValueContract[Any](true, None)) else None
+                    val rvContract = if (desc.syncReturnValue.kind != NotRegistered)
+                        Some(new SimpleModifiableValueContract[Any](desc.syncReturnValue.kind, None)) else None
+
                     val agreement      = desc.agreement.map(ag => getAgreement(ag.name)).getOrElse(EmptyBuilder)
                     val procrastinator = findProcrastinator(desc.properties)
                     MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, true, agreement)
@@ -94,6 +97,11 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                     MethodContractDescriptorImpl(method, false, None, None, Array(), msg, true, EmptyBuilder)
             }
         }.toArray
+    }
+
+    private def encodedIntMethodString(i: Int): String = {
+        if (i > 0) i.toString
+        else "_" + i.abs.toString
     }
 
     private def describeAttributedMethods(classDesc: SyncStructureDescription[_], kind: DescriptionKind,
@@ -112,14 +120,15 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             }
 
             def checkParams(): Unit = {
-                if (signature.params.exists(_.syncState.isSync))
-                    throw new BHVLanguageException("disabled methods can't define synchronized arguments")
+                if (signature.params.exists(_.syncState.kind != NotRegistered))
+                    throw new BHVLanguageException("disabled methods can't define connected arguments")
             }
 
             def extractModifier(mod: CompModifier, valType: String): ValueModifier[Any] = {
                 mod match {
                     case ValueModifierReference(_, ref)      => getValueModifier(ref, valType)
-                    case ModifierExpression(target, in, out) => makeModifier(s"method_${target}_${signature.methodName}_${signature.hashCode()}", valType, in, out)
+                    case ModifierExpression(target, in, out) => makeModifier(
+                        s"method_${target}_${signature.methodName}_${encodedIntMethodString(signature.hashCode())}", valType, in, out)
                 }
             }
 
@@ -137,22 +146,24 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         val returnTypeName = methodDesc.javaMethod.getReturnType.getName
                         val rvModifier     = desc.modifiers.find(_.target == "returnvalue").map(extractModifier(_, returnTypeName))
                         desc.syncReturnValue match {
-                            case SynchronizeState(true, isSync) => new SimpleModifiableValueContract[Any](isSync, rvModifier)
-                            case SynchronizeState(false, _)     => new SimpleModifiableValueContract[Any](referent.flatMap(_.returnValueContract).exists(_.isSynchronized), rvModifier)
+                            case RegistrationState(true, state) => new SimpleModifiableValueContract[Any](state, rvModifier)
+                            case RegistrationState(false, _)    =>
+                                val state = referent.flatMap(_.returnValueContract).map(_.registrationKind).getOrElse(NotRegistered)
+                                new SimpleModifiableValueContract[Any](state, rvModifier)
                         }
                     }
                     val agreement          = desc.agreement
-                        .map(ag => getAgreement(ag.name))
-                        .orElse(referent.map(_.agreement))
-                        .getOrElse(EmptyBuilder)
+                            .map(ag => getAgreement(ag.name))
+                            .orElse(referent.map(_.agreement))
+                            .getOrElse(EmptyBuilder)
                     val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                     val parameterContracts = {
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
                             case MethodParam(syncState, nameOpt, tpe) =>
                                 val modifier = nameOpt.flatMap(name => desc.modifiers.find(_.target == name).map(extractModifier(_, tpe)))
-                                new SimpleModifiableValueContract[Any](syncState.isSync, modifier)
+                                new SimpleModifiableValueContract[Any](syncState.kind, modifier)
                         }.toArray
-                        if (!acc.exists(x => x.isSynchronized || x.modifier.isDefined)) Array[ModifiableValueContract[Any]]() else acc
+                        if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
                     }
                     MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, true, agreement)
             }
@@ -172,8 +183,8 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             if (referentPos != -1)
                 foreachResult(referentPos) = null //removing old version
             field.state match {
-                case SynchronizeState(true, isSync) => new FieldContractImpl[Any](desc, isSync)
-                case SynchronizeState(false, _)     => new FieldContractImpl[Any](desc, referent.exists(_.isSynchronized))
+                case RegistrationState(true, isSync) => new FieldContractImpl[Any](desc, isSync)
+                case RegistrationState(false, _)     => new FieldContractImpl[Any](desc, referent.map(_.registrationKind).getOrElse(NotRegistered))
             }
         }
         foreachResult.filter(_ != null) ++ result
@@ -193,7 +204,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
 
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {
         agreementBuilders
-            .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
+                .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
     }
 
     private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {

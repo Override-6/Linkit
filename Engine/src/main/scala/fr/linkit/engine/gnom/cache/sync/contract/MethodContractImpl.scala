@@ -13,13 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract}
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract, RegistrationKind}
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.AppLogger
@@ -36,42 +37,43 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
 
     override val isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
 
-    override def synchronizeArguments(args: Array[Any], syncAction: Any => SynchronizedObject[AnyRef]): Array[Any] = {
+    override def connectArguments(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit = {
         if (parameterContracts.isEmpty)
-            return args
-        var i = -1
-        args.map(param => {
-            i += 1
+            return
+        var i = 0
+        while (i < args.length) {
             val contract = parameterContracts(i)
-            param match {
-                case sync: SynchronizedObject[_]               => sync
-                case anyRef: AnyRef if contract.isSynchronized => syncAction(anyRef)
-                case other                                     => other
+            args(i) = args(i) match {
+                case sync: ConnectedObject[_]                                     => sync.connected
+                case anyRef: AnyRef if contract.registrationKind != NotRegistered => syncAction(anyRef, contract.registrationKind).connected
+                case other                                                        => other
             }
-        })
+            i += 1
+        }
     }
 
-    override def synchronizeReturnValue(rv: Any, syncAction: Any => SynchronizedObject[AnyRef]): Any = {
-        if (returnValueContract.isSynchronized) syncAction(rv)
+    override def connectReturnValue(rv: Any, syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Any = {
+        if (returnValueContract.registrationKind != NotRegistered) syncAction(rv, returnValueContract.registrationKind).connected
         else rv
     }
 
-    override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: AnyRef => SynchronizedObject[AnyRef]): Any = {
+    override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, RegistrationKind) => ConnectedObject[AnyRef]): Any = {
         var result = initialResult
-        if (result != null && returnValueContract.isSynchronized && !result.isInstanceOf[SynchronizedObject[_]]) {
+        val kind   = returnValueContract.registrationKind
+        if (result != null && kind != NotRegistered && !result.isInstanceOf[ConnectedObject[_]]) {
             val modifier = returnValueContract.modifier.orNull
             if (modifier != null)
                 result = modifier.toRemote(result, remote)
-            return syncAction(result.asInstanceOf[AnyRef])
+            return syncAction(result.asInstanceOf[AnyRef], kind).connected
         }
         result
     }
 
     override def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R = {
         val id                                                = description.methodId
-        val node                                              = data.syncObject.getNode
+        val node                                              = data.obj.getNode
         val args                                              = data.arguments
-        val choreographer                                     = data.syncObject.getChoreographer
+        val choreographer                                     = data.obj.getChoreographer
         val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, node) with CallableLocalMethodInvocation[R] {
             override val methodArguments: Array[Any] = args
 
@@ -87,19 +89,24 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
     }
 
     override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Any = {
-        val args       = data.arguments
-        val syncObject = data.syncObject
+        val args = data.arguments
+        val obj  = data.obj
         if (hideMessage.isDefined)
             throw new HiddenMethodInvocationException(hideMessage.get)
-        if (syncObject.isMirroring)
-            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${syncObject.reference} on engine ${syncObject.ownerID}")
+        if (isMirroring(obj))
+            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${obj.reference} on engine ${obj.ownerID}")
         modifyParameters(origin, args)
         AppLogger.debug {
             val name     = description.javaMethod.getName
             val methodID = description.methodId
             s"RMI - Calling method $methodID $name(${args.mkString(", ")})"
         }
-        description.javaMethod.invoke(syncObject, args: _*)
+        description.javaMethod.invoke(obj, args: _*)
+    }
+
+    private def isMirroring(obj: ChippedObject[_]): Boolean = obj match {
+        case s: SynchronizedObject[_] => s.isMirroring
+        case _                        => false
     }
 
     @inline
@@ -122,17 +129,18 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
         // From here we are sure that we want to perform a remote
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
         val currentIdentifier = puppeteer.currentIdentifier
-        val sync              = localInvocation.objectNode.synchronizedObject
+        val obj               = localInvocation.objectNode.obj
         var result     : Any  = null
         var localResult: Any  = null
         val mayPerformRMI     = agreement.mayPerformRemoteInvocation
-        if (agreement.mayCallSuper && !sync.isMirroring) {
+        if (agreement.mayCallSuper && !isMirroring(obj)) {
             localResult = localInvocation.callSuper()
         }
 
         def syncValue(v: Any) = {
-            if (v != null && returnValueContract.isSynchronized && !v.isInstanceOf[SynchronizedObject[AnyRef]]) {
-                puppeteer.synchronizedObj(v.asInstanceOf[AnyRef])
+            val kind = returnValueContract.registrationKind
+            if (v != null && kind != NotRegistered && !v.isInstanceOf[ConnectedObject[AnyRef]]) {
+                puppeteer.createConnectedObj(v.asInstanceOf[AnyRef], kind).connected
             } else v
         }
 
@@ -140,7 +148,6 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
         if (!mayPerformRMI) {
             return (if (currentMustReturn) syncValue(localResult) else null).asInstanceOf[R]
         }
-
 
         val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with DispatchableRemoteMethodInvocation[R] {
             override val agreement: RMIRulesAgreement = MethodContractImpl.this.agreement
@@ -196,12 +203,11 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
 
             if (modifier != null) {
                 result = modifier.toRemote(result, engine)
-                if (paramContract.isSynchronized) result match {
+                if (paramContract.registrationKind != NotRegistered) result match {
                     //The modification could return a non synchronized object even if the contract wants it to be synchronized.
-                    case ref: AnyRef if !ref.isInstanceOf[SynchronizedObject[AnyRef]] =>
-                        result = puppeteer.synchronizedObj(ref)
-
-                    case _ =>
+                    case ref: AnyRef if !ref.isInstanceOf[ConnectedObject[AnyRef]] =>
+                        result = puppeteer.createConnectedObj(ref, paramContract.registrationKind).connected
+                    case _                                                         =>
                 }
             }
         }

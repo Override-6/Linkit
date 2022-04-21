@@ -15,6 +15,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.gnom.cache.sync.CanNotSynchronizeException
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
 
 
@@ -43,11 +44,11 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @tparam B the type of the node's synchronized object
      * @return Some(SyncNode) if found, None instead.
      */
-    def findNode[B <: AnyRef](path: Array[Int]): Option[ObjectNode[B]]
+    def findNode[B <: AnyRef](path: Array[Int]): Option[ConnectedObjectNode[B]]
 
     /**
      *
-     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ObjectNode]]
+     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
      *
      * @throws CanNotSynchronizeException if the object is already synchronized.
      * @throws IllegalArgumentException   if the given parent does not belongs to this tree.
@@ -60,11 +61,11 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @return the created node
      */
     //TODO Should be removed (or only used internally)
-    def insertObject[B <: AnyRef](parent: ObjectNode[_], source: B, ownerID: String): ObjectSyncNode[B]
+    def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: B, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B]
 
     /**
      *
-     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ObjectNode]]
+     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
      *
      * @throws CanNotSynchronizeException if the object is already synchronized.
      * @throws IllegalArgumentException   if the given parent is does not belongs to this tree.
@@ -76,6 +77,6 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @tparam B the type of the object.
      * @return the created node
      */
-    def insertObject[B <: AnyRef](parentPath: Array[Int], source: B, ownerID: String): ObjectSyncNode[B]
+    def insertObject[B <: AnyRef](parentPath: Array[Int], source: B, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B]
 
 }
