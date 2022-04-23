@@ -27,7 +27,6 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         extends Chip[A] {
 
     private val chipped       = chippedObject.connected
-    private val choreographer = chippedObject.getChoreographer
     private val sourceClass   = chippedObject.getConnectedObjectClass
     private val isDistant     = contract.remoteObjectInfo.isDefined
     private val isOrigin      = chippedObject.isOrigin
@@ -54,7 +53,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
     }
 
     @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], caller: Engine): Any = {
-        choreographer.disableInvocations {
+        chippedObject.getChoreographer.disableInvocations {
             ExecutorEngine.setCurrentEngine(caller)
             val data   = new contract.InvocationExecution {
                 override val obj: ChippedObject[_] = ObjectChip.this.chippedObject

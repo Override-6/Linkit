@@ -34,7 +34,6 @@ final class SharedCacheDistantManager @Persist()(family: String,
     override def deconstruct(): Array[Any] = Array(family, ownerID, network, store)
 
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
-        println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
         val request = channel
                 .makeRequest(ownerScope)
                 .putAttribute("behavior", behavior)

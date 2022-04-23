@@ -16,15 +16,14 @@ package fr.linkit.engine.internal.language.bhv.parser
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ast}
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.ast
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
 
 object ClassParser extends BehaviorLanguageParser {
 
     private val classParser = {
-        val syncParser                 = (Exclamation.? ~ (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly) ^^ (t => (t._1.isDefined, t._2))).? ^^
-                (s => RegistrationState(s.isDefined, s.map(_._2).getOrElse(NotRegistered)))
+        val syncParser                 = (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly | Regular ^^^ NotRegistered).? ^^
+                (s => RegistrationState(s.isDefined, s.getOrElse(NotRegistered)))
         val properties                 = {
             val property = SquareBracketLeft ~> (identifier <~ Equal) ~ identifier <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
             repsep(property, Comma.?)

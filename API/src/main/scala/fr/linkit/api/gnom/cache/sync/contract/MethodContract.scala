@@ -29,9 +29,9 @@ trait MethodContract[R] {
 
     def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, RegistrationKind) => ConnectedObject[AnyRef]): Any
 
-    def connectArguments(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit
+    def connectArgs(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit
 
-    def connectReturnValue(rv: Any, syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Any
+    def applyReturnValue(rv: Any, syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Any
 
     def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R
 

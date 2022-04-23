@@ -189,7 +189,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
             else {
                 reference match {
                     case ref: SharedCacheReference =>
-                        LocalCachesStore.findCache(ref.cacheID).fold(throw new NoSuchElementException(s"Could not inject Linker request bundle: no cache is set at $ref")) { cacheProfile =>
+                        LocalCachesStore.findCache(ref.cacheID).fold(throw new NoSuchElementException(s"Could not inject Linker request bundle: no such cache is set at $ref")) { cacheProfile =>
                             cacheProfile.objectLinker.fold()(_.injectRequest(bundle))
                         }
                 }

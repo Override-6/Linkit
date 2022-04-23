@@ -37,7 +37,7 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
 
     override val isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
 
-    override def connectArguments(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit = {
+    override def connectArgs(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit = {
         if (parameterContracts.isEmpty)
             return
         var i = 0
@@ -52,7 +52,7 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
         }
     }
 
-    override def connectReturnValue(rv: Any, syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Any = {
+    override def applyReturnValue(rv: Any, syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Any = {
         if (returnValueContract.registrationKind != NotRegistered) syncAction(rv, returnValueContract.registrationKind).connected
         else rv
     }
@@ -95,7 +95,7 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
             throw new HiddenMethodInvocationException(hideMessage.get)
         if (isMirroring(obj))
             throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${obj.reference} on engine ${obj.ownerID}")
-        modifyParameters(origin, args)
+        modifyArgsIn(origin, args)
         AppLogger.debug {
             val name     = description.javaMethod.getName
             val methodID = description.methodId
@@ -109,11 +109,13 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
         case _                        => false
     }
 
-    @inline
-    private def modifyParameters(engine: Engine, params: Array[Any]): Unit = {
-        if (parameterContracts.isEmpty)
+    private def modifyArgsIn(engine: Engine, params: Array[Any]): Unit = {
+        val pcLength = parameterContracts.length
+        if (pcLength == 0)
             return
-        for (i <- params.indices) {
+        if (params.length != pcLength)
+            throw new IllegalArgumentException("Params array length is not equals to parameter contracts length.")
+        for (i <- 0 to pcLength) {
             val contract = parameterContracts(i)
 
             val modifier = contract.modifier.orNull
@@ -182,35 +184,39 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
         }
         val buff = args.clone()
         dispatcher.foreachEngines(engineID => {
-            val engine = network.findEngine(engineID).get
-            for (i <- args.indices) {
-                var finalRef = args(i)
-                if (finalRef != null) {
-                    finalRef = modifyParam(i, finalRef)(engine, puppeteer)
-                }
-                buff(i) = finalRef
-            }
+            val target = network.findEngine(engineID).get
+            modifyArgsOut(buff, target, puppeteer)
             buff
         })
     }
 
-    private def modifyParam(idx: Int, param: Any)(engine: Engine, puppeteer: Puppeteer[_]): Any = {
-        var result = param
-        if (parameterContracts.nonEmpty) {
-            val paramContract = parameterContracts(idx)
+    private def modifyArgsOut(args: Array[Any], target: Engine, puppeteer: Puppeteer[_]): Unit = {
+        def modifyParamOut(idx: Int, param: Any)(target: Engine, puppeteer: Puppeteer[_]): Any = {
+            var result = param
+            if (parameterContracts.nonEmpty) {
+                val paramContract = parameterContracts(idx)
 
-            val modifier = paramContract.modifier.orNull
+                val modifier = paramContract.modifier.orNull
 
-            if (modifier != null) {
-                result = modifier.toRemote(result, engine)
-                if (paramContract.registrationKind != NotRegistered) result match {
-                    //The modification could return a non synchronized object even if the contract wants it to be synchronized.
-                    case ref: AnyRef if !ref.isInstanceOf[ConnectedObject[AnyRef]] =>
-                        result = puppeteer.createConnectedObj(ref, paramContract.registrationKind).connected
-                    case _                                                         =>
+                if (modifier != null) {
+                    result = modifier.toRemote(result, target)
+                    if (paramContract.registrationKind != NotRegistered) result match {
+                        //The modification could return a non synchronized object even if the contract wants it to be synchronized.
+                        case ref: AnyRef if !ref.isInstanceOf[ConnectedObject[AnyRef]] =>
+                            result = puppeteer.createConnectedObj(ref, paramContract.registrationKind).connected
+                        case _                                                         =>
+                    }
                 }
             }
+            result
         }
-        result
+        for (i <- args.indices) {
+            var finalRef = args(i)
+            if (finalRef != null) {
+                finalRef = modifyParamOut(i, finalRef)(target, puppeteer)
+            }
+            args(i) = finalRef
+        }
     }
+
 }

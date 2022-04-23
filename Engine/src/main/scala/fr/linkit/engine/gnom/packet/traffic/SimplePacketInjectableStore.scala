@@ -99,7 +99,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     }
 
     private def failPresence(kind: Class[_], path: Array[Int]): Nothing = {
-        throw new NoSuchTrafficPresenceException(s"Could not find ${kind.getSimpleName} at path '${path.mkString("/")}'.")
+        throw new NoSuchTrafficPresenceException(s"Could not find ${kind.getSimpleName} at '${TrafficReference / path}'.")
     }
 
     override def close(cause: Reason): Unit = {

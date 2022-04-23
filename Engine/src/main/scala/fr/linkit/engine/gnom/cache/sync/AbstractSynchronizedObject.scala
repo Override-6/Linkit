@@ -84,10 +84,10 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             opt.get
         }
         //Arguments that must be synchronized wil be synchronized according to method contract.
-        methodContract.connectArguments(args, puppeteer.createConnectedObj)
+        methodContract.connectArgs(args, puppeteer.createConnectedObj)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
         if (!methodContract.isRMIActivated || choreographer.isMethodExecutionForcedToLocal) {
-            return methodContract.connectReturnValue(superCall(args), puppeteer.createConnectedObj).asInstanceOf[R]
+            return methodContract.applyReturnValue(superCall(args), puppeteer.createConnectedObj).asInstanceOf[R]
         }
         val data = new methodContract.RemoteInvocationExecution {
             override val obj      : ChippedObject[_] = AbstractSynchronizedObject.this

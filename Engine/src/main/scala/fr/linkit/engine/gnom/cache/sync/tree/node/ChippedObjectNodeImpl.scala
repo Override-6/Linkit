@@ -76,7 +76,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
         }
     }
 
-    override def toString: String = s"node $reference for chipped object ${obj}"
+    override def toString: String = s"node $reference for chipped object ${obj.connected}"
 
     def getChild[B <: AnyRef](id: Int): Option[ObjectSyncNodeImpl[B]] = (childs.get(id): Any) match {
         case None        => None
