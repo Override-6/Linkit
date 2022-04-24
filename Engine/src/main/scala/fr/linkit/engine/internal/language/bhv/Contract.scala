@@ -27,7 +27,7 @@ import scala.util.parsing.input.CharSequenceReader
 object Contract {
 
     private final val contracts    = mutable.HashMap.empty[String, PartialContractDescriptorData]
-    private final val toPrecompute = mutable.ListBuffer.empty[(String, String)]
+    private final val toPrecompute = mutable.HashSet.empty[(String, String)]
     private final val center       = new DefaultCompilerCenter
 
     def precompute(application: ApplicationContext): Unit = {

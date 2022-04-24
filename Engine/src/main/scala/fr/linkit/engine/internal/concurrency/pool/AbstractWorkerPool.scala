@@ -305,7 +305,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
 
     private def unparkBusyThread(): Unit = workers.synchronized {
         val sleepingWorker = workers.find(_.isSleeping)
-        AppLogger.vDebug(s"unparking busy thread ${sleepingWorker.orNull} (if null, no thread is sleeping)")
+        //AppLogger.vDebug(s"unparking busy thread ${sleepingWorker.orNull} (if null, no thread is sleeping)")
         sleepingWorker match {
             case None         => //no-op
             case Some(worker) => LockSupport.unpark(worker.thread)

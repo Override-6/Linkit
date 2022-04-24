@@ -84,7 +84,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     override def findNode(path: Array[Int], pos: Int): Option[TrafficNode[PacketInjectable]] = {
         val len = path.length
         if (pos >= len) {
-            failPresence(classOf[TrafficObject[TrafficReference]], path)
+            return None//failPresence(classOf[TrafficObject[TrafficReference]], path)
         }
         children.get(path(pos)).flatMap {
             case node@SimpleTrafficNode(_: PacketInjectable, _, _)                  =>

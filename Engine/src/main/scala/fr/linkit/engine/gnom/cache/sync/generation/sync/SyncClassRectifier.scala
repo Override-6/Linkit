@@ -20,9 +20,11 @@ import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObje
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{JavaKeywords, SuperMethodModifiers, getMethodDescriptor}
 import javassist._
-import javassist.bytecode.MethodInfo
+import javassist.bytecode.annotation.{Annotation, AnnotationsWriter, BooleanMemberValue, ByteMemberValue, CharMemberValue, ClassMemberValue, DoubleMemberValue, FloatMemberValue, IntegerMemberValue, LongMemberValue, MemberValue, MemberValueVisitor, ShortMemberValue, StringMemberValue}
+import javassist.bytecode.{AnnotationsAttribute, MethodInfo}
 
-import java.lang.reflect.{Method, Modifier}
+import java.lang.reflect.{Constructor, Method, Modifier}
+import scala.annotation.switch
 import scala.collection.immutable.HashSet
 import scala.collection.mutable.ListBuffer
 
@@ -39,7 +41,6 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     fixAllMethods()
     addAllConstructors()
     fixNetworkObjectInherance()
-
     lazy val rectifiedClass: (Array[Byte], Class[SynchronizedObject[_]]) = {
         val bc = ctClass.toBytecode
 
@@ -80,8 +81,8 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     private def addAllConstructors(): Unit = {
         superClass.getDeclaredConstructors.foreach(constructor => if (!Modifier.isPrivate(constructor.getModifiers)) {
             if (constructor.getParameterCount > 0) {
+                val const  = addConstructor(constructor)
                 val params = constructor.getParameterTypes
-                val const  = addConstructor(ctClass, params)
                 const.setBody(
                     s"""
                        |super(${params.indices.map(i => s"$$${i + 1}").mkString(",")});
@@ -90,11 +91,44 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
         })
     }
 
-    private def addConstructor(target: CtClass, params: Array[Class[_]]): CtConstructor = {
-        val ctConstructor = new CtConstructor(Array.empty, target)
+    private def addConstructor(constructor: Constructor[_]): CtConstructor = {
+        val params        = constructor.getParameterTypes
+        val ctConstructor = new CtConstructor(Array.empty, ctClass)
+        val constPool     = ctClass.getClassFile.getConstPool
+        val annAttribute  = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag)
+        constructor.getAnnotations.foreach(ann => {
+            val annType    = ann.annotationType()
+            val annotation = new Annotation(annType.getName, constPool)
+            addAllMembers(ann, annotation)
+            annAttribute.addAnnotation(annotation)
+        })
+        ctConstructor.getMethodInfo.addAttribute(annAttribute)
         params.foreach(param => ctConstructor.addParameter(pool.get(param.getName)))
-        target.addConstructor(ctConstructor)
+        ctClass.addConstructor(ctConstructor)
         ctConstructor
+    }
+
+    private def cast[X](y: Any): X = y.asInstanceOf[X]
+
+    private def addAllMembers(ann: java.lang.annotation.Annotation, annotation: Annotation): Unit = {
+        val constPool = ctClass.getClassFile.getConstPool
+        ann.annotationType().getDeclaredMethods.foreach { method =>
+            val returnType  = method.getReturnType
+            val value       = method.invoke(ann)
+            val memberValue = (returnType.getName: @switch) match {
+                case "int"              => new IntegerMemberValue(constPool, cast(value))
+                case "byte"             => new ByteMemberValue(cast(value), constPool)
+                case "double"           => new DoubleMemberValue(cast(value), constPool)
+                case "long"             => new LongMemberValue(cast(value), constPool)
+                case "short"            => new ShortMemberValue(cast(value), constPool)
+                case "char"             => new CharMemberValue(cast(value), constPool)
+                case "float"            => new FloatMemberValue(cast(value), constPool)
+                case "boolean"            => new BooleanMemberValue(cast[Boolean](value), constPool)
+                case "java.lang.String" => new StringMemberValue(cast[String](value), constPool)
+                case "java.lang.Class" => new ClassMemberValue(cast[Class[_]](value).getName, constPool)
+            }
+            annotation.addMemberValue(method.getName, memberValue)
+        }
     }
 
     private def fixAllMethods(): Unit = {

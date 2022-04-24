@@ -70,10 +70,10 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override def isConnected(identifier: String): Boolean = findEngine(identifier).isDefined
 
     override def findCacheManager(family: String): Option[SharedCacheManager] = {
-        if (trunkInitializing)
-            return None
         if (family == GlobalCacheID)
             return Some(globalCache)
+        if (trunkInitializing)
+            return None
         trunk.findCache(family)
     }
 
@@ -83,9 +83,9 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override def declareNewCacheManager(family: String): SharedCacheManager = {
         if (trunkInitializing)
-           throw new UnsupportedOperationException("Trunk is initializing.")
+            throw new UnsupportedOperationException("Trunk is initializing.")
         if (trunk.findCache(family).isDefined)
-           throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
+            throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
         newCacheManager(family)
     }
 

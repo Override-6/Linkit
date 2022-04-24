@@ -34,7 +34,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
         if (!obj.isInstanceOf[NetworkObject[_]]) {
             return findNonNetworkObjectReference(obj)
         }
-        obj match {
+        val found = obj match {
             case sync: SynchronizedObject[_]                       =>
                 findSyncObjectReference(sync)
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
@@ -44,6 +44,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
             case obj: NetworkObject[NetworkObjectReference]        =>
                 findNetworkObjectReference(obj)
         }
+        found
     }
 
     private def findSyncObjectReference(obj: SynchronizedObject[_]): Option[NetworkObjectReference] = {

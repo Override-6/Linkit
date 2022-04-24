@@ -21,6 +21,7 @@ import java.io.InputStream
 import java.nio.file.{FileSystemNotFoundException, Files, Path}
 import java.security.CodeSource
 import java.util.zip.ZipFile
+import scala.collection.mutable
 
 object MappingEngine {
 
@@ -31,6 +32,8 @@ object MappingEngine {
     val EmptyFilter = new MapEngineFilters(null)
 
     val DefaultFilter = new MapEngineFilters(getClass.getResourceAsStream("/mapEngineFilter.txt"))
+
+    private val mappedDirs = mutable.HashSet.empty[String]
 
     def mapAllSources(sources: (CodeSource, ClassLoader)*): Unit = {
         sources.foreach { case (source, classLoader) =>
@@ -94,6 +97,9 @@ object MappingEngine {
     private def mapDirectory(root: String,
                              directory: Path, classLoader: ClassLoader,
                              filters: MapEngineFilters): Unit = {
+        if (mappedDirs.contains(directory.toString))
+            return
+        mappedDirs.add(directory.toString)
         if (isZipFile(directory)) {
             val dirPath  = directory.toString
             val isInJMod = dirPath.endsWith(".jmod")
@@ -131,7 +137,7 @@ object MappingEngine {
                 try {
                     ClassMappings.putClass(className, classLoader)
                 } catch {
-                    case e: NoClassDefFoundError =>
+                    case _: NoClassDefFoundError =>
                         AppLogger.warn(s"$className is not a valid class")
                 }
             }

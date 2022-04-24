@@ -36,9 +36,7 @@ object RFSCServer {
         val properties = network.globalCache
                 .attachToCache(40, DefaultSynchronizedObjectCache[mutable.HashMap[String, String]])
                 .syncObject(0, Constructor[mutable.HashMap[String, String]](), contracts)
-        val statics    = network.newStaticAccess(1, contracts)
-        val wtf = statics[Path].of[Path]("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\CompilationCenter")
-        println(wtf)
+        network.newStaticAccess(1, contracts)
     }
 
 }

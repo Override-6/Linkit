@@ -94,7 +94,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
-        runLater {
+        /*runLater*/ {
             val coords       = DedicatedPacketCoordinates(path, boundIdentifier, currentIdentifier)
             val config       = traffic.getPersistenceConfig(coords.path)
             val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network)

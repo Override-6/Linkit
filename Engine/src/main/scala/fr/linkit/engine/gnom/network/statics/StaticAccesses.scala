@@ -28,8 +28,7 @@ class StaticAccesses(network: Network) {
             case Some(_) =>
                 throw new CacheAlreadyDeclaredException(s"Static access already exists for id '$id'")
             case None    =>
-                val cache = cacheManager.attachToCache(id, DefaultSynchronizedStaticsCache.apply(contract))
-                staticAccesses.syncObject(id, Constructor[StaticAccessImpl](cache), contract)
+                staticAccesses.syncObject(id, Constructor[StaticAccessImpl](id, cacheManager, contract), contract)
         }
     }
 }

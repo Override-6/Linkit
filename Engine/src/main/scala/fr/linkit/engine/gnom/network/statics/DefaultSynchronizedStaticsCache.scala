@@ -11,6 +11,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.SynchronizedStaticsCache
+import fr.linkit.api.gnom.persistence.context.Persist
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
@@ -20,7 +21,7 @@ import scala.reflect.ClassTag
 
 //this class is used by the statics synchronization side.
 //It is not directly used by the user and must uses a specific sync instance creator.
-class DefaultSynchronizedStaticsCache(channel: CachePacketChannel,
+class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
                                       classCenter: SyncClassCenter,
                                       override val defaultContracts: ContractDescriptorData,
                                       override val network: Network) extends DefaultSynchronizedObjectCache[MethodCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {

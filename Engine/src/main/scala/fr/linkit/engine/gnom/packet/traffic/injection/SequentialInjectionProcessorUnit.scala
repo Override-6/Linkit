@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
 
+import scala.annotation.StaticAnnotation
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -29,6 +30,8 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
     private final val queue            = mutable.PriorityQueue.empty[ObjectDeserializationResult] { case (a, b) => a.ordinal - b.ordinal }
     private final val locker           = new SimpleWorkerController()
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
+
+    class CacaProut(x: Int => Unit) extends StaticAnnotation()
 
     override def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit = {
         val methodExecutor = Thread.currentThread()
@@ -66,8 +69,10 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                 return //the current IPU is not processing any injection
             WorkerPools.currentTask.orNull
         }
-        if (currentTask == null && executor != null) this.synchronized(wait())
-        else if (executor != null) locker.pauseTask()
+        if (currentTask == null && executor != null)
+            this.synchronized(wait())
+        else if (executor != null)
+            locker.pauseTask()
     }
 
     def deserializeNextResult(injectable: PacketInjectable): Unit = {

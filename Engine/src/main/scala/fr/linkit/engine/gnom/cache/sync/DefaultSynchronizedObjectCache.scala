@@ -20,13 +20,14 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
-import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, ConnectedObjectNode}
+import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.AppLogger
@@ -54,9 +55,9 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacketChannel,
-                                                            classCenter: SyncClassCenter,
-                                                            override val defaultContracts: ContractDescriptorData,
-                                                            override val network: Network)
+                                                                       classCenter: SyncClassCenter,
+                                                                       override val defaultContracts: ContractDescriptorData,
+                                                                       override val network: Network)
         extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
     private  val cacheOwnerId     : String                     = channel.manager.ownerID
@@ -246,6 +247,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         forest.findTree(id).isDefined
     }
 
+
     private object DefaultInstantiator extends SyncInstanceInstantiator {
 
         override def newSynchronizedInstance[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
@@ -367,5 +369,7 @@ object DefaultSynchronizedObjectCache {
                                               rootObject: A with SynchronizedObject[A],
                                               treeOwner: String,
                                               contracts: ContractDescriptorData) extends Serializable
+
+
 
 }

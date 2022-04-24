@@ -37,7 +37,6 @@ object ObjectsProperty {
             "app" -> network.connection.getApp,
             "application" -> network.connection.getApp,
             //"server" -> network.serverEngine,
-            "gnol" -> network.gnol,
             "traffic" -> network.connection.traffic,
         ))
     }

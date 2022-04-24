@@ -1,7 +1,10 @@
 package fr.linkit.engine.gnom.network.statics
 
+import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor, SynchronizedStaticsCache}
+import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder._
@@ -13,8 +16,10 @@ import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFold
 
 import scala.reflect.{ClassTag, classTag}
 
-class StaticAccessImpl(cache: SynchronizedStaticsCache) extends StaticAccess {
+class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, contract: ContractDescriptorData) extends StaticAccess with Deconstructible {
 
+
+    private val cache = manager.attachToCache(cacheId, DefaultSynchronizedStaticsCache.apply(contract))
     private val app      = cache.network.connection.getApp
     private val center   = app.compilerCenter
     private val resource = {
@@ -27,6 +32,8 @@ class StaticAccessImpl(cache: SynchronizedStaticsCache) extends StaticAccess {
         val caller = cache.getOrSynchronize(clazz.getName.hashCode)(getMethodCaller(clazz))
         new StaticAccessorImpl(caller, clazz)
     }
+
+    override def deconstruct(): Array[Any] = Array(cacheId, manager, contract)
 
     private def getMethodCaller(clazz: Class[_]): SyncStaticAccessInstanceCreator = {
         val staticsDesc = SyncStaticsDescription(clazz)
