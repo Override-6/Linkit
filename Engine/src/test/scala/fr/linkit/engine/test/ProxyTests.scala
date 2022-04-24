@@ -30,14 +30,4 @@ class ProxyTests {
             x * 2
         }
     }
-
-    @Test
-    def makeTest(): Unit = {
-        val proxy = Proxy.newPrxyInstance(classOf[ProxiedObject].getClassLoader, Array(classOf[ProxiedObject]), (p, m, args) => {
-            println(p, m, args)
-            "testlol"
-        }).asInstanceOf[ProxiedObject]
-        proxy.test("testtestdqsdzq dqd zd qzd zqd ")
-    }
-
 }

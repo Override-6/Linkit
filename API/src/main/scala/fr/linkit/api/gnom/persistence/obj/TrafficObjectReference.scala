@@ -14,10 +14,13 @@
 package fr.linkit.api.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 import java.util
 
 class TrafficObjectReference(val trafficPath: Array[Int]) extends TrafficReference {
+
+    override def parent: Option[NetworkObjectReference] = Some(TrafficReference)
 
     override def toString: String = {
         s"@traffic/${trafficPath.mkString("/")}"

@@ -26,7 +26,6 @@ import fr.linkit.api.gnom.reference.linker.{InitialisableNetworkObjectLinker, Ne
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, TrafficInterestedNPH}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
@@ -152,11 +151,10 @@ abstract class AbstractSharedCacheManager(override val family: String,
         }
 
         override def toString: String = localRegisteredHandlers.toString()
-
     }
 
     protected object ManagerCachesLinker
-        extends AbstractNetworkPresenceHandler[SharedCacheReference](network.objectManagementChannel)
+        extends AbstractNetworkPresenceHandler[SharedCacheReference](network.gnol.cacheNOL, network.objectManagementChannel)
             with InitialisableNetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH {
 
         override def registerReference(ref: SharedCacheReference): Unit = super.registerReference(ref)
@@ -190,7 +188,8 @@ abstract class AbstractSharedCacheManager(override val family: String,
                 reference match {
                     case ref: SharedCacheReference =>
                         LocalCachesStore.findCache(ref.cacheID).fold(throw new NoSuchElementException(s"Could not inject Linker request bundle: no such cache is set at $ref")) { cacheProfile =>
-                            cacheProfile.objectLinker.fold()(_.injectRequest(bundle))
+                            cacheProfile.objectLinker.fold(throw new UnsupportedOperationException(s"Could not inject Linker request bundle: cache located at '$ref' does not have an object linker."))(
+                                _.injectRequest(bundle))
                         }
                 }
             }

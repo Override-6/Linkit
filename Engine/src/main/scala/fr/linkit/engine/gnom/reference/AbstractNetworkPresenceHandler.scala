@@ -28,7 +28,7 @@ import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, 
 
 import scala.collection.mutable
 
-abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](channel: ObjectManagementChannel)
+abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](parent: NetworkPresenceHandler[_ >: R], channel: ObjectManagementChannel)
         extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
     private lazy val currentIdentifier = channel.traffic.currentIdentifier
@@ -43,8 +43,11 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
     }
 
     override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
-        getPresence(ref).getPresenceFor(engineId) eq PRESENT
+        (parent == null || ref.parent.exists(r => parent.isPresentOnEngine(engineId, casted(r)))) &&
+                (getPresence(ref).getPresenceFor(engineId) eq PRESENT)
     }
+
+    private def casted[A](ref: NetworkObjectReference): A = ref.asInstanceOf[A]
 
     def findPresence(ref: R): Option[NetworkObjectPresence] = {
         Some(getPresence(ref))
@@ -55,17 +58,21 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](chann
         //fixme quick wobbly fix
         if (traffic != null && traffic.currentIdentifier == engineId)
             return isLocationReferenced(location)
-        AppLogger.debug(s"Asking if $location is present on engine: $engineId")
-        val isPresent = channel
-                .makeRequest(ChannelScopes.include(engineId))
-                .addPacket(EmptyPacket)
-                .putAttribute(ReferenceAttributeKey, location)
-                .submit()
-                .nextResponse
-                .nextPacket[BooleanPacket]
-                .value
-        AppLogger.debug(s"is any network object registered at $location on engine $engineId ? $isPresent")
-        isPresent
+
+        val parentIsPresent = parent == null || location.parent.exists(r => parent.isPresentOnEngine(engineId, casted(r)))
+        parentIsPresent && {
+            AppLogger.debug(s"Asking if $location is present on engine: $engineId")
+            val isPresent = channel
+                    .makeRequest(ChannelScopes.include(engineId))
+                    .addPacket(EmptyPacket)
+                    .putAttribute(ReferenceAttributeKey, location)
+                    .submit()
+                    .nextResponse
+                    .nextPacket[BooleanPacket]
+                    .value
+            AppLogger.debug(s"is any network object registered at $location on engine $engineId ? $isPresent")
+            isPresent
+        }
     }
 
     private[reference] def informPresence(enginesId: Array[String], location: R, presence: ObjectPresenceType): Unit = {

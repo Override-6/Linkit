@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: AbstractPacketTraffic) extends
-        AbstractNetworkPresenceHandler[TrafficReference](omc) with NetworkObjectLinker[TrafficReference] {
+        AbstractNetworkPresenceHandler[TrafficReference](null, omc) with NetworkObjectLinker[TrafficReference] {
 
     override def findObject(reference: TrafficReference): Option[NetworkObject[_ <: TrafficReference]] = {
         reference match {

@@ -61,7 +61,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
 
     private  val cacheOwnerId     : String                     = channel.manager.ownerID
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
-    override val forest           : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, network.objectManagementChannel)
+    override val forest           : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, channel.manager.getCachesLinker, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
 
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = {

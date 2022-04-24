@@ -13,8 +13,6 @@
 
 package fr.linkit.api.gnom.reference.presence
 
-import fr.linkit.api.gnom.packet.PacketCoordinates
-
 trait NetworkObjectPresence {
 
     def getPresenceFor(engineId: String): ObjectPresenceType

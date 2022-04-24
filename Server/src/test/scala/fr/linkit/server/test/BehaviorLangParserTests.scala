@@ -8,10 +8,4 @@ class BehaviorLangParserTests {
 
     private val app     = ServerLauncher.launch()
     private val network = app.findConnection(Port).get.network
-
-    @Test
-    def parse(): Unit = {
-        Contract("contracts/NetworkContract.bhv")(app, ObjectsProperty.defaults(network))
-    }
-
 }

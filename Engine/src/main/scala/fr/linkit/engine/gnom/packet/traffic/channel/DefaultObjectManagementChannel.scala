@@ -15,7 +15,14 @@ package fr.linkit.engine.gnom.packet.traffic.channel
 
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.reference.presence.ObjectPresenceType
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
+import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket.AnyRefPacket
+import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 class DefaultObjectManagementChannel(rootStore: PacketInjectableStore, scope: ChannelScope)

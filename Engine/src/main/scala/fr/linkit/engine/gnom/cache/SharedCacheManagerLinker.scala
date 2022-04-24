@@ -23,7 +23,7 @@ import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils._
 
 class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[SharedCacheManagerReference](omc)
+        extends AbstractNetworkPresenceHandler[SharedCacheManagerReference](null, omc)
                 with InitialisableNetworkObjectLinker[SharedCacheManagerReference] {
 
     override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SharedCacheManagerReference]

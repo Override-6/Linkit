@@ -28,6 +28,9 @@ class ConnectedObjectReference(family: String,
                                cacheID: Int,
                                val ownerID: String,
                                val nodePath: Array[Int]) extends SharedCacheReference(family, cacheID) {
+
+    override def parent: Option[SharedCacheReference] = Some(new SharedCacheReference(family, cacheID))
+
     override def toString: String = super.toString + s"/~${nodePath.mkString("/")}"
 
     override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, ownerID, nodePath))

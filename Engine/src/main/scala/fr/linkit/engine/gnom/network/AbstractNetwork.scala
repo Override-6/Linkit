@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.api.gnom.cache.{CacheAlreadyDeclaredException, CacheManagerAlreadyDeclaredException, SharedCacheManager}
+import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
@@ -23,7 +23,6 @@ import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, Remainin
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
-import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
@@ -41,7 +40,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     private            val currentIdentifier      : String                     = connection.currentIdentifier
     private            val tnol                                                = traffic.getTrafficObjectLinker
     private            val rnol                                                = new MapNetworkObjectsLinker(objectManagementChannel) with RemainingNetworkObjectsLinker
-    private lazy       val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
+    private            val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
     override lazy      val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, Some(rnol))
     override lazy      val globalCache            : SharedCacheManager         = createGlobalCache
     protected lazy     val trunk                  : NetworkDataTrunk           = initDataTrunk()
@@ -71,6 +70,8 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override def isConnected(identifier: String): Boolean = findEngine(identifier).isDefined
 
     override def findCacheManager(family: String): Option[SharedCacheManager] = {
+        if (trunkInitializing)
+            return None
         if (family == GlobalCacheID)
             return Some(globalCache)
         trunk.findCache(family)
@@ -81,8 +82,10 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
 
     override def declareNewCacheManager(family: String): SharedCacheManager = {
+        if (trunkInitializing)
+           throw new UnsupportedOperationException("Trunk is initializing.")
         if (trunk.findCache(family).isDefined)
-            throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
+           throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
         newCacheManager(family)
     }
 

@@ -12,8 +12,11 @@
  */
 
 package fr.linkit.api.gnom.network
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 class EngineReference(val identifier: String) extends NetworkReference {
+
+    override def parent: Option[NetworkObjectReference] = Some(NetworkReference)
 
     override def toString: String = {
         s"@network/$identifier"

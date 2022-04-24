@@ -14,16 +14,20 @@
 package fr.linkit.api.gnom.persistence.context
 
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 import java.util
 
-class ContextualObjectReference(private val trafficPath0: Array[Int], val objectID: Int) extends TrafficObjectReference(trafficPath0) {
+class ContextualObjectReference(trafficPath: Array[Int], val objectID: Int) extends TrafficObjectReference(trafficPath) {
+
+    override def parent: Option[NetworkObjectReference] = Some(new TrafficObjectReference(trafficPath))
+
     override def toString: String = super.toString + s"/~$objectID"
 
-    override def hashCode(): Int = util.Arrays.deepHashCode(Array(trafficPath0, objectID))
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(trafficPath, objectID))
 
     override def equals(obj: Any): Boolean = obj match {
-        case ref: ContextualObjectReference => ref.objectID == objectID && (ref.trafficPath0 sameElements trafficPath0)
+        case ref: ContextualObjectReference => ref.objectID == objectID && (ref.trafficPath sameElements trafficPath)
         case _ => false
     }
 }

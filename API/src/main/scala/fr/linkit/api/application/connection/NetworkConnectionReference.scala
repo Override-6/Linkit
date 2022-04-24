@@ -14,8 +14,11 @@
 package fr.linkit.api.application.connection
 
 import fr.linkit.api.gnom.network.NetworkReference
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 class NetworkConnectionReference extends NetworkReference {
+
+    override def parent: Option[NetworkObjectReference] = Some(NetworkReference)
 
     override def toString: String = "@network/connection"
 
