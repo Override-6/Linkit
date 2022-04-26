@@ -24,6 +24,7 @@ import fr.linkit.engine.internal.generation.compilation.{AbstractCompilationRequ
 import java.nio.file.Path
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
+import fr.linkit.engine.internal.mapping.ClassMappings
 
 class ClassCompilationRequestFactory[I <: CompilationContext, C](blueprint: ClassBlueprint[I]) extends AbstractCompilationRequestFactory[I, Class[_ <: C]] {
 
@@ -56,6 +57,8 @@ class ClassCompilationRequestFactory[I <: CompilationContext, C](blueprint: Clas
     }
 
     def loadClass(req: CompilationRequest[Seq[Class[_ <: C]]], context: I, className: String, loader: GeneratedClassLoader): Class[_] = {
-        loader.loadClass(className)
+        val clazz = loader.loadClass(className)
+        ClassMappings.putClass(clazz)
+        clazz
     }
 }

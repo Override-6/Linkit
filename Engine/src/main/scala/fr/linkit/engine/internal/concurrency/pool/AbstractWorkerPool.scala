@@ -223,6 +223,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
 
     def haveMoreTasks: Boolean
 
+    //TODO much better to return a ThreadTask instead of having a runnable that will declare a ThreadTask in it.
     protected def nextTask: Runnable
 
     /**

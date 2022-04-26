@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.engine.gnom.network.statics.StaticsCaller
+import fr.linkit.api.gnom.network.statics.StaticsCaller
 
 import java.lang.reflect.Method
 import scala.collection.mutable

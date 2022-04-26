@@ -13,30 +13,32 @@
 
 package fr.linkit.engine.internal.mapping
 
-import java.security.CodeSource
-
 import fr.linkit.api.internal.system.AppLogger
 
+import java.security.CodeSource
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 object ClassMappings {
 
     type ClassMappings = ClassMappings.type
 
-    private val primitives     = mapPrimitives()
-    private val classes        = mutable.HashMap.empty[Int, (Class[_], MappedClassInfo)]
-    private val unknownClasses = mutable.HashMap.empty[Int, MappedClassInfo]
-    private val sources        = mutable.HashSet.empty[CodeSource]
+    private val primitives = mapPrimitives()
+    private val classes    = mutable.HashMap.empty[Int, (Class[_], MappedClassInfo)]
+    private val sources    = mutable.HashSet.empty[CodeSource]
+
+    private val listeners     = ListBuffer.empty[ClassMappingsListener]
+    private var haveListeners = false
+
+    private[mapping] def classCodes: Array[Int] = classes.keys.toArray
 
     def putClass(className: String, loader: ClassLoader): Unit = {
         //println(s"Class put ! ($className) of hash code ${className.hashCode}")
-        val clazz = Class.forName(className, false, loader)
-        classes.put(className.hashCode, createMapValue(clazz))
+        val clazz     = Class.forName(className, false, loader)
+        val classCode = className.hashCode
+        classes.put(classCode, createMapValue(clazz))
+        notifyListeners(classCode)
         MappedClassesTree.addClass(clazz)
-    }
-
-    def putUnknownClass(info: MappedClassInfo): Unit = {
-        unknownClasses.put(info.classCode, info)
     }
 
     def addClassPath(source: CodeSource): Unit = sources += source
@@ -44,7 +46,9 @@ object ClassMappings {
     def getClassPaths: List[CodeSource] = sources.toList
 
     def putClass(clazz: Class[_]): Unit = {
-        classes.put(clazz.getName.hashCode, (clazz, getClassInfo(clazz)))
+        val classCode = clazz.getName.hashCode
+        classes.put(classCode, (clazz, getClassInfo(clazz)))
+        notifyListeners(classCode)
     }
 
     def findClass(hashCode: Int): Option[Class[_]] = {
@@ -61,21 +65,20 @@ object ClassMappings {
 
     def isRegistered(hashCode: Int): Boolean = classes.contains(hashCode)
 
-    @inline def isRegistered(clazz: Class[_]): Boolean = isRegistered(clazz.getName)
+    @inline
+    def isRegistered(clazz: Class[_]): Boolean = isRegistered(clazz.getName)
 
-    @inline def isRegistered(className: String): Boolean = classes.contains(className.hashCode)
+    @inline
+    def isRegistered(className: String): Boolean = classes.contains(className.hashCode)
 
-    @inline def codeOfClass(clazz: Class[_]): Int = {
+    @inline
+    def codeOfClass(clazz: Class[_]): Int = {
         val name = clazz.getName
         if (!classes.contains(name.hashCode)) {
             AppLogger.warn(s"Class map did not contained $clazz. (code: ${name.hashCode})")
             putClass(clazz)
         }
         name.hashCode
-    }
-
-    def findUnknownClassInfo(code: Int): Option[MappedClassInfo] = {
-        unknownClasses.get(code)
     }
 
     def findKnownClassInfo(code: Int): Option[MappedClassInfo] = {
@@ -86,6 +89,11 @@ object ClassMappings {
         if ((clazz eq classOf[Object]) || clazz == null)
             return MappedClassInfo.Object
         classes.getOrElseUpdate(clazz.getName.hashCode, createMapValue(clazz))._2
+    }
+
+    def addListener(listener: ClassMappingsListener) = {
+        listeners += listener
+        haveListeners = true
     }
 
     private def createMapValue(clazz: Class[_]): (Class[_], MappedClassInfo) = {
@@ -106,7 +114,12 @@ object ClassMappings {
             l.Boolean.TYPE,
             Character.TYPE
         ).map(cl => (cl.getName.hashCode, cl))
-            .toMap
+                .toMap
+    }
+
+    private def notifyListeners(classCode: Int): Unit = {
+        if (haveListeners)
+            listeners.foreach(_.onClassMapped(classCode))
     }
 
 }

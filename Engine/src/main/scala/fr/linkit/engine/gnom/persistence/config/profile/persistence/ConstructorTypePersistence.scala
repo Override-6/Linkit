@@ -35,7 +35,6 @@ class ConstructorTypePersistence[T <: AnyRef](constructor: Constructor[T], decon
     private  val invoker                    = new ConstructorInvoker(constructor)
 
     override def initInstance(allocatedObject: T, args: Array[Any], box: ControlBox): Unit = {
-        constructor
         invoker.invoke(allocatedObject, args)
     }
 

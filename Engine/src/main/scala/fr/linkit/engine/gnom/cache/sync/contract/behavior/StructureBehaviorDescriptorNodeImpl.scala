@@ -50,7 +50,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
 
         putMethods(methodMap, true, context)
 
-        new StructureContractImpl(clazz, descriptor.mirroringInfo, methodMap.toMap, Array())
+        new StructureContractImpl(clazz, None, methodMap.toMap, Array())
     }
 
     override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {

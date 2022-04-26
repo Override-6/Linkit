@@ -26,7 +26,7 @@ import fr.linkit.engine.internal.mapping.ClassMappings
 import java.io.File
 import java.nio.file.{Files, NoSuchFileException}
 
-class SyncClassCompilationRequestFactory(center: CompilerCenter)
+class SyncClassCompilationRequestFactory()
         extends ClassCompilationRequestFactory[SyncStructureDescription[_], SynchronizedObject[_]](ClassBlueprint) {
 
     override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]],
@@ -38,11 +38,11 @@ class SyncClassCompilationRequestFactory(center: CompilerCenter)
             throw new NoSuchFileException(s"Class file for class $className at ${req.classDir} not found.")
 
         AppLogger.debug("Performing post compilation modifications in the class file...")
-        val (byteCode, wrapperClass) = new SyncClassRectifier(context, className, loader, context.clazz).rectifiedClass
+        val (byteCode, syncClass) = new SyncClassRectifier(context, className, loader, context.clazz).rectifiedClass
         Files.write(wrapperClassFile, byteCode)
-        RuntimeClassOperations.prepareClass(wrapperClass)
-        ClassMappings.putClass(wrapperClass)
-        wrapperClass
+        RuntimeClassOperations.prepareClass(syncClass)
+        ClassMappings.putClass(syncClass)
+        syncClass
     }
 }
 

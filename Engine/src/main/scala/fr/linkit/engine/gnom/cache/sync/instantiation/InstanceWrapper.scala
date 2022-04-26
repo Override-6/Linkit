@@ -16,11 +16,11 @@ package fr.linkit.engine.gnom.cache.sync.instantiation
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 
-class InstanceWrapper[T <: AnyRef](obj: T with SynchronizedObject[T]) extends SyncInstanceCreator[T] {
+case class InstanceWrapper[T <: AnyRef](obj: T with SynchronizedObject[T]) extends SyncInstanceCreator[T] {
     override val tpeClass: Class[T] = obj.getSourceClass
 
     override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
-        val clazz = obj.getClass
+        //val clazz = obj.getClass
         //if (clazz != syncClass)
         //    throw new IllegalArgumentException(s"Required sync object type is not equals to stored sync object (${obj.getClass} / $syncClass")
         obj

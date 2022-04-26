@@ -15,8 +15,8 @@ package $ClassPackage$
 import $OriginClassName$
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
+import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
-import fr.linkit.engine.gnom.network.statics.StaticsCaller
 import fr.linkit.engine.internal.utils.JavaUtils.nl
 
 import scala.annotation.switch

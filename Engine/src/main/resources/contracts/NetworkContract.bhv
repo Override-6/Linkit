@@ -1,6 +1,7 @@
 name "NetworkContract"
 import fr.linkit.api.gnom.**
 import fr.linkit.engine.gnom.**
+import fr.linkit.engine.internal.mapping.*
 import java.nio.file.Path
 import java.net.URI
 
@@ -10,7 +11,7 @@ code ${
 
 agreement current_and_origin = discard * -> accept current and owner -> appoint current
 agreement broadcast = accept * -> appoint current
-
+agreement only_owner = discard * -> accept owner -> appoint owner
 describe DefaultEngine {
     updateState(ExternalConnectionState) following current_and_origin
 }
@@ -24,6 +25,11 @@ describe NetworkDataTrunk {
 
 describe StaticAccesses {
     newStaticAccess0(int, ContractDescriptorData) following broadcast
+}
+
+describe RemoteClassMappings {
+    addClassToMap(String) following only_owner
+    onClassMapped(int) following broadcast
 }
 
 modifier SharedCacheOriginManager {

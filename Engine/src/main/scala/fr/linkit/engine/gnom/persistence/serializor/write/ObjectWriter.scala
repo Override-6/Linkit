@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
+import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
@@ -27,9 +28,10 @@ import scala.annotation.switch
 class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     val buff: ByteBuffer = bundle.buff
-    private val config     = bundle.config
-    private var widePacket = config.widePacket
-    private val pool       = new SerializerObjectPool(bundle)
+    private final val boundClassMappings = bundle.network.findEngine(bundle.boundId).map(_.asInstanceOf[DefaultEngine].classMappings).orNull
+    private       val config             = bundle.config
+    private var widePacket               = config.widePacket
+    private       val pool               = new SerializerObjectPool(bundle)
 
     def addObjects(roots: Array[AnyRef]): Unit = {
         val pool = this.pool
@@ -128,7 +130,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         }
 
         (flag: @switch) match {
-            case Class | SyncClass => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
+            case Class | SyncClass => foreach[Class[_]](writeClass)
             case String            => foreach[String](putString)
             case Enum              => foreach[Enum[_]](putEnum)
             case Array             => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
@@ -139,6 +141,13 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     }
 
     def getPool: SerializerObjectPool = pool
+
+    private def writeClass(clazz: Class[_]): Unit = {
+        val code = ClassMappings.codeOfClass(clazz)
+        buff.putInt(code)
+        if (boundClassMappings != null && !boundClassMappings.isClassCodeMapped(code))
+            boundClassMappings.addClassToMap(clazz.getName)
+    }
 
     private def putEnum(enum: Enum[_]): Unit = {
         putTypeRef(enum.getClass, forceSyncClass = false)
@@ -165,12 +174,6 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         putTypeRef(objectType, isSyncClass)
         //writing object content
         ArrayPersistence.writeArrayContent(this, decomposed)
-    }
-
-    @inline
-    private def putRef(pos: Int, ref: Int): Unit = {
-        if (widePacket) buff.putInt(pos, ref)
-        else buff.putChar(pos, ref.toChar)
     }
 
     @inline

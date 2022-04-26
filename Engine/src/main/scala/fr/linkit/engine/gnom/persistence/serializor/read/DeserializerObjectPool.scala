@@ -41,9 +41,9 @@ class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
 
 
     def getType(globalPos: Int): Class[_] = {
-        var pos = globalPos
+        var pos      = globalPos
         var tpeChunk = getChunkFromFlag[Class[_]](Class)
-        val size = tpeChunk.size
+        val size     = tpeChunk.size
         if (pos >= size) {
             tpeChunk = getChunkFromFlag[Class[_]](SyncClass)
             pos -= size

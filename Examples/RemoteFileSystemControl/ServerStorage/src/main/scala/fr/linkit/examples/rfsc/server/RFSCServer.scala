@@ -30,7 +30,7 @@ object RFSCServer {
 
     def main(args: Array[String]): Unit = {
         val server = createConnection("RFSCServer")
-        print("Server launched !")
+        println("Server launched !")
         val network    = server.network
         val contracts  = Contract("FSControl")(network)
         val properties = network.globalCache

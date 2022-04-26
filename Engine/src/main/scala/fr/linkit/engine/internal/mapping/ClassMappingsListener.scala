@@ -11,12 +11,8 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.network.statics
+package fr.linkit.engine.internal.mapping
 
-import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-
-trait StaticsCaller extends MethodCaller {
-
-    val staticsTarget: Class[_]
-
+trait ClassMappingsListener {
+    def onClassMapped(classCode: Int): Unit
 }

@@ -16,18 +16,18 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, InvalidSyncClassRequestException, SynchronizedObject}
+import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsCallerDescription}
-import fr.linkit.engine.gnom.network.statics.StaticsCaller
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import scala.util.Try
 
 class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends SyncClassCenter {
 
-    private val requestFactory = new SyncClassCompilationRequestFactory(center)
+    private val requestFactory = new SyncClassCompilationRequestFactory()
 
     override def getSyncClass[S <: AnyRef](clazz: Class[_]): Class[S with SynchronizedObject[S]] = {
         if (classOf[StaticsCaller].isAssignableFrom(clazz)) {

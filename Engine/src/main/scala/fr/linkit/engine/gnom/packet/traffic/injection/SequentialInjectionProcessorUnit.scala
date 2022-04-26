@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
-import fr.linkit.api.internal.concurrency.WorkerPools
+import fr.linkit.api.internal.concurrency.{Worker, WorkerPools}
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
 
 import scala.annotation.StaticAnnotation
@@ -26,24 +26,34 @@ import scala.collection.mutable.ListBuffer
 
 class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
 
-    private final var executor: Thread = _
+    private final var executor: Worker = _
     private final val queue            = mutable.PriorityQueue.empty[ObjectDeserializationResult] { case (a, b) => a.ordinal - b.ordinal }
     private final val locker           = new SimpleWorkerController()
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
 
-    class CacaProut(x: Int => Unit) extends StaticAnnotation()
-
     override def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit = {
-        val methodExecutor = Thread.currentThread()
+        val methodExecutor = WorkerPools.currentWorker
         //AppLogger.debug(s"posting serialization result in sipu, executor = $executor")
         queue.synchronized {
             queue.enqueue(result)
         }
         this.synchronized {
-            if (executor != null && methodExecutor != executor)
+            if (executor != null && methodExecutor != executor) {
+                //the current thread is not the thread in charge of deserializing
+                //and injecting packets for this InjectionProcessorUnit.
+                if (executor.isSleeping) {
+                    //If the thread that is in charge of the deserialization / injection process is doing nothing
+                    //then force it to deserialize all remaining packets
+                    executor.runSpecificTask(deserializeAll(injectable))
+                }
                 return
+            }
             executor = methodExecutor
         }
+        deserializeAll(injectable)
+    }
+
+    private def deserializeAll(injectable: PacketInjectable): Unit = {
         // If any of the chained SIPU is processing,
         // the current unit will wait until the whole chain is complete.
         chain.foreach(_.join())

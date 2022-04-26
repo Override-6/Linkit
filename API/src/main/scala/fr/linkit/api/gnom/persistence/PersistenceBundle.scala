@@ -13,17 +13,19 @@
 
 package fr.linkit.api.gnom.persistence
 
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
+import org.jetbrains.annotations.Nullable
 
 import java.nio.ByteBuffer
 
 trait PersistenceBundle {
 
-    val buff          : ByteBuffer
-    val boundId       : String
-    val packetPath    : Array[Int]
-    val config        : PersistenceConfig
-    val gnol          : GeneralNetworkObjectLinker
+    val network   : Network
+    val buff      : ByteBuffer
+    val boundId   : String
+    val packetPath: Array[Int]
+    val config    : PersistenceConfig
 
 }

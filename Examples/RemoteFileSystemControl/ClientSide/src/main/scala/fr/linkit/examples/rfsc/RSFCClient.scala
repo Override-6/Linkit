@@ -12,7 +12,7 @@ object RSFCClient {
 
     def main(args: Array[String]): Unit = {
         val serverStatics = launchApp("x").network.getStaticAccess(1)
-        val path: Path    = serverStatics[Path].of("D:\\Users\\maxim\\Desktop\\Dev\\Perso\\Linkit\\StaticsFTPTest\\Server\\testServer.txt", Array[String]())
+        val path: Path    = serverStatics[Path].of[Path]("D:\\Users\\maxim\\Desktop\\Dev\\Perso\\Linkit\\StaticsFTPTest\\Server\\testServer.txt", Array[String]())
         val destPath      = Path.of("D:\\Users\\maxim\\Desktop\\Dev\\Perso\\Linkit\\StaticsFTPTest\\Client\\destination.png")
         serverStatics[Files].move(path, destPath, Array[CopyOption]())
     }

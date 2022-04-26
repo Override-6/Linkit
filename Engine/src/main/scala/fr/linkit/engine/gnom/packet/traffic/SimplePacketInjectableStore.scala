@@ -45,8 +45,9 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
             val node: TrafficNode[_] = nodeOpt.get
             val injectable           = node.injectable
             val presenceClass        = injectable.getClass
-            node match {
-                case node: TrafficNode[C] if clazz.isAssignableFrom(presenceClass) => return node
+            return node match {
+                case node: TrafficNode[C] if clazz.isAssignableFrom(presenceClass) =>
+                    node
                 case o                                                             =>
                     throw new ConflictException(s"Could not return current packet injectable: A PacketInjectable of type '${o.getClass.getSimpleName} exists at @traffic/$id, which is not assignable to request type '${clazz.getSimpleName}'")
             }

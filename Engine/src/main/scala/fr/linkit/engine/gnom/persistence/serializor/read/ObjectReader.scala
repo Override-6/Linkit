@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, ReferencedPoolObject}
+import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
@@ -121,7 +122,7 @@ class ObjectReader(bundle: PersistenceBundle,
         val widePacket = buff.get() == 1
         val sizes      = new Array[Int](ChunkCount)
 
-        var i: Int          = 0
+        var i: Int                = 0
         val announcedChunksNumber = buff.getInt
         while (i < ChunkCount) {
             val chunkBit = (announcedChunksNumber >> i) & 1

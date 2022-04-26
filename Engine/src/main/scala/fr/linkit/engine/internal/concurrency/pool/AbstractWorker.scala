@@ -13,51 +13,54 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import java.util.concurrent.locks.LockSupport
-
 import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorker.TaskProfile
 
+import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+import scala.util.Try
 
 /**
  * The representation of a java thread, extending from [[Thread]].
  * This class contains information that need to be stored into a specific thread class.
  * */
 private[concurrency] trait AbstractWorker
-    extends Worker with WorkerThreadController {
+        extends Worker with WorkerThreadController {
 
     private var isParkingForWorkflow   : Boolean    = false
     private var taskRecursionDepthCount: Int        = 0
     private var currentTask            : ThreadTask = _
     private val workingTasks                        = new mutable.LinkedHashMap[Int, TaskProfile]
-    override  val pool  : WorkerPool
+    private val forcedTasks                         = ListBuffer.empty[ThreadTask]
+    override val pool: WorkerPool
 
     override def getCurrentTask: Option[ThreadTask] = Option(currentTask)
 
     override def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit = {
         ensureCurrentThreadEqualsThis()
-        AppLogger.vError("Entering workflow loop...")
+        //AppLogger.vError("Entering workflow loop...")
 
         while (loopCondition) {
-            AppLogger.vError("This thread is about to park.")
+            //AppLogger.vError("This thread is about to park.")
             isParkingForWorkflow = true
             val t = parkAction
             isParkingForWorkflow = false
-            AppLogger.vError("This thread has been unparked.")
+            //AppLogger.vError("This thread has been unparked.")
+            forcedTasks.foreach(runTask)
             if (!loopCondition) {
                 return
             }
-            AppLogger.vError("Continuing workflow...")
+            //AppLogger.vError("Continuing workflow...")
             workflow(t)
         }
-        AppLogger.vError("Exiting workflow loop...")
+        //AppLogger.vError("Exiting workflow loop...")
     }
 
     override def runTask(task: ThreadTask): Unit = {
-        if (Thread.currentThread() != thread)
-            throw IllegalThreadException("")
+        ensureCurrentThreadEqualsThis()
 
         pushTask(task)
         task.runTask()
@@ -89,9 +92,16 @@ private[concurrency] trait AbstractWorker
         val id = task.taskID
         workingTasks.remove(id)
         currentTask = workingTasks
-            .lastOption
-            .map(_._2.task)
-            .orNull
+                .lastOption
+                .map(_._2.task)
+                .orNull
+    }
+
+    override def runSpecificTask(task: => Unit): Unit = {
+        if (!isSleeping)
+            throw new IllegalThreadStateException("Thread isn't sleeping.")
+        forcedTasks += new SimpleAsyncTask(currentTask.taskID + 1, currentTask, () => Try(task))
+        wakeup(currentTask)
     }
 
     override def taskRecursionDepth: Int = taskRecursionDepthCount
@@ -100,9 +110,10 @@ private[concurrency] trait AbstractWorker
 
     override def isSleeping: Boolean = isParkingForWorkflow
 
+    @inline
     private def ensureCurrentThreadEqualsThis(): Unit = {
         if (Thread.currentThread() != thread)
-            throw IllegalThreadException("This Thread does not in its own worker.")
+            throw IllegalThreadException(s"method not called by thread $thread")
     }
 
 }

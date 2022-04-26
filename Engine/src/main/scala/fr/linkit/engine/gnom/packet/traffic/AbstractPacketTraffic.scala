@@ -100,7 +100,9 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             processInjection(bundle)
         } else {
             val path = result.coords.path
-            val node = findNode(path).get
+            val node = findNode(path).getOrElse {
+                throw new NoSuchTrafficPresenceException(s"Could not process injection: Could not find packet injectable located at ${path.mkString("/")}")
+            }
             node.ipu().post(result, node.injectable)
         }
     }

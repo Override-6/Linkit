@@ -23,7 +23,7 @@ import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, 
 
 class ObjectSelector(bundle: PersistenceBundle) {
 
-    private val gnol       = bundle.gnol
+    private val gnol       = bundle.network.gnol
     private val rnol       = gnol.remainingNOL
     private val col        = bundle.config.contextualObjectLinker
     private val boundId    = bundle.boundId

@@ -29,4 +29,7 @@ trait Worker {
 
     def getController: WorkerThreadController
 
+    @throws[IllegalThreadStateException]("if isSleeping = false")
+    def runSpecificTask(task: => Unit): Unit
+
 }

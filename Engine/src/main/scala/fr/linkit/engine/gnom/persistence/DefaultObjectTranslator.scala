@@ -14,11 +14,11 @@
 package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
@@ -95,15 +95,14 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
     }
 
     override def translate(traffic: PacketTraffic, buffer: ByteBuffer, ordinal: Int): ObjectDeserializationResult = {
-        val coords  = readCoordinates(buffer)
-        val conf    = traffic.getPersistenceConfig(coords.path)
-        val network = traffic.connection.network
-        val bundle  = new PersistenceBundle {
-            override val buff      : ByteBuffer                 = buffer
-            override val boundId   : String                     = coords.senderID
-            override val packetPath: Array[Int]                 = coords.path
-            override val config    : PersistenceConfig          = conf
-            override val gnol      : GeneralNetworkObjectLinker = network.gnol
+        val coords = readCoordinates(buffer)
+        val conf   = traffic.getPersistenceConfig(coords.path)
+        val bundle = new PersistenceBundle {
+            override val network   : Network           = traffic.connection.network
+            override val buff      : ByteBuffer        = buffer
+            override val boundId   : String            = coords.senderID
+            override val packetPath: Array[Int]        = coords.path
+            override val config    : PersistenceConfig = conf
         }
         new LazyObjectDeserializationResult(buffer, coords, ordinal)(serializer.deserializeObjects(bundle))
     }

@@ -11,19 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.test
+package fr.linkit.api.gnom.network.statics
 
-import fr.linkit.engine.internal.manipulation.invokation.ConstructorInvoker
-import org.junit.jupiter.api.Test
+import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 
-class ScalaTests(i: Int) {
+trait StaticsCaller extends MethodCaller {
 
-
-    println("DSQD: i")
-
-
-}
-
-object ScalaTests {
+    val staticsTarget: Class[_]
 
 }

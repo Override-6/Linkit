@@ -16,6 +16,10 @@ package fr.linkit.engine.gnom.network
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.internal.system.Versions
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
+import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
+import fr.linkit.engine.internal.language.bhv.Contract
+import fr.linkit.engine.internal.mapping.RemoteClassMappings
 import fr.linkit.engine.internal.system.StaticVersions
 
 import java.sql.Timestamp
@@ -23,11 +27,17 @@ import java.sql.Timestamp
 class DefaultEngine(override val identifier: String,
                     override val cache: SharedCacheManager) extends Engine {
 
-    override val reference   : EngineReference = new EngineReference(identifier)
-    override val network     : Network         = cache.network
+    override val reference: EngineReference = new EngineReference(identifier)
+    override val network  : Network         = cache.network
 
     //val reference: EngineReference = new EngineReference(identifier)
     override val versions: Versions = StaticVersions.currentVersions
+
+    val classMappings: RemoteClassMappings = {
+        val contracts = Contract("NetworkContract")(network)
+        cache.attachToCache(1, DefaultSynchronizedObjectCache[RemoteClassMappings](contracts))
+                .syncObject(0, Constructor[RemoteClassMappings](identifier))
+    }
 
     override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())
 

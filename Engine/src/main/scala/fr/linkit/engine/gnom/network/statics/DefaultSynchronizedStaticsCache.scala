@@ -7,15 +7,15 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
-import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.network.statics.SynchronizedStaticsCache
+import fr.linkit.api.gnom.network.statics.{StaticsCaller, SynchronizedStaticsCache}
 import fr.linkit.api.gnom.persistence.context.Persist
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 
 import scala.reflect.ClassTag
 
@@ -24,28 +24,30 @@ import scala.reflect.ClassTag
 class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
                                       classCenter: SyncClassCenter,
                                       override val defaultContracts: ContractDescriptorData,
-                                      override val network: Network) extends DefaultSynchronizedObjectCache[MethodCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
+                                      override val network: Network) extends DefaultSynchronizedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
 
     //ensuring that the creator is of the right type
-    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: MethodCaller]): MethodCaller with SynchronizedObject[MethodCaller] = {
+    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {
         checkCreator(creator)
         super.syncObject(id, creator)
     }
 
-    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: MethodCaller], contracts: ContractDescriptorData): MethodCaller with SynchronizedObject[MethodCaller] = {
+    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller], contracts: ContractDescriptorData): StaticsCaller with SynchronizedObject[StaticsCaller] = {
         checkCreator(creator)
         super.syncObject(id, creator, contracts)
     }
 
-    override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[MethodCaller], context: SyncObjectContext): StructureContract[MethodCaller] = {
+    override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: SyncObjectContext): StructureContract[StaticsCaller] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator =>
-                factory.getStaticContract(creator.staticsClass.asInstanceOf[Class[MethodCaller]], context)
+                factory.getStaticContract(creator.targettedClass.asInstanceOf[Class[StaticsCaller]], context)
+            case InstanceWrapper(methodCaller: StaticsCaller) =>
+                factory.getStaticContract(methodCaller.staticsTarget.asInstanceOf[Class[StaticsCaller]], context)
             case _                                        => throwUOE()
         }
     }
 
-    private def checkCreator(creator: SyncInstanceCreator[_ <: MethodCaller]): Unit = {
+    private def checkCreator(creator: SyncInstanceCreator[_ <: StaticsCaller]): Unit = {
         if (!creator.isInstanceOf[SyncStaticAccessInstanceCreator])
             throwUOE()
     }

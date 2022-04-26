@@ -3,7 +3,7 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor, SynchronizedStaticsCache}
+import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor, StaticsCaller}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.application.LinkitApplication
@@ -24,7 +24,7 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
     private val center   = app.compilerCenter
     private val resource = {
         val prop = LinkitApplication.getProperty("compilation.working_dir.classes")
-        app.getAppResources.getOrOpenThenRepresent[CachedClassFolderResource[MethodCaller]](prop)
+        app.getAppResources.getOrOpenThenRepresent[CachedClassFolderResource[StaticsCaller]](prop)
     }
 
     override def apply[S: ClassTag]: StaticAccessor = {
@@ -37,13 +37,13 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
 
     private def getMethodCaller(clazz: Class[_]): SyncStaticAccessInstanceCreator = {
         val staticsDesc = SyncStaticsDescription(clazz)
-        val mcClass     = resource.findClass[MethodCaller](staticsDesc.classPackage + "." + clazz.getSimpleName + "StaticsCaller", staticsDesc.parentLoader).getOrElse {
+        val mcClass     = resource.findClass[StaticsCaller](staticsDesc.classPackage + "." + clazz.getSimpleName + "StaticsCaller", staticsDesc.parentLoader).getOrElse {
             genClass(staticsDesc)
-        }.asInstanceOf[Class[MethodCaller]]
+        }.asInstanceOf[Class[StaticsCaller]]
         new SyncStaticAccessInstanceCreator(mcClass, Array(), clazz)
     }
 
-    private def genClass(context: SyncStaticsDescription[_]): Class[_ <: MethodCaller] = {
+    private def genClass(context: SyncStaticsDescription[_]): Class[_ <: StaticsCaller] = {
         val result = center.processRequest {
             AppLogger.info(s"Compiling Statics method caller for class '${context.clazz.getName}'...")
             CompilationRequestFactory.makeRequest(context)
@@ -57,5 +57,5 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
 object StaticAccessImpl {
 
     private final val Blueprint                 = new StaticsCallerClassBlueprint(getClass.getResourceAsStream("/generation/statics_caller.scbp"))
-    private final val CompilationRequestFactory = new ClassCompilationRequestFactory[SyncStaticsDescription[_], MethodCaller](Blueprint)
+    private final val CompilationRequestFactory = new ClassCompilationRequestFactory[SyncStaticsDescription[_], StaticsCaller](Blueprint)
 }
