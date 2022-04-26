@@ -3,7 +3,7 @@
 #include <string.h>
 #include <vector>
 #include <string>
-#include <algorithm>;
+#include <algorithm>
 using namespace std;
 
 jvalue NumberToJValue(JNIEnv* env, JValueType type, double n) {
@@ -38,28 +38,28 @@ jvalue NumberToJValue(JNIEnv* env, JValueType type, double n) {
 }
 
 JValueType ClassNameToType(std::string name) {
-	if (name == "boolean" || name == "Z") {
+	if (name == "java.lang.Boolean" || name == "boolean" || name == "Z") {
 		return JValueType::BOOLEAN_FLAG;
 	}
-	else if (name == "byte" || name == "B") {
+	else if (name == "java.lang.Byte" || name == "byte" || name == "B") {
 		return JValueType::BYTE_FLAG;
 	}
-	else if (name == "char" || name == "C") {
+	else if (name == "java.lang.Character" || name == "char" || name == "C") {
 		return JValueType::CHAR_FLAG;
 	}
-	else if (name == "short" || name == "S") {
+	else if (name == "java.lang.Short" || name == "short" || name == "S") {
 		return JValueType::SHORT_FLAG;
 	}
-	else if (name == "int" || name == "I") {
+	else if (name == "java.lang.Integer" || name == "int" || name == "I") {
 		return JValueType::INT_FLAG;
 	}
-	else if (name == "long" || name == "J") {
+	else if (name == "java.lang.Long" || name == "long" || name == "J") {
 		return JValueType::LONG_FLAG;
 	}
-	else if (name == "float" || name == "F") {
+	else if (name == "java.lang.Float" || name == "float" || name == "F") {
 		return JValueType::FLOAT_FLAG;
 	}
-	else if (name == "double" || name == "D") {
+	else if (name == "java.lang.Double" || name == "double" || name == "D") {
 		return JValueType::DOUBLE_FLAG;
 	}
 	else if (name == "void" || name == "V") {

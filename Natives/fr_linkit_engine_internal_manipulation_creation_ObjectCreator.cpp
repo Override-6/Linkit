@@ -8,7 +8,6 @@
 
 using namespace std;
 
-std::ofstream debugfile("C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home\\NativesCommunication-ObjectCreator.txt");
 
 jobject GetField(JNIEnv* env, jobject target, jobject field, string returnType) {
 	jfieldID fieldID = env->FromReflectedField(field);
