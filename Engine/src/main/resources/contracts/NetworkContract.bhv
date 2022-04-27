@@ -20,7 +20,7 @@ describe NetworkDataTrunk {
         sync returnvalue
     }
     newEngine(String) following broadcast
-    addEngine(sync Engine)
+    addEngine(sync DefaultEngine)
 }
 
 describe StaticAccesses {

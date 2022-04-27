@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
 import fr.linkit.engine.gnom.network.DefaultEngine
@@ -28,7 +29,7 @@ import scala.annotation.switch
 class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     val buff: ByteBuffer = bundle.buff
-    private final val boundClassMappings = bundle.network.findEngine(bundle.boundId).map(_.asInstanceOf[DefaultEngine].classMappings).orNull
+    private final val boundClassMappings = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[DefaultEngine].classMappings).orNull
     private       val config             = bundle.config
     private var widePacket               = config.widePacket
     private       val pool               = new SerializerObjectPool(bundle)
@@ -145,8 +146,9 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     private def writeClass(clazz: Class[_]): Unit = {
         val code = ClassMappings.codeOfClass(clazz)
         buff.putInt(code)
-        if (boundClassMappings != null && !boundClassMappings.isClassCodeMapped(code))
+        if (boundClassMappings != null && !boundClassMappings.isClassCodeMapped(code)) InvocationChoreographer.enableInvocations {
             boundClassMappings.addClassToMap(clazz.getName)
+        }
     }
 
     private def putEnum(enum: Enum[_]): Unit = {

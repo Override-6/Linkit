@@ -51,6 +51,18 @@ class InvocationChoreographer {
         }
     }
 
+    def enableInvocations[A](action: => A): A = {
+        val thread = Thread.currentThread()
+        if (!markedThreads.contains(thread)) return action
+
+        markedThreads -= thread
+        try {
+            action
+        } finally {
+            markedThreads += thread
+        }
+    }
+
     /**
      * @return true if the current thread is marked as a thread that must perform all SynchronizedObject's executions locally.
      *         @see [[disableInvocations()]]

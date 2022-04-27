@@ -33,10 +33,25 @@ class DefaultEngine(override val identifier: String,
     //val reference: EngineReference = new EngineReference(identifier)
     override val versions: Versions = StaticVersions.currentVersions
 
-    val classMappings: RemoteClassMappings = {
-        val contracts = Contract("NetworkContract")(network)
-        cache.attachToCache(1, DefaultSynchronizedObjectCache[RemoteClassMappings](contracts))
-                .syncObject(0, Constructor[RemoteClassMappings](identifier))
+    private var mappings              : Option[RemoteClassMappings] = None
+    private var isMappingsInitializing: Boolean                     = false
+
+    def isCurrentEngine = identifier == network.connection.currentIdentifier
+
+    def classMappings: Option[RemoteClassMappings] = {
+        if (mappings.isEmpty && !isMappingsInitializing) {
+            isMappingsInitializing = true
+            val contracts = Contract("NetworkContract")(network)
+            val cache     = network.globalCache.attachToCache(2, DefaultSynchronizedObjectCache[RemoteClassMappings](contracts))
+            mappings = {
+                if (isCurrentEngine)
+                    Some(cache.syncObject(identifier.hashCode, Constructor[RemoteClassMappings](identifier)))
+                else
+                    cache.findObject(identifier.hashCode)
+            }
+            isMappingsInitializing = false
+        }
+        mappings
     }
 
     override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())

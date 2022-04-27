@@ -71,7 +71,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getNode: ObjectSyncNode[A] = node
 
-    protected def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
+    protected final def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         if (!isInitialized) {
             //throw new IllegalStateException(s"Synchronized object at '${location}' is not initialised")
             return superCall(args).asInstanceOf[R]

@@ -32,7 +32,7 @@ trait Network extends StaticNetworkObject[NetworkReference] {
 
     val gnol: GeneralNetworkObjectLinker
 
-    def connectionEngine: Engine
+    def currentEngine: Engine
 
     def globalCache: SharedCacheManager
 

@@ -13,8 +13,6 @@
 
 package fr.linkit.engine.internal.mapping
 
-import fr.linkit.api.gnom.network.Engine
-
 import scala.collection.mutable
 
 class RemoteClassMappings(val ownerId: String) extends ClassMappingsListener {

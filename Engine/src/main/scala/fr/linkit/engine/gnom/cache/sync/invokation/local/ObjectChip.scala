@@ -60,7 +60,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
                 override val arguments : Array[Any]       = params
             }
             val result = contract.executeMethodInvocation(caller, data)
-            ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
+            ExecutorEngine.setCurrentEngine(network.currentEngine) //return to the current engine.
             result
         }
     }

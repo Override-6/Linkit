@@ -49,7 +49,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     private var trunkInitializing = false
 
-    override def connectionEngine: Engine = engine0
+    override def currentEngine: Engine = engine0
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
         throw new NoSuchElementException("Server Engine not found.")
@@ -133,8 +133,9 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         trunk.reinjectEngines()
         engine0 = trunk.newEngine(currentIdentifier)
         staticAccesses = trunk.staticAccesses
+        engine0.asInstanceOf[DefaultEngine].classMappings
 
-        ExecutorEngine.initDefaultEngine(connectionEngine)
+        ExecutorEngine.initDefaultEngine(currentEngine)
         this
     }
 

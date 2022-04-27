@@ -15,7 +15,6 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
@@ -28,7 +27,7 @@ import scala.collection.mutable
 //FIXME OriginManagers and DistantManagers can be bypassed
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
-    private               val engines        = mutable.HashMap.empty[String, Engine]
+    private               val engines        = mutable.HashMap.empty[String, DefaultEngine]
     private               val caches         = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
     private[network] lazy val staticAccesses = new StaticAccesses(network)
 
@@ -50,7 +49,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
             throw new IllegalArgumentException("This engine already exists !")
         val current      = ExecutorEngine.currentEngine
         val cacheManager = {
-            if (network.connectionEngine ne current) getDistantCache(engineIdentifier)
+            if (network.currentEngine ne current) getDistantCache(engineIdentifier)
             else network.newCacheManager(engineIdentifier)
         }
         addEngine(new DefaultEngine(engineIdentifier, cacheManager))
@@ -76,7 +75,8 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
 
     def countConnection: Int = engines.size
 
-    protected def addEngine(engine: Engine): Engine = {
+    protected def addEngine(engine: DefaultEngine): Engine = {
+        //engine.classMappings //init the mappings
         engines.put(engine.identifier, engine)
         engine
     }

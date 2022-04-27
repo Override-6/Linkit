@@ -59,8 +59,8 @@ case class MethodParam(syncState: RegistrationState, name: Option[String], tpe: 
 
     override def toString: String = (syncState.kind match {
         case RegistrationKind.NotRegistered => ""
-        case RegistrationKind.ChippedOnly   => "chip"
-        case RegistrationKind.Synchronized  => "sync"
+        case RegistrationKind.ChippedOnly   => "chip "
+        case RegistrationKind.Synchronized  => "sync "
     }) + tpe
 }
 
