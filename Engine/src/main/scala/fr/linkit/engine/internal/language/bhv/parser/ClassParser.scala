@@ -14,10 +14,11 @@
 package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
-import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ast}
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
+import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ast}
 
 object ClassParser extends BehaviorLanguageParser {
 
@@ -36,10 +37,12 @@ object ClassParser extends BehaviorLanguageParser {
         }
         val returnvalueState           = syncParser <~ ReturnValue | success(RegistrationState(false, NotRegistered))
         val as                         = Following ~> identifier ^^ AgreementReference
+        val invHandlingTypeParser      = (Ensinv ^^^ EnableSubInvocations | Disinv ^^^ DisableSubInvocations) | success(Inherit)
         val foreachMethodEnable        = {
             val notModifiers = not(rep1(methodModifierParser)) withFailureMessage "Global method description can't have any modifier"
-            (properties <~ Foreach <~ Method <~ Enable) ~ as.? ~ (BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight).? ^^ {
-                case properties ~ ref ~ rvState => new EnabledMethodDescription(properties, ref, rvState.getOrElse(RegistrationState(false, NotRegistered)))
+            (properties <~ Foreach <~ Method <~ Enable) ~ invHandlingTypeParser ~ as.? ~ (BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight).? ^^ {
+                case properties ~ invMethod ~ ref ~ rvState =>
+                    new EnabledMethodDescription(invMethod, properties, ref, rvState.getOrElse(RegistrationState(false, NotRegistered)))
             }
         }
         val foreachMethodDisable       = Foreach ~ Method ~> Disable ^^^ new DisabledMethodDescription()
@@ -55,8 +58,9 @@ object ClassParser extends BehaviorLanguageParser {
             (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ RegistrationState(false, NotRegistered))
         }
         val enabledMethodParser        = {
-            properties ~ (Enable.? ~> methodSignature) ~ as.? ~ enabledMethodCore ^^ {
-                case properties ~ sig ~ referent ~ (modifiers ~ syncRv) => EnabledMethodDescription(properties, referent, syncRv)(sig, modifiers)
+            invHandlingTypeParser ~ properties ~ (Enable.? ~> methodSignature) ~ as.? ~ enabledMethodCore ^^ {
+                case invMethod ~ properties ~ sig ~ referent ~ (modifiers ~ syncRv) =>
+                    EnabledMethodDescription(invMethod, properties, referent, syncRv)(sig, modifiers)
             }
         }
         val disabledMethodParser       = {

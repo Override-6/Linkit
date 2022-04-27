@@ -28,7 +28,7 @@ describe StaticAccesses {
 }
 
 describe RemoteClassMappings {
-    addClassToMap(String) following only_owner
+    ensinv addClassToMap(String) following only_owner
     onClassMapped(int) following broadcast
 }
 

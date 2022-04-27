@@ -23,9 +23,10 @@ object ClassMappings {
 
     type ClassMappings = ClassMappings.type
 
-    private val primitives = mapPrimitives()
-    private val classes    = mutable.HashMap.empty[Int, (Class[_], MappedClassInfo)]
-    private val sources    = mutable.HashSet.empty[CodeSource]
+    private val primitives   = mapPrimitives()
+    private val classes      = mutable.HashMap.empty[Int, (Class[_], MappedClassInfo)]
+    private val classLoaders = mutable.HashSet.empty[ClassLoader]
+    private val sources      = mutable.HashSet.empty[CodeSource]
 
     private val listeners     = ListBuffer.empty[ClassMappingsListener]
     private var haveListeners = false
@@ -39,6 +40,16 @@ object ClassMappings {
         classes.put(classCode, createMapValue(clazz))
         notifyListeners(classCode)
         MappedClassesTree.addClass(clazz)
+    }
+
+    def putClass(className: String): Unit = {
+        for (loader <- classLoaders) try {
+            putClass(className, loader)
+            return
+        } catch {
+            case _: ClassNotFoundException =>
+        }
+        throw new ClassNotFoundException(className)
     }
 
     def addClassPath(source: CodeSource): Unit = sources += source
@@ -99,6 +110,7 @@ object ClassMappings {
     private def createMapValue(clazz: Class[_]): (Class[_], MappedClassInfo) = {
         if ((clazz eq classOf[Object]) || clazz == null)
             return (clazz, MappedClassInfo.Object)
+        classLoaders += clazz.getClassLoader
         (clazz, MappedClassInfo(clazz))
     }
 

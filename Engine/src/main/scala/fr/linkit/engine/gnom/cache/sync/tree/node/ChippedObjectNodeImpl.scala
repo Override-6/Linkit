@@ -1,6 +1,7 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, ChippedObject, ConnectedObjectReference}
@@ -28,6 +29,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
     override  val chip             : Chip[A]                          = data.chip
     override  val tree             : DefaultSynchronizedObjectTree[_] = data.tree
     override  val contract         : StructureContract[A]             = data.contract
+    override  val choreographer    : InvocationChoreographer          = data.choreographer
     /**
      * The identifier of the engine that posted this object.
      */

@@ -5,29 +5,15 @@ import java.nio.file.Files
 import fr.linkit.**
 import java.net.URI
 import scala.collection.mutable
-code ${
-    import scala.collection.mutable
-    import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
-    lazy val properties = £{@network: Network}.globalCache
-             .attachToCache(40, DefaultSynchronizedObjectCache[mutable.HashMap[String, String]])
-             .findObject(0).get
-}
 
-agreement only_cache_owner = accept cache_owner
+agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_owner
 agreement broadcast = accept*
-
-describe mutable.HashMap {
-    put(Object, Object) following broadcast
-}
 
 describe mirroring Path {
     foreach method enable following only_cache_owner
 }
 describe statics Path {
-    of(path: String, String[]) {
-        path -> out: ${(path, remote) => properties("FS_HOME_" + remote.identifier) + s"/$path"}
-        chip returnvalue
-    }
+    of(path: String, String[]) following only_cache_owner
     hide method of(URI) "Please use method of(String, String[]) instead."
 }
 describe statics Files {

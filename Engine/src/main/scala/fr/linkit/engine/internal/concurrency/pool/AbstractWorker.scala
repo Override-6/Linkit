@@ -97,11 +97,13 @@ private[concurrency] trait AbstractWorker
                 .orNull
     }
 
-    override def runSpecificTask(task: => Unit): Unit = {
+    override def runWhileSleeping(task: => Unit): Unit = {
         if (!isSleeping)
             throw new IllegalThreadStateException("Thread isn't sleeping.")
-        forcedTasks += new SimpleAsyncTask(currentTask.taskID + 1, currentTask, () => Try(task))
-        wakeup(currentTask)
+        val id = if (currentTask == null) 0 else currentTask.taskID + 1
+        forcedTasks += new SimpleAsyncTask(id, currentTask, () => Try(task))
+        if (currentTask != null)
+            wakeup(currentTask)
     }
 
     override def taskRecursionDepth: Int = taskRecursionDepthCount

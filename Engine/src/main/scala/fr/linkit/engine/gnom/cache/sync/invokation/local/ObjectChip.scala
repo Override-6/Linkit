@@ -16,20 +16,23 @@ package fr.linkit.engine.gnom.cache.sync.invokation.local
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, StructureContract}
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.internal.utils.ScalaUtils
 
+import scala.annotation.switch
+
 class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
                                       network: Network, chippedObject: ChippedObject[A])
         extends Chip[A] {
 
-    private val chipped       = chippedObject.connected
-    private val sourceClass   = chippedObject.getConnectedObjectClass
-    private val isDistant     = contract.remoteObjectInfo.isDefined
-    private val isOrigin      = chippedObject.isOrigin
+    private val chipped     = chippedObject.connected
+    private val sourceClass = chippedObject.getConnectedObjectClass
+    private val isDistant   = contract.remoteObjectInfo.isDefined
+    private val isOrigin    = chippedObject.isOrigin
 
     override def updateObject(obj: A): Unit = {
         ScalaUtils.pasteAllFields(chipped, obj)
@@ -53,15 +56,25 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
     }
 
     @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], caller: Engine): Any = {
-        chippedObject.getChoreographer.disableInvocations {
+        val invKind = contract.invocationHandlingMethod
+
+        def call() = contract.choreographer.disinv {
             ExecutorEngine.setCurrentEngine(caller)
             val data   = new contract.InvocationExecution {
-                override val obj: ChippedObject[_] = ObjectChip.this.chippedObject
-                override val arguments : Array[Any]       = params
+                override val obj      : ChippedObject[_] = ObjectChip.this.chippedObject
+                override val arguments: Array[Any]       = params
             }
             val result = contract.executeMethodInvocation(caller, data)
             ExecutorEngine.setCurrentEngine(network.currentEngine) //return to the current engine.
             result
+        }
+
+        val choreographer = chippedObject.getChoreographer
+        import choreographer._
+        (invKind: @switch) match {
+            case DisableSubInvocations => disinv(call())
+            case EnableSubInvocations  => ensinv(call())
+            case Inherit               => call()
         }
     }
 

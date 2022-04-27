@@ -78,6 +78,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                 if (cache.forest.asInstanceOf[DefaultSyncObjectForest[AnyRef]].isObjectLinked(r))
                     ???///tree.insertObject(nodeReference.nodePath, r, agreement.getAppointedEngineReturn).obj.connected
                 else r
+            case null => null.asInstanceOf[R]
         }
     }
 

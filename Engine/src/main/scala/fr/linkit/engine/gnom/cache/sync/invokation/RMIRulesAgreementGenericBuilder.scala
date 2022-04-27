@@ -40,11 +40,11 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
     }
 
     override def acceptAll(): RMIRulesAgreementGenericBuilder = {
-        new RMIRulesAgreementGenericBuilder(discarded, accepted, conditions, true, desiredEngineReturn)
+        new RMIRulesAgreementGenericBuilder(Seq(), accepted, conditions, true, desiredEngineReturn)
     }
 
     override def discardAll(): RMIRulesAgreementGenericBuilder = {
-        new RMIRulesAgreementGenericBuilder(discarded, accepted, conditions, false, desiredEngineReturn)
+        new RMIRulesAgreementGenericBuilder(discarded, Seq(), conditions, false, desiredEngineReturn)
     }
 
     override def appointReturn(target: EngineTag): RMIRulesAgreementGenericBuilder = {

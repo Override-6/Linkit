@@ -7,6 +7,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescripti
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, RemoteObjectInfo}
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
@@ -84,17 +85,17 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
         methods.map { method =>
             desc match {
                 case _: DisabledMethodDescription   =>
-                    MethodContractDescriptorImpl(method, false, None, None, Array.empty, None, true, EmptyBuilder)
+                    MethodContractDescriptorImpl(method, false, None, None, Array.empty, None, Inherit, EmptyBuilder)
                 case desc: EnabledMethodDescription =>
                     val rvContract = if (desc.syncReturnValue.kind != NotRegistered)
                         Some(new SimpleModifiableValueContract[Any](desc.syncReturnValue.kind, None)) else None
 
                     val agreement      = desc.agreement.map(ag => getAgreement(ag.name)).getOrElse(EmptyBuilder)
                     val procrastinator = findProcrastinator(desc.properties)
-                    MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, true, agreement)
+                    MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, desc.invocationHandlingMethod, agreement)
                 case desc: HiddenMethodDescription  =>
                     val msg = Some(desc.hideMessage.getOrElse(s"${method.javaMethod} is hidden"))
-                    MethodContractDescriptorImpl(method, false, None, None, Array(), msg, true, EmptyBuilder)
+                    MethodContractDescriptorImpl(method, false, None, None, Array(), msg, Inherit, EmptyBuilder)
             }
         }.toArray
     }
@@ -127,19 +128,19 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             def extractModifier(mod: CompModifier, valType: String): ValueModifier[Any] = {
                 mod match {
                     case ValueModifierReference(_, ref)      => getValueModifier(ref, valType)
-                    case ModifierExpression(target, in, out) => makeModifier(
-                        s"method_${target}_${signature.methodName}_${encodedIntMethodString(signature.hashCode())}", valType, in, out)
+                    case ModifierExpression(_, in, out) => makeModifier(
+                        s"method_${encodedIntMethodString(methodDesc.methodId)}", valType, in, out)
                 }
             }
 
             val result = (method: MethodDescription) match {
                 case _: DisabledMethodDescription  =>
                     checkParams()
-                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array.empty, None, true, EmptyBuilder)
+                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array.empty, None, Inherit, EmptyBuilder)
                 case desc: HiddenMethodDescription =>
                     checkParams()
                     val msg = Some(desc.hideMessage.getOrElse(s"${methodDesc.javaMethod} is hidden"))
-                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array(), msg, true, EmptyBuilder)
+                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array(), msg, Inherit, EmptyBuilder)
 
                 case desc: EnabledMethodDescription with AttributedEnabledMethodDescription =>
                     val rvContract         = {
@@ -165,7 +166,10 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         }.toArray
                         if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
                     }
-                    MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, true, agreement)
+                    var invocationMethod = desc.invocationHandlingMethod
+                    if (invocationMethod == Inherit)
+                        invocationMethod = referent.map(_.invocationHandlingMethod).getOrElse(Inherit)
+                    MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, invocationMethod, agreement)
             }
             result
         }
@@ -228,6 +232,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
         val inLambdaName     = s"${tpe}_in_${formattedTpeName}"
         val outLambdaName    = s"${tpe}_out_${formattedTpeName}"
         new ValueModifier[A] {
+
             override def fromRemote(input: A, remote: Engine): A = {
                 if (in.isDefined) {
                     val result = caller.call(inLambdaName, Array(input, remote))

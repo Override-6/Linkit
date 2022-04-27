@@ -14,12 +14,13 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.{RegistrationKind, StructureContract}
-import RegistrationKind._
+import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.{RegistrationKind, StructureContract}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
@@ -27,7 +28,6 @@ import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
-import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.AppLogger
@@ -96,13 +96,14 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val originClass   = chippedObject.getConnectedObjectClass
         val path          = parent.treePath :+ id
         val behaviorStore = tree.contractFactory
-        val context       = UsageSyncObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId)
+        val choreographer = new InvocationChoreographer()
+        val context       = UsageSyncObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId, choreographer)
         val contract      = behaviorStore.getObjectContract[B](originClass, context)
         val chip          = ObjectChip[B](contract, network, chippedObject)
         val reference     = new ConnectedObjectReference(family, cacheID, ownerID, path)
         val presence      = forest.getPresence(reference)
         new ChippedObjectNodeData[B](
-            network, chip, contract, chippedObject,
+            network, chip, contract, choreographer, chippedObject,
         )(new NodeData[B](reference, presence, tree, currentIdentifier, ownerID, Some(parent)))
     }
 
@@ -187,7 +188,8 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         precompileClasses(contracts)
 
         val nodeReference = ConnectedObjectReference(family, cacheID, rootObjectOwner, Array(id))
-        val context       = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId)
+        val choreographer = new InvocationChoreographer()
+        val context       = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId, choreographer)
         val factory       = SyncObjectContractFactory(contracts)
 
         val rootContract = getRootContract(factory)(creator, context)
@@ -199,7 +201,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val origin    = creator.getOrigin.map(new WeakReference(_))
         val rootNode  = (tree: DefaultSynchronizedObjectTree[A]) => {
             val regularData = new NodeData[A](nodeReference, presence, tree, currentIdentifier, rootObjectOwner, None)
-            val chipData    = new ChippedObjectNodeData[A](network, chip, rootContract, root)(regularData)
+            val chipData    = new ChippedObjectNodeData[A](network, chip, rootContract, choreographer, root)(regularData)
             val syncData    = new SyncObjectNodeData[A](puppeteer, root, origin)(chipData)
             new RootObjectNodeImpl[A](syncData)
         }

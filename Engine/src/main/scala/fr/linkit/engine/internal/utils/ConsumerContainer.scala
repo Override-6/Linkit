@@ -13,13 +13,13 @@
 
 package fr.linkit.engine.internal.utils
 
+import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class ConsumerContainer[A]() {
-
+class ConsumerContainer[A]@Persist()() extends Deconstructible {
 
     private val consumers = ListBuffer.empty[ConsumerExecutor]
 
@@ -109,6 +109,7 @@ class ConsumerContainer[A]() {
 
     }
 
+    override def deconstruct(): Array[Any] = Array()
 }
 
 object ConsumerContainer {

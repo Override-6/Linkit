@@ -22,7 +22,7 @@ class RemoteClassMappings(val ownerId: String) extends ClassMappingsListener {
     ClassMappings.addListener(this)
 
     //called on the owner engine
-    def addClassToMap(className: String): Unit = ClassMappings.putClass(className, ClassLoader.getSystemClassLoader)
+    def addClassToMap(className: String): Unit = ClassMappings.putClass(className)
 
     //called by the other engines
     def isClassCodeMapped(classCode: Int): Boolean = mappedClasses.contains(classCode)

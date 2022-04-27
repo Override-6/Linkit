@@ -17,16 +17,19 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 
 import scala.collection.mutable
 
-class InvocationChoreographer {
+class InvocationChoreographer(parent: InvocationChoreographer) {
+
+    def this() = this(InvocationChoreographer)
 
     /**
      * All threads that figures in this set are running the
-     * [[disableInvocations]] method.
-     * @see [[disableInvocations]] for more details
+     * [[disinv]] method.
+     * @see [[disinv]] for more details
      * */
     protected val markedThreads = new mutable.HashSet[Thread]
 
     /**
+     * Disable Sub Invocations<b>
      * The provided action will be executed, and during its execution,
      * the current thread will be added into the [[markedThreads]] set.
      *
@@ -39,7 +42,7 @@ class InvocationChoreographer {
      * @see [[MethodInvocation]]
      * @see [[SynchronizedObject]] for more information about those 'generated methods'.
      * */
-    def disableInvocations[A](action: => A): A = {
+    def disinv[A](action: => A): A = {
         val thread = Thread.currentThread()
         if (markedThreads.contains(thread)) return action
 
@@ -51,7 +54,10 @@ class InvocationChoreographer {
         }
     }
 
-    def enableInvocations[A](action: => A): A = {
+    /**
+     * Enable Sub Invocations<b>
+     * */
+    def ensinv[A](action: => A): A = {
         val thread = Thread.currentThread()
         if (!markedThreads.contains(thread)) return action
 
@@ -65,11 +71,10 @@ class InvocationChoreographer {
 
     /**
      * @return true if the current thread is marked as a thread that must perform all SynchronizedObject's executions locally.
-     *         @see [[disableInvocations()]]
+     *         @see [[disinv()]]
      * */
     def isMethodExecutionForcedToLocal: Boolean = {
-        val thread = Thread.currentThread()
-        markedThreads.contains(thread) || InvocationChoreographer.markedThreads.contains(thread)
+        markedThreads.contains(Thread.currentThread()) || parent.isMethodExecutionForcedToLocal
     }
 
 }

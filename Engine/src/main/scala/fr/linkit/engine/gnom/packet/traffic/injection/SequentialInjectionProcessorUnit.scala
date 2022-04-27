@@ -44,7 +44,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                 if (executor.isSleeping) {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
-                    executor.runSpecificTask(deserializeAll(injectable))
+                    executor.runWhileSleeping(deserializeAll(injectable))
                 }
                 return
             }

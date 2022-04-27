@@ -146,7 +146,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     private def writeClass(clazz: Class[_]): Unit = {
         val code = ClassMappings.codeOfClass(clazz)
         buff.putInt(code)
-        if (boundClassMappings != null && !boundClassMappings.isClassCodeMapped(code)) InvocationChoreographer.enableInvocations {
+        if (boundClassMappings != null && !boundClassMappings.isClassCodeMapped(code)) InvocationChoreographer.ensinv {
             boundClassMappings.addClassToMap(clazz.getName)
         }
     }

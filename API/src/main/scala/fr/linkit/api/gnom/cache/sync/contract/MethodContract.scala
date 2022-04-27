@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
+import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, InvocationHandlingMethod}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.network.Engine
@@ -26,6 +27,10 @@ trait MethodContract[R] {
     val hideMessage: Option[String]
 
     val isRMIActivated: Boolean
+
+    val invocationHandlingMethod: InvocationHandlingMethod
+
+    val choreographer: InvocationChoreographer
 
     def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, RegistrationKind) => ConnectedObject[AnyRef]): Any
 

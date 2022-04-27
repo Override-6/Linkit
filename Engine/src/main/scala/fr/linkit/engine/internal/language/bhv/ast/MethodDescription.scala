@@ -1,6 +1,7 @@
 package fr.linkit.engine.internal.language.bhv.ast
 
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 
 trait MethodDescription
 
@@ -18,17 +19,19 @@ class DisabledMethodDescription() extends MethodDescription
 
 class HiddenMethodDescription(val hideMessage: Option[String]) extends MethodDescription
 
-class EnabledMethodDescription(val properties: List[MethodProperty],
+class EnabledMethodDescription(val invocationHandlingMethod: InvocationHandlingMethod,
+                               val properties: List[MethodProperty],
                                val agreement: Option[AgreementReference],
                                val syncReturnValue: RegistrationState) extends MethodDescription
 
 object EnabledMethodDescription {
 
-    def apply(properties: List[MethodProperty],
+    def apply(invocationHandlingMethod: InvocationHandlingMethod,
+              properties: List[MethodProperty],
               agreement: Option[AgreementReference],
               syncReturnValue: RegistrationState)
              (sig: MethodSignature, mods: List[CompModifier]): EnabledMethodDescription with AttributedMethodDescription = {
-        new EnabledMethodDescription(properties, agreement, syncReturnValue) with AttributedEnabledMethodDescription {
+        new EnabledMethodDescription(invocationHandlingMethod, properties, agreement, syncReturnValue) with AttributedEnabledMethodDescription {
             override val signature = sig
             override val modifiers = mods
         }

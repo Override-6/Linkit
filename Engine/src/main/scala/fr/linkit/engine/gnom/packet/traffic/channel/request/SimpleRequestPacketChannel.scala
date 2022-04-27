@@ -58,7 +58,8 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
 
                 val responseID = response.id
                 Option(requestHolders.get(responseID)) match {
-                    case Some(request)                     => request.get().pushResponse(response)
+                    case Some(request)                     =>
+                        request.get().pushResponse(response)
                     case None if responseID > requestCount =>
                         throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
                     case None                              => requestHolders remove responseID

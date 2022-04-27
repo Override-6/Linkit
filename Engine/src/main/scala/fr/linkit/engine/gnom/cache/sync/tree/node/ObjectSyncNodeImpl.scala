@@ -32,7 +32,7 @@ class ObjectSyncNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends Chipp
     override def toString: String = s"node $reference for sync object ${obj.getClass.getName}"
 
     @Nullable
-    override def getMatchingSyncNode(nonSyncObject: AnyRef): MutableSyncNode[_ <: AnyRef] = InvocationChoreographer.disableInvocations {
+    override def getMatchingSyncNode(nonSyncObject: AnyRef): MutableSyncNode[_ <: AnyRef] = InvocationChoreographer.disinv {
         val origin = if (originRef == null) null else originRef.get()
         if (origin != null && (nonSyncObject eq origin))
             return this

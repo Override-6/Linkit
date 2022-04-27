@@ -48,7 +48,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         this.contract = node.contract
         this.presenceOnNetwork = node.objectPresence
         this.node = node
-        this.choreographer = new InvocationChoreographer()
+        this.choreographer = node.choreographer
 
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
@@ -83,6 +83,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             }
             opt.get
         }
+        val choreographer = methodContract.choreographer
         //Arguments that must be synchronized wil be synchronized according to method contract.
         methodContract.connectArgs(args, puppeteer.createConnectedObj)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")

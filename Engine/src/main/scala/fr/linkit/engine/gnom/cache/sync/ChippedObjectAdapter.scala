@@ -52,7 +52,7 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
     override def presence: NetworkObjectPresence = presence0
 
     def initialize(node: ChippedObjectNode[A]): Unit = {
-        this.choreographer = new InvocationChoreographer()
+        this.choreographer = node.choreographer
         this.reference0 = node.reference
         this.presence0 = node.objectPresence
         this.node = node

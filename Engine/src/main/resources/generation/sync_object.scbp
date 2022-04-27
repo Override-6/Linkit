@@ -27,10 +27,12 @@ class $ClassName$$TParamsIn$ extends AbstractSynchronizedObject[$OriginClassSimp
 
     override def originClass: Class[_] = classOf[$OriginClassSimpleName$$TParamsInBusted$]
 
+    @inline
+    implicit def cast[A, X[B]](y: X[_]): X[A] = y.asInstanceOf[X[A]]
 
 !!INHERITED_METHODS!! {
     $Override$ def $MethodName$($ParamsIn$): $ReturnType$ = {
-        handleCall[$ReturnType$]($MethodID$)(Array($ParamsOutArray$))(args => Array(this: Any $ParamsOutLambda$): Any)
+        handleCall[$ReturnType$]($MethodID$)(Array($ParamsOutArray$))(args => Array(this: Any $ParamsOutLambda$): Any).asInstanceOf[$ReturnType$]
     }
 }
 

@@ -39,8 +39,11 @@ class $ClassName$ extends StaticsCaller {
         }
     }
 
+    @inline
+    implicit def cast[A, X[B]](y: X[_]): X[A] = y.asInstanceOf[X[A]]
+
 !!INHERITED_METHODS!! {
-    protected def _$MethodNameID$($ParamsIn$): $ReturnType$ = $OriginClassSimpleName$.$MethodName$($ParamsOut$)
+    protected def _$MethodNameID$($ParamsIn$): $ReturnType$ = $OriginClassSimpleName$.$MethodName$($ParamsOut$).asInstanceOf[$ReturnType$]
 }
 }
 

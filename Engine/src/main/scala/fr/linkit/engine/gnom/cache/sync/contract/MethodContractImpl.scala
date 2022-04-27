@@ -17,9 +17,10 @@ import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract, RegistrationKind}
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
-import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
+import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, InvocationChoreographer, InvocationHandlingMethod, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
@@ -27,7 +28,10 @@ import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 import org.jetbrains.annotations.Nullable
 
-class MethodContractImpl[R](skipInnerInvocations: Boolean,
+import scala.annotation.switch
+
+class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHandlingMethod,
+                            parentChoreographer: InvocationChoreographer,
                             agreement: RMIRulesAgreement,
                             parameterContracts: Array[ModifiableValueContract[Any]],
                             returnValueContract: ModifiableValueContract[Any],
@@ -36,6 +40,8 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
                             @Nullable override val procrastinator: Procrastinator) extends MethodContract[R] {
 
     override val isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
+
+    override val choreographer: InvocationChoreographer = new InvocationChoreographer(parentChoreographer)
 
     override def connectArgs(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit = {
         if (parameterContracts.isEmpty)
@@ -78,10 +84,11 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
             override val methodArguments: Array[Any] = args
 
             override def callSuper(): R = {
-                if (skipInnerInvocations) choreographer.disableInvocations[R] {
-                    data.doSuperCall().asInstanceOf[R]
-                } else {
-                    data.doSuperCall().asInstanceOf[R]
+                import choreographer._
+                (invocationHandlingMethod: @switch) match {
+                    case DisableSubInvocations => disinv(data.doSuperCall().asInstanceOf[R])
+                    case EnableSubInvocations  => ensinv(data.doSuperCall().asInstanceOf[R])
+                    case Inherit               => data.doSuperCall().asInstanceOf[R]
                 }
             }
         }
@@ -115,7 +122,7 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
             return
         if (params.length != pcLength)
             throw new IllegalArgumentException("Params array length is not equals to parameter contracts length.")
-        for (i <- 0 to pcLength) {
+        for (i <- 0 until pcLength) {
             val contract = parameterContracts(i)
 
             val modifier = contract.modifier.orNull
@@ -210,6 +217,7 @@ class MethodContractImpl[R](skipInnerInvocations: Boolean,
             }
             result
         }
+
         for (i <- args.indices) {
             var finalRef = args(i)
             if (finalRef != null) {

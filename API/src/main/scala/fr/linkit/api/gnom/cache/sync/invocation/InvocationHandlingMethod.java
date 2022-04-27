@@ -11,23 +11,14 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.lexer.file;
+package fr.linkit.api.gnom.cache.sync.invocation;
 
-import fr.linkit.engine.internal.language.bhv.lexer.Keyword;
+public enum InvocationHandlingMethod {
 
-public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
-    Import, Describe, Code, Stub, Name,
-    Mirroring, Statics,
-    Method, Following, Enable, Disable, Hide, ReturnValue, Ensinv, Disinv,
-    Sync, Chip, Regular,
-    Modifier, In, Out, Foreach,
-    //Agreements
-    Agreement,
-    Discard, Accept, And, Appoint, If, Else, Is, Not;
-
-    @Override
-    public String value() {
-        return name().toLowerCase();
-    }
+    Inherit,
+    //disinv
+    DisableSubInvocations,
+    //ensinv
+    EnableSubInvocations
 
 }

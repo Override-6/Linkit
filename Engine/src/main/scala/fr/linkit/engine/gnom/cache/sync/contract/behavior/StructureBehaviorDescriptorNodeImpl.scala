@@ -157,19 +157,22 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         hierarchyVerifyResult.get
     }
 
-    private def verifyAgreement(method: Method, agreement: RMIRulesAgreement, context: SyncObjectContext): Unit = {
+    private def verifyAgreement(method: Method, agreement: RMIRulesAgreement, context: SyncObjectContext, isStatic: Boolean): Unit = {
         val acceptAll = agreement.isAcceptAll
         if (!acceptAll && agreement.acceptedEngines.length == 0)
             throw new BadContractException(s"method agreement $method have nowhere to invoke the method.")
-        val isMirroring = descriptor.mirroringInfo.isDefined && context.ownerID != context.currentID //is mirrorable and is not origin
+        if (isStatic)
+            return
+        val isMirroring = descriptor.mirroringInfo.isDefined && context.ownerID != context.currentID //is mirrorable and is not origin = isMirroring
         if (!isMirroring) return
 
+        val msg = s"method agreement $method would invoke this method on this engine while its implementation is on engine '${context.ownerID}'."
         if (acceptAll) {
             if (!agreement.discardedEngines.contains(context.currentID))
-                throw new BadContractException(s"method agreement $method would invoke this method on this engine while its implementation is on engine ${context.ownerID}.")
+                throw new BadContractException(msg)
         } else {
             if (agreement.acceptedEngines.contains(context.currentID))
-                throw new BadContractException(s"method agreement $method would invoke this method on this engine while its implementation is on engine ${context.ownerID}.")
+                throw new BadContractException(msg)
         }
     }
 
@@ -178,10 +181,10 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             val id = desc.description.methodId
             if (!map.contains(id)) {
                 val agreement = desc.agreement.result(context)
-                verifyAgreement(desc.description.javaMethod, agreement, context)
+                verifyAgreement(desc.description.javaMethod, agreement, context, static)
                 val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](NotRegistered))
                 val contract   = new MethodContractImpl[Any](
-                    desc.skipInnerInvocations, agreement, desc.parameterContracts,
+                    desc.invocationHandlingMethod, context.choreographer, agreement, desc.parameterContracts,
                     rvContract, desc.description, desc.hideMessage, desc.procrastinator.orNull)
                 map.put(id, contract)
             }

@@ -28,6 +28,7 @@ import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
+import fr.linkit.engine.internal.utils.ConsumerContainer
 
 import java.sql.Timestamp
 
@@ -145,6 +146,8 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         val store  = networkStore.createStore(family.hashCode)
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
     }
+
+    override def onNewEngine(f: Engine => Unit): Unit = trunk.onNewEngine(f)
 }
 
 object AbstractNetwork {

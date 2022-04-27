@@ -8,24 +8,19 @@ import scala.collection.mutable
 code ${
     import scala.collection.mutable
     import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
-    lazy val properties = £{@network: Network}.globalCache
-             .attachToCache(40, DefaultSynchronizedObjectCache[mutable.HashMap[String, String]])
-             .findObject(0).get
+    import fr.linkit.api.gnom.network.Engine
+    val homes = £{@homes: mutable.HashMap[Engine, Path]}
 }
 
-agreement only_cache_owner = accept cache_owner
+agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_owner
 agreement broadcast = accept*
 
-describe mutable.HashMap {
-    put(Object, Object) following broadcast
-}
-
-describe mirroring Path {
+describe Path {
     foreach method enable following only_cache_owner
 }
 describe statics Path {
-    of(path: String, String[]) {
-        path -> out: ${(path, remote) => properties("FS_HOME_" + remote.identifier) + s"/$path"}
+    of(path: String, String[]) following only_cache_owner {
+        path -> in: ${(path, remote) => homes(remote).toString + s"/$path"}
         chip returnvalue
     }
     hide method of(URI) "Please use method of(String, String[]) instead."

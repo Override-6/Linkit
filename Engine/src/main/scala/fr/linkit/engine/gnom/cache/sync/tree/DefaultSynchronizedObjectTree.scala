@@ -146,8 +146,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     }
 
     private def newChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chipped: B, ownerID: String): ChippedObjectNode[B] = {
-        if (ownerID != currentIdentifier)
-            throw new IllegalConnectedObjectRegistration("Attempted to create a chipped object that is not owned by the current engine. Chipped Objects can only exists on their origin engines.")
+        //if (ownerID != currentIdentifier)
+        //    throw new IllegalConnectedObjectRegistration("Attempted to create a chipped object that is not owned by the current engine. Chipped Objects can only exists on their origin engines.")
         val adapter = new ChippedObjectAdapter[B](chipped)
         initChippedObject(parent, id, adapter, ownerID)
     }

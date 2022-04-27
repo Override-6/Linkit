@@ -34,7 +34,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         result
     }
 
-    override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disableInvocations {
+    override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disinv {
         AppLogger.debug("Starting Serializing objects...")
         val t0 = System.currentTimeMillis()
         val buffer = bundle.buff
@@ -61,7 +61,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         }
     }
 
-    override def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit = InvocationChoreographer.disableInvocations {
+    override def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit = InvocationChoreographer.disinv {
         val buff = bundle.buff
         checkSignatureAndProtocol(buff)
 

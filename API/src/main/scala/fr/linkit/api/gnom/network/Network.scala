@@ -61,4 +61,6 @@ trait Network extends StaticNetworkObject[NetworkReference] {
     def newStaticAccess(id: Int, contract: ContractDescriptorData): StaticAccess
 
     def newStaticAccess(id: Int): StaticAccess
+
+    def onNewEngine(f: Engine => Unit): Unit
 }

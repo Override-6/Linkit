@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
+import fr.linkit.engine.internal.utils.ConsumerContainer
 
 import java.sql.Timestamp
 import scala.collection.mutable
@@ -27,9 +28,10 @@ import scala.collection.mutable
 //FIXME OriginManagers and DistantManagers can be bypassed
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
-    private               val engines        = mutable.HashMap.empty[String, DefaultEngine]
-    private               val caches         = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
-    private[network] lazy val staticAccesses = new StaticAccesses(network)
+    private               val engines           = mutable.HashMap.empty[String, DefaultEngine]
+    private               val caches            = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
+    private[network] lazy val staticAccesses    = new StaticAccesses(network)
+    private    val onNewEngineEvents = ConsumerContainer[Engine]()
 
     def this(network: AbstractNetwork) {
         this(network, new Timestamp(System.currentTimeMillis()))
@@ -76,8 +78,8 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     def countConnection: Int = engines.size
 
     protected def addEngine(engine: DefaultEngine): Engine = {
-        //engine.classMappings //init the mappings
         engines.put(engine.identifier, engine)
+        onNewEngineEvents.applyAll(engine)
         engine
     }
 
@@ -94,6 +96,10 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         if (engines.nonEmpty)
             engines.values.foreach(addEngine)
         this
+    }
+
+    private[network] def onNewEngine(f: Engine => Unit): Unit = {
+        onNewEngineEvents += f
     }
 
 }

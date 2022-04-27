@@ -40,17 +40,18 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
         val signature        = desc.signature
         desc.modifiers.foreach {
             case exp: ModifierExpression =>
+                val classSystemDesc  = classDesc.head.kind match {
+                    case _@(RegularDescription | _: MirroringDescription) => SyncObjectDescription(file.findClass(classDesc.head.className))
+                    case StaticsDescription                               => SyncStaticsDescription(file.findClass(classDesc.head.className))
+                }
                 val className = exp.target match {
                     case "returnvalue" =>
-                        val classSystemDesc  = classDesc.head.kind match {
-                            case _@(RegularDescription | _: MirroringDescription) => SyncObjectDescription(file.findClass(classDesc.head.className))
-                            case StaticsDescription                               => SyncStaticsDescription(file.findClass(classDesc.head.className))
-                        }
                         file.getMethodDescFromSignature(classDesc.head.kind, signature, classSystemDesc).javaMethod.getReturnType.getName
                     case paramName =>
                         file.findClass(signature.params.find(_.name.contains(paramName)).get.tpe).getName
                 }
-                submitAll(s"method_${exp.target}_${signature.methodName}_${encodedIntMethodString(signature.hashCode())}", className, exp)
+                val mDesc = file.getMethodDescFromSignature(classDesc.head.kind, desc.signature, classSystemDesc)
+                submitAll(s"method_${encodedIntMethodString(mDesc.methodId)}", className, exp)
             case _ => //fallback will be for modifier references, they don't hold any lambda expression so let's skip them
         }
     }
