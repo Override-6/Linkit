@@ -71,12 +71,15 @@ class ObjectSelector(bundle: PersistenceBundle) {
     }
 
     private def findNonNetworkObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
-        col.findReferenceID(obj) match {
+        (col.findReferenceID(obj) match {
             case None     => None
             case Some(id) =>
                 val ref = new ContextualObjectReference(packetPath, id)
                 if (col.isPresentOnEngine(boundId, ref)) Some(ref)
                 else None
+        }) match {
+            case None =>
+            case some => some
         }
     }
 

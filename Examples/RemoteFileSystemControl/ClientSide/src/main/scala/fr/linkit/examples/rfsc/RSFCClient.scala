@@ -5,29 +5,27 @@ import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
 
+import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.nio.file.{Files, Path}
 
 object RSFCClient {
 
-    implicit def cast[A, B, X[C, D]](x: X[_, _]): X[A, B] = x.asInstanceOf[X[A, B]]
-
-    val a: String = "dsdq"
-    val b: Function1[Int, Int] = null
-
-    val c: Function1[String, String] = b
-
     def main(args: Array[String]): Unit = {
-        val network = launchApp("x").network
-        val serverStatics = network.getStaticAccess(1)
-        val path: Path    = serverStatics[Path].of[Path]("testServer.txt", Array[String]())
-        val destPath      = Path.of("D:\\Users\\maxim\\Desktop\\Dev\\Perso\\Linkit\\StaticsFTPTest\\Client\\destination.png")
-        val content: Array[Byte] = serverStatics[Files].readAllBytes[Array[Byte]](path)
-        if (!Files.exists(destPath)) {
-            Files.createDirectories(destPath.getParent)
-            Files.createFile(destPath)
+        val network               = launchApp("x").network
+        val serverStatics         = network.getStaticAccess(1)
+
+        val srcPath               = Path.of("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Client\\test.txt")
+        if (Files.notExists(srcPath)) {
+            Files.createDirectories(srcPath.getParent)
+            Files.createFile(srcPath)
         }
-        Files.write(destPath, content)
+        val content = Files.readAllBytes(srcPath)
+        val destPath: Path        = serverStatics[Path].of[Path]("test.txt", Array[String]())
+        val serverStream: OutputStream = serverStatics[Files].newOutputStream[OutputStream](destPath)
+        serverStream.write(content)
+        serverStream.close()
+
     }
 
     private def launchApp(identifier0: String): ExternalConnection = {

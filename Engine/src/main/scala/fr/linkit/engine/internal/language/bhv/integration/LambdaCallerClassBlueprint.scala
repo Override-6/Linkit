@@ -26,11 +26,12 @@ class LambdaCallerClassBlueprint(bp: InputStream) extends AbstractClassBlueprint
     override val rootScope   : RootValueScope = new RootValueScope {
         bindValue("Imports" ~> (_.importedClasses.map(cl => s"import ${cl.getName}\n").mkString("")))
         bindValue("Blocks" ~> (_.blocks.mkString("\n")))
-        bindSubScope(new LambdaMethodScope(_, _), (context, action: LambdaExpressionInfo => Unit) => context.expressions.foreach(action))
+        bindSubScope("LAMBDA_METHODS", new LambdaMethodScope(_, _, _),
+            (context, action: LambdaExpressionInfo => Unit) => context.expressions.foreach(action))
     }
 
-    private class LambdaMethodScope(bp: String, pos: Int)
-        extends AbstractValueScope[LambdaExpressionInfo]("LAMBDA_METHODS", bp, pos) {
+    private class LambdaMethodScope(name: String, bp: String, pos: Int)
+            extends AbstractValueScope[LambdaExpressionInfo](name, bp, pos) {
 
         bindValue("MethodName" ~> (_.name))
         bindValue("ParamsIn" ~> (e => getParameters(e.paramTypes, true)))

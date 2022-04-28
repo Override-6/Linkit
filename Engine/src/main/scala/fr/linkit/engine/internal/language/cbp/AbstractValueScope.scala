@@ -61,13 +61,12 @@ abstract class AbstractValueScope[A](override val name: String,
         values.put(pair._1, BlueprintValueSupplier[A](pair)(upperBlueprint))
     }
 
-    protected def bindSubScope[B](scopeFactory: (String, Int) => ValueScope[B], contextIterator: ContextIterator[A, B]): Unit = {
-        bindingLogics += (_.bindSubScope(scopeFactory, contextIterator))
-        val scopes = subBlocks.map(block => (scopeFactory(block.blockBlueprint, block.startPos), block))
+    protected def bindSubScope[B](name: String, scopeFactory: (String, String, Int) => ValueScope[B], contextIterator: ContextIterator[A, B]): Unit = {
+        bindingLogics += (_.bindSubScope(name, scopeFactory, contextIterator))
+        val scopes = subBlocks.filter(_.name equalsIgnoreCase name).map(block => (scopeFactory(name, block.blockBlueprint, block.startPos), block))
         if (scopes.isEmpty) {
-            throw new NoSuchElementException("Sub scope not present.")
+            throw new NoSuchElementException(s"Sub scope '$name' not present.")
         }
-        val name = scopes.head._2.name
         subScopes.put(name, new SubScopeCategory[B](scopes, contextIterator))
     }
 

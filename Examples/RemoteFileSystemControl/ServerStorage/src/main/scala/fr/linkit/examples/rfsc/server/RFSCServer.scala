@@ -7,7 +7,7 @@ import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
 object RFSCServer {
@@ -18,8 +18,12 @@ object RFSCServer {
         val server = createConnection("RFSCServer")
         println("Server launched !")
         val network = server.network
-        network.onNewEngine { client =>
-            clientsHomes.put(client, Path.of(s"D:\\Users\\maxim\\Desktop\\Dev\\Perso\\Linkit\\StaticsFTPTest\\Client\\${client.identifier}\\"))
+        network.onNewEngine { client => {
+            val path = Path.of(s"C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Server\\${client.identifier}\\")
+            if (Files.notExists(path))
+                Files.createDirectories(path)
+            clientsHomes.put(client,path)
+        }
         }
         val contracts = Contract("FSControl", network.connection.getApp, ObjectsProperty(Map("homes" -> clientsHomes)))
         network.newStaticAccess(1, contracts)

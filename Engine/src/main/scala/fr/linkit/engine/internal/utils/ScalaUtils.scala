@@ -20,7 +20,7 @@ import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import sun.misc.Unsafe
 
 import java.io.File
-import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
+import java.lang.reflect.{AccessibleObject, Field, InaccessibleObjectException, Modifier}
 import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.{ClassTag, classTag}
@@ -198,7 +198,7 @@ object ScalaUtils {
         v
     }
 
-    private def setAccessible(field: Field): Boolean = {
+    def setAccessible(field: AccessibleObject): Boolean = {
         try {
             field.setAccessible(true)
             //if (ref != null) field.canAccess(ref) else

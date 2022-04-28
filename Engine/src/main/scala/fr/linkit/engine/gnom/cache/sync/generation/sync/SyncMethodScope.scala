@@ -17,18 +17,16 @@ import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import ScalaBlueprintUtilities.{getParameters, getReturnType}
 import fr.linkit.engine.internal.language.cbp.AbstractValueScope
 
-object SyncMethodBlueprint {
+class SyncMethodScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, blueprint, pos) {
 
-    class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, blueprint, pos) {
-        bindValue("ReturnType" ~> getReturnType)
-        bindValue("MethodName" ~> (_.javaMethod.getName))
-        bindValue("MethodID" ~> (m => m.methodId.toString))
-        bindValue("ParamsIn" ~> (getParameters(_, true, false)))
-        bindValue("ParamsOut" ~> (getParameters(_, false, true)))
-        bindValue("ParamsOutArray" ~> (getParameters(_, false, false)))
-        bindValue("ParamsOutLambda" ~> getParamsOutLambda)
-        bindValue("Override" ~> chooseOverride)
-    }
+    bindValue("ReturnType" ~> getReturnType)
+    bindValue("MethodName" ~> (_.javaMethod.getName))
+    bindValue("MethodID" ~> (m => m.methodId.toString))
+    bindValue("ParamsIn" ~> (getParameters(_, true, false)))
+    bindValue("ParamsOut" ~> (getParameters(_, false, true)))
+    bindValue("ParamsOutArray" ~> (getParameters(_, false, false)))
+    bindValue("ParamsOutLambda" ~> getParamsOutLambda)
+    bindValue("Override" ~> chooseOverride)
 
     private def getParamsOutLambda(desc: MethodDescription): String = {
         val result = (1 to desc.javaMethod.getParameterCount)
@@ -46,3 +44,4 @@ object SyncMethodBlueprint {
         }
     }
 }
+

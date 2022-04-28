@@ -3,7 +3,7 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.statics.StaticAccessor
-import fr.linkit.engine.internal.utils.UnWrapper
+import fr.linkit.engine.internal.utils.{ScalaUtils, UnWrapper}
 
 import java.lang.reflect.{Method, Modifier}
 import scala.language.dynamics
@@ -14,10 +14,9 @@ class StaticAccessorImpl(staticCaller: MethodCaller, staticClass: Class[_]) exte
     private val staticMethods = {
         staticClass
                 .getDeclaredMethods
-                .filter(m => Modifier.isStatic(m.getModifiers))
-                .tapEach(_.setAccessible(true))
+                .filter(m => Modifier.isStatic(m.getModifiers) && Modifier.isPublic(m.getModifiers))
+                .filter(ScalaUtils.setAccessible)
     }
-
     override def applyDynamic[T: ClassTag](name: String)(params: Any*): T = {
         val returnType                    = classTag[T].runtimeClass
         val arrayParams                   = params.toArray

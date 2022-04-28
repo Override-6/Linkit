@@ -20,7 +20,7 @@ import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerTyp
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
 
 import java.io.InputStream
-import java.lang.reflect.TypeVariable
+import java.lang.reflect.{Method, TypeVariable}
 
 class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStructureDescription[_]](in) {
 
@@ -33,15 +33,29 @@ class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStr
         bindValue("TParamsOut" ~> (getGenericParams(_, _.getName)))
         bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))
 
-        bindSubScope(new SyncMethodBlueprint.ValueScope("INHERITED_METHODS", _, _), (desc, action: MethodDescription => Unit) => {
+        bindSubScope("INHERITED_METHODS", new SyncMethodScope(_, _, _), (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
                     .toSeq
                     .distinctBy(x => (x.javaMethod.getParameterTypes.toList, x.getName))
                     .foreach(action)
         })
 
+        bindSubScope("CASTS", new CastsScope(_, _, _), (desc, action: Int => Unit) => {
+            val casts = desc.listMethods()
+                    .toSeq
+                    .flatMap(x => countCompsTParams(x.javaMethod))
+                    .distinct
+                    .filter(_ > 0)
+            casts.foreach(action)
+        })
+
     }
 
+    private def countCompsTParams(method: Method): Seq[Int] = {
+        def countTParams(clazz: Class[_]): Int = clazz.getTypeParameters.size
+
+        Seq[Int](countTParams(method.getReturnType)) ++ method.getParameterTypes.map(countTParams)
+    }
 
     private def typeToScalaDeclaration(tpe: TypeVariable[_]): String = {
         tpe.getName + " <: " + tpe.getBounds.map(_.getTypeName).mkString(" with ")

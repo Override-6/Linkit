@@ -5,8 +5,11 @@ import java.nio.file.Files
 import fr.linkit.**
 import java.net.URI
 import scala.collection.mutable
+import java.io.*
+import java.nio.file.*
 
 agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_owner
+agreement only_owner = discard * -> accept owner -> appoint owner
 agreement broadcast = accept*
 
 describe mirroring Path {
@@ -18,4 +21,17 @@ describe statics Path {
 }
 describe statics Files {
     foreach method enable following only_cache_owner
+    newInputStream(Path, OpenOption[]) following only_cache_owner {
+        chip returnvalue
+    }
+    newOutputStream(Path, OpenOption[]) following only_cache_owner {
+        chip returnvalue
+    }
+}
+
+describe mirroring OutputStream {
+    foreach method enable following only_owner
+}
+describe mirroring InputStream {
+    foreach method enable following only_owner
 }

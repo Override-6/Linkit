@@ -147,9 +147,9 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         descs.foreach(desc => {
             val clazz         = desc.targetClass
             val mirroringInfo = desc.mirroringInfo
-            if (mirroringInfo.isDefined)
-                classes += mirroringInfo.get.stubClass
+            if (mirroringInfo.isDefined) addClass(mirroringInfo.get.stubClass)
             else addClass(clazz)
+
             desc.fields.filter(_.registrationKind == Synchronized).foreach(f => addClass(f.desc.javaField.getType))
             desc.methods.foreach(method => {
                 val javaMethod = method.description.javaMethod
@@ -162,7 +162,8 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
             })
         })
         classes -= classOf[Object]
-        classes = classes.filterNot(classCenter.isClassGenerated).filterNot(c => isNotOverridable(c.getModifiers))
+        classes = classes.filterNot(classCenter.isClassGenerated)
+                .filterNot(c => isNotOverridable(c.getModifiers))
         if (classes.isEmpty)
             return
         AppLogger.info(s"Found ${classes.size} classes to compile in their sync versions")
