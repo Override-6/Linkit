@@ -21,12 +21,12 @@ import scala.tools.nsc.{Global, Settings}
 
 object ScalacCompilerAccess extends AbstractCompilerAccess {
 
-    val ScalacArguments: List[String] = List("-usejavacp")
-    val ScalaFileExtension            = ".scala"
+    val ScalacDefaultArguments: List[String] = List("-usejavacp", "-nowarn")
+    val ScalaFileExtension                   = ".scala"
 
     override def compile(sourceFiles: Seq[Path], destination: Path, classPaths: Seq[Path], additionalArguments: Seq[String]): Seq[Path] = {
         val settings = new Settings()
-        val arguments = ScalacArguments ++ Seq("-d", destination.toString) ++ additionalArguments
+        val arguments = ScalacDefaultArguments ++ Seq("-d", destination.toString) ++ additionalArguments
         settings.processArguments(arguments, true)
         classPaths.map(_.toString).foreach(settings.classpath.append)
         val global = new Global(settings)

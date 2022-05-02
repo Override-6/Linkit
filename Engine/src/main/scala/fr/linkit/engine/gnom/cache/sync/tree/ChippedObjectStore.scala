@@ -11,29 +11,24 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invocation
+package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.tree.{ChippedObjectNode, ObjectConnector}
+import fr.linkit.api.gnom.cache.sync.ChippedObject
 
-/**
- * The invocation information for a synchronized object's method.
- *
- * @tparam R the return type of the method invoked
- * */
-trait MethodInvocation[R] {
+import scala.collection.mutable
+import scala.util.Try
 
-    /**
-     * The synchronized object on which the method is called.
-     * */
-    val objectNode: ChippedObjectNode[_]
+object ChippedObjectStore {
 
-    /**
-     * The method's identifier.
-     * */
-    val methodID: Int
+    private val map = mutable.HashMap.empty[Any, ChippedObject[_]]
 
-    val connector: ObjectConnector
+    private[tree] def addChippedObject(chippedObject: ChippedObject[_]): Unit = {
+        map.put(chippedObject.connected, chippedObject)
+    }
 
-    var debug: Boolean = true
+    def findConnectedObject(obj: Any): Option[ChippedObject[_]] = {
+        if (obj == null) return None
+        Try(map.get(obj)).toOption.flatten
+    }
 
 }

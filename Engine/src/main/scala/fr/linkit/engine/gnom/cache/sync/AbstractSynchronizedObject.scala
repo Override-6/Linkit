@@ -14,10 +14,10 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
-import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectReference, ConnectedObjectAlreadyInitialisedException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
+import fr.linkit.api.gnom.cache.sync.tree.{ObjectConnector, ObjectSyncNode}
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectAlreadyInitialisedException, ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 
@@ -29,6 +29,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient private final var choreographer    : InvocationChoreographer  = _
     @transient private final var presenceOnNetwork: NetworkObjectPresence    = _
     @transient private final var node             : ObjectSyncNode[A]        = _
+    @transient private final var connector        : ObjectConnector          = _
 
     //cached values for handleCall
     @transient private final var currentIdentifier: String  = _
@@ -49,6 +50,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         this.presenceOnNetwork = node.objectPresence
         this.node = node
         this.choreographer = node.choreographer
+        this.connector = node.tree
 
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
@@ -71,29 +73,32 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getNode: ObjectSyncNode[A] = node
 
+    override def isMirrored: Boolean = contract.remoteObjectInfo.isDefined
+
     protected final def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         if (!isInitialized) {
             //throw new IllegalStateException(s"Synchronized object at '${location}' is not initialised")
             return superCall(args).asInstanceOf[R]
         }
-        val methodContract   = {
+        val methodContract = {
             val opt = contract.findMethodContract(id)
             if (opt.isEmpty) { //no contract specified so we just execute the method.
                 return superCall(args).asInstanceOf[R]
             }
             opt.get
         }
-        val choreographer = methodContract.choreographer
+        val choreographer  = methodContract.choreographer
         //Arguments that must be synchronized wil be synchronized according to method contract.
-        methodContract.connectArgs(args, puppeteer.createConnectedObj)
+        methodContract.connectArgs(args, connector.createConnectedObj(location))
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
         if (!methodContract.isRMIActivated || choreographer.isMethodExecutionForcedToLocal) {
-            return methodContract.applyReturnValue(superCall(args), puppeteer.createConnectedObj).asInstanceOf[R]
+            return methodContract.applyReturnValue(superCall(args), connector.createConnectedObj(location)).asInstanceOf[R]
         }
         val data = new methodContract.RemoteInvocationExecution {
             override val obj      : ChippedObject[_] = AbstractSynchronizedObject.this
-            override val arguments: Array[Any]            = args
-            override val puppeteer: Puppeteer[_]          = AbstractSynchronizedObject.this.puppeteer
+            override val connector: ObjectConnector  = AbstractSynchronizedObject.this.connector
+            override val puppeteer: Puppeteer[_]     = AbstractSynchronizedObject.this.puppeteer
+            override val arguments: Array[Any]       = args
 
             override def doSuperCall(): Any = {
                 if (isNotMirroring) {

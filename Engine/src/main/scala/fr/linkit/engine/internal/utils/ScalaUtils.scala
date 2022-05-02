@@ -179,9 +179,8 @@ object ScalaUtils {
     @inline
     def allocate[A](clazz: Class[_]): A = {
         if (clazz == null)
-            throw new NullPointerException
-        val instance = ObjectCreator.allocate(clazz).asInstanceOf[A]
-        instance
+            throw new NullPointerException("class is null.")
+        ObjectCreator.allocate(clazz).asInstanceOf[A]
     }
 
     def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Array[Field] = {

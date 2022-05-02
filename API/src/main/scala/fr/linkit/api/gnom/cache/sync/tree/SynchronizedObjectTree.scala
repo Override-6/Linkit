@@ -13,9 +13,6 @@
 
 package fr.linkit.api.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
-import fr.linkit.api.gnom.cache.sync.CanNotSynchronizeException
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
 
 
@@ -45,38 +42,5 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      * @return Some(SyncNode) if found, None instead.
      */
     def findNode[B <: AnyRef](path: Array[Int]): Option[ConnectedObjectNode[B]]
-
-    /**
-     *
-     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
-     *
-     * @throws CanNotSynchronizeException if the object is already synchronized.
-     * @throws IllegalArgumentException   if the given parent does not belongs to this tree.
-     * @throws NoSuchSyncNodeException    if the parent's path could not be found.
-     * @param parent  the parent of the synchronized object that will be inserted.
-     * @param id      the identifier of the created node
-     * @param source     the object that will be converted to a synchronized object. (The given object may be corrupted)
-     * @param ownerID the owner of the object (Generally the engine that have created the object)
-     * @tparam B the type of the object.
-     * @return the created node
-     */
-    //TODO Should be removed (or only used internally)
-    def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: B, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B]
-
-    /**
-     *
-     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
-     *
-     * @throws CanNotSynchronizeException if the object is already synchronized.
-     * @throws IllegalArgumentException   if the given parent is does not belongs to this tree.
-     * @throws NoSuchSyncNodeException    if the parent's path could not be found.
-     * @param parentPath the parent's path of the synchronized object that will be inserted.
-     * @param id         the identifier of the created node
-     * @param source        the object that will be converted to a synchronized object. (The given object may be corrupted)
-     * @param ownerID    the owner of the object (Generally the engine that have created the object)
-     * @tparam B the type of the object.
-     * @return the created node
-     */
-    def insertObject[B <: AnyRef](parentPath: Array[Int], source: B, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B]
 
 }

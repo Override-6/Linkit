@@ -21,8 +21,9 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, InvocationChoreographer, InvocationHandlingMethod, MirroringObjectInvocationException}
-import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
-import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.gnom.cache.sync.tree.ObjectConnector
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, ConnectedObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
@@ -80,7 +81,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         val node                                              = data.obj.getNode
         val args                                              = data.arguments
         val choreographer                                     = data.obj.getChoreographer
-        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, node) with CallableLocalMethodInvocation[R] {
+        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, node, data.connector) with CallableLocalMethodInvocation[R] {
             override val methodArguments: Array[Any] = args
 
             override def callSuper(): R = {
@@ -138,10 +139,13 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         // From here we are sure that we want to perform a remote
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
         val currentIdentifier = puppeteer.currentIdentifier
-        val obj               = localInvocation.objectNode.obj
-        var result     : Any  = null
-        var localResult: Any  = null
+        val objectNode        = localInvocation.objectNode
+        val obj               = objectNode.obj
         val mayPerformRMI     = agreement.mayPerformRemoteInvocation
+        val connector         = localInvocation.connector
+
+        var result     : Any = null
+        var localResult: Any = null
         if (agreement.mayCallSuper && !isMirroring(obj)) {
             localResult = localInvocation.callSuper()
         }
@@ -149,7 +153,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         def syncValue(v: Any) = {
             val kind = returnValueContract.registrationKind
             if (v != null && kind != NotRegistered && !v.isInstanceOf[ConnectedObject[AnyRef]]) {
-                puppeteer.createConnectedObj(v.asInstanceOf[AnyRef], kind).connected
+                connector.createConnectedObj(obj.reference)(v.asInstanceOf[AnyRef], kind).connected
             } else v
         }
 
@@ -162,7 +166,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             override val agreement: RMIRulesAgreement = MethodContractImpl.this.agreement
 
             override def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit = {
-                makeDispatch(puppeteer, dispatcher, localInvocation)
+                makeDispatch(puppeteer.network, dispatcher, localInvocation)
             }
         }
         AppLogger.debug {
@@ -180,11 +184,10 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         syncValue(result).asInstanceOf[R]
     }
 
-    private def makeDispatch(puppeteer: Puppeteer[_],
+    private def makeDispatch(network: Network,
                              dispatcher: Puppeteer[AnyRef]#RMIDispatcher,
                              invocation: LocalMethodInvocation[_]): Unit = {
         val args    = invocation.methodArguments
-        val network = puppeteer.network
         if (parameterContracts.isEmpty) {
             dispatcher.broadcast(args)
             return
@@ -192,13 +195,13 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         val buff = args.clone()
         dispatcher.foreachEngines(engineID => {
             val target = network.findEngine(engineID).get
-            modifyArgsOut(buff, target, puppeteer)
+            modifyArgsOut(buff, target, invocation.objectNode.reference, invocation.connector)
             buff
         })
     }
 
-    private def modifyArgsOut(args: Array[Any], target: Engine, puppeteer: Puppeteer[_]): Unit = {
-        def modifyParamOut(idx: Int, param: Any)(target: Engine, puppeteer: Puppeteer[_]): Any = {
+    private def modifyArgsOut(args: Array[Any], target: Engine, objRef: ConnectedObjectReference, connector: ObjectConnector): Unit = {
+        def modifyParamOut(idx: Int, param: Any): Any = {
             var result = param
             if (parameterContracts.nonEmpty) {
                 val paramContract = parameterContracts(idx)
@@ -210,7 +213,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
                     if (paramContract.registrationKind != NotRegistered) result match {
                         //The modification could return a non synchronized object even if the contract wants it to be synchronized.
                         case ref: AnyRef if !ref.isInstanceOf[ConnectedObject[AnyRef]] =>
-                            result = puppeteer.createConnectedObj(ref, paramContract.registrationKind).connected
+                            result = connector.createConnectedObj(objRef)(ref, paramContract.registrationKind).connected
                         case _                                                         =>
                     }
                 }
@@ -221,7 +224,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         for (i <- args.indices) {
             var finalRef = args(i)
             if (finalRef != null) {
-                finalRef = modifyParamOut(i, finalRef)(target, puppeteer)
+                finalRef = modifyParamOut(i, finalRef)
             }
             args(i) = finalRef
         }

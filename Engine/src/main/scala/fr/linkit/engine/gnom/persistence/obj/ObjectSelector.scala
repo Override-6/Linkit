@@ -14,10 +14,11 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
-import fr.linkit.api.gnom.cache.sync.{OriginReferencedConnectedObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, OriginReferencedConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject, SystemNetworkObjectPresence}
+import fr.linkit.engine.gnom.cache.sync.tree.ChippedObjectStore
 import fr.linkit.engine.gnom.reference.ContextObject
 import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, InternalNetworkObjectPresence}
 
@@ -35,8 +36,8 @@ class ObjectSelector(bundle: PersistenceBundle) {
             return findNonNetworkObjectReference(obj)
         }
         val found = obj match {
-            case sync: SynchronizedObject[_]                       =>
-                findSyncObjectReference(sync)
+            case sync: ConnectedObject[_]                          =>
+                findConnectedObjectReference(sync)
             case obj: DynamicNetworkObject[NetworkObjectReference] =>
                 findDynamicNetworkObjectReference(obj)
             case obj: StaticNetworkObject[NetworkObjectReference]  =>
@@ -47,7 +48,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
         found
     }
 
-    private def findSyncObjectReference(obj: SynchronizedObject[_]): Option[NetworkObjectReference] = {
+    private def findConnectedObjectReference(obj: ConnectedObject[_]): Option[NetworkObjectReference] = {
         val reference = obj.reference
         val presence  = obj.presence
         if (presence.isPresentOn(boundId))
@@ -77,10 +78,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
                 val ref = new ContextualObjectReference(packetPath, id)
                 if (col.isPresentOnEngine(boundId, ref)) Some(ref)
                 else None
-        }) match {
-            case None =>
-            case some => some
-        }
+        }).orElse(ChippedObjectStore.findConnectedObject(obj).map(_.reference))
     }
 
     private def findDynamicNetworkObjectReference(obj: DynamicNetworkObject[NetworkObjectReference]): Option[NetworkObjectReference] = {

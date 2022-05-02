@@ -16,6 +16,7 @@ package fr.linkit.api.gnom.cache.sync.contract
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, InvocationHandlingMethod}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
+import fr.linkit.api.gnom.cache.sync.tree.ObjectConnector
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
@@ -51,6 +52,8 @@ trait MethodContract[R] {
     trait RemoteInvocationExecution extends InvocationExecution {
 
         val puppeteer: Puppeteer[_]
+
+        val connector: ObjectConnector
 
         def doSuperCall(): Any
     }

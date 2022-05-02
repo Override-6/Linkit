@@ -28,6 +28,12 @@ public enum RegistrationKind {
      * Register and start synchronized object registration / generation process for the targeted object.
      * The object is also chipped, see {@link fr.linkit.api.gnom.cache.sync.SynchronizedObject}
      * */
-    Synchronized
+    Synchronized,
+
+    /**
+     * Register a synchronized object that mirrors a distant Chipped Object / Synchronized Object.<br>
+     * the object is a SynchronizedObject.
+     * */
+    Mirroring
 
 }

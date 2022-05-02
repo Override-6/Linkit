@@ -14,8 +14,9 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.Freezable
-import fr.linkit.api.gnom.persistence.obj.{LambdaObject, ProfilePoolObject, ReferencedPoolObject}
+import fr.linkit.api.gnom.persistence.obj.{LambdaObject, MirroringPoolObject, ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
+
 import java.lang
 abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
 
@@ -43,7 +44,8 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
         // Arrays
         new PoolChunk[Array[_]](Array, false, this, sizes(Array)),
         // Context Objects Locations
-        new PoolChunk[ReferencedPoolObject](RNO, false, this, sizes(RNO))
+        new PoolChunk[ReferencedPoolObject](RNO, false, this, sizes(RNO)),
+        new PoolChunk[MirroringPoolObject](Mirroring, false, this, sizes(Mirroring))
     )
 
     override def freeze(): Unit = frozen = true

@@ -19,7 +19,6 @@ import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import java.lang.invoke.{LambdaMetafactory, MethodHandles, MethodType}
 import java.lang.reflect.Modifier
 
-//TODO  https://stackoverflow.com/questions/23595136/get-a-list-of-classes-lambdas
 object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPRepresentation] {
 
     private       val lookup     = MethodHandles.lookup()

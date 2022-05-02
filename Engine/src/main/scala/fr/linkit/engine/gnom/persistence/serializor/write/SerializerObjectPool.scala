@@ -13,11 +13,10 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.write
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
-import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
@@ -51,11 +50,12 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
             case _: Boolean => getChunkFromFlag(Boolean)
             case _: Char    => getChunkFromFlag(Char)
 
-            case _: String                          => getChunkFromFlag(String)
-            case _ if ref.getClass.isArray          => getChunkFromFlag(Array)
-            case _: Enum[_]                         => getChunkFromFlag(Enum)
-            case ref: AnyRef if isLambdaObject(ref) => getChunkFromFlag(Lambda)
-            case _                                  => getChunkFromFlag(Object)
+            case _: String                             => getChunkFromFlag(String)
+            case _ if ref.getClass.isArray             => getChunkFromFlag(Array)
+            case _: Enum[_]                            => getChunkFromFlag(Enum)
+            case ref: AnyRef if isLambdaObject(ref)    => getChunkFromFlag(Lambda)
+            case ch: ChippedObject[_] if ch.isMirrored => getChunkFromFlag(Mirroring)
+            case _                                     => getChunkFromFlag(Object)
         }
     }
 
@@ -136,7 +136,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
             case _               => NotSerializableLambdasTypePersistence
         }
         val representation = ltp.toRepresentation(lambdaObject)
-        val decomposed     = addObjectAndReturnDecomposed(representation)
+        val decomposed     = addObjectDecomposed(representation)
         val slo            = new SimpleLambdaObject(lambdaObject, decomposed, representation)
         getChunkFromFlag(Lambda).add(slo)
     }
@@ -147,21 +147,41 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         if ((ref eq null) || getChunk(ref).indexOf(ref) >= 0)
             return
         ref match {
-            case _: String                              =>
+            case _: String                               =>
                 getChunkFromFlag(String).add(ref)
-            case _: AnyRef if ref.getClass.isArray      =>
+            case _: AnyRef if ref.getClass.isArray       =>
                 addArray(ref)
-            case _: Enum[_]                             =>
+            case _: Enum[_]                              =>
                 addTypeOfIfAbsent(ref)
                 getChunkFromFlag(Enum).add(ref)
-            case _: Class[_]                            =>
+            case _: Class[_]                             =>
                 getChunkFromFlag(Class).add(ref)
-            case _ if UnWrapper.isPrimitiveWrapper(ref) =>
+            case _ if UnWrapper.isPrimitiveWrapper(ref)  =>
                 getChunk(ref).add(ref)
-            case _ if isLambdaObject(ref)               =>
+            case _ if isLambdaObject(ref)                =>
                 addLambda(ref)
-            case _                                      =>
+            case chi: ChippedObject[_] if chi.isMirrored =>
+                addMirroredObject(chi)
+            case _                                       =>
                 addObj0(ref)
+        }
+    }
+
+    private def addMirroredObject(chi: ChippedObject[_ <: AnyRef]): Unit = {
+        val nrlOpt = selector.findObjectReference(chi)
+        if (nrlOpt.isEmpty) {
+            val chunk = getChunkFromFlag[ReferencedPoolObject](Mirroring)
+            val pos = chunks(Object).size
+            val ref = chi.reference
+            chunk.add(new ReferencedPoolObject {
+                override val referenceIdx: Int                    = pos
+                override val reference   : NetworkObjectReference = ref
+
+                override def value: AnyRef = chi
+            })
+            addObj(ref)
+        } else {
+            addReferencedObject(chi, nrlOpt.get)
         }
     }
 
@@ -171,15 +191,15 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         clazz.getSimpleName.contains("$$Lambda$")
     }
 
-    private def addObjectAndReturnDecomposed(ref: AnyRef): Array[Any] = {
+    private def addObjectDecomposed(ref: AnyRef): Array[Any] = {
         val selectedRefType = addTypeOfIfAbsent(ref)
         val profile         = config.getProfile[AnyRef](ref)
         val persistence     = profile.getPersistence(ref)
         val decomposed      = persistence.toArray(ref)
         val objPool         = getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
 
-        //do not swap those two lines
         val obj = new SimpleObject(ref, selectedRefType, ref.isInstanceOf[SynchronizedObject[_]], decomposed, profile)
+        //do not swap those two lines
         objPool.add(obj)
         addAll(decomposed)
         decomposed
@@ -188,7 +208,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     private def addObj0(ref: AnyRef): Unit = {
         val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
-            addObjectAndReturnDecomposed(ref)
+            addObjectDecomposed(ref)
         } else {
             addReferencedObject(ref, nrlOpt.get)
         }

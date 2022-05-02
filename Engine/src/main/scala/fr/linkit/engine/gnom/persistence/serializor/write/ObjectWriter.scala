@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
+import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
 import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
@@ -71,30 +71,29 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         //let a hole for placing in chunk sizes
 
         val chunks    = pool.getChunks
-        val len       = chunks.length.toByte
         var totalSize = 0
 
         val announcedChunksPos = buff.position()
-        buff.position(announcedChunksPos + 4)
+        buff.position(announcedChunksPos + 8)
 
         //Announcing what chunk has been used by the packet and writing their sizes in the buff
-        var announcedChunksNumber = 0x0000 //0b00000000
-        var i                     = 0
-        while (i < len) {
+        var announcedChunksNumber: Long = 0x0000 //0b00000000
+        var i                           = 0
+        while (i < ChunkCount) {
             val chunk = chunks(i)
             val size  = chunk.size
             if (size > 0) {
                 totalSize += size
                 //Tag's announcement mark is appended to the announced chunks number
-                announcedChunksNumber |= (0x0001 << chunk.tag)
+                announcedChunksNumber |= (1 << chunk.tag)
 
                 putRef(size) //append the size of the chunk
             }
             i += 1
         }
-        buff.putInt(announcedChunksPos, announcedChunksNumber)
+        buff.putLong(announcedChunksPos, announcedChunksNumber)
         i = 0
-        while (i < len) {
+        while (i < ChunkCount) {
             val chunk = chunks(i)
             val size  = chunk.size
             if (size > 0) {
@@ -138,10 +137,16 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             case Object            => foreach[SimpleObject](writeObject)
             case Lambda            => foreach[SimpleLambdaObject](writeLambdaObject)
             case RNO               => foreach[ReferencedPoolObject](obj => putRef(obj.referenceIdx))
+            case Mirroring         => foreach[MirroringPoolObject](writeMirroringObject)
         }
     }
 
     def getPool: SerializerObjectPool = pool
+
+    private def writeMirroringObject(rpo: MirroringPoolObject): Unit = {
+        writeClass(rpo.stubClass)
+        putRef(rpo.referenceIdx)
+    }
 
     private def writeClass(clazz: Class[_]): Unit = {
         val code = ClassMappings.codeOfClass(clazz)

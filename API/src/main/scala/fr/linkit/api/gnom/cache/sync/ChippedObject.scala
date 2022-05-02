@@ -26,5 +26,7 @@ trait ChippedObject[A <: AnyRef] extends ConnectedObject[A] {
      */
     def getChoreographer: InvocationChoreographer
 
+    def isMirrored: Boolean
+
 
 }

@@ -25,6 +25,8 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
     private var presence0    : NetworkObjectPresence    = _
     private var node         : ChippedObjectNode[A]     = _
 
+    override val isMirrored: Boolean = true //pure chipped objects are always mirrored.
+
     override def getConnectedObjectClass: Class[A] = connected.getClass.asInstanceOf[Class[A]]
 
     override def reference: ConnectedObjectReference = reference0

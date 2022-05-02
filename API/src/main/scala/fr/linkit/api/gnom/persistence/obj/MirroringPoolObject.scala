@@ -11,8 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree
+package fr.linkit.api.gnom.persistence.obj
 
-class NoSuchObjectTreeException(msg: String, cause: Throwable = null) extends SynchronizedObjectException(msg, cause) {
+trait MirroringPoolObject extends ReferencedPoolObject {
+
+    val stubClass: Class[_]
 
 }

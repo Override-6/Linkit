@@ -63,9 +63,6 @@ trait Puppeteer[S <: AnyRef] {
      */
     def sendInvoke(invocation: DispatchableRemoteMethodInvocation[_]): Unit
 
-    //TODO make this for internal use only
-    def createConnectedObj(obj: Any, registrationKind: RegistrationKind): ConnectedObject[AnyRef]
-
     trait RMIDispatcher {
         def broadcast(args: Array[Any]): Unit
 

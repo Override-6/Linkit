@@ -11,29 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.invocation
+package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.tree.{ChippedObjectNode, ObjectConnector}
-
-/**
- * The invocation information for a synchronized object's method.
- *
- * @tparam R the return type of the method invoked
- * */
-trait MethodInvocation[R] {
-
-    /**
-     * The synchronized object on which the method is called.
-     * */
-    val objectNode: ChippedObjectNode[_]
-
-    /**
-     * The method's identifier.
-     * */
-    val methodID: Int
-
-    val connector: ObjectConnector
-
-    var debug: Boolean = true
+class NoSuchConnectedObjectTreeException(msg: String, cause: Throwable = null) extends SynchronizedObjectException(msg, cause) {
 
 }

@@ -13,7 +13,6 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, _}
@@ -33,7 +32,6 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val cache: SynchronizedObjectCache[_],
                                    override val nodeReference: ConnectedObjectReference) extends Puppeteer[S] {
 
-    private lazy val tree                       = cache.forest.findTree(nodeReference.nodePath.head).get
     override     val network          : Network = cache.network
     private      val traffic                    = channel.traffic
     override     val currentIdentifier: String  = traffic.currentIdentifier
@@ -94,11 +92,6 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
             invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         }
-    }
-
-    override def createConnectedObj(obj: Any, kind: RegistrationKind): ConnectedObject[AnyRef] = {
-        val currentPath = nodeReference.nodePath
-        tree.insertObject(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier, kind).obj
     }
 
     class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {
