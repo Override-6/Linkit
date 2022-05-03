@@ -25,7 +25,7 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
     protected final val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects classes
         new PoolChunk[Class[_]](Class, true, this, sizes(Class)),
-        new PoolChunk[Class[_]](SyncClass, true, this, sizes(SyncClass)),
+        new PoolChunk[Class[_]](SyncDef, true, this, sizes(SyncDef)),
         // Strings
         new PoolChunk[String](String, false, this, sizes(String)),
         // Primitives (primitives stored into primitives arrays are not contained in those chunks)

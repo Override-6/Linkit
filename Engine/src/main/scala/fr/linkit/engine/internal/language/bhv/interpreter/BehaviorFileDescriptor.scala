@@ -79,7 +79,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             return Array()
         val desc    = descOpt.get
         val methods = classDesc match {
-            case desc: SyncObjectDescription[_]  => desc.listMethods(desc.clazz)
+            case desc: SyncObjectDescription[_]  => desc.listMethods(desc.specs)
             case desc: SyncStaticsDescription[_] => desc.listMethods()
         }
         methods.map { method =>

@@ -27,7 +27,7 @@ trait SyncStructureDescription[A <: AnyRef] extends CompilationContext {
     /**
      * The super class's type (for java reflection api)
      * */
-    val clazz: Class[A]
+    val specs: SyncClassDef
 
     /**
      * @return A list of [[MethodDescription]]

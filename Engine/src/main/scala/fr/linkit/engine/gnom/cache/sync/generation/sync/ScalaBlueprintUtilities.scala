@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDefMultiple, SyncStructureDescription}
 
 import java.lang.reflect.{Modifier, TypeVariable}
 import scala.collection.immutable.HashSet
@@ -21,9 +21,13 @@ import scala.collection.immutable.HashSet
 object ScalaBlueprintUtilities {
 
     def getGenericParams(desc: SyncStructureDescription[_], transform: TypeVariable[_] => Any): String = {
-        val result = desc
-                .clazz
-                .getTypeParameters
+        val specs   = desc.specs
+        val classes = specs match {
+            case multiple: SyncClassDefMultiple => specs.mainClass :: multiple.interfaces.toList
+            case _                              => List(specs.mainClass)
+        }
+        val result  = classes
+                .flatMap(_.getTypeParameters)
                 .map(transform)
                 .mkString(",")
         if (result.isEmpty) ""
@@ -75,14 +79,15 @@ object ScalaBlueprintUtilities {
     def getParameters(desc: MethodDescription, withTypes: Boolean, withVarargsInlines: Boolean): String = {
         val params = desc.javaMethod.getParameters
         params.zipWithIndex
-                .map { case (param, idx) => s"arg${idx+1}" + (if (withTypes) ": " + toScalaString(param.getType)
-                else if (withVarargsInlines && param.isVarArgs) ":_*" else "") }
+                .map { case (param, idx) => s"arg${idx + 1}" + (if (withTypes) ": " + toScalaString(param.getType)
+                else if (withVarargsInlines && param.isVarArgs) ":_*" else "")
+                }
                 .mkString(", ")
     }
 
     def getParameters(params: Array[Class[_]], withTypes: Boolean): String = {
         params.zipWithIndex
-                .map { case (clazz, idx) => s"arg${idx+1}" + (if (withTypes) ": " + toScalaString(clazz) else "") }
+                .map { case (clazz, idx) => s"arg${idx + 1}" + (if (withTypes) ": " + toScalaString(clazz) else "") }
                 .mkString(", ")
     }
 

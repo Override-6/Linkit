@@ -11,6 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.description
+package fr.linkit.api.gnom.cache.sync
 
-    case class SyncClassRepresentation(superClass: Class[_], interfaces: Array[Class[_]] = Array())
+import fr.linkit.api.internal.system.AppException
+
+class InvalidSyncClassDefinitionException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+
+}

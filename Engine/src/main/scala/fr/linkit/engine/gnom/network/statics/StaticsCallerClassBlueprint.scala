@@ -15,12 +15,12 @@ class StaticsCallerClassBlueprint(bp: InputStream) extends AbstractClassBlueprin
 
     override val compilerType: CompilerType   = CommonCompilerType.Scalac
     override val rootScope   : RootValueScope = new RootValueScope {
-        bindValue("OriginClassSimpleName" ~> (_.clazz.getSimpleName))
-        bindValue("OriginClassName" ~> (_.clazz.getTypeName))
-        bindValue("ClassName" ~> (_.clazz.getSimpleName + "StaticsCaller"))
+        bindValue("OriginClassSimpleName" ~> (_.specs.mainClass.getSimpleName))
+        bindValue("OriginClassName" ~> (_.specs.mainClass.getTypeName))
+        bindValue("ClassName" ~> (_.specs.mainClass.getSimpleName + "StaticsCaller"))
 
         bindSubScope("INHERITED_METHODS", new SyncMethodScope(_, _, _) {
-            bindValue("OriginClassSimpleName" ~> (_.classDesc.clazz.getSimpleName))
+            bindValue("OriginClassSimpleName" ~> (_.classDesc.specs.mainClass.getSimpleName))
             bindValue("MethodNameID" ~> getMethodNameID)
             bindValue("ParamsOutMatch" ~> getParamsOutMatch)
             bindValue("ParamsOut" ~> (getParameters(_, false, true)))

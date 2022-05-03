@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
@@ -130,8 +131,9 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         }
 
         (flag: @switch) match {
-            case Class | SyncClass => foreach[Class[_]](writeClass)
-            case String            => foreach[String](putString)
+            case Class  => foreach[Class[_]](writeClass)
+            case SyncDef => foreach[SyncClassDef](writeSyncClassDef)
+            case String          => foreach[String](putString)
             case Enum              => foreach[Enum[_]](putEnum)
             case Array             => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
             case Object            => foreach[SimpleObject](writeObject)
@@ -142,6 +144,10 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     }
 
     def getPool: SerializerObjectPool = pool
+
+    private def writeSyncClassDef(syncDef: SyncClassDef): Unit = {
+
+    }
 
     private def writeMirroringObject(rpo: MirroringPoolObject): Unit = {
         writeClass(rpo.stubClass)
@@ -212,7 +218,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     private def putGeneratedTypeRef(clazz: Class[_]): Unit = {
         val size = pool.getChunkFromFlag(Class).size
-        val idx  = pool.getChunkFromFlag(SyncClass).indexOf(clazz) + size
+        val idx  = pool.getChunkFromFlag(SyncDef).indexOf(clazz) + size
         putRef(idx)
     }
 

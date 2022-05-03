@@ -13,10 +13,12 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+
 /**
  * Contains all the information required to create a mirroring class.
  * @param stubClasses the classes that will be extended by the generated sync class for the mirroring objects.
  *                    first index is the super class, other indexes are for the interfaces.
  * */
-case class MirroringInfo(stubClasses: Array[Class[_]])
+case class MirroringInfo(stubSyncClass: SyncClassDef)
 

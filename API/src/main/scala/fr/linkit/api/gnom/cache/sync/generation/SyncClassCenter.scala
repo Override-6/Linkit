@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassRepresentation, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 
 import scala.reflect.runtime.universe
 import scala.reflect.{ClassTag, classTag}
@@ -24,16 +24,16 @@ import scala.reflect.{ClassTag, classTag}
  * */
 trait SyncClassCenter {
 
-    def getSyncClass[S <: AnyRef](clazz: SyncClassRepresentation): Class[S with SynchronizedObject[S]]
+    def getSyncClass[S <: AnyRef](clazz: SyncClassDef): Class[S with SynchronizedObject[S]]
 
     def getSyncClassFromDesc[S<: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]]
 
-    def getSyncClassFromTpe[S<: AnyRef: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](SyncClassRepresentation(classTag[S].runtimeClass))
+    def getSyncClassFromTpe[S<: AnyRef: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](SyncClassDef(classTag[S].runtimeClass))
 
-    def preGenerateClasses(classes: Seq[SyncClassRepresentation]): Unit
+    def preGenerateClasses(classes: Seq[SyncClassDef]): Unit
 
-    def isClassGenerated[T<: AnyRef: ClassTag]: Boolean = isClassGenerated(SyncClassRepresentation(classTag[T].runtimeClass))
+    //def isClassGenerated[T<: AnyRef: ClassTag]: Boolean = isClassGenerated(new SyncClassDef(classTag[T].runtimeClass))
 
-    def isClassGenerated(clazz: SyncClassRepresentation): Boolean
+    def isClassGenerated(classDef: SyncClassDef): Boolean
 
 }

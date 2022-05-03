@@ -13,14 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.gnom.cache.sync.invocation.local.AbstractMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{JavaKeywords, SuperMethodModifiers, getMethodDescriptor}
 import javassist._
-import javassist.bytecode.annotation.{Annotation, AnnotationsWriter, BooleanMemberValue, ByteMemberValue, CharMemberValue, ClassMemberValue, DoubleMemberValue, FloatMemberValue, IntegerMemberValue, LongMemberValue, MemberValue, MemberValueVisitor, ShortMemberValue, StringMemberValue}
+import javassist.bytecode.annotation._
 import javassist.bytecode.{AnnotationsAttribute, MethodInfo}
 
 import java.lang.reflect.{Constructor, Method, Modifier}
@@ -31,13 +31,14 @@ import scala.collection.mutable.ListBuffer
 class SyncClassRectifier(desc: SyncStructureDescription[_],
                          syncClassName: String,
                          classLoader: GeneratedClassLoader,
-                         superClass: Class[_]) {
+                         syncClassDef: SyncClassDef) {
 
-    private val pool = ClassPool.getDefault
+    private val superClass = syncClassDef.mainClass
+    private val pool       = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
     private val ctClass = pool.get(syncClassName)
 
-    makeExtend()
+    applyClassDef()
     fixAllMethods()
     addAllConstructors()
     fixNetworkObjectInherance()
@@ -47,12 +48,20 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
         (bc, classLoader.defineClass(bc, ctClass.getName).asInstanceOf[Class[SynchronizedObject[_]]])
     }
 
-    private def makeExtend(): Unit = {
-        val ctSuperClass = pool.get(superClass.getName)
-        if (superClass.isInterface)
-            ctClass.addInterface(ctSuperClass)
-        else
-            ctClass.setSuperclass(ctSuperClass)
+    private def applyClassDef(): Unit = {
+        def extendClass(clazz: Class[_]): Unit = {
+            val ctClass0 = pool.get(clazz.getName)
+            if (clazz.isInterface)
+                ctClass.addInterface(ctClass0)
+            else
+                ctClass.setSuperclass(ctClass0)
+        }
+
+        extendClass(superClass)
+        syncClassDef match {
+            case multiple: SyncClassDefMultiple => multiple.interfaces.foreach(extendClass)
+            case _                              =>
+        }
     }
 
     private def fixNetworkObjectInherance(): Unit = {
@@ -123,9 +132,9 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
                 case "short"            => new ShortMemberValue(cast(value), constPool)
                 case "char"             => new CharMemberValue(cast(value), constPool)
                 case "float"            => new FloatMemberValue(cast(value), constPool)
-                case "boolean"            => new BooleanMemberValue(cast[Boolean](value), constPool)
+                case "boolean"          => new BooleanMemberValue(cast[Boolean](value), constPool)
                 case "java.lang.String" => new StringMemberValue(cast[String](value), constPool)
-                case "java.lang.Class" => new ClassMemberValue(cast[Class[_]](value).getName, constPool)
+                case "java.lang.Class"  => new ClassMemberValue(cast[Class[_]](value).getName, constPool)
             }
             annotation.addMemberValue(method.getName, memberValue)
         }

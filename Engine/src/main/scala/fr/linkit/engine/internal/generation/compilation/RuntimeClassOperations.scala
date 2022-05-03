@@ -15,6 +15,9 @@ package fr.linkit.engine.internal.generation.compilation
 
 object RuntimeClassOperations {
 
+    /**
+     *
+     * */
     def prepareClass(clazz: Class[_]): Unit = {
         clazz.getFields
         clazz.getDeclaredFields

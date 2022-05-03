@@ -13,13 +13,18 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
-import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 
 import java.lang.reflect.Method
 import scala.collection.mutable
 
-class SyncStaticsCallerDescription[A <: StaticsCaller](override val clazz: Class[A]) extends SyncObjectDescription[A](clazz) {
+class SyncStaticsCallerDescription[A <: StaticsCaller](override val specs: SyncClassDef) extends SyncObjectDescription[A](specs) {
+
+    private val clazz = specs match {
+        case multiple: SyncClassDefMultiple => throw new IllegalArgumentException("class def can't be multiple")
+        case _                              => specs.mainClass
+    }
 
     lazy val callerTargetDesc = {
         val companionClass    = clazz.getClassLoader.loadClass(clazz.getName + "$")
@@ -46,7 +51,7 @@ object SyncStaticsCallerDescription {
 
     def apply[A <: StaticsCaller](clazz: Class[_]): SyncStaticsCallerDescription[A] = {
         cache.getOrElseUpdate(clazz, {
-            new SyncStaticsCallerDescription[A](clazz.asInstanceOf[Class[A]])
+            new SyncStaticsCallerDescription[A](new SyncClassDef(clazz))
         }).asInstanceOf[SyncStaticsCallerDescription[A]]
     }
 

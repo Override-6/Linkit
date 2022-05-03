@@ -13,10 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassRepresentation, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter.SyncClassRepresentation
-import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, InvalidSyncClassRequestException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, InvalidSyncClassDefinitionException, SynchronizedObject}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
@@ -30,35 +29,25 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
 
     private val requestFactory = new SyncClassCompilationRequestFactory()
 
-    override def getSyncClass[S <: AnyRef](clazz: SyncClassRepresentation): Class[S with SynchronizedObject[S]] = {
-        if (classOf[StaticsCaller].isAssignableFrom(clazz.superClass)) {
-            if (clazz.interfaces.nonEmpty)
-                throw new IllegalArgumentException("static caller sync class representation can't define interfaces.")
-            getSyncClassFromDesc[S](SyncStaticsCallerDescription[S with StaticsCaller](clazz.superClass).asInstanceOf[SyncStructureDescription[S]])
+    override def getSyncClass[S <: AnyRef](clazz: SyncClassDef): Class[S with SynchronizedObject[S]] = {
+        if (classOf[StaticsCaller].isAssignableFrom(clazz.mainClass)) {
+            if (clazz.isInstanceOf[SyncClassDefMultiple])
+                throw new IllegalArgumentException("Static caller sync class representation can't define interfaces.")
+            getSyncClassFromDesc[S](SyncStaticsCallerDescription[S with StaticsCaller](clazz.mainClass).asInstanceOf[SyncStructureDescription[S]])
         } else getSyncClassFromDesc[S](SyncObjectDescription[S](clazz))
     }
 
     override def getSyncClassFromDesc[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
-        val clazz = desc.clazz
-        if (clazz.isArray)
-            throw new InvalidSyncClassRequestException(s"Provided class is Array. ($clazz)")
-        if (!isOverrideable(clazz.getModifiers))
-            throw new InvalidSyncClassRequestException(s"Provided class is not extensible. ($clazz)")
         getOrGenClass[S](desc)
     }
 
-    private def isOverrideable(mods: Int): Boolean = {
-        import java.lang.reflect.Modifier._
-        !isFinal(mods) && isPublic(mods)
-    }
-
-    private def getOrGenClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = desc.clazz.synchronized {
-        val clazz = desc.clazz
+    private def getOrGenClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = desc.specs.synchronized {
+        val clazz = desc.specs
         val opt   = resources.findClass[S](clazz)
         if (opt.isDefined) opt.get
         else {
             val genClassFullName = desc.classPackage + '.' + desc.className
-            val result           = Try(clazz.getClassLoader.loadClass(genClassFullName)).getOrElse(genClass[S](desc))
+            val result           = Try(clazz.mainClass.getClassLoader.loadClass(genClassFullName)).getOrElse(genClass[S](desc))
                     .asInstanceOf[Class[S with SynchronizedObject[S]]]
             if (result == null)
                 throw new ClassNotFoundException(s"Could not load generated class '$genClassFullName'")
@@ -67,10 +56,15 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     }
 
     private def genClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
-        val clazz = desc.clazz
-        checkClassValidity(clazz)
+        val clazz = desc.specs
+        checkClassDefValidity(clazz)
         val result = center.processRequest {
-            AppLogger.info(s"Compiling Sync class for ${clazz.getName}...")
+            clazz match {
+                case multiple: SyncClassDefMultiple =>
+                    AppLogger.info(s"Compiling Sync class for ${clazz.mainClass.getName} with additional interfaces ${multiple.interfaces.mkString(", ")}...")
+                case _                              =>
+                    AppLogger.info(s"Compiling Sync class for ${clazz.mainClass.getName}...")
+            }
             requestFactory.makeRequest(desc)
         }
         AppLogger.info(s"Compilation done. (${result.getCompileTime} ms).")
@@ -87,6 +81,15 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
      * @param clazz
      */
     //TODO explain the error further
+    private def checkClassDefValidity(specs: SyncClassDef): Unit = {
+        checkClassValidity(specs.mainClass)
+        specs match {
+            case multiple: SyncClassDefMultiple =>
+                multiple.interfaces.foreach(checkClassValidity)
+            case _                              =>
+        }
+    }
+
     private def checkClassValidity(clazz: Class[_]): Unit = {
         if (!classOf[NetworkObject[_]].isAssignableFrom(clazz))
             return
@@ -117,13 +120,13 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         }
     }
 
-    override def preGenerateClasses(classes: Seq[Class[_]]): Unit = {
+    override def preGenerateClasses(classes: Seq[SyncClassDef]): Unit = {
         val toCompile = classes.filterNot(isClassGenerated)
         if (toCompile.isEmpty)
             return
-        toCompile.foreach(checkClassValidity)
+        toCompile.foreach(checkClassDefValidity)
         val result = center.processRequest {
-            AppLogger.info(s"Compiling Sync Classes for ${toCompile.map(_.getSimpleName).mkString(", ")}...")
+            AppLogger.info(s"Compiling Sync Classes for ${toCompile.map(_.mainClass.getName).mkString(", ")}...")
             requestFactory.makeMultiRequest(toCompile.map(SyncObjectDescription(_)))
         }
         result.getValue.get.foreach(ClassMappings.putClass)
@@ -131,12 +134,8 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         AppLogger.info(s"Compilation done in $ct ms.")
     }
 
-    override def isClassGenerated(clazz: Class[_]): Boolean = {
-        resources.findClass[AnyRef](clazz).isDefined
+    override def isClassGenerated(classDef: SyncClassDef): Boolean = {
+        resources.findClass[AnyRef](classDef).isDefined
     }
-
-}
-
-object DefaultSyncClassCenter {
 
 }

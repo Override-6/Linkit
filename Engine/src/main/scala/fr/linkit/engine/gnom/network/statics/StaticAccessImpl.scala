@@ -2,7 +2,6 @@ package fr.linkit.engine.gnom.network.statics
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor, StaticsCaller}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.system.AppLogger
@@ -45,7 +44,7 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
 
     private def genClass(context: SyncStaticsDescription[_]): Class[_ <: StaticsCaller] = {
         val result = center.processRequest {
-            AppLogger.info(s"Compiling Statics method caller for class '${context.clazz.getName}'...")
+            AppLogger.info(s"Compiling Statics method caller for '${context.specs.mainClass}'...")
             CompilationRequestFactory.makeRequest(context)
         }
         AppLogger.info(s"Compilation done in ${result.getCompileTime} ms.")

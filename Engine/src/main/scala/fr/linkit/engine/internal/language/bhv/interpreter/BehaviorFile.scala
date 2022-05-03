@@ -88,9 +88,9 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
         val name   = signature.methodName
         val params = signature.params.map(param => findClass(param.tpe)).toArray
         val method = {
-            try classDesc.clazz.getDeclaredMethod(name, params: _*)
+            try classDesc.specs.getDeclaredMethod(name, params: _*)
             catch {
-                case _: NoSuchMethodException => throw new BHVLanguageException(s"Unknown method $signature in ${classDesc.clazz}")
+                case _: NoSuchMethodException => throw new BHVLanguageException(s"Unknown method $signature in ${classDesc.specs}")
             }
         }
         val static = Modifier.isStatic(method.getModifiers)
@@ -106,7 +106,7 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
     }
 
     def getFieldDescFromName(kind: DescriptionKind, name: String, classDesc: SyncStructureDescription[_]): SFieldDescription = {
-        val clazz     = classDesc.clazz
+        val clazz     = classDesc.specs
         val fieldDesc = {
             classDesc.listFields().find(_.javaField.getName == name).getOrElse {
                 throw new BHVLanguageException(s"Unknwown field $name in $clazz")

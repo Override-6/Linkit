@@ -52,8 +52,8 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         ref match {
             case sync: SynchronizedObject[T] => sync.getNode.contract.remoteObjectInfo match {
                 // force warp because the output of getProfile will be a regular type profile a not a sync type profile
-                case Some(value) => warpTypePersistencesWithSyncPersist(getProfile(value.stubClass))
-                case None        => getProfile(sync.getClass)
+                case Some(info) => warpTypePersistencesWithSyncPersist(getProfile(info.stubSyncClass.asInstanceOf[Class[T]]))
+                case None       => getProfile(sync.getClass)
             }
             case _                           => getProfile(ref.getClass)
         }

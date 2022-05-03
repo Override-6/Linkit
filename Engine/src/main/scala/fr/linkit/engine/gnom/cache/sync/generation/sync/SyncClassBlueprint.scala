@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDefMultiple, SyncStructureDescription}
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import ScalaBlueprintUtilities._
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
@@ -27,8 +27,8 @@ class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStr
     override val compilerType: CompilerType = CommonCompilerType.Scalac
 
     override val rootScope: RootValueScope = new RootValueScope {
-        bindValue("OriginClassSimpleName" ~> (_.clazz.getSimpleName))
-        bindValue("OriginClassName" ~> (_.clazz.getTypeName))
+        bindValue("OriginClassSimpleName" ~> (_.specs.mainClass.getSimpleName))
+        bindValue("OriginClassName" ~> (_.specs.mainClass.getSimpleName))
         bindValue("TParamsIn" ~> (getGenericParams(_, typeToScalaDeclaration)))
         bindValue("TParamsOut" ~> (getGenericParams(_, _.getName)))
         bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))

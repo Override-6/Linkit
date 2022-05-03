@@ -15,9 +15,10 @@ package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
+import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureContractDescriptor}
-import fr.linkit.api.gnom.cache.sync.contract.{RegistrationKind, StructureContract}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
@@ -55,9 +56,9 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacketChannel,
-                                                                       classCenter: SyncClassCenter,
-                                                                       override val defaultContracts: ContractDescriptorData,
-                                                                       override val network: Network)
+                                                            classCenter: SyncClassCenter,
+                                                            override val defaultContracts: ContractDescriptorData,
+                                                            override val network: Network)
         extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
     private  val cacheOwnerId     : String                     = channel.manager.ownerID
@@ -147,17 +148,17 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     }
 
     private def precompileClasses(descs: Array[StructureContractDescriptor[_]]): Unit = {
-        var classes = mutable.HashSet.empty[Array[Class[_]]]
+        var classes = mutable.HashSet.empty[Class[_]]
 
         def addClass(clazz: Class[_]): Unit = {
             if (!Modifier.isAbstract(clazz.getModifiers))
-                classes += Array(clazz)
+                classes += clazz
         }
 
         descs.foreach(desc => {
             val clazz         = desc.targetClass
             val mirroringInfo = desc.mirroringInfo
-            if (mirroringInfo.isDefined) classes += mirroringInfo.get.stubClasses
+            if (mirroringInfo.isDefined) classes += mirroringInfo.get.stubSyncClass.mainClass
             else addClass(clazz)
 
             desc.fields.filter(_.registrationKind == Synchronized).foreach(f => addClass(f.desc.javaField.getType))
@@ -172,14 +173,15 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
             })
         })
         classes -= classOf[Object]
-        classes = classes.filterNot(classCenter.isClassGenerated)
+        classes = classes.filterNot(cl => classCenter.isClassGenerated(SyncClassDef(cl)))
                 .filterNot(c => isNotOverridable(c.getModifiers))
+
         if (classes.isEmpty)
             return
         AppLogger.info(s"Found ${classes.size} classes to compile in their sync versions")
         AppLogger.debug("Classes to compile :")
         classes.foreach(clazz => AppLogger.debug(s"\tgen.${clazz}Sync"))
-        classCenter.preGenerateClasses(classes.toList)
+        classCenter.preGenerateClasses(classes.toList.map(SyncClassDef(_)))
     }
 
     private def isObjectPresent(location: ConnectedObjectReference): Boolean = {
@@ -190,7 +192,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     }
 
     protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[A], context: SyncObjectContext): StructureContract[A] = {
-        factory.getObjectContract[A](creator.tpeClass, context)
+        factory.getObjectContract[A](creator.tpeClass, context, false)
     }
 
     private def createNewTree(id: Int, rootObjectOwner: String,
@@ -260,11 +262,10 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         forest.findTree(id).isDefined
     }
 
-
     private object DefaultInstantiator extends SyncInstanceInstantiator {
 
         override def newSynchronizedInstance[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
-            val syncClass = classCenter.getSyncClass[B](creator.tpeClass)
+            val syncClass = classCenter.getSyncClass[B](new SyncClassDef(creator.tpeClass))
             try {
                 creator.getInstance(syncClass)
             } catch {
@@ -382,7 +383,5 @@ object DefaultSynchronizedObjectCache {
                                               rootObject: A with SynchronizedObject[A],
                                               treeOwner: String,
                                               contracts: ContractDescriptorData) extends Serializable
-
-
 
 }

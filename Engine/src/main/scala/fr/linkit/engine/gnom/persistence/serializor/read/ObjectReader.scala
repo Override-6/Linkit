@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
@@ -88,7 +89,7 @@ class ObjectReader(bundle: PersistenceBundle,
 
         (flag: @switch) match {
             case Class     => collectAndUpdateChunk[Class[_]](readClass())
-            case SyncClass => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](syncClassCenter.getSyncClass(readClass())) //would compile the class if it's Sync version does not exists on this engine
+            case SyncDef   => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](syncClassCenter.getSyncClass(readSyncDef())) //would compile the class if it's Sync version does not exists on this engine
             case Enum      => collectAndUpdateChunk[Enum[_]](readEnum())
             case String    => collectAndUpdateChunk[String](readString())
             case Array     => collectAndUpdateChunk[PoolObject[_ <: AnyRef]](ArrayPersistence.readArray(this))
@@ -107,6 +108,10 @@ class ObjectReader(bundle: PersistenceBundle,
         val stubClass = readClass()
         val refIdx    = readNextRef
         new MirroringObject(refIdx, stubClass, selector, pool)
+    }
+
+    private def readSyncDef(): SyncClassDef = {
+
     }
 
     private def readClass(): Class[_] = {

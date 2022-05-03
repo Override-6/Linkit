@@ -1,7 +1,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncClassDef}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.{SyntheticMod, isNotOverridable}
@@ -11,7 +11,7 @@ import java.lang.reflect.{Executable, Method, Modifier}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: Class[A]) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
+class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDef) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
 
     def listMethods[L >: A](limit: Class[L]): Iterable[MethodDescription] = {
         listMethods().filter(m => limit.isAssignableFrom(m.javaMethod.getDeclaringClass))
@@ -66,16 +66,15 @@ object SyncObjectDescription {
 
     private val SyntheticMod = 0x00001000
 
-    private val cache = mutable.HashMap.empty[Class[_], SyncObjectDescription[_]]
+    private val cache = mutable.HashMap.empty[Int, SyncObjectDescription[_]]
 
-    def apply[A <: AnyRef](clazz: Class[_]): SyncObjectDescription[A] = cache.getOrElseUpdate(clazz, {
-        if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
-            throw new IllegalArgumentException(s"Provided class already extends from SynchronizedObject ($clazz)")
-        val AClass = clazz.asInstanceOf[Class[A]]
-        new SyncObjectDescription[A](AClass)
+    def apply[A <: AnyRef](specs: SyncClassDef): SyncObjectDescription[A] = cache.getOrElseUpdate(specs.id, {
+        if (specs.isAssignableFromThis(classOf[SynchronizedObject[_]]))
+            throw new IllegalArgumentException(s"Provided class definition contains classes that extends ${classOf[SynchronizedObject[_]]} ($specs)")
+        new SyncObjectDescription[A](specs)
     }).asInstanceOf[SyncObjectDescription[A]]
 
-    implicit def fromTag[A <: AnyRef : ClassTag]: SyncObjectDescription[A] = apply[A](classTag[A].runtimeClass)
+    //implicit def fromTag[A <: AnyRef : ClassTag]: SyncObjectDescription[A] = apply[A](classTag[A].runtimeClass)
 
     def isNotOverridable(mods: Int): Boolean = {
         import Modifier._

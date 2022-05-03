@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, RMIRulesAgreement, SyncObjectContext}
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefMultiple
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
@@ -42,7 +43,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         putMethods(methodMap, false, context)
         putFields(fieldMap)
 
-        val mirroringInfo = descriptor.mirroringInfo.orElse(if (forceMirroring) autoDefineMirroringInfo())
+        val mirroringInfo = descriptor.mirroringInfo.orElse(if (forceMirroring) Some(autoDefineMirroringInfo()) else None)
 
         new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }
@@ -64,7 +65,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         while (findReasonTypeCantBeSync(superClass).isDefined)
             superClass = this.superClass.clazz
         val interfaces = this.interfaces.flatMap(getSyncableInterface)
-        MirroringInfo(Array(superClass) ++ interfaces)
+        MirroringInfo(SyncClassDefMultiple(superClass, interfaces))
     }
 
     private def getSyncableInterface(interface: StructureBehaviorDescriptorNodeImpl[_]): Array[Class[_]] = {

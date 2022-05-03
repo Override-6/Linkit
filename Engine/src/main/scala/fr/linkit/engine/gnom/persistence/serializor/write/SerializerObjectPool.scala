@@ -40,7 +40,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     def getChunk[T](ref: Any): PoolChunk[T] = {
         //TODO this method can be optimized
         ref match {
-            case c: Class[_] if isSyncClass(c) => getChunkFromFlag(SyncClass)
+            case c: Class[_] if isSyncClass(c) => getChunkFromFlag(SyncDef)
             case _: Class[_]                   => getChunkFromFlag(Class)
 
             case _: Int     => getChunkFromFlag(Int)
@@ -237,7 +237,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     private def addTypeOfIfAbsent(ref: AnyRef): Class[_] = ref match {
         case sync: SynchronizedObject[_] =>
             val implClass = sync.getNode.contract.remoteObjectInfo.fold[Class[_]](sync.getSourceClass)(_.stubClass)
-            getChunkFromFlag(SyncClass).addIfAbsent(implClass)
+            getChunkFromFlag(SyncDef).addIfAbsent(implClass)
             implClass
         case _                           =>
             val clazz = ref.getClass

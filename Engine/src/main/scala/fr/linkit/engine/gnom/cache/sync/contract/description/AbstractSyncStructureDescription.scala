@@ -13,23 +13,23 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description._
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource._
 
 import java.lang.reflect._
 import scala.collection.mutable.ListBuffer
 
-abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz: Class[A]) extends SyncStructureDescription[A] {
+abstract class AbstractSyncStructureDescription[A <: AnyRef](override val specs: SyncClassDef) extends SyncStructureDescription[A] {
 
     private val methodDescriptions: Map[Int, MethodDescription] = collectMethods()
     private val fieldDescriptions : Map[Int, FieldDescription]  = collectFields()
 
     //The generated class name
-    override def classPackage: String = GeneratedClassesPackage + clazz.getPackageName
+    override def classPackage: String = GeneratedClassesPackage + specs.mainClass.getPackageName
 
-    override def className: String = clazz.getSimpleName + SyncSuffixName
+    override def className: String = specs.mainClass.getSimpleName + SyncSuffixName + s"_${specs.id}"
 
-    override def parentLoader: ClassLoader = clazz.getClassLoader
+    override def parentLoader: ClassLoader = specs.mainClass.getClassLoader
 
     override def listMethods(): Iterable[MethodDescription] = {
         methodDescriptions.values
@@ -64,16 +64,27 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz:
 
     protected def toMethodDesc(method: Method): MethodDescription = new MethodDescription(method, this)
 
-    private def getAllMethods: ListBuffer[Method] = {
-        val buff = ListBuffer.from[Method](clazz.getMethods)
-        if (clazz.isInterface)
-            buff ++= classOf[Object].getDeclaredMethods
-        var cl: Class[_] = clazz
-        while (cl != null) {
-            buff ++= cl.getDeclaredMethods.filter(m => Modifier.isProtected(m.getModifiers))
-            cl = cl.getSuperclass
+    protected def getAllMethods: Seq[Method] = {
+        val buff = ListBuffer.empty[Method]
+
+        def addAllMethods(clazz: Class[_]): Unit = {
+            buff ++= clazz.getMethods
+            if (clazz.isInterface)
+                buff ++= classOf[Object].getDeclaredMethods
+            var cl: Class[_] = clazz
+            while (cl != null) {
+                buff ++= cl.getDeclaredMethods.filter(m => Modifier.isProtected(m.getModifiers))
+                cl = cl.getSuperclass
+            }
         }
-        buff
+
+        addAllMethods(specs.mainClass)
+        specs match {
+            case multiple: SyncClassDefMultiple =>
+                multiple.interfaces.foreach(addAllMethods)
+            case _                              =>
+        }
+        buff.toSeq
     }
 
     protected def applyNotFilter(e: Executable): Boolean
@@ -86,7 +97,7 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val clazz:
 
     private def collectFields(): Map[Int, FieldDescription] = {
         val fields          = ListBuffer.empty[Field]
-        var clazz: Class[_] = this.clazz
+        var clazz: Class[_] = this.specs.mainClass
         while (clazz != null) {
             fields ++= clazz.getDeclaredFields
                     .filterNot(f => Modifier.isStatic(f.getModifiers))
