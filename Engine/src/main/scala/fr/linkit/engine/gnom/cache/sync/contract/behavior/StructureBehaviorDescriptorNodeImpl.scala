@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, RMIRulesAgreement, SyncObjectContext}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, RegistrationKind, StructureContract}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
@@ -35,14 +35,16 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     //private val instanceDesc = SyncObjectDescription[A](clazz)
     //private val staticsDesc  = SyncStaticsDescription[A](clazz)
 
-    override def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
+    override def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext, forceMirroring: Boolean): StructureContract[A] = {
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
         val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
 
         putMethods(methodMap, false, context)
         putFields(fieldMap)
 
-        new StructureContractImpl(clazz, descriptor.mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
+        val mirroringInfo = descriptor.mirroringInfo.orElse(if (forceMirroring) autoDefineMirroringInfo())
+
+        new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }
 
     override def getStaticsContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
@@ -57,6 +59,22 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         new HeritageValueModifier(factory, limit)
     }
 
+    private def autoDefineMirroringInfo(): MirroringInfo = {
+        var superClass: Class[_] = this.clazz
+        while (findReasonTypeCantBeSync(superClass).isDefined)
+            superClass = this.superClass.clazz
+        val interfaces = this.interfaces.flatMap(getSyncableInterface)
+        MirroringInfo(Array(superClass) ++ interfaces)
+    }
+
+    private def getSyncableInterface(interface: StructureBehaviorDescriptorNodeImpl[_]): Array[Class[_]] = {
+        if (interface == null)
+            return Array()
+        if (findReasonTypeCantBeSync(interface.clazz).isDefined)
+            interface.interfaces.flatMap(getSyncableInterface)
+        else interfaces.map(_.clazz)
+    }
+
     /*
     * performs verifications on the node to ensure that the resulted StructureContract would not
     * throw any exception while being used by synchronized objects.
@@ -65,12 +83,12 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         //ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
         verifyMirroringHierarchy()
         ensureNoSyncFieldIsPrimitive()
-        ensureNoSyncFieldIsSynchronized()
+        ensureNoSyncFieldIsStatic()
         ensureNoMethodContainsPrimitiveSyncComp()
         warnAllHiddenMethodsWithDescribedBehavior()
     }
 
-    private def ensureNoSyncFieldIsSynchronized(): Unit = {
+    private def ensureNoSyncFieldIsStatic(): Unit = {
         if (descriptor.fields.exists(fc => fc.registrationKind != NotRegistered && Modifier.isStatic(fc.desc.javaField.getModifiers)))
             throw new BadContractException(s"in $clazz: static synchronized fields are not supported.")
     }
@@ -120,16 +138,24 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     }
 
     private def ensureTypeCanBeSync(tpe: Class[_], msg: String => String): Unit = {
-        if (tpe.isPrimitive) throw new BadContractException(msg("primitives"))
-        if (tpe.isArray) throw new BadContractException(msg("arrays"))
-        if (tpe.isEnum) throw new BadContractException(msg("enums"))
-        if (tpe.isAnnotation) throw new BadContractException(msg("annotations"))
-        if (tpe.isSealed) throw new BadContractException(msg("sealed classes"))
+        findReasonTypeCantBeSync(tpe).foreach(reason => throw new BadContractException(msg(reason)))
+    }
 
-        import Modifier._
-        val mods = tpe.getModifiers
-        if (isFinal(mods)) throw new BadContractException(msg("final classes"))
-        if (isPrivate(mods)) throw new BadContractException(msg("private classes"))
+    private def findReasonTypeCantBeSync(tpe: Class[_]): Option[String] = {
+        val result = if (tpe.isPrimitive) "primitive"
+        else if (tpe.isArray) "array"
+        else if (tpe.isEnum) "enum"
+        else if (tpe.isAnnotation) "annotation"
+        else if (tpe.isSealed) "sealed class"
+        else {
+            import Modifier._
+            val mods = tpe.getModifiers
+            if (isFinal(mods)) "final class"
+            else if (isPrivate(mods)) "private class"
+            else if (isProtected(mods)) "protected class"
+            else null
+        }
+        Option(result)
     }
 
     private var hierarchyVerifyResult: Option[Boolean] = None

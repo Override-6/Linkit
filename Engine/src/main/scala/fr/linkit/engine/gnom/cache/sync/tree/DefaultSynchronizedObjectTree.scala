@@ -177,7 +177,6 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val node = new ChippedObjectNodeImpl[B](data)
         parent.addChild(node)
         adapter.initialize(node)
-        ChippedObjectStore.addChippedObject(adapter)
         node
     }
 
@@ -231,7 +230,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     private def createUnknownObjectNode[B <: AnyRef](path: Array[Int]): MutableNode[B] = {
         val parent = getParent(path.dropRight(1))
-        val data   = dataFactory.newUnknownObjectData[AnyRef](parent, path)
+        val data   = dataFactory.newObjectData[AnyRef](parent, path)
         val node   = new UnknownObjectSyncNode(data)
         parent.addChild(node)
         node.asInstanceOf[MutableNode[B]]

@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RemoteObjectInfo}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo}
 import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 
 import scala.collection.mutable.ListBuffer
@@ -44,7 +44,7 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[_], nextSuperR
 
             new StructureContractDescriptor[A] {
                 override val targetClass   = relation.targetClass.asInstanceOf[Class[A]]
-                override val mirroringInfo = fusion[Option[RemoteObjectInfo]](_.mirroringInfo, _.isDefined && _.isDefined, _.orElse(_), "mirroring information")
+                override val mirroringInfo = fusion[Option[MirroringInfo]](_.mirroringInfo, _.isDefined && _.isDefined, _.orElse(_), "mirroring information")
                 override val modifier      = fusion[Option[ValueModifier[A]]](_.modifier, _.isDefined && _.isDefined, _.orElse(_), "value modifier.")
                 override val methods       = fusion[Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(b.contains), _ ++ _, "method contract.")
                 override val fields        = fusion[Array[FieldContract[Any]]](_.fields, (a, b) => a.exists(b.contains), _ ++ _, "field contract.")

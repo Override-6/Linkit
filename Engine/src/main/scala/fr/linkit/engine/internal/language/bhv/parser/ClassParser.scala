@@ -16,6 +16,7 @@ package fr.linkit.engine.internal.language.bhv.parser
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.engine.internal.language.bhv.ast._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ast}
@@ -71,8 +72,8 @@ object ClassParser extends BehaviorLanguageParser {
         }
         val methodsParser              = enabledMethodParser | disabledMethodParser | hiddenMethodParser
         val fieldsParser               = syncParser ~ identifier ^^ { case state ~ name => AttributedFieldDescription(name, state) }
-        val classHead                  = Describe ~> (Statics | Mirroring).? ~ identifier ~ (Stub ~> identifier).? ^^ {
-            case Some(Mirroring) ~ className ~ stubClass        => ClassDescriptionHead(MirroringDescription(stubClass.getOrElse(className)), className)
+        val classHead                  = Describe ~> (Statics | BehaviorLanguageKeyword.Mirroring).? ~ identifier ~ (Stub ~> identifier).? ^^ {
+            case Some(BehaviorLanguageKeyword.Mirroring) ~ className ~ stubClass        => ClassDescriptionHead(MirroringDescription(stubClass.getOrElse(className)), className)
             case None ~ className ~ None                        => ClassDescriptionHead(RegularDescription, className)
             case Some(Statics) ~ className ~ None               => ClassDescriptionHead(StaticsDescription, className)
             case _@(Some(Statics) | None) ~ className ~ Some(_) =>

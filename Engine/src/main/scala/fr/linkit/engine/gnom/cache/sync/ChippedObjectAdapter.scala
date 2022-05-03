@@ -17,6 +17,10 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.tree.ChippedObjectNode
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter.addChippedObject
+
+import scala.collection.mutable
+import scala.util.Try
 
 final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends ChippedObject[A] {
 
@@ -54,9 +58,26 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
     override def presence: NetworkObjectPresence = presence0
 
     def initialize(node: ChippedObjectNode[A]): Unit = {
+        if (node.contract.remoteObjectInfo.isEmpty)
+            throw new IllegalConnectedObjectException("Pure chipped object's contract must define mirroring information.")
         this.choreographer = node.choreographer
         this.reference0 = node.reference
         this.presence0 = node.objectPresence
         this.node = node
+        addChippedObject(this)
+    }
+
+}
+
+object ChippedObjectAdapter {
+    private val map = mutable.HashMap.empty[Any, ChippedObject[_]]
+
+    private def addChippedObject(chippedObject: ChippedObject[_]): Unit = {
+        map.put(chippedObject.connected, chippedObject)
+    }
+
+    def findAdapter(obj: Any): Option[ChippedObject[_]] = {
+        if (obj == null) return None
+        Try(map.get(obj)).toOption.flatten
     }
 }

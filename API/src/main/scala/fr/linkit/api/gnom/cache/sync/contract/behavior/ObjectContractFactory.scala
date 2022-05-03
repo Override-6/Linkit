@@ -21,7 +21,7 @@ trait ObjectContractFactory {
 
     val data: ContractDescriptorData
 
-    def getObjectContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext): StructureContract[A]
+    def getObjectContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext, forceMirroring: Boolean): StructureContract[A]
 
     def getStaticContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext): StructureContract[A]
 

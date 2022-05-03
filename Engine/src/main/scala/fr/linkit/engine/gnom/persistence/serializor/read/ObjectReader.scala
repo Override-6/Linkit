@@ -94,12 +94,12 @@ class ObjectReader(bundle: PersistenceBundle,
             case Array     => collectAndUpdateChunk[PoolObject[_ <: AnyRef]](ArrayPersistence.readArray(this))
             case Object    => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
             case Lambda    => collectAndUpdateChunk[NotInstantiatedLambdaObject](readLambdaObject())
-            case RNO       => collectAndUpdateChunk[ReferencedPoolObject](readContextObject())
+            case RNO       => collectAndUpdateChunk[ReferencedPoolObject](readReferencedObject())
             case Mirroring => collectAndUpdateChunk[MirroringPoolObject](readMirroringObject())
         }
     }
 
-    private def readContextObject(): ReferencedPoolObject = {
+    private def readReferencedObject(): ReferencedPoolObject = {
         new ReferencedObject(readNextRef, selector, pool)
     }
 

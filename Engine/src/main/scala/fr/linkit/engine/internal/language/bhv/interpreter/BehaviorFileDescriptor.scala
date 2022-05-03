@@ -6,7 +6,7 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, RemoteObjectInfo}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, MirroringInfo}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
@@ -43,7 +43,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                 val (mirroringInfo0, classDesc) = kind match {
                     case RegularDescription         => (None, SyncObjectDescription(clazz))
                     case StaticsDescription         => (None, SyncStaticsDescription(clazz))
-                    case MirroringDescription(stub) => (Some(RemoteObjectInfo(file.findClass(stub))), SyncObjectDescription(clazz))
+                    case MirroringDescription(stub) => (Some(MirroringInfo(file.findClass(stub))), SyncObjectDescription(clazz))
                 }
                 new StructureContractDescriptor[AnyRef] {
                     override val targetClass   = clazz.asInstanceOf[Class[AnyRef]]

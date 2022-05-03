@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.{ConnectedObject, OriginReferencedConnected
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject, SystemNetworkObjectPresence}
-import fr.linkit.engine.gnom.cache.sync.tree.ChippedObjectStore
+import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.reference.ContextObject
 import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, InternalNetworkObjectPresence}
 
@@ -78,7 +78,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
                 val ref = new ContextualObjectReference(packetPath, id)
                 if (col.isPresentOnEngine(boundId, ref)) Some(ref)
                 else None
-        }).orElse(ChippedObjectStore.findConnectedObject(obj).map(_.reference))
+        }).orElse(ChippedObjectAdapter.findAdapter(obj).flatMap(findConnectedObjectReference))
     }
 
     private def findDynamicNetworkObjectReference(obj: DynamicNetworkObject[NetworkObjectReference]): Option[NetworkObjectReference] = {

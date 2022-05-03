@@ -13,8 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassRepresentation, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
+import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter.SyncClassRepresentation
 import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, InvalidSyncClassRequestException, SynchronizedObject}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.reference.NetworkObject
@@ -29,9 +30,11 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
 
     private val requestFactory = new SyncClassCompilationRequestFactory()
 
-    override def getSyncClass[S <: AnyRef](clazz: Class[_]): Class[S with SynchronizedObject[S]] = {
-        if (classOf[StaticsCaller].isAssignableFrom(clazz)) {
-            getSyncClassFromDesc[S](SyncStaticsCallerDescription[S with StaticsCaller](clazz).asInstanceOf[SyncStructureDescription[S]])
+    override def getSyncClass[S <: AnyRef](clazz: SyncClassRepresentation): Class[S with SynchronizedObject[S]] = {
+        if (classOf[StaticsCaller].isAssignableFrom(clazz.superClass)) {
+            if (clazz.interfaces.nonEmpty)
+                throw new IllegalArgumentException("static caller sync class representation can't define interfaces.")
+            getSyncClassFromDesc[S](SyncStaticsCallerDescription[S with StaticsCaller](clazz.superClass).asInstanceOf[SyncStructureDescription[S]])
         } else getSyncClassFromDesc[S](SyncObjectDescription[S](clazz))
     }
 

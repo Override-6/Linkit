@@ -11,6 +11,6 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract
+package fr.linkit.api.gnom.cache.sync.contract.description
 
-case class RemoteObjectInfo(stubClass: Class[_])
+    case class SyncClassRepresentation(superClass: Class[_], interfaces: Array[Class[_]] = Array())

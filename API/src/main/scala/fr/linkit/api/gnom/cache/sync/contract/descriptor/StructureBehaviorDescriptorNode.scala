@@ -23,7 +23,7 @@ trait StructureBehaviorDescriptorNode[A <: AnyRef] {
 
     def getStaticsContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A]
 
-    def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A]
+    def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext, forceMirroring: Boolean): StructureContract[A]
 
     def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A]
 

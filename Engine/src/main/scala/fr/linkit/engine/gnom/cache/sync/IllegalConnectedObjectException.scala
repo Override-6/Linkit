@@ -11,24 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree
+package fr.linkit.engine.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.sync.ChippedObject
+import fr.linkit.api.gnom.cache.sync.SyncObjectException
 
-import scala.collection.mutable
-import scala.util.Try
-
-object ChippedObjectStore {
-
-    private val map = mutable.HashMap.empty[Any, ChippedObject[_]]
-
-    private[tree] def addChippedObject(chippedObject: ChippedObject[_]): Unit = {
-        map.put(chippedObject.connected, chippedObject)
-    }
-
-    def findConnectedObject(obj: Any): Option[ChippedObject[_]] = {
-        if (obj == null) return None
-        Try(map.get(obj)).toOption.flatten
-    }
+class IllegalConnectedObjectException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause){
 
 }

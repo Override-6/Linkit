@@ -17,11 +17,15 @@ import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 
 trait SyncNodeDataFactory {
 
-    def newChippedObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chippedObject: ChippedObject[A],  ownerID: String): ChippedObjectNodeData[A]
+    def newChippedObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
+                                          chippedObject: ChippedObject[A],  ownerID: String): ChippedObjectNodeData[A]
+
+    def newChippedOnlyObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
+                                              chippedObject: ChippedObject[A],  ownerID: String): ChippedObjectNodeData[A]
 
     def newSyncObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
                                        syncObject: A with SynchronizedObject[A], origin: Option[A],
                                        ownerID: String): SyncObjectNodeData[A]
 
-    def newUnknownObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], path: Array[Int]): NodeData[A]
+    def newObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], path: Array[Int]): NodeData[A]
 }

@@ -92,13 +92,23 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
 
     override def newChippedObjectData[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chippedObject: ChippedObject[B],
                                                    ownerID: String): ChippedObjectNodeData[B] = {
+        newChippedObjectData(false, parent, id, chippedObject, ownerID)
+    }
+
+    override def newChippedOnlyObjectData[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chippedObject: ChippedObject[B],
+                                                       ownerID: String): ChippedObjectNodeData[B] = {
+        newChippedObjectData(true, parent, id, chippedObject, ownerID)
+    }
+
+    private def newChippedObjectData[B <: AnyRef](forceMirroring: Boolean, parent: MutableNode[_ <: AnyRef], id: Int, chippedObject: ChippedObject[B],
+                                                  ownerID: String): ChippedObjectNodeData[B] = {
         val tree          = parent.tree.asInstanceOf[DefaultSynchronizedObjectTree[B]]
         val originClass   = chippedObject.getConnectedObjectClass
         val path          = parent.treePath :+ id
         val behaviorStore = tree.contractFactory
         val choreographer = new InvocationChoreographer()
         val context       = UsageSyncObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId, choreographer)
-        val contract      = behaviorStore.getObjectContract[B](originClass, context)
+        val contract      = behaviorStore.getObjectContract[B](originClass, context, forceMirroring)
         val chip          = ObjectChip[B](contract, network, chippedObject)
         val reference     = new ConnectedObjectReference(family, cacheID, ownerID, path)
         val presence      = forest.getPresence(reference)
@@ -118,7 +128,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         new SyncObjectNodeData[B](puppeteer, syncObject, originRef)(chippedData)
     }
 
-    override def newUnknownObjectData[B <: AnyRef](parent: MutableNode[_ <: AnyRef], path: Array[Int]): NodeData[B] = {
+    override def newObjectData[B <: AnyRef](parent: MutableNode[_ <: AnyRef], path: Array[Int]): NodeData[B] = {
         val reference = new ConnectedObjectReference(family, cacheID, null, path)
         val presence  = forest.getPresence(reference)
         val tree      = parent.tree.asInstanceOf[DefaultSynchronizedObjectTree[_]] //TODO REMOVE THIS CAST
@@ -137,17 +147,17 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     }
 
     private def precompileClasses(descs: Array[StructureContractDescriptor[_]]): Unit = {
-        var classes = mutable.HashSet.empty[Class[_]]
+        var classes = mutable.HashSet.empty[Array[Class[_]]]
 
         def addClass(clazz: Class[_]): Unit = {
             if (!Modifier.isAbstract(clazz.getModifiers))
-                classes += clazz
+                classes += Array(clazz)
         }
 
         descs.foreach(desc => {
             val clazz         = desc.targetClass
             val mirroringInfo = desc.mirroringInfo
-            if (mirroringInfo.isDefined) addClass(mirroringInfo.get.stubClass)
+            if (mirroringInfo.isDefined) classes += mirroringInfo.get.stubClasses
             else addClass(clazz)
 
             desc.fields.filter(_.registrationKind == Synchronized).foreach(f => addClass(f.desc.javaField.getType))

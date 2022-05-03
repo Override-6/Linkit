@@ -15,13 +15,15 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
+import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
+import org.jetbrains.annotations.Nullable
 
 class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Array[Int](ChunkCount).mapInPlace(_ => -1)) {
 
@@ -161,21 +163,22 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
             case _ if isLambdaObject(ref)                =>
                 addLambda(ref)
             case chi: ChippedObject[_] if chi.isMirrored =>
-                addMirroredObject(chi)
+                addMirroredObject(chi, null)
             case _                                       =>
                 addObj0(ref)
         }
     }
 
-    private def addMirroredObject(chi: ChippedObject[_ <: AnyRef]): Unit = {
-        val nrlOpt = selector.findObjectReference(chi)
+    private def addMirroredObject(chi: ChippedObject[_], @Nullable refHint: Option[NetworkObjectReference]): Unit = {
+        val nrlOpt = if (refHint == null) selector.findObjectReference(chi) else refHint
         if (nrlOpt.isEmpty) {
             val chunk = getChunkFromFlag[ReferencedPoolObject](Mirroring)
-            val pos = chunks(Object).size
-            val ref = chi.reference
-            chunk.add(new ReferencedPoolObject {
+            val pos   = chunks(Object).size
+            val ref   = chi.reference
+            chunk.add(new MirroringPoolObject {
                 override val referenceIdx: Int                    = pos
                 override val reference   : NetworkObjectReference = ref
+                override val stubClass   : Class[_]               = chi.getNode.contract.remoteObjectInfo.get.stubClass
 
                 override def value: AnyRef = chi
             })
@@ -208,7 +211,9 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     private def addObj0(ref: AnyRef): Unit = {
         val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
-            addObjectDecomposed(ref)
+            val chiOpt = ChippedObjectAdapter.findAdapter(ref)
+            if (chiOpt.isDefined) addMirroredObject(chiOpt.get, nrlOpt)
+            else addObjectDecomposed(ref)
         } else {
             addReferencedObject(ref, nrlOpt.get)
         }
