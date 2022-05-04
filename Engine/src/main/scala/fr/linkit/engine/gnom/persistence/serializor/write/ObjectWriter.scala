@@ -13,8 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.write
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
@@ -131,27 +130,33 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         }
 
         (flag: @switch) match {
-            case Class  => foreach[Class[_]](writeClass)
-            case SyncDef => foreach[SyncClassDef](writeSyncClassDef)
-            case String          => foreach[String](putString)
-            case Enum              => foreach[Enum[_]](putEnum)
-            case Array             => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
-            case Object            => foreach[SimpleObject](writeObject)
-            case Lambda            => foreach[SimpleLambdaObject](writeLambdaObject)
-            case RNO               => foreach[ReferencedPoolObject](obj => putRef(obj.referenceIdx))
-            case Mirroring         => foreach[MirroringPoolObject](writeMirroringObject)
+            case Class     => foreach[Class[_]](writeClass)
+            case SyncDef   => foreach[SyncClassDef](writeSyncClassDef)
+            case String    => foreach[String](putString)
+            case Enum      => foreach[Enum[_]](putEnum)
+            case Array     => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
+            case Object    => foreach[SimpleObject](writeObject)
+            case Lambda    => foreach[SimpleLambdaObject](writeLambdaObject)
+            case RNO       => foreach[ReferencedPoolObject](obj => putRef(obj.referenceIdx))
+            case Mirroring => foreach[MirroringPoolObject](writeMirroringObject)
         }
     }
 
     def getPool: SerializerObjectPool = pool
 
     private def writeSyncClassDef(syncDef: SyncClassDef): Unit = {
-
+        val (classCount, classes) = syncDef match {
+            case unique: SyncClassDefUnique     => (1, scala.Array(unique.mainClass))
+            case multiple: SyncClassDefMultiple => (1 + multiple.interfaces.length, scala.Array(multiple.mainClass) ++ multiple.interfaces)
+        }
+        buff.putChar(classCount.toChar)
+        classes.foreach(putTypeRef)
     }
 
     private def writeMirroringObject(rpo: MirroringPoolObject): Unit = {
-        writeClass(rpo.stubClass)
-        putRef(rpo.referenceIdx)
+        val idx = pool.getChunkFromFlag(SyncDef).indexOf(rpo.stubClassDef)
+        putRef(idx) //the mirroring object's class definition
+        putRef(rpo.referenceIdx) //the mirroring object reference.
     }
 
     private def writeClass(clazz: Class[_]): Unit = {
@@ -163,7 +168,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     }
 
     private def putEnum(enum: Enum[_]): Unit = {
-        putTypeRef(enum.getClass, forceSyncClass = false)
+        putTypeRef(enum.getClass)
         putString(enum.name())
     }
 
@@ -174,17 +179,27 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     @inline
     private def writeLambdaObject(poolObj: SimpleLambdaObject): Unit = {
         val rep = poolObj.representation
-        writeObject(rep.getClass, rep.isInstanceOf[SynchronizedObject[_]], poolObj.representationDecomposed)
+        writeObject(rep.getClass, poolObj.representationDecomposed)
     }
 
     @inline
     private def writeObject(poolObj: SimpleObject): Unit = {
-        writeObject(poolObj.valueClass, poolObj.isSync, poolObj.decomposed)
+        poolObj.valueClassRef match {
+            case Left(clazz)    => writeObject(clazz, poolObj.decomposed)
+            case Right(syncDef) => writeObject(syncDef, poolObj.decomposed)
+        }
     }
 
-    private def writeObject(objectType: Class[_], isSyncClass: Boolean, decomposed: Array[Any]): Unit = {
+    private def writeObject(objectType: Class[_], decomposed: Array[Any]): Unit = {
         //writing object's class
-        putTypeRef(objectType, isSyncClass)
+        putTypeRef(objectType)
+        //writing object content
+        ArrayPersistence.writeArrayContent(this, decomposed)
+    }
+
+    private def writeObject(objectType: SyncClassDef, decomposed: Array[Any]): Unit = {
+        //writing object's class
+        putSyncTypeRef(objectType)
         //writing object content
         ArrayPersistence.writeArrayContent(this, decomposed)
     }
@@ -203,23 +218,12 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         putRef(idx)
     }
 
-    def putTypeRef(tpe: Class[_], forceSyncClass: Boolean): Unit = {
-        if (forceSyncClass) {
-            putGeneratedTypeRef(tpe)
-            return
-        }
-        val idx = pool.getChunkFromFlag(Class).indexOf(tpe)
-        if (idx == -1) {
-            putGeneratedTypeRef(tpe)
-            return
-        }
-        putRef(idx)
+    def putTypeRef(tpe: Class[_]): Unit = {
+        putRef(pool.getChunkFromFlag(Class).indexOf(tpe))
     }
 
-    private def putGeneratedTypeRef(clazz: Class[_]): Unit = {
-        val size = pool.getChunkFromFlag(Class).size
-        val idx  = pool.getChunkFromFlag(SyncDef).indexOf(clazz) + size
-        putRef(idx)
+    def putSyncTypeRef(syncClassDef: SyncClassDef): Unit = {
+        val idx = pool.getChunkFromFlag(SyncDef).indexOf(syncClassDef)
+        putRef(pool.getChunkFromFlag(Class).size + idx)
     }
-
 }

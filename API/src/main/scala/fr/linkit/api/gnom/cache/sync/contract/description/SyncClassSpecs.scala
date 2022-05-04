@@ -14,34 +14,47 @@
 package fr.linkit.api.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.InvalidSyncClassDefinitionException
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef.check
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique.check
 
 import java.util
 
-class SyncClassDef(val mainClass: Class[_]) {
+sealed trait SyncClassDef {
 
-    check(mainClass)
+    val mainClass: Class[_]
+    val id       : Int
 
-    val id: Int = mainClass.getName.hashCode
+    def isAssignableFromThis(clazz: Class[_]): Boolean
+
+    def ensureOverrideable(): Unit
+}
+
+final class SyncClassDefUnique(val mainClass: Class[_]) extends SyncClassDef {
+
+    val id: Int = mainClass.getName.hashCode.abs
 
     override def toString: String = s"SyncClassDef(superClass: $mainClass)"
 
     def isAssignableFromThis(clazz: Class[_]): Boolean = clazz.isAssignableFrom(mainClass)
+
+    override def ensureOverrideable(): Unit = check(mainClass)
 }
 
-class SyncClassDefMultiple(superClass: Class[_], val interfaces: Array[Class[_]] = Array()) extends SyncClassDef(superClass) {
+final class SyncClassDefMultiple(val mainClass: Class[_], val interfaces: Array[Class[_]] = Array()) extends SyncClassDef {
 
-    interfaces.foreach(check)
+    override val id: Int = util.Arrays.hashCode(Array[AnyRef](mainClass.getName) ++ interfaces.map(_.getName)).abs
 
-    override val id: Int = util.Arrays.hashCode(Array[AnyRef](superClass.getName) ++ interfaces.map(_.getName)).abs
+    override def toString: String = s"SyncClassDefMultiple(superClass: $mainClass, interfaces: ${interfaces.mkString("Array(", ", ", ")")})"
 
-    override def toString: String = s"SyncClassDefMultiple(superClass: $superClass, interfaces: ${interfaces.mkString("Array(", ", ", ")")})"
+    override def isAssignableFromThis(clazz: Class[_]): Boolean = clazz.isAssignableFrom(mainClass) || interfaces.exists(clazz.isAssignableFrom)
 
-    override def isAssignableFromThis(clazz: Class[_]): Boolean = super.isAssignableFromThis(clazz) || interfaces.exists(clazz.isAssignableFrom)
+    override def ensureOverrideable(): Unit = {
+        check(mainClass)
+        interfaces.foreach(check)
+    }
 
 }
 
-object SyncClassDef {
+object SyncClassDefUnique {
 
     private[description] def check(clazz: Class[_]): Unit = {
         if (clazz.isArray)
@@ -53,8 +66,8 @@ object SyncClassDef {
             throw new InvalidSyncClassDefinitionException(s"Provided class definition is not overrideable. ($clazz)")
     }
 
-    def apply(superClass: Class[_]): SyncClassDef = {
-        new SyncClassDef(superClass)
+    def apply(superClass: Class[_]): SyncClassDefUnique = {
+        new SyncClassDefUnique(superClass)
     }
 }
 

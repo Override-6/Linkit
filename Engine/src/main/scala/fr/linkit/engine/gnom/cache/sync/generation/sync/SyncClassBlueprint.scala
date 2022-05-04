@@ -28,7 +28,7 @@ class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStr
 
     override val rootScope: RootValueScope = new RootValueScope {
         bindValue("OriginClassSimpleName" ~> (_.specs.mainClass.getSimpleName))
-        bindValue("OriginClassName" ~> (_.specs.mainClass.getSimpleName))
+        bindValue("OriginClassName" ~> (_.specs.mainClass.getName))
         bindValue("TParamsIn" ~> (getGenericParams(_, typeToScalaDeclaration)))
         bindValue("TParamsOut" ~> (getGenericParams(_, _.getName)))
         bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))

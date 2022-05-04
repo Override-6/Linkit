@@ -13,8 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
@@ -23,7 +22,7 @@ import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
-import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
+import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException, ObjectDeserializationException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.lang.reflect.{Array => RArray}
@@ -89,7 +88,7 @@ class ObjectReader(bundle: PersistenceBundle,
 
         (flag: @switch) match {
             case Class     => collectAndUpdateChunk[Class[_]](readClass())
-            case SyncDef   => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](syncClassCenter.getSyncClass(readSyncDef())) //would compile the class if it's Sync version does not exists on this engine
+            case SyncDef   => collectAndUpdateChunk[SyncClassDef](readSyncDef())
             case Enum      => collectAndUpdateChunk[Enum[_]](readEnum())
             case String    => collectAndUpdateChunk[String](readString())
             case Array     => collectAndUpdateChunk[PoolObject[_ <: AnyRef]](ArrayPersistence.readArray(this))
@@ -105,13 +104,32 @@ class ObjectReader(bundle: PersistenceBundle,
     }
 
     private def readMirroringObject(): MirroringPoolObject = {
-        val stubClass = readClass()
-        val refIdx    = readNextRef
-        new MirroringObject(refIdx, stubClass, selector, pool)
+        val stubClassDef = pool.getChunkFromFlag[SyncClassDef](SyncDef).get(readNextRef)
+        syncClassCenter.getSyncClass(stubClassDef)
+        val refIdx = readNextRef
+        new MirroringObject(refIdx, stubClassDef, selector, pool)
     }
 
     private def readSyncDef(): SyncClassDef = {
-
+        def readDef(): SyncClassDef = {
+            val classCount = buff.getChar.toInt
+            if (classCount == 1) {
+                return new SyncClassDefUnique(pool.getType(readNextRef))
+            }
+            if (classCount < 1)
+                throw new ObjectDeserializationException("class count < 1 when reading sync class definition.")
+            val classes = new Array[Class[_]](classCount)
+            var i       = 0
+            while (i < classCount) {
+                classes(i) = pool.getType(readNextRef)
+                i += 1
+            }
+            new SyncClassDefMultiple(classes.head, classes.tail)
+        }
+        val result = readDef()
+        val clazz = syncClassCenter.getSyncClass(result)
+        pool.cacheSyncClass(result, clazz)
+        result
     }
 
     private def readClass(): Class[_] = {

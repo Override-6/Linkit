@@ -37,11 +37,14 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     private val pool       = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
     private val ctClass = pool.get(syncClassName)
+    ctClass.defrost()
+    ctClass.stopPruning(true)
 
     applyClassDef()
     fixAllMethods()
     addAllConstructors()
     fixNetworkObjectInherance()
+
     lazy val rectifiedClass: (Array[Byte], Class[SynchronizedObject[_]]) = {
         val bc = ctClass.toBytecode
 

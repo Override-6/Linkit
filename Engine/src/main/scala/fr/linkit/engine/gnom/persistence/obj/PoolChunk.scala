@@ -68,9 +68,13 @@ final class PoolChunk[T](val tag: Byte,
         this.pos += 1
     }
 
-    def addIfAbsent(t: T): Unit = {
-        if (indexOf(t) < 0)
+    def addIfAbsent(t: T): Int = {
+        val idx = indexOf(t)
+        if (idx < 0) {
             add(t)
+        }
+        idx
+
     }
 
     @NotNull

@@ -17,19 +17,25 @@ import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.application.resource.representation.ResourceRepresentationFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.engine.gnom.cache.sync.generation.adaptClassName
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource.{GeneratedClassesPackage, SyncSuffixName}
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
 
 class SyncObjectClassResource(resource: ResourceFolder) extends CachedClassFolderResource[SynchronizedObject[AnyRef]](resource) {
 
     def findClass[S <: AnyRef](classDef: SyncClassDef): Option[Class[S with SynchronizedObject[S]]] = {
-        findClass[S](classDef.mainClass.getName + s"_${classDef.id}", classDef.mainClass.getClassLoader).asInstanceOf[Option[Class[S with SynchronizedObject[S]]]]
+        val mainClass = classDef.mainClass
+        val loader = classDef.mainClass.getClassLoader
+        super.findClass(adaptClassName(mainClass.getName, classDef.id), loader)
+                .asInstanceOf[Option[Class[S with SynchronizedObject[S]]]]
     }
 
     override def findClass[S <: AnyRef](className: String, loader: ClassLoader): Option[Class[S with SynchronizedObject[AnyRef]]] = {
-        super.findClass(adaptClassName(className), loader)
+        super.findClass(adaptClassName(className, className.hashCode.abs), loader)
     }
 
+    def adaptClassName(className: String, id: Int): String = {
+        GeneratedClassesPackage + className + SyncSuffixName + s"_$id"
+    }
 }
 
 object SyncObjectClassResource extends ResourceRepresentationFactory[SyncObjectClassResource, ResourceFolder] {

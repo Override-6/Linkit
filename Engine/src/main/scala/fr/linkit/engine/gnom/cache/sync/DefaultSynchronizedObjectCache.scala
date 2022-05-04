@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
@@ -173,7 +173,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
             })
         })
         classes -= classOf[Object]
-        classes = classes.filterNot(cl => classCenter.isClassGenerated(SyncClassDef(cl)))
+        classes = classes.filterNot(cl => classCenter.isClassGenerated(SyncClassDefUnique(cl)))
                 .filterNot(c => isNotOverridable(c.getModifiers))
 
         if (classes.isEmpty)
@@ -181,7 +181,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         AppLogger.info(s"Found ${classes.size} classes to compile in their sync versions")
         AppLogger.debug("Classes to compile :")
         classes.foreach(clazz => AppLogger.debug(s"\tgen.${clazz}Sync"))
-        classCenter.preGenerateClasses(classes.toList.map(SyncClassDef(_)))
+        classCenter.preGenerateClasses(classes.toList.map(SyncClassDefUnique(_)))
     }
 
     private def isObjectPresent(location: ConnectedObjectReference): Boolean = {
@@ -265,7 +265,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     private object DefaultInstantiator extends SyncInstanceInstantiator {
 
         override def newSynchronizedInstance[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
-            val syncClass = classCenter.getSyncClass[B](new SyncClassDef(creator.tpeClass))
+            val syncClass = classCenter.getSyncClass[B](new SyncClassDefUnique(creator.tpeClass))
             try {
                 creator.getInstance(syncClass)
             } catch {

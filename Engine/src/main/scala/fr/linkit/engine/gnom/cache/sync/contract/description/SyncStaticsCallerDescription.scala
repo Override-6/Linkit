@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 
 import java.lang.reflect.Method
@@ -21,12 +21,10 @@ import scala.collection.mutable
 
 class SyncStaticsCallerDescription[A <: StaticsCaller](override val specs: SyncClassDef) extends SyncObjectDescription[A](specs) {
 
-    private val clazz = specs match {
-        case multiple: SyncClassDefMultiple => throw new IllegalArgumentException("class def can't be multiple")
-        case _                              => specs.mainClass
-    }
-
-    lazy val callerTargetDesc = {
+    private lazy val callerTargetDesc = {
+        if (specs.isInstanceOf[SyncClassDefMultiple])
+            throw new IllegalArgumentException("class def can't be multiple")
+        val clazz             = specs.mainClass
         val companionClass    = clazz.getClassLoader.loadClass(clazz.getName + "$")
         val callerTargetField = companionClass.getDeclaredField("staticsTarget")
         callerTargetField.setAccessible(true)
@@ -51,7 +49,7 @@ object SyncStaticsCallerDescription {
 
     def apply[A <: StaticsCaller](clazz: Class[_]): SyncStaticsCallerDescription[A] = {
         cache.getOrElseUpdate(clazz, {
-            new SyncStaticsCallerDescription[A](new SyncClassDef(clazz))
+            new SyncStaticsCallerDescription[A](new SyncClassDefUnique(clazz))
         }).asInstanceOf[SyncStaticsCallerDescription[A]]
     }
 

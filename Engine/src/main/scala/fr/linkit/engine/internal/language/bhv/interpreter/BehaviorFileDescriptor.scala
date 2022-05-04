@@ -3,10 +3,10 @@ package fr.linkit.engine.internal.language.bhv.interpreter
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDefUnique, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, MirroringInfo}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, ModifiableValueContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
@@ -41,9 +41,9 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             case ClassDescription(ClassDescriptionHead(kind, className), foreachMethod, foreachField, fieldDescs, methodDescs) => {
                 val clazz                       = file.findClass(className)
                 val (mirroringInfo0, classDesc) = kind match {
-                    case RegularDescription         => (None, SyncObjectDescription(clazz))
-                    case StaticsDescription         => (None, SyncStaticsDescription(clazz))
-                    case MirroringDescription(stub) => (Some(MirroringInfo(file.findClass(stub))), SyncObjectDescription(clazz))
+                    case RegularDescription             => (None, SyncObjectDescription(SyncClassDefUnique(clazz)))
+                    case StaticsDescription             => (None, SyncStaticsDescription(clazz))
+                    case MirroringDescription(stubName) => (Some(MirroringInfo(SyncClassDefUnique(file.findClass(stubName)))), SyncObjectDescription(SyncClassDefUnique(clazz)))
                 }
                 new StructureContractDescriptor[AnyRef] {
                     override val targetClass   = clazz.asInstanceOf[Class[AnyRef]]
@@ -78,8 +78,9 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
         if (descOpt.isEmpty)
             return Array()
         val desc    = descOpt.get
+        def cast[X](y: Any) = y.asInstanceOf[X]
         val methods = classDesc match {
-            case desc: SyncObjectDescription[_]  => desc.listMethods(desc.specs)
+            case desc: SyncObjectDescription[_]  => desc.listMethods(cast(desc.specs.mainClass))
             case desc: SyncStaticsDescription[_] => desc.listMethods()
         }
         methods.map { method =>
@@ -127,7 +128,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
 
             def extractModifier(mod: CompModifier, valType: String): ValueModifier[Any] = {
                 mod match {
-                    case ValueModifierReference(_, ref)      => getValueModifier(ref, valType)
+                    case ValueModifierReference(_, ref) => getValueModifier(ref, valType)
                     case ModifierExpression(_, in, out) => makeModifier(
                         s"method_${encodedIntMethodString(methodDesc.methodId)}", valType, in, out)
                 }
@@ -166,7 +167,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         }.toArray
                         if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
                     }
-                    var invocationMethod = desc.invocationHandlingMethod
+                    var invocationMethod   = desc.invocationHandlingMethod
                     if (invocationMethod == Inherit)
                         invocationMethod = referent.map(_.invocationHandlingMethod).getOrElse(Inherit)
                     MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, invocationMethod, agreement)

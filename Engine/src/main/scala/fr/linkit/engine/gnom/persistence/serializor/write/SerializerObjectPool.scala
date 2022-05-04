@@ -13,7 +13,8 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.write
 
-import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
@@ -40,8 +41,8 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     def getChunk[T](ref: Any): PoolChunk[T] = {
         //TODO this method can be optimized
         ref match {
-            case c: Class[_] if isSyncClass(c) => getChunkFromFlag(SyncDef)
-            case _: Class[_]                   => getChunkFromFlag(Class)
+            case _: SyncClassDef => getChunkFromFlag(SyncDef)
+            case _: Class[_]     => getChunkFromFlag(Class)
 
             case _: Int     => getChunkFromFlag(Int)
             case _: Byte    => getChunkFromFlag(Byte)
@@ -178,7 +179,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
             chunk.add(new MirroringPoolObject {
                 override val referenceIdx: Int                    = pos
                 override val reference   : NetworkObjectReference = ref
-                override val stubClass   : Class[_]               = chi.getNode.contract.remoteObjectInfo.get.stubClass
+                override val stubClassDef: SyncClassDef           = chi.getNode.contract.remoteObjectInfo.get.stubSyncClass
 
                 override def value: AnyRef = chi
             })
@@ -201,7 +202,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         val decomposed      = persistence.toArray(ref)
         val objPool         = getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
 
-        val obj = new SimpleObject(ref, selectedRefType, ref.isInstanceOf[SynchronizedObject[_]], decomposed, profile)
+        val obj = new SimpleObject(ref, selectedRefType, decomposed, profile)
         //do not swap those two lines
         objPool.add(obj)
         addAll(decomposed)
@@ -234,15 +235,26 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         chunk.add(rno)
     }
 
-    private def addTypeOfIfAbsent(ref: AnyRef): Class[_] = ref match {
-        case sync: SynchronizedObject[_] =>
-            val implClass = sync.getNode.contract.remoteObjectInfo.fold[Class[_]](sync.getSourceClass)(_.stubClass)
-            getChunkFromFlag(SyncDef).addIfAbsent(implClass)
-            implClass
+    private def addTypeOfIfAbsent(ref: AnyRef): Either[Class[_], SyncClassDef] = ref match {
+        case sync: ChippedObject[_] =>
+            val implClassDef = sync.getNode.contract.remoteObjectInfo.fold[SyncClassDef](SyncClassDefUnique(sync.getConnectedObjectClass))(_.stubSyncClass)
+
+            val idx = getChunkFromFlag(SyncDef).addIfAbsent(implClassDef)
+            if (idx < 0) {
+                val classChunk = getChunkFromFlag[Class[_]](Class)
+                classChunk.add(implClassDef.mainClass)
+                implClassDef match {
+                    case multiple: SyncClassDefMultiple =>
+                        multiple.interfaces.foreach(classChunk.add)
+                    case _                              =>
+                }
+            }
+            Right(implClassDef)
         case _                           =>
+            val classChunk = getChunkFromFlag[Class[_]](Class)
             val clazz = ref.getClass
-            getChunkFromFlag(Class).addIfAbsent(clazz)
-            clazz
+            classChunk.addIfAbsent(clazz)
+            Left(clazz)
     }
 
     private def addAll(objects: Array[Any]): Unit = {

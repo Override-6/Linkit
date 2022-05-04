@@ -43,7 +43,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         putMethods(methodMap, false, context)
         putFields(fieldMap)
 
-        val mirroringInfo = descriptor.mirroringInfo.orElse(if (forceMirroring) Some(autoDefineMirroringInfo()) else None)
+        val mirroringInfo = descriptor.mirroringInfo.orElse(if (forceMirroring) Some(autoDefineMirroringInfo(clazz)) else None)
 
         new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }
@@ -60,20 +60,21 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         new HeritageValueModifier(factory, limit)
     }
 
-    private def autoDefineMirroringInfo(): MirroringInfo = {
-        var superClass: Class[_] = this.clazz
-        while (findReasonTypeCantBeSync(superClass).isDefined)
-            superClass = this.superClass.clazz
-        val interfaces = this.interfaces.flatMap(getSyncableInterface)
+    private def autoDefineMirroringInfo(clazz: Class[_]): MirroringInfo = {
+        var superClass: Class[_] = clazz
+        while (findReasonTypeCantBeSync(superClass).isDefined) //will be at least java.lang.Object
+            superClass = superClass.getSuperclass
+
+        val interfaces = clazz.getInterfaces.flatMap(getSyncableInterface)
         MirroringInfo(SyncClassDefMultiple(superClass, interfaces))
     }
 
-    private def getSyncableInterface(interface: StructureBehaviorDescriptorNodeImpl[_]): Array[Class[_]] = {
+    private def getSyncableInterface(interface: Class[_]): Array[Class[_]] = {
         if (interface == null)
             return Array()
-        if (findReasonTypeCantBeSync(interface.clazz).isDefined)
-            interface.interfaces.flatMap(getSyncableInterface)
-        else interfaces.map(_.clazz)
+        if (findReasonTypeCantBeSync(interface).isDefined)
+            interface.getInterfaces.flatMap(getSyncableInterface)
+        else Array(interface)
     }
 
     /*
@@ -154,6 +155,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             if (isFinal(mods)) "final class"
             else if (isPrivate(mods)) "private class"
             else if (isProtected(mods)) "protected class"
+            else if (mods == 0 /*package private*/) "package private class"
             else null
         }
         Option(result)

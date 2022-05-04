@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.interpreter
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncStructureDescription, FieldDescription => SFieldDescription, MethodDescription => SMethodDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDefUnique, SyncStructureDescription, FieldDescription => SFieldDescription, MethodDescription => SMethodDescription}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast._
@@ -38,15 +38,15 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
                 {
                     case name if array.lastOption.contains(name) => Class.forName(className)
                 }
-            case ClassImport(packageName, 0) =>
+            case ClassImport(packageName, 0)                                          =>
                 val array = packageName.split('.');
                 {
                     case s"$prefix.$name" if array.lastOption.contains(prefix) => Class.forName(packageName + "." + name)
                 }
-            case ClassImport(pck, 1)       => {
+            case ClassImport(pck, 1)                                                  => {
                 case name if Try(Class.forName(pck + "." + name)).isSuccess => Class.forName(pck + "." + name)
             }
-            case ClassImport(rootPck, 2)   => {
+            case ClassImport(rootPck, 2)                                              => {
                 case name if MappedClassesTree.getClass(rootPck, name).isDefined =>
                     MappedClassesTree.getClass(rootPck, name).get
             }
@@ -59,13 +59,13 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
         val pureName   = name.take(arrayIndex)
         val arrayDepth = (name.length - pureName.length) / 2
         val clazz      = imports
-            .find(_.isDefinedAt(pureName)).map(_.apply(pureName))
-            .orElse(Try(Class.forName(pureName)).toOption)
-            .orElse(PrimitiveClasses.get(pureName))
-            .orElse(Try(Class.forName("java.lang." + pureName)).toOption)
-            .getOrElse {
-                throw new BHVLanguageException(s"Unknown class '$pureName' ${if (!pureName.contains(".")) ", is it imported ?" else ""}")
-            }
+                .find(_.isDefinedAt(pureName)).map(_.apply(pureName))
+                .orElse(Try(Class.forName(pureName)).toOption)
+                .orElse(PrimitiveClasses.get(pureName))
+                .orElse(Try(Class.forName("java.lang." + pureName)).toOption)
+                .getOrElse {
+                    throw new BHVLanguageException(s"Unknown class '$pureName' ${if (!pureName.contains(".")) ", is it imported ?" else ""}")
+                }
         lambdas.addImportedClass(clazz)
         (0 until arrayDepth).foldLeft[Class[_]](clazz)((cl, _) => cl.arrayType())
     }
@@ -87,8 +87,10 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
     def getMethodDescFromSignature(kind: DescriptionKind, signature: MethodSignature, classDesc: SyncStructureDescription[_]): SMethodDescription = {
         val name   = signature.methodName
         val params = signature.params.map(param => findClass(param.tpe)).toArray
+        if (!classDesc.specs.isInstanceOf[SyncClassDefUnique])
+            throw new BHVLanguageException("class description's sync class definition is not 'unique' ")
         val method = {
-            try classDesc.specs.getDeclaredMethod(name, params: _*)
+            try classDesc.specs.mainClass.getDeclaredMethod(name, params: _*)
             catch {
                 case _: NoSuchMethodException => throw new BHVLanguageException(s"Unknown method $signature in ${classDesc.specs}")
             }

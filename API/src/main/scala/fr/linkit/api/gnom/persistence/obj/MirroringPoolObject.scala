@@ -13,8 +13,10 @@
 
 package fr.linkit.api.gnom.persistence.obj
 
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+
 trait MirroringPoolObject extends ReferencedPoolObject {
 
-    val stubClass: Class[_]
+    val stubClassDef: SyncClassDef
 
 }

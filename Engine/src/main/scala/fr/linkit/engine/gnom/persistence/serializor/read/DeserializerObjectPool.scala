@@ -13,13 +13,18 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.engine.gnom.persistence.obj.ObjectPool
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
+
+import scala.collection.mutable
 
 class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
 
     freeze() //Deserializer can't append objects, because sizes are already defined
     chunks.foreach(_.freeze())
+
+    private val syncClassesCache = mutable.HashMap.empty[Int, Class[_]]
 
     private val chunksPositions = {
         val length       = chunks.length
@@ -39,16 +44,18 @@ class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
         array
     }
 
+    def cacheSyncClass(syncDef: SyncClassDef, clazz: Class[_]): Unit = {
+        syncClassesCache(syncDef.id) = clazz
+    }
 
     def getType(globalPos: Int): Class[_] = {
-        var pos      = globalPos
-        var tpeChunk = getChunkFromFlag[Class[_]](Class)
-        val size     = tpeChunk.size
-        if (pos >= size) {
-            tpeChunk = getChunkFromFlag[Class[_]](SyncDef)
-            pos -= size
+        val clazzChunk     = getChunkFromFlag[Class[_]](Class)
+        val clazzChunkSize = clazzChunk.size
+        if (globalPos >= clazzChunkSize) {
+            val syncClassDef = getChunkFromFlag[SyncClassDef](SyncDef).get(globalPos - clazzChunkSize)
+            return syncClassesCache(syncClassDef.id)
         }
-        tpeChunk.get(pos)
+        clazzChunk.get(globalPos)
     }
 
     @inline

@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.obj
 
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.persistence.Freezable
 import fr.linkit.api.gnom.persistence.obj.{LambdaObject, MirroringPoolObject, ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -22,10 +23,10 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
 
     private var frozen = false
 
-    protected final val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
+    protected val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects classes
         new PoolChunk[Class[_]](Class, true, this, sizes(Class)),
-        new PoolChunk[Class[_]](SyncDef, true, this, sizes(SyncDef)),
+        new PoolChunk[SyncClassDef](SyncDef, true, this, sizes(SyncDef)),
         // Strings
         new PoolChunk[String](String, false, this, sizes(String)),
         // Primitives (primitives stored into primitives arrays are not contained in those chunks)

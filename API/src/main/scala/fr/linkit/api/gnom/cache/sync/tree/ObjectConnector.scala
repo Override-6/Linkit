@@ -16,8 +16,9 @@ package fr.linkit.api.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, ConnectedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
 
-trait ObjectConnector {
+import java.util.concurrent.ThreadLocalRandom
 
+trait ObjectConnector {
 
     /**
      *
@@ -52,7 +53,6 @@ trait ObjectConnector {
      */
     def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B]
 
-
-    def createConnectedObj(parentRef: ConnectedObjectReference)(obj: Any, kind: RegistrationKind): ConnectedObject[AnyRef]
+    def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, kind: RegistrationKind): ConnectedObject[AnyRef]
 
 }
