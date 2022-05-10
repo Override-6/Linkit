@@ -20,7 +20,7 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 trait MemberContractFactory {
 
     def genMethodContract(procrastinator: Option[Procrastinator],
-                          desc: MethodDescription): SyncObjectContext => MethodContract[Any]
+                          desc: MethodDescription): ConnectedObjectContext => MethodContract[Any]
 
     def genFieldContract(desc: FieldDescription): FieldContract[Any]
 

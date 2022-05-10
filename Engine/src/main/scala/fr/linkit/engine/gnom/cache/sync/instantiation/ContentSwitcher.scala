@@ -14,13 +14,14 @@
 package fr.linkit.engine.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 class ContentSwitcher[T <: AnyRef](source: T) extends SyncInstanceCreator[T] {
 
-    override val tpeClass: Class[T] = source.getClass.asInstanceOf[Class[T]]
+    override val syncClassDef: SyncClassDef = SyncClassDefUnique(source.getClass)
 
     override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
         val instance = ScalaUtils.allocate[T with SynchronizedObject[T]](syncClass)

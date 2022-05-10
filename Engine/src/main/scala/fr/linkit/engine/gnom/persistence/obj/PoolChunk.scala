@@ -28,7 +28,7 @@ final class PoolChunk[T](val tag: Byte,
                         (implicit cTag: ClassTag[T]) extends Freezable {
 
     private var buff          = new Array[T](if (length < 0) BuffSteps else length)
-    private final val buffMap = new util.HashMap[Int, Int]() //Buff item Identity Hash Code -> Buff Pos + 1
+    private final val buffMap = new util.HashMap[Int, Int]() //Buff item Identity Hash Code -> Buff Pos
     private var pos           = 0
 
     private var frozen = false

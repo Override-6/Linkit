@@ -52,7 +52,7 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
     }
 
     private def addCondition(condition: AgreementCondition, ifTrue: AgreementConditionAction, ifFalse: AgreementConditionAction): RMIRulesAgreementGenericBuilder = {
-        val conditions = this.conditions :+ ((context: SyncObjectContext) => condition(context, this, ifTrue, ifFalse))
+        val conditions = this.conditions :+ ((context: ConnectedObjectContext) => condition(context, this, ifTrue, ifFalse))
         new RMIRulesAgreementGenericBuilder(discarded, accepted, conditions, acceptAllTargets, desiredEngineReturn)
     }
 
@@ -77,7 +77,7 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
         }
     }
 
-    override def result(context: SyncObjectContext): RMIRulesAgreement = {
+    override def result(context: ConnectedObjectContext): RMIRulesAgreement = {
         var builder = this
         for (condition <- conditions) {
             builder = condition(context).asInstanceOf[RMIRulesAgreementGenericBuilder]
@@ -97,8 +97,8 @@ object RMIRulesAgreementGenericBuilder {
     final val EmptyBuilder = new RMIRulesAgreementGenericBuilder()
 
     type Action = RMIRulesAgreementBuilder => RMIRulesAgreementBuilder
-    type AgreementCondition = (SyncObjectContext, RMIRulesAgreementBuilder, Action, Action) => RMIRulesAgreementBuilder
-    type AgreementConditionResult = SyncObjectContext => RMIRulesAgreementBuilder
+    type AgreementCondition = (ConnectedObjectContext, RMIRulesAgreementBuilder, Action, Action) => RMIRulesAgreementBuilder
+    type AgreementConditionResult = ConnectedObjectContext => RMIRulesAgreementBuilder
 
     private final def compare(left: EngineTag, right: EngineTag): AgreementCondition = (c, b, ifTrue, ifFalse) => if (c.areEquals(right, left)) ifTrue(b) else ifFalse(b)
 

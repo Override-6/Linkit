@@ -16,8 +16,8 @@ package fr.linkit.engine.gnom.cache.sync
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
@@ -36,11 +36,11 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverridable
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverrideable
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, EmptyContractDescriptorData}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
-import fr.linkit.engine.gnom.cache.sync.invokation.UsageSyncObjectContext
+import fr.linkit.engine.gnom.cache.sync.invokation.UsageConnectedObjectContext
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.{InvocationPacket, ObjectPuppeteer}
 import fr.linkit.engine.gnom.cache.sync.tree._
@@ -108,7 +108,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val path          = parent.treePath :+ id
         val behaviorStore = tree.contractFactory
         val choreographer = new InvocationChoreographer()
-        val context       = UsageSyncObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId, choreographer)
+        val context       = UsageConnectedObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId, SyncClassDefUnique(chippedObject.getClass), choreographer)
         val contract      = behaviorStore.getObjectContract[B](originClass, context, forceMirroring)
         val chip          = ObjectChip[B](contract, network, chippedObject)
         val reference     = new ConnectedObjectReference(family, cacheID, ownerID, path)
@@ -174,7 +174,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         })
         classes -= classOf[Object]
         classes = classes.filterNot(cl => classCenter.isClassGenerated(SyncClassDefUnique(cl)))
-                .filterNot(c => isNotOverridable(c.getModifiers))
+                .filterNot(c => isNotOverrideable(c.getModifiers))
 
         if (classes.isEmpty)
             return
@@ -191,8 +191,8 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         }
     }
 
-    protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[A], context: SyncObjectContext): StructureContract[A] = {
-        factory.getObjectContract[A](creator.tpeClass, context, false)
+    protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[A], context: ConnectedObjectContext): StructureContract[A] = {
+        factory.getObjectContract[A](creator.syncClassDef.mainClass.asInstanceOf[Class[A]], context, false)
     }
 
     private def createNewTree(id: Int, rootObjectOwner: String,
@@ -202,7 +202,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
 
         val nodeReference = ConnectedObjectReference(family, cacheID, rootObjectOwner, Array(id))
         val choreographer = new InvocationChoreographer()
-        val context       = UsageSyncObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId, choreographer)
+        val context       = UsageConnectedObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId, creator.syncClassDef, choreographer)
         val factory       = SyncObjectContractFactory(contracts)
 
         val rootContract = getRootContract(factory)(creator, context)
@@ -265,14 +265,14 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     private object DefaultInstantiator extends SyncInstanceInstantiator {
 
         override def newSynchronizedInstance[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
-            val syncClass = classCenter.getSyncClass[B](new SyncClassDefUnique(creator.tpeClass))
+            val syncClass = classCenter.getSyncClass[B](creator.syncClassDef)
             try {
                 creator.getInstance(syncClass)
             } catch {
                 case NonFatal(e) =>
                     throw new SyncObjectInstantiationException(e.getMessage +
                             s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
-                               | Try to regenerate the sync class of ${creator.tpeClass}.
+                               | Try to regenerate the sync class of ${creator.syncClassDef.mainClass}.
                                | """.stripMargin, e)
             }
         }

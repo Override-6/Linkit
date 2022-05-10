@@ -14,18 +14,18 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, SyncObjectContext}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, ConnectedObjectContext}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
 class SyncObjectContractFactory(override val data: ContractDescriptorData) extends ObjectContractFactory {
 
 
-    override def getObjectContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext, forceMirroring: Boolean): StructureContract[A] = {
-        data.getNode[A](clazz).getObjectContract(clazz, context: SyncObjectContext, forceMirroring)
+    override def getObjectContract[A <: AnyRef](clazz: Class[A], context: ConnectedObjectContext, forceMirroring: Boolean): StructureContract[A] = {
+        data.getNode[A](clazz).getObjectContract(clazz, context: ConnectedObjectContext, forceMirroring)
     }
 
-    override def getStaticContract[A <: AnyRef](clazz: Class[A], context: SyncObjectContext): StructureContract[A] = {
+    override def getStaticContract[A <: AnyRef](clazz: Class[A], context: ConnectedObjectContext): StructureContract[A] = {
         data.getNode(clazz).getStaticsContract(clazz, context)
     }
 

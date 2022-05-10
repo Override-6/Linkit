@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor.getAssignableConstructor
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
@@ -23,7 +24,7 @@ import scala.reflect.{ClassTag, classTag}
 
 class Constructor[A <: AnyRef] (clazz: Class[A], arguments: Array[Any]) extends SyncInstanceCreator[A] {
 
-    override val tpeClass: Class[A] = clazz
+    override val syncClassDef: SyncClassDef = SyncClassDefUnique(clazz)
 
     override def getInstance(syncClass: Class[A with SynchronizedObject[A]]): A with SynchronizedObject[A] = {
         val constructor = getAssignableConstructor(syncClass, arguments)

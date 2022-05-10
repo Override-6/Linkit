@@ -13,14 +13,15 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 
-trait SyncObjectContext {
+trait ConnectedObjectContext {
     val ownerID     : String
     val rootOwnerID : String
     val currentID   : String
     val cacheOwnerID: String
-
+    val classDef: SyncClassDef
     val choreographer: InvocationChoreographer
 
     def translate(tag: EngineTag): String

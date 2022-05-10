@@ -14,10 +14,12 @@
 package fr.linkit.engine.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 
 case class InstanceWrapper[T <: AnyRef](obj: T with SynchronizedObject[T]) extends SyncInstanceCreator[T] {
-    override val tpeClass: Class[T] = obj.getSourceClass
+
+    override val syncClassDef: SyncClassDef = SyncClassDefUnique(obj.getSourceClass) //TODO make the object's SyncClassDef accessible.
 
     override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
         //val clazz = obj.getClass

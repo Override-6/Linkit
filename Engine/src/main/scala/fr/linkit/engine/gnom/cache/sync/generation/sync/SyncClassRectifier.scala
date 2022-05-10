@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.gnom.cache.sync.invocation.local.AbstractMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
@@ -34,6 +34,10 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
                          syncClassDef: SyncClassDef) {
 
     private val superClass = syncClassDef.mainClass
+    private val interfaces = syncClassDef match {
+        case unique: SyncClassDefUnique     => Array()
+        case multiple: SyncClassDefMultiple => multiple.interfaces
+    }
     private val pool       = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
     private val ctClass = pool.get(syncClassName)
@@ -56,8 +60,9 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
             val ctClass0 = pool.get(clazz.getName)
             if (clazz.isInterface)
                 ctClass.addInterface(ctClass0)
-            else
+            else if (ctClass.getSuperclass.getName == "java.lang.Object")
                 ctClass.setSuperclass(ctClass0)
+            else throw new UnsupportedOperationException(s"Could not set super class $ctClass0, generated class already extends ${ctClass.getSuperclass.getName}")
         }
 
         extendClass(superClass)
@@ -252,7 +257,15 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
         } else {
             val str = {
                 val declaringClass = javaMethod.getDeclaringClass
-                val enclosing      = if (declaringClass.isInterface) s"${superClass.getName}." else ""
+                val enclosing      = {
+                    if (declaringClass.isInterface) {
+                        if (declaringClass.isAssignableFrom(superClass))
+                            s"${superClass.getName}."
+                        else {
+                            interfaces.find(declaringClass.isAssignableFrom).get.getName + "."
+                        }
+                    } else ""
+                }
 
                 s"${enclosing}super.${javaMethod.getName}(${(1 to javaMethod.getParameterCount).map(i => s"$$$i").mkString(",")});".stripMargin
             }

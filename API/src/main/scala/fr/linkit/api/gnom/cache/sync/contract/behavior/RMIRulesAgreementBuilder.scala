@@ -29,7 +29,7 @@ trait RMIRulesAgreementBuilder {
 
     def assuming(left: EngineTag): Condition
 
-    def result(context: SyncObjectContext): RMIRulesAgreement
+    def result(context: ConnectedObjectContext): RMIRulesAgreement
 
     trait Condition {
 

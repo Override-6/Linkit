@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.{RegistrationKind, SyncObjectFieldManipulation}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree._
@@ -25,6 +26,7 @@ import fr.linkit.engine.gnom.cache.sync.instantiation.{ContentSwitcher, Mirrorin
 import fr.linkit.engine.gnom.cache.sync.tree.node._
 
 import java.util.concurrent.ThreadLocalRandom
+import scala.annotation.switch
 import scala.util.Try
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
@@ -98,7 +100,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val parentNode = findNode[B](parentPath).getOrElse {
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
-        insertionKind match {
+        (insertionKind: @switch) match {
             case NotRegistered              => throw new IllegalArgumentException("insertionKind = NotRegistered.")
             case ChippedOnly | Synchronized =>
                 val id = forest
@@ -108,11 +110,11 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                 genConnectedObject[B](parentNode, id, obj.asInstanceOf[B], insertionKind)(ownerID)
             case Mirroring                  =>
                 val id                             = idHint
-                val clazz                          = obj match {
-                    case clazz: Class[B] => clazz
-                    case _               => throw new IllegalArgumentException("inserting mirroring object but 'obj' argument is not a java.lang.Class object.")
+                val classDef                       = obj match {
+                    case cDef: SyncClassDef => cDef
+                    case _                  => throw new IllegalArgumentException("inserting mirroring object but 'obj' argument is not a java.lang.Class object.")
                 }
-                val syncObject                     = instantiator.newSynchronizedInstance[B](new MirroringInstanceCreator[B](clazz))
+                val syncObject                     = instantiator.newSynchronizedInstance[B](new MirroringInstanceCreator[B](classDef))
                 val result: ConnectedObjectNode[B] = initSynchronizedObject[B](parentNode, id, syncObject, None, ownerID)
                 result
         }

@@ -14,14 +14,16 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, RMIRulesAgreement, SyncObjectContext}
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefMultiple
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, ObjectContractFactory, RMIRulesAgreement}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
+import fr.linkit.engine.internal.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.{Method, Modifier}
@@ -36,7 +38,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
     //private val instanceDesc = SyncObjectDescription[A](clazz)
     //private val staticsDesc  = SyncStaticsDescription[A](clazz)
 
-    override def getObjectContract(clazz: Class[_ <: A], context: SyncObjectContext, forceMirroring: Boolean): StructureContract[A] = {
+    override def getObjectContract(clazz: Class[_ <: A], context: ConnectedObjectContext, forceMirroring: Boolean): StructureContract[A] = {
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
         val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
 
@@ -48,7 +50,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }
 
-    override def getStaticsContract(clazz: Class[_ <: A], context: SyncObjectContext): StructureContract[A] = {
+    override def getStaticsContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A] = {
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
 
         putMethods(methodMap, true, context)
@@ -77,10 +79,53 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         else Array(interface)
     }
 
+    private def ensureAllMethodDescribedWhenMirroring(contracts: Iterable[MethodContract[_]], clazzDef: SyncClassDef): Unit = {
+        val selfIsMirrorable = descriptor.mirroringInfo.isDefined
+        if (!selfIsMirrorable) return
+        val classMethods = listMethods(clazzDef)
+        for (contract <- contracts) {
+            val contractMethod = contract.description.methodId
+            if (classMethods.contains(contractMethod))
+                classMethods -= contractMethod
+        }
+        if (classMethods.nonEmpty) {
+            def str(m: Method) = m.getName + m.getParameters.map(_.getType.getName).mkString("(", ", ", ")")
+
+            val methods = classMethods.values.map(str).mkString("- ", "\n- ", "")
+            throw new BadContractException(
+                s"""
+                   |methods below are not bound to any contract, and the resulting connected object is a mirroring object.
+                   |$methods
+                   |for $clazzDef
+                   |""".stripMargin)
+        }
+    }
+
+    private def listMethods(syncClassDef: SyncClassDef): mutable.HashMap[Int, Method] = {
+        val methods = mutable.HashMap.empty[Int, Method]
+
+        def acc(clazz: Class[_]): Unit = {
+            var cl = clazz
+            while (cl != null) {
+                methods ++= cl.getDeclaredMethods
+                        .filter(m => !SyncObjectDescription.isNotOverrideable(m.getModifiers))
+                        .map(m => (MethodDescription.computeID(m), m))
+                cl = cl.getSuperclass
+            }
+        }
+
+        acc(syncClassDef.mainClass)
+        syncClassDef match {
+            case multiple: SyncClassDefMultiple => multiple.interfaces.foreach(acc)
+            case _: SyncClassDefUnique          =>
+        }
+        methods
+    }
+
     /*
-    * performs verifications on the node to ensure that the resulted StructureContract would not
-    * throw any exception while being used by synchronized objects.
-    * */
+        * performs verifications on the node to ensure that the resulted StructureContract would not
+        * throw any exception while being used by synchronized / chipped / mirroring objects.
+        * */
     private def verify(): Unit = {
         //ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
         verifyMirroringHierarchy()
@@ -155,7 +200,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
             if (isFinal(mods)) "final class"
             else if (isPrivate(mods)) "private class"
             else if (isProtected(mods)) "protected class"
-            else if (mods == 0 /*package private*/) "package private class"
+            else if (mods == 0 /*package private*/ ) "package private class"
             else null
         }
         Option(result)
@@ -186,7 +231,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         hierarchyVerifyResult.get
     }
 
-    private def verifyAgreement(method: Method, agreement: RMIRulesAgreement, context: SyncObjectContext, isStatic: Boolean): Unit = {
+    private def verifyAgreement(method: Method, agreement: RMIRulesAgreement, context: ConnectedObjectContext, isStatic: Boolean): Unit = {
         val acceptAll = agreement.isAcceptAll
         if (!acceptAll && agreement.acceptedEngines.length == 0)
             throw new BadContractException(s"method agreement $method have nowhere to invoke the method.")
@@ -205,7 +250,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         }
     }
 
-    private def putMethods(map: mutable.HashMap[Int, MethodContract[Any]], static: Boolean, context: SyncObjectContext): Unit = {
+    private def putMethods(map: mutable.HashMap[Int, MethodContract[Any]], static: Boolean, context: ConnectedObjectContext): Unit = {
         for (desc <- descriptor.methods if Modifier.isStatic(desc.description.javaMethod.getModifiers) == static) {
             val id = desc.description.methodId
             if (!map.contains(id)) {
@@ -221,6 +266,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](override val descriptor: 
         if (superClass != null)
             superClass.putMethods(map, static, context)
         interfaces.foreach(_.putMethods(map, static, context))
+        if (!static)
+            ensureAllMethodDescribedWhenMirroring(map.values, context.classDef)
     }
 
     private def putFields(map: mutable.HashMap[Int, FieldContract[Any]]): Unit = {

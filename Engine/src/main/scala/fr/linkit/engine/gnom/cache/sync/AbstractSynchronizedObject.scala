@@ -83,7 +83,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         val methodContract = {
             val opt = contract.findMethodContract(id)
             if (opt.isEmpty) { //no contract specified so we just execute the method.
-                return superCall(args).asInstanceOf[R]
+                 return superCall(args).asInstanceOf[R]
             }
             opt.get
         }

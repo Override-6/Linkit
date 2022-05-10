@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.write
 
+import fr.linkit.api.gnom.cache.sync.ChippedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
-import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
@@ -91,23 +91,24 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     }
 
     @inline
-    private def isSyncClass(clazz: Class[_]): Boolean = {
-        classOf[SynchronizedObject[_]].isAssignableFrom(clazz)
-    }
-
-    @inline
     private def globalPos(ref: Any): Int = {
         if (ref == null)
             return 0
         val chunk = getChunk[Any](ref)
-        val tag   = chunk.tag
+        var tag   = chunk.tag
         var idx   = chunk.indexOf(ref)
         if (idx > -1)
-            idx += chunksPositions(tag) + 1
-        else if (tag == Object) { //it could be a referenced object
-            idx = chunks(RNO).indexOf(ref) + chunksPositions(RNO) + 1
+            return idx + chunksPositions(tag) + 1
+
+        tag = RNO
+        idx = chunks(RNO).indexOf(ref)
+        if (idx < 0) {
+            tag = Mirroring
+            idx = chunks(Mirroring).indexOf(ref)
         }
-        idx
+        if (idx < 0)
+            return -1
+        idx + chunksPositions(tag) + 1
     }
 
     def addObject(ref: AnyRef): Unit = {
@@ -173,16 +174,12 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     private def addMirroredObject(chi: ChippedObject[_], @Nullable refHint: Option[NetworkObjectReference]): Unit = {
         val nrlOpt = if (refHint == null) selector.findObjectReference(chi) else refHint
         if (nrlOpt.isEmpty) {
-            val chunk = getChunkFromFlag[ReferencedPoolObject](Mirroring)
-            val pos   = chunks(Object).size
-            val ref   = chi.reference
-            chunk.add(new MirroringPoolObject {
-                override val referenceIdx: Int                    = pos
-                override val reference   : NetworkObjectReference = ref
-                override val stubClassDef: SyncClassDef           = chi.getNode.contract.remoteObjectInfo.get.stubSyncClass
-
-                override def value: AnyRef = chi
-            })
+            addTypeOfIfAbsent(chi)
+            val chunk        = getChunkFromFlag[ReferencedPoolObject](Mirroring)
+            val pos          = chunks(Object).size
+            val ref          = chi.reference
+            val stubClassDef = chi.getNode.contract.remoteObjectInfo.get.stubSyncClass
+            chunk.add(new MirroringObject(stubClassDef, pos, ref, chi))
             addObj(ref)
         } else {
             addReferencedObject(chi, nrlOpt.get)
@@ -250,9 +247,9 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
                 }
             }
             Right(implClassDef)
-        case _                           =>
+        case _                      =>
             val classChunk = getChunkFromFlag[Class[_]](Class)
-            val clazz = ref.getClass
+            val clazz      = ref.getClass
             classChunk.addIfAbsent(clazz)
             Left(clazz)
     }

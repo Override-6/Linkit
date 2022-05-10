@@ -3,7 +3,7 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.SharedCacheFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.SyncObjectContext
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
@@ -37,7 +37,7 @@ class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
         super.syncObject(id, creator, contracts)
     }
 
-    override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: SyncObjectContext): StructureContract[StaticsCaller] = {
+    override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator =>
                 factory.getStaticContract(creator.targettedClass.asInstanceOf[Class[StaticsCaller]], context)

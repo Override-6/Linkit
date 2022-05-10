@@ -4,7 +4,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncClassDef}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.{SyntheticMod, isNotOverridable}
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.{SyntheticMod, isNotOverrideable}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.JavaKeywords
 
 import java.lang.reflect.{Executable, Method, Modifier}
@@ -22,9 +22,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDe
     }
 
     override protected def applyNotFilter(e: Executable): Boolean = {
-        isNotOverridable(e.getModifiers) || containsNotAccessibleElements(e) || isIllegal(e) ||
-                //FIXME Weird bug due to scala's Any and AnyRef stuff...
-                (e.getName == "equals" && e.getParameterTypes.length == 1) ||
+        isNotOverrideable(e.getModifiers) || containsNotAccessibleElements(e) || isIllegal(e) ||
                 //FIXME Bug occurred for objects that extends NetworkObject[A].
                 // as SynchronizedObject trait also extends NetworkObject[SyncObjectReference],
                 // a collision may occur as the generated method would be
@@ -76,8 +74,8 @@ object SyncObjectDescription {
 
     //implicit def fromTag[A <: AnyRef : ClassTag]: SyncObjectDescription[A] = apply[A](classTag[A].runtimeClass)
 
-    def isNotOverridable(mods: Int): Boolean = {
+    def isNotOverrideable(mods: Int): Boolean = {
         import Modifier._
-        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods) || isNative(mods)
+        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods)
     }
 }

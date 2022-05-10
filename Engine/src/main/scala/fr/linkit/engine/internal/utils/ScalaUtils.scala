@@ -191,7 +191,7 @@ object ScalaUtils {
             superClass = superClass.getSuperclass
         }
         val v = superFields
-                .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isNative(f.getModifiers))
+                .filterNot(f => Modifier.isStatic(f.getModifiers))
         if (accessible)
             v.filter(setAccessible)
         v

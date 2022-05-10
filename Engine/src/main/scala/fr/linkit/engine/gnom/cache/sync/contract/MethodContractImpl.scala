@@ -36,7 +36,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
                             agreement: RMIRulesAgreement,
                             parameterContracts: Array[ModifiableValueContract[Any]],
                             returnValueContract: ModifiableValueContract[Any],
-                            description: MethodDescription,
+                            override val description: MethodDescription,
                             override val hideMessage: Option[String],
                             @Nullable override val procrastinator: Procrastinator) extends MethodContract[R] {
 

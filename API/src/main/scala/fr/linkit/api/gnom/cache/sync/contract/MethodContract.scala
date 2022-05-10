@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
+import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, InvocationHandlingMethod}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
@@ -26,6 +27,8 @@ trait MethodContract[R] {
     @Nullable val procrastinator: Procrastinator
 
     val hideMessage: Option[String]
+
+    val description: MethodDescription
 
     val isRMIActivated: Boolean
 
