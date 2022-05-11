@@ -14,14 +14,14 @@
 package fr.linkit.engine.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, RegistrationKind, SyncObjectFieldManipulation}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncLevel, SyncObjectFieldManipulation}
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, SynchronizedObject}
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 class FieldContractImpl[A](val desc: FieldDescription,
-                           val registrationKind: RegistrationKind) extends FieldContract[A] {
+                           val registrationKind: SyncLevel) extends FieldContract[A] {
 
-    private val isRegistered = registrationKind != RegistrationKind.NotRegistered
+    private val isRegistered = registrationKind != SyncLevel.NotRegistered
 
     override def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manip: SyncObjectFieldManipulation): Unit = {
         val field      = desc.javaField

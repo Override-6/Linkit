@@ -14,11 +14,11 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
-import fr.linkit.api.gnom.cache.sync.contract.StructureContract
+import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, MirroringStructureContractDescriptor, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
@@ -157,9 +157,12 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
 
         descs.foreach(desc => {
             val clazz         = desc.targetClass
-            val mirroringInfo = desc.mirroringInfo
-            if (mirroringInfo.isDefined) classes += mirroringInfo.get.stubSyncClass.mainClass
-            else addClass(clazz)
+            desc match {
+                case descriptor: MirroringStructureContractDescriptor[_] =>
+                    classes += descriptor.mirroringInfo.stubSyncClass.mainClass
+                case _                                                  =>
+                    addClass(clazz)
+            }
 
             desc.fields.filter(_.registrationKind == Synchronized).foreach(f => addClass(f.desc.javaField.getType))
             desc.methods.foreach(method => {
@@ -202,7 +205,11 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
 
         val nodeReference = ConnectedObjectReference(family, cacheID, rootObjectOwner, Array(id))
         val choreographer = new InvocationChoreographer()
-        val context       = UsageConnectedObjectContext(rootObjectOwner, rootObjectOwner, currentIdentifier, cacheOwnerId, creator.syncClassDef, choreographer)
+        val context       = UsageConnectedObjectContext(
+            rootObjectOwner, rootObjectOwner,
+            currentIdentifier, cacheOwnerId,
+            creator.syncClassDef, SyncLevel.Synchronized, //roots are synchronized objects.
+            choreographer)
         val factory       = SyncObjectContractFactory(contracts)
 
         val rootContract = getRootContract(factory)(creator, context)

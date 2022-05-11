@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.contract;
 
-public enum RegistrationKind {
+public enum SyncLevel {
 
     /**
      * don't register the targeted object, ignore it.
@@ -34,6 +34,17 @@ public enum RegistrationKind {
      * Register a synchronized object that mirrors a distant Chipped Object / Synchronized Object.<br>
      * the object is a SynchronizedObject.
      * */
-    Mirroring
+    Mirroring,
+
+    /**
+     * Only registers the object, this way, the same instance of the object is sent <br>
+     * to the remote engines instead of sending copy of it (see {@link fr.linkit.api.gnom.reference.NetworkObject})
+     * */
+    Register,
+
+    /**
+     * Specific state for {@link fr.linkit.api.gnom.network.statics.StaticAccess} and Static accessors.
+     * */
+    Statics,
 
 }

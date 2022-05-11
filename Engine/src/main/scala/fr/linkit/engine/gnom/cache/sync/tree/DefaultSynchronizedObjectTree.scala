@@ -14,10 +14,10 @@
 package fr.linkit.engine.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.api.gnom.cache.sync.contract.{RegistrationKind, SyncObjectFieldManipulation}
+import fr.linkit.api.gnom.cache.sync.contract.{SyncLevel, SyncObjectFieldManipulation}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.network.{Engine, Network}
@@ -81,22 +81,22 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new InvalidNodePathException("Path is empty")
     }
 
-    override def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B] = {
+    override def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not owner by this tree's cache.")
         insertObject[B](parent.treePath, source, ownerID, insertionKind)
     }
 
-    override def insertObject[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B] = {
+    override def insertObject[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
         insertObject0(parentPath, obj, ownerID, insertionKind, ThreadLocalRandom.current().nextInt())
     }
 
-    override def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, insertionKind: RegistrationKind): ConnectedObject[AnyRef] = {
+    override def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, insertionKind: SyncLevel): ConnectedObject[AnyRef] = {
         val currentPath = parentRef.nodePath
         insertObject0(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier, insertionKind, idHint).obj
     }
 
-    private def insertObject0[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: RegistrationKind, idHint: Int): ConnectedObjectNode[B] = {
+    private def insertObject0[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int): ConnectedObjectNode[B] = {
         val parentNode = findNode[B](parentPath).getOrElse {
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
@@ -140,7 +140,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     }
 
     private def genConnectedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
-                                                source: B, insertionKind: RegistrationKind)(ownerID: String): ConnectedObjectNode[B] = {
+                                                source: B, insertionKind: SyncLevel)(ownerID: String): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not present in this tree.")
         if (insertionKind == NotRegistered)
@@ -222,7 +222,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                 }
             }
 
-            override def createConnectedObject(obj: AnyRef, kind: RegistrationKind): ConnectedObject[AnyRef] = {
+            override def createConnectedObject(obj: AnyRef, kind: SyncLevel): ConnectedObject[AnyRef] = {
                 val id = forest.removeLinkedReference(obj)
                         .map(_.nodePath.last)
                         .getOrElse(ThreadLocalRandom.current().nextInt())

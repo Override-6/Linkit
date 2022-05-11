@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync.contract
 
 trait ValueContract {
 
-    val registrationKind: RegistrationKind
+    val registrationKind: SyncLevel
 
 }
 

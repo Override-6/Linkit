@@ -36,11 +36,11 @@ trait MethodContract[R] {
 
     val choreographer: InvocationChoreographer
 
-    def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, RegistrationKind) => ConnectedObject[AnyRef]): Any
+    def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any
 
-    def connectArgs(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit
+    def connectArgs(args: Array[Any], syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Unit
 
-    def applyReturnValue(rv: Any, syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Any
+    def applyReturnValue(rv: Any, syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any
 
     def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R
 

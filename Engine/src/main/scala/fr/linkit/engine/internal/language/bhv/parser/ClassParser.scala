@@ -13,13 +13,12 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
+import fr.linkit.engine.internal.language.bhv.ast
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword
-import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword.{Sync, _}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
-import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ast}
 
 object ClassParser extends BehaviorLanguageParser {
 
@@ -72,12 +71,17 @@ object ClassParser extends BehaviorLanguageParser {
         }
         val methodsParser              = enabledMethodParser | disabledMethodParser | hiddenMethodParser
         val fieldsParser               = syncParser ~ identifier ^^ { case state ~ name => AttributedFieldDescription(name, state) }
-        val classHead                  = Describe ~> (Statics | BehaviorLanguageKeyword.Mirroring).? ~ identifier ~ (Stub ~> identifier).? ^^ {
-            case Some(BehaviorLanguageKeyword.Mirroring) ~ className ~ stubClass        => ClassDescriptionHead(MirroringDescription(stubClass.getOrElse(className)), className)
-            case None ~ className ~ None                        => ClassDescriptionHead(RegularDescription, className)
-            case Some(Statics) ~ className ~ None               => ClassDescriptionHead(StaticsDescription, className)
-            case _@(Some(Statics) | None) ~ className ~ Some(_) =>
-                throw new BHVLanguageException(s"statics or regular description '${className}' cannot define a stub class.")
+        val targetKind                 = {
+            val stubParser = ParenLeft ~> identifier <~ ParenRight
+            val stubed     = (Mirror ^^^ (MirroringDescription(_)) | (Chip ^^^ (ChipDescription(_)))) ~ stubParser ^^ { case f ~ s => f(s) }
+            stubed | (Sync ^^^ RegularDescription)
+        }
+        val targetedKinds              = (SquareBracketLeft ~> rep1(targetKind, Comma) <~ SquareBracketRight).? ^^ (_.getOrElse(List()))
+        val staticsHead                = Describe ~> Statics ~ identifier
+        val instanceHead               = Describe ~> identifier ~ targetedKinds
+        val classHead                  = (staticsHead | instanceHead) ^^ {
+            case Statics ~ (className: String)                        => ClassDescriptionHead(Seq(StaticsDescription), className)
+            case (className: String) ~ (kinds: List[DescriptionKind]) => ClassDescriptionHead(kinds, className)
         }
         val attributedFieldsAndMethods = rep(methodsParser | fieldsParser) ^^ { x =>
             val fields  = x.filter(_.isInstanceOf[AttributedFieldDescription]).map { case d: AttributedFieldDescription => d }

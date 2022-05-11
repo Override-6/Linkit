@@ -14,16 +14,12 @@
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, ConnectedObjectContext}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, ObjectContractFactory}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
 trait StructureBehaviorDescriptorNode[A <: AnyRef] {
 
-    val descriptor: StructureContractDescriptor[A]
-
-    def getStaticsContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A]
-
-    def getObjectContract(clazz: Class[_ <: A], context: ConnectedObjectContext, forceMirroring: Boolean): StructureContract[A]
+    def getContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A]
 
     def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A]
 

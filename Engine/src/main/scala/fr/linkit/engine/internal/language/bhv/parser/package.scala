@@ -11,23 +11,17 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.lexer.file;
+package fr.linkit.engine.internal.language.bhv
 
-import fr.linkit.engine.internal.language.bhv.lexer.Keyword;
+package object parser {
 
-public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
-    Import, Describe, Code, Stub, Name,
-    Mirror, Statics,
-    Method, Following, Enable, Disable, Hide, ReturnValue, Ensinv, Disinv,
-    Sync, Chip, Regular,
-    Modifier, In, Out, Foreach,
-    //Agreements
-    Agreement,
-    Discard, Accept, And, Appoint, If, Else, Is, Not;
+    object have {
 
-    @Override
-    public String value() {
-        return name().toLowerCase();
+        def unapply[A](seq: Seq[A])(elements: Any*): Option[Seq[A]] = {
+            if (seq.containsSlice(elements))
+                Some(seq)
+            else None
+        }
     }
 
 }

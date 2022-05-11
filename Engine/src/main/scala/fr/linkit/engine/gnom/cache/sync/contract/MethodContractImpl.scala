@@ -13,10 +13,10 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
-import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract, RegistrationKind}
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
@@ -44,7 +44,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
 
     override val choreographer: InvocationChoreographer = new InvocationChoreographer(parentChoreographer)
 
-    override def connectArgs(args: Array[Any], syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Unit = {
+    override def connectArgs(args: Array[Any], syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Unit = {
         if (parameterContracts.isEmpty)
             return
         var i = 0
@@ -59,12 +59,12 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         }
     }
 
-    override def applyReturnValue(rv: Any, syncAction: (Any, RegistrationKind) => ConnectedObject[AnyRef]): Any = {
+    override def applyReturnValue(rv: Any, syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
         if (returnValueContract.registrationKind != NotRegistered) syncAction(rv, returnValueContract.registrationKind).connected
         else rv
     }
 
-    override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, RegistrationKind) => ConnectedObject[AnyRef]): Any = {
+    override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any = {
         var result = initialResult
         val kind   = returnValueContract.registrationKind
         if (result != null && kind != NotRegistered && !result.isInstanceOf[ConnectedObject[_]]) {

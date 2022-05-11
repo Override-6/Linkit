@@ -36,9 +36,9 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[_], nextSuperR
     lazy val asNode: StructureBehaviorDescriptorNodeImpl[A] = {
         val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.asNode
         val descriptor    = descriptors.foldLeft(StructureContractDescriptor.empty[A](ClassTag(targetClass)))((desc, result) => {
-            def fusion[B](supplier: StructureContractDescriptor[A] => B, clashes: (B, B) => Boolean, fusion: (B, B) => B, fieldName: String): B = {
-                val a = supplier(desc)
-                val b = supplier(result)
+            def fusion[B](extract: StructureContractDescriptor[A] => B, clashes: (B, B) => Boolean, fusion: (B, B) => B, fieldName: String): B = {
+                val a = extract(desc)
+                val b = extract(result)
                 if (clashes(a, b)) err(fieldName) else fusion(a, b)
             }
 
@@ -53,6 +53,8 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[_], nextSuperR
         new StructureBehaviorDescriptorNodeImpl[A](descriptor, nextSuperNode, interfaceRelation.map(_.asNode).toArray)
     }
 
-    private def err(fieldName: String): Nothing = throw new BadContractException(s"Two Structure Contract Descriptors describes different $fieldName.")
+    private def err(compName: String): Nothing = {
+        throw new BadContractException(s"Two Structure Contract Descriptors describes different $compName.")
+    }
 
 }

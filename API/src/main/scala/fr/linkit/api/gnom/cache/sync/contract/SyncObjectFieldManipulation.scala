@@ -24,6 +24,6 @@ trait SyncObjectFieldManipulation {
 
     def initObject(sync: ConnectedObject[AnyRef]): Unit
 
-    def createConnectedObject(obj: AnyRef, kind: RegistrationKind): ConnectedObject[AnyRef]
+    def createConnectedObject(obj: AnyRef, kind: SyncLevel): ConnectedObject[AnyRef]
 
 }

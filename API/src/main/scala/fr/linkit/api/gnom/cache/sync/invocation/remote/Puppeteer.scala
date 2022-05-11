@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference, SynchronizedObjectCache}
 import fr.linkit.api.gnom.network.Network
 

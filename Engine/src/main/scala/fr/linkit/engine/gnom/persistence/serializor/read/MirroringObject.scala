@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.NoSuchCacheException
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObjectCache}
 import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ProfilePoolObject}
@@ -53,7 +53,7 @@ class MirroringObject(override val referenceIdx: Int,
                 }.asInstanceOf[DefaultSynchronizedObjectTree[_]]
                 val nodePath  = ref.nodePath
                 val parentRef = new ConnectedObjectReference(ref.family, ref.cacheID, ref.ownerID, nodePath.dropRight(1))
-                val connected = tree.createConnectedObj(parentRef, nodePath.last)(stubClassDef, RegistrationKind.Mirroring)
+                val connected = tree.createConnectedObj(parentRef, nodePath.last)(stubClassDef, SyncLevel.Mirroring)
                 connected
         }
     }

@@ -1,7 +1,7 @@
 package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind._
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDefUnique, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}

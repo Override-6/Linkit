@@ -1,8 +1,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
+import fr.linkit.api.gnom.cache.sync.contract.FieldContract
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, MethodContractDescriptor, StructureBehaviorDescriptorNode, StructureContractDescriptor}
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo}
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectClassRelation
 import fr.linkit.engine.internal.utils.ClassMap
 
@@ -88,8 +87,6 @@ class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescrip
 
 object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(new StructureContractDescriptor[Object] {
     override val targetClass  : Class[Object]                   = classOf[Object]
-    override val mirroringInfo: Option[MirroringInfo]           = None
     override val methods      : Array[MethodContractDescriptor] = Array()
     override val fields       : Array[FieldContract[Any]]       = Array()
-    override val modifier     : Option[ValueModifier[Object]]   = None
 }))

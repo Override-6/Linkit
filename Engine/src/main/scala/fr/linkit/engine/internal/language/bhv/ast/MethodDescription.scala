@@ -1,6 +1,6 @@
 package fr.linkit.engine.internal.language.bhv.ast
 
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 
 trait MethodDescription
@@ -61,9 +61,9 @@ case class MethodProperty(name: String, value: String)
 case class MethodParam(syncState: RegistrationState, name: Option[String], tpe: String) {
 
     override def toString: String = (syncState.kind match {
-        case RegistrationKind.NotRegistered => ""
-        case RegistrationKind.ChippedOnly   => "chip "
-        case RegistrationKind.Synchronized  => "sync "
+        case SyncLevel.NotRegistered => ""
+        case SyncLevel.ChippedOnly   => "chip "
+        case SyncLevel.Synchronized  => "sync "
     }) + tpe
 }
 

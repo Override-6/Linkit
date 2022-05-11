@@ -11,23 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.lexer.file;
+package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.engine.internal.language.bhv.lexer.Keyword;
+import fr.linkit.api.gnom.cache.sync.contract.MirroringInfo
 
-public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
-    Import, Describe, Code, Stub, Name,
-    Mirror, Statics,
-    Method, Following, Enable, Disable, Hide, ReturnValue, Ensinv, Disinv,
-    Sync, Chip, Regular,
-    Modifier, In, Out, Foreach,
-    //Agreements
-    Agreement,
-    Discard, Accept, And, Appoint, If, Else, Is, Not;
-
-    @Override
-    public String value() {
-        return name().toLowerCase();
-    }
-
+trait MirroringStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A] {
+    val mirroringInfo: MirroringInfo
 }

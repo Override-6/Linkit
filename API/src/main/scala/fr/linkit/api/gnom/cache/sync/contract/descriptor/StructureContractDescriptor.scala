@@ -13,32 +13,13 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo}
-
-import scala.reflect.{ClassTag, classTag}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncLevel}
 
 trait StructureContractDescriptor[A <: AnyRef] {
 
-    val targetClass  : Class[A]
-    val mirroringInfo: Option[MirroringInfo]
+    val syncLevel  : SyncLevel
+    val targetClass: Class[A]
 
     val methods : Array[MethodContractDescriptor]
     val fields  : Array[FieldContract[Any]]
-    val modifier: Option[ValueModifier[A]]
-}
-
-object StructureContractDescriptor {
-
-    def empty[A <: AnyRef : ClassTag]: StructureContractDescriptor[A] = {
-        val clazz = classTag[A].runtimeClass.asInstanceOf[Class[A]]
-        new StructureContractDescriptor[A] {
-            override val targetClass  : Class[A]                        = clazz
-            override val mirroringInfo: Option[MirroringInfo]           = None
-            override val methods      : Array[MethodContractDescriptor] = Array()
-            override val fields       : Array[FieldContract[Any]]       = Array()
-            override val modifier     : Option[ValueModifier[A]]        = None
-        }
-    }
-
 }

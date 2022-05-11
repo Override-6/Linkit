@@ -13,8 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.tree
 
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, ConnectedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.cache.sync.contract.RegistrationKind
 
 import java.util.concurrent.ThreadLocalRandom
 
@@ -35,7 +35,7 @@ trait ObjectConnector {
      * @return the created node
      */
     //TODO Should be removed (or only used internally)
-    def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B]
+    def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B]
 
     /**
      *
@@ -51,8 +51,8 @@ trait ObjectConnector {
      * @tparam B the type of the object.
      * @return the created node
      */
-    def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: RegistrationKind): ConnectedObjectNode[B]
+    def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B]
 
-    def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, kind: RegistrationKind): ConnectedObject[AnyRef]
+    def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, kind: SyncLevel): ConnectedObject[AnyRef]
 
 }
