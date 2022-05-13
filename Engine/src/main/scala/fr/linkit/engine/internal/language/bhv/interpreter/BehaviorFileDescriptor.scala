@@ -4,9 +4,9 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDefUnique, SyncStructureDescription}
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorGroup, MethodContractDescriptor, MirroringStructureContractDescriptor, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, ModifiableValueContract}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, ModifiableValueContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
@@ -25,7 +25,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
     private val valueModifiers   : Map[String, (Class[_], ValueModifier[Any])] = computeValueModifiers()
     private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
-    private val contracts        : Seq[StructureContractDescriptor[_]]         = computeContracts()
+    private val contracts        : Seq[ContractDescriptorGroup[_]]             = computeContracts()
 
     lazy val data = {
         new ContractDescriptorDataImpl(contracts.toArray) with LangContractDescriptorData {
@@ -36,31 +36,37 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
         }
     }
 
-    private def computeContracts(): Seq[StructureContractDescriptor[_]] = {
-        val result = ast.classDescriptions.map {
-            case ClassDescription(ClassDescriptionHead(kind, className), foreachMethod, foreachField, fieldDescs, methodDescs) => {
-                val clazz                       = file.findClass(className)
-                val (mirroringInfo0, classDesc) = kind match {
-                    case RegularDescription             => (None, SyncObjectDescription(SyncClassDefUnique(clazz)))
-                    case StaticsDescription             => (None, SyncStaticsDescription(clazz))
-                    case MirroringDescription(stubName) => (Some(MirroringInfo(SyncClassDefUnique(file.findClass(stubName)))), SyncObjectDescription(SyncClassDefUnique(clazz)))
+    private def computeContracts(): Seq[ContractDescriptorGroup[_]] = {
+        ast.classDescriptions.groupBy(_.head.className).map { case (className, descs) => {
+            val clazz       = file.findClass(className).asInstanceOf[Class[AnyRef]]
+            val defaults    = descs.filter(_.head.kinds.empty)
+            val descriptors = descs.filter(_.head.kinds.nonEmpty)
+                .flatMap {
+                    case ClassDescription(ClassDescriptionHead(kinds, _), foreachMethod, foreachField, fieldDescs, methodDescs) => {
+                        kinds.map { kind =>
+                            val (mirroringInfo0, classDesc) = kind match {
+                                case SyncDescription                => (None, SyncObjectDescription(SyncClassDefUnique(clazz)))
+                                case StaticsDescription             => (None, SyncStaticsDescription(clazz))
+                                case MirroringDescription(stubName) => (Some(MirroringInfo(SyncClassDefUnique(file.findClass(stubName)))), SyncObjectDescription(SyncClassDefUnique(clazz)))
+                            }
+                            val methods0                    = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs)
+                            val fields0                     = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs)
+                            mirroringInfo0.fold(new StructureContractDescriptor[AnyRef] {
+                                override val syncLevel  : SyncLevel                       = kind.syncLevel
+                                override val targetClass: Class[AnyRef]                   = clazz
+                                override val methods    : Array[MethodContractDescriptor] = methods0
+                                override val fields     : Array[FieldContract[Any]]       = fields0
+                            })(mi => new MirroringStructureContractDescriptor[AnyRef] {
+                                override val mirroringInfo: MirroringInfo                   = mi
+                                override val targetClass  : Class[AnyRef]                   = clazz
+                                override val methods      : Array[MethodContractDescriptor] = methods0
+                                override val fields       : Array[FieldContract[Any]]       = fields0
+                            })
+                        }
+                    }
                 }
-                new StructureContractDescriptor[AnyRef] {
-                    override val targetClass   = clazz.asInstanceOf[Class[AnyRef]]
-                    override val mirroringInfo = mirroringInfo0
-                    override val methods       = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs)
-                    override val fields        = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs)
-                    override val modifier      = typeModifiers.get(clazz)
-                }
-            }
         }
-        new StructureContractDescriptor[AnyRef] {
-            override val targetClass   = classOf[Object]
-            override val mirroringInfo = None
-            override val methods       = Array()
-            override val fields        = Array()
-            override val modifier      = None
-        } :: result
+        }
     }
 
     private def foreachFields(classDesc: SyncStructureDescription[_])

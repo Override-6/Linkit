@@ -29,6 +29,7 @@ object ClassParser extends BehaviorLanguageParser {
             val property = SquareBracketLeft ~> (identifier <~ Equal) ~ identifier <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
             repsep(property, Comma.?)
         }
+
         val methodModifierParser       = {
             ((identifier | ReturnValue ^^^ "returnvalue") <~ Arrow) ~ (identifier | modifiers) ^^ {
                 case target ~ (ref: String)                 => ValueModifierReference(target, ref)
@@ -74,7 +75,7 @@ object ClassParser extends BehaviorLanguageParser {
         val targetKind                 = {
             val stubParser = ParenLeft ~> identifier <~ ParenRight
             val stubed     = (Mirror ^^^ (MirroringDescription(_)) | (Chip ^^^ (ChipDescription(_)))) ~ stubParser ^^ { case f ~ s => f(s) }
-            stubed | (Sync ^^^ RegularDescription)
+            stubed | (Sync ^^^ SyncDescription)
         }
         val targetedKinds              = (SquareBracketLeft ~> rep1(targetKind, Comma) <~ SquareBracketRight).? ^^ (_.getOrElse(List()))
         val staticsHead                = Describe ~> Statics ~ identifier

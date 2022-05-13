@@ -1,9 +1,9 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, DescriptorProfile, StructureBehaviorDescriptorNode}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, ContractDescriptorGroup, StructureBehaviorDescriptorNode}
 import fr.linkit.engine.internal.utils.ClassMap
 
-class ContractDescriptorDataImpl(val profiles: Array[DescriptorProfile[_]]) extends ContractDescriptorData {
+class ContractDescriptorDataImpl(val profiles: Array[ContractDescriptorGroup[_]]) extends ContractDescriptorData {
 
     private val nodeMap = computeDescriptors()
 
@@ -52,11 +52,11 @@ class ContractDescriptorDataImpl(val profiles: Array[DescriptorProfile[_]]) exte
     * Sorting descriptors by their hierarchy rank, and performing
     * checks to avoid multiple descriptor profiles per class
     * */
-    private def rearrangeDescriptors(): Array[DescriptorProfile[AnyRef]] = {
-        type S = DescriptorProfile[_]
+    private def rearrangeDescriptors(): Array[ContractDescriptorGroup[AnyRef]] = {
+        type S = ContractDescriptorGroup[_]
         profiles.distinct.sorted((a: S, b: S) => {
             getClassHierarchicalDepth(a.clazz) - getClassHierarchicalDepth(b.clazz)
-        }).asInstanceOf[Array[DescriptorProfile[AnyRef]]]
+        }).asInstanceOf[Array[ContractDescriptorGroup[AnyRef]]]
     }
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]

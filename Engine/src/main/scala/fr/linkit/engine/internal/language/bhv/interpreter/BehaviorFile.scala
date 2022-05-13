@@ -98,9 +98,9 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
         val static = Modifier.isStatic(method.getModifiers)
         //checking if method is valid depending on the description context
         kind match {
-            case StaticsDescription if !static                            => throw new BHVLanguageException(s"Method '$signature' is not static.")
-            case _@MirroringDescription(_) | RegularDescription if static => throw new BHVLanguageException(s"Method '$signature' is static. ")
-            case _                                                        =>
+            case StaticsDescription if !static                         => throw new BHVLanguageException(s"Method '$signature' is not static.")
+            case _@MirroringDescription(_) | SyncDescription if static => throw new BHVLanguageException(s"Method '$signature' is static. ")
+            case _                                                     =>
         }
 
         val methodID = SMethodDescription.computeID(method)
@@ -117,9 +117,9 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
         val field     = fieldDesc.javaField
         val static    = Modifier.isStatic(field.getModifiers)
         kind match {
-            case StaticsDescription if !static                            => throw new BHVLanguageException(s"Field $name is not static.")
-            case _@MirroringDescription(_) | RegularDescription if static => throw new BHVLanguageException(s"Field $name is static. ")
-            case _                                                        =>
+            case StaticsDescription if !static                         => throw new BHVLanguageException(s"Field $name is not static.")
+            case _@MirroringDescription(_) | SyncDescription if static => throw new BHVLanguageException(s"Field $name is static. ")
+            case _                                                     =>
         }
         fieldDesc
     }

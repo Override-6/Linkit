@@ -1,14 +1,26 @@
 package fr.linkit.engine.internal.language.bhv.ast
 
-sealed trait DescriptionKind
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 
-case object RegularDescription extends DescriptionKind
+sealed trait DescriptionKind {
+    val syncLevel: SyncLevel
+}
 
-case class MirroringDescription(stub: String) extends DescriptionKind
+case object SyncDescription extends DescriptionKind {
+    override val syncLevel: SyncLevel = SyncLevel.Synchronized
+}
 
-case class ChipDescription(stub: String) extends DescriptionKind
+case class MirroringDescription(stub: String) extends DescriptionKind {
+    override val syncLevel: SyncLevel = SyncLevel.Mirroring
+}
 
-case object StaticsDescription extends DescriptionKind
+case class ChipDescription(stub: String) extends DescriptionKind {
+    override val syncLevel: SyncLevel = SyncLevel.ChippedOnly
+}
+
+case object StaticsDescription extends DescriptionKind {
+    override val syncLevel: SyncLevel = SyncLevel.Statics
+}
 
 case class ClassDescriptionHead(kinds: Seq[DescriptionKind], className: String)
 

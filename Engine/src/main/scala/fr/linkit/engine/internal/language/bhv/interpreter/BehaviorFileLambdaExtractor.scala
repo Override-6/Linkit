@@ -42,8 +42,8 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
         desc.modifiers.foreach {
             case exp: ModifierExpression =>
                 val classSystemDesc = classDesc.head.kind match {
-                    case _@(RegularDescription | _: MirroringDescription) => SyncObjectDescription(SyncClassDefUnique(file.findClass(classDesc.head.className)))
-                    case StaticsDescription                               => SyncStaticsDescription(file.findClass(classDesc.head.className))
+                    case _@(SyncDescription | _: MirroringDescription) => SyncObjectDescription(SyncClassDefUnique(file.findClass(classDesc.head.className)))
+                    case StaticsDescription                            => SyncStaticsDescription(file.findClass(classDesc.head.className))
                 }
                 val className       = exp.target match {
                     case "returnvalue" =>
