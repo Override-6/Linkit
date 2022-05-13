@@ -17,15 +17,22 @@ import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 
 trait SyncNodeDataFactory {
 
-    def newChippedObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
-                                          chippedObject: ChippedObject[A],  ownerID: String): ChippedObjectNodeData[A]
-
-    def newChippedOnlyObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
-                                              chippedObject: ChippedObject[A],  ownerID: String): ChippedObjectNodeData[A]
-
-    def newSyncObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
-                                       syncObject: A with SynchronizedObject[A], origin: Option[A],
-                                       ownerID: String): SyncObjectNodeData[A]
-
-    def newObjectData[A <: AnyRef](parent: MutableNode[_ <: AnyRef], path: Array[Int]): NodeData[A]
+    def newNodeData[A <: AnyRef, N <: NodeData[A]](req: NodeDataRequest[A, N]): N
 }
+
+sealed trait NodeDataRequest[A <: AnyRef, +N <: NodeData[A]] {
+    val parent: MutableNode[_ <: AnyRef]
+}
+
+class NormalNodeDataRequest[A <: AnyRef](val parent: MutableNode[_ <: AnyRef],
+                                         val path: Array[Int],
+                                         val ownerID: String) extends NodeDataRequest[A, NodeData[A]]
+
+class SyncNodeDataRequest[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
+                                       val syncObject: A with SynchronizedObject[A], val origin: Option[A],
+                                       ownerID: String)
+    extends ChippedObjectNodeDataRequest[A](parent, id, syncObject, ownerID) with NodeDataRequest[A, SyncObjectNodeData[A]]
+
+class ChippedObjectNodeDataRequest[A <: AnyRef](val parent: MutableNode[_ <: AnyRef], val id: Int,
+                                                val chippedObject: ChippedObject[A], val ownerID: String)
+    extends NodeDataRequest[A, ChippedObjectNodeData[A]]

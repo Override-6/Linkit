@@ -13,8 +13,9 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.MirroringInfo
+import fr.linkit.api.gnom.cache.sync.contract.{MirroringInfo, SyncLevel}
 
 trait MirroringStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A] {
+    override final val syncLevel: SyncLevel = SyncLevel.Mirroring
     val mirroringInfo: MirroringInfo
 }

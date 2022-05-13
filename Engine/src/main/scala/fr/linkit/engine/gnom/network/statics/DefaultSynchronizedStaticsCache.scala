@@ -2,7 +2,7 @@ package fr.linkit.engine.gnom.network.statics
 
 import fr.linkit.api.gnom.cache.SharedCacheFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.StructureContract
+import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
@@ -22,9 +22,9 @@ import scala.reflect.ClassTag
 //this class is used by the statics synchronization side.
 //It is not directly used by the user and must uses a specific sync instance creator.
 class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
-                                      classCenter: SyncClassCenter,
-                                      override val defaultContracts: ContractDescriptorData,
-                                      override val network: Network) extends DefaultSynchronizedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
+                                                 classCenter: SyncClassCenter,
+                                                 override val defaultContracts: ContractDescriptorData,
+                                                 override val network: Network) extends DefaultSynchronizedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
 
     //ensuring that the creator is of the right type
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {
@@ -39,11 +39,17 @@ class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
 
     override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
         creator match {
-            case creator: SyncStaticAccessInstanceCreator =>
-                factory.getStaticContract(creator.targettedClass.asInstanceOf[Class[StaticsCaller]], context)
+            case creator: SyncStaticAccessInstanceCreator     =>
+                factory.getContract(creator.targettedClass.asInstanceOf[Class[StaticsCaller]], context)
             case InstanceWrapper(methodCaller: StaticsCaller) =>
-                factory.getStaticContract(methodCaller.staticsTarget.asInstanceOf[Class[StaticsCaller]], context)
-            case _                                        => throwUOE()
+                val cl = methodCaller.staticsTarget
+                if (context.syncLevel != SyncLevel.Statics) {
+                    throw new IllegalArgumentException(
+                        s"attempted to create a connected statics accessor for $cl, but the given context does not say the resulting object will be used as a statics accessor. (context.syncLevel = ${context.syncLevel} and should be SyncLevel.${SyncLevel.Statics})")
+                }
+                factory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context)
+            case _                                            =>
+                throwUOE()
         }
     }
 

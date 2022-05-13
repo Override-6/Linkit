@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
-import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, UnknownObjectSyncNode}
+import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, SyncNodeDataRequest, UnknownObjectSyncNode}
 import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
@@ -31,8 +31,8 @@ import scala.collection.mutable
 class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCache[A],
                                            cachePresenceHandler: NetworkPresenceHandler[SharedCacheReference],
                                            omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[ConnectedObjectReference](cachePresenceHandler, omc)
-                with InitialisableNetworkObjectLinker[ConnectedObjectReference] with SynchronizedObjectForest[A] {
+    extends AbstractNetworkPresenceHandler[ConnectedObjectReference](cachePresenceHandler, omc)
+        with InitialisableNetworkObjectLinker[ConnectedObjectReference] with SynchronizedObjectForest[A] {
 
     private val trees        = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
     private val unknownTrees = new mutable.HashMap[Int, UnknownTree]()
@@ -72,10 +72,10 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
             return None
         val path = location.nodePath
         trees.get(path.head)
-                .flatMap(_.findNode(path).flatMap((x: ConnectedObjectNode[_]) => x match {
-                    case node: ObjectSyncNode[_] => Some(node.obj)
-                    case _                       => None
-                }))
+            .flatMap(_.findNode(path).flatMap((x: ConnectedObjectNode[_]) => x match {
+                case node: ObjectSyncNode[_] => Some(node.obj)
+                case _                       => None
+            }))
     }
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
@@ -143,7 +143,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                         throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
                 case node: UnknownObjectSyncNode =>
                     val parent = node.parent.asInstanceOf[MutableNode[AnyRef]]
-                    val data   = center.newSyncObjectData[A](parent, node.id, castedSync, None, reference.ownerID)
+                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync, None, reference.ownerID))
                     node.setAsKnownObjectNode(data)
             }
         }

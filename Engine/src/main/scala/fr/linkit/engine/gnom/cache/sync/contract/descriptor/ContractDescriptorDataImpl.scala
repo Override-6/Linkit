@@ -1,11 +1,9 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.FieldContract
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, MethodContractDescriptor, StructureBehaviorDescriptorNode, StructureContractDescriptor}
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectClassRelation
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, DescriptorProfile, StructureBehaviorDescriptorNode}
 import fr.linkit.engine.internal.utils.ClassMap
 
-class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescriptor[_]]) extends ContractDescriptorData {
+class ContractDescriptorDataImpl(val profiles: Array[DescriptorProfile[_]]) extends ContractDescriptorData {
 
     private val nodeMap = computeDescriptors()
 
@@ -13,29 +11,29 @@ class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescrip
 
     def markAsPrecompiled(): Unit = precompiled = true
 
-    def isPrecompiled(): Boolean = precompiled
+    def isPrecompiled: Boolean = precompiled
 
     override def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A] = {
-        nodeMap.get(clazz).get.asInstanceOf[StructureBehaviorDescriptorNode[A]]
+        nodeMap(clazz).asInstanceOf[StructureBehaviorDescriptorNode[A]]
     }
 
     private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
         val descriptors      = rearrangeDescriptors()
         val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()
-        val objectDescriptor = descriptors.head
-        if (objectDescriptor.targetClass != classOf[Object])
+        val objDescriptor = descriptors.head
+        if (objDescriptor.clazz != classOf[Object])
             throw new IllegalArgumentException("Descriptions sequence's first element must be the java.lang.Object type behavior description.")
 
-        val objectRelation = new SyncObjectClassRelation[AnyRef](objectDescriptor.targetClass, null)
-        relations.put(objectDescriptor.targetClass, objectRelation)
-        for (descriptor <- descriptors.tail) {
-            val clazz  = descriptor.targetClass
+        val objectRelation = new SyncObjectClassRelation[AnyRef](objDescriptor.clazz, objDescriptor.modifier, null)
+        relations.put(objDescriptor.clazz, objectRelation)
+        for (profile <- descriptors.tail) {
+            val clazz  = profile.clazz
             val up = relations.get(clazz).getOrElse(objectRelation) //should at least return the java.lang.Object behavior descriptor
-            if (up.targetClass == clazz)
-                up.addDescriptor(descriptor)
-            else {
-                val rel = new SyncObjectClassRelation[AnyRef](clazz, up)
-                rel.addDescriptor(descriptor)
+            if (up.targetClass == clazz) {
+                profile.descriptors.foreach(up.addDescriptor)
+            } else {
+                val rel = new SyncObjectClassRelation[AnyRef](clazz, profile.modifier, up)
+                profile.descriptors.foreach(rel.addDescriptor)
                 relations.put(clazz, cast(rel))
             }
         }
@@ -52,19 +50,13 @@ class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescrip
 
     /*
     * Sorting descriptors by their hierarchy rank, and performing
-    * checks to avoid multiple descriptors per class
+    * checks to avoid multiple descriptor profiles per class
     * */
-    private def rearrangeDescriptors(): Array[StructureContractDescriptor[AnyRef]] = {
-        /*descriptors.foreach(a => {
-            val clazz = a.targetClass
-            val count = descriptors.count(b => clazz == b.targetClass)
-            if (count > 1)
-                throw new BadContractException(s"found $count descriptors for class ${a.targetClass}. Only one can be accepted")
-        })*/
-        type S = StructureContractDescriptor[_]
-        descriptors.sorted((a: S, b: S) => {
-            getClassHierarchicalDepth(a.targetClass) - getClassHierarchicalDepth(b.targetClass)
-        }).asInstanceOf[Array[StructureContractDescriptor[AnyRef]]]
+    private def rearrangeDescriptors(): Array[DescriptorProfile[AnyRef]] = {
+        type S = DescriptorProfile[_]
+        profiles.distinct.sorted((a: S, b: S) => {
+            getClassHierarchicalDepth(a.clazz) - getClassHierarchicalDepth(b.clazz)
+        }).asInstanceOf[Array[DescriptorProfile[AnyRef]]]
     }
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]
@@ -84,9 +76,3 @@ class ContractDescriptorDataImpl(val descriptors: Array[StructureContractDescrip
     }
 
 }
-
-object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(new StructureContractDescriptor[Object] {
-    override val targetClass  : Class[Object]                   = classOf[Object]
-    override val methods      : Array[MethodContractDescriptor] = Array()
-    override val fields       : Array[FieldContract[Any]]       = Array()
-}))

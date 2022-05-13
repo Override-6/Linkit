@@ -11,14 +11,14 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.contract.behavior
+package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, ObjectContractFactory}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.cache.sync.contract.behavior.LeveledSBDN.autoDefineMirroringInfo
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.autoDefineMirroringInfo
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, EmptyStructureContract}
 import org.jetbrains.annotations.Nullable
 
@@ -47,7 +47,6 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
                 val mirroringInfo = if (context.syncLevel == SyncLevel.Mirroring) Some(autoDefineMirroringInfo(clazz)) else None
                 new EmptyStructureContract[A](clazz, mirroringInfo)
         }
-
     }
 
     override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {

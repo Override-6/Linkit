@@ -14,11 +14,11 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, MirroringStructureContractDescriptor, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncInstanceInstantiator, SyncObjectInstantiationException}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
@@ -59,7 +59,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                                                             classCenter: SyncClassCenter,
                                                             override val defaultContracts: ContractDescriptorData,
                                                             override val network: Network)
-        extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
+    extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
 
     private  val cacheOwnerId     : String                     = channel.manager.ownerID
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
@@ -74,9 +74,9 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val tree        = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], contracts)
         val treeProfile = ObjectTreeProfile(id, tree.getRoot.obj, currentIdentifier, contracts)
         channel.makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(ObjectPacket(treeProfile))
-                .putAllAttributes(this)
-                .submit()
+            .addPacket(ObjectPacket(treeProfile))
+            .putAllAttributes(this)
+            .submit()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
         wrapperNode.obj
@@ -91,49 +91,46 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         createNewTree(path.head, reference.ownerID, wrapper)
     }
 
-    override def newChippedObjectData[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chippedObject: ChippedObject[B],
-                                                   ownerID: String): ChippedObjectNodeData[B] = {
-        newChippedObjectData(false, parent, id, chippedObject, ownerID)
-    }
 
-    override def newChippedOnlyObjectData[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chippedObject: ChippedObject[B],
-                                                       ownerID: String): ChippedObjectNodeData[B] = {
-        newChippedObjectData(true, parent, id, chippedObject, ownerID)
-    }
-
-    private def newChippedObjectData[B <: AnyRef](forceMirroring: Boolean, parent: MutableNode[_ <: AnyRef], id: Int, chippedObject: ChippedObject[B],
-                                                  ownerID: String): ChippedObjectNodeData[B] = {
+    private def newChippedObjectData[B <: AnyRef](level: SyncLevel, req: ChippedObjectNodeDataRequest[B]): ChippedObjectNodeData[B] = {
+        import req._
         val tree          = parent.tree.asInstanceOf[DefaultSynchronizedObjectTree[B]]
         val originClass   = chippedObject.getConnectedObjectClass
         val path          = parent.treePath :+ id
         val behaviorStore = tree.contractFactory
         val choreographer = new InvocationChoreographer()
-        val context       = UsageConnectedObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId, SyncClassDefUnique(chippedObject.getClass), choreographer)
-        val contract      = behaviorStore.getObjectContract[B](originClass, context, forceMirroring)
-        val chip          = ObjectChip[B](contract, network, chippedObject)
         val reference     = new ConnectedObjectReference(family, cacheID, ownerID, path)
         val presence      = forest.getPresence(reference)
+        val context       = UsageConnectedObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId, SyncClassDefUnique(chippedObject.getClass), level, choreographer)
+        val contract      = behaviorStore.getContract[B](originClass, context)
+        val chip          = ObjectChip[B](contract, network, chippedObject)
         new ChippedObjectNodeData[B](
             network, chip, contract, choreographer, chippedObject,
         )(new NodeData[B](reference, presence, tree, currentIdentifier, ownerID, Some(parent)))
     }
 
-    override def newSyncObjectData[B <: AnyRef](parent: MutableNode[_ <: AnyRef],
-                                                id: Int,
-                                                syncObject: B with SynchronizedObject[B],
-                                                origin: Option[B],
-                                                ownerID: String): SyncObjectNodeData[B] = {
-        val chippedData = newChippedObjectData[B](parent, id, syncObject, ownerID)
+    private def newSyncObjectData[B <: AnyRef](req: SyncNodeDataRequest[B]): SyncObjectNodeData[B] = {
+        val chippedData = newChippedObjectData[B](SyncLevel.Synchronized, req)
         val puppeteer   = new ObjectPuppeteer[B](channel, this, chippedData.reference)
-        val originRef   = origin.map(new WeakReference[B](_))
-        new SyncObjectNodeData[B](puppeteer, syncObject, originRef)(chippedData)
+        val originRef   = req.origin.map(new WeakReference[B](_))
+        new SyncObjectNodeData[B](puppeteer, req.syncObject, originRef)(chippedData)
     }
 
-    override def newObjectData[B <: AnyRef](parent: MutableNode[_ <: AnyRef], path: Array[Int]): NodeData[B] = {
-        val reference = new ConnectedObjectReference(family, cacheID, null, path)
+    private def newRegularNodeData[B <: AnyRef](req: NormalNodeDataRequest[B]): NodeData[B] = {
+        import req._
+        val reference = new ConnectedObjectReference(family, cacheID, ownerID, path)
         val presence  = forest.getPresence(reference)
         val tree      = parent.tree.asInstanceOf[DefaultSynchronizedObjectTree[_]] //TODO REMOVE THIS CAST
-        new NodeData[B](reference, presence, tree, currentIdentifier, null, Some(parent))
+        new NodeData[B](reference, presence, tree, currentIdentifier, ownerID, Some(parent))
+    }
+
+    override def newNodeData[B <: AnyRef, N <: NodeData[B]](req: NodeDataRequest[B, N]): N = {
+        implicit def cast[X](a: Any) = a.asInstanceOf[X]
+        req match {
+            case req: NormalNodeDataRequest[B]        => newRegularNodeData[B](req)
+            case req: ChippedObjectNodeDataRequest[B] => newChippedObjectData[B](SyncLevel.ChippedOnly, req)
+            case req: SyncNodeDataRequest[B]          => newSyncObjectData[B](req)
+        }
     }
 
     override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
@@ -141,8 +138,9 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     }
 
     private def precompileClasses(data: ContractDescriptorData): Unit = data match {
-        case data: ContractDescriptorDataImpl if !data.isPrecompiled() =>
-            precompileClasses(data.descriptors)
+        case data: ContractDescriptorDataImpl if !data.isPrecompiled =>
+            val descs = data.profiles.flatMap(_.descriptors.toSeq)
+            precompileClasses(descs)
             data.markAsPrecompiled()
         case _                                                         =>
     }
@@ -156,11 +154,11 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         }
 
         descs.foreach(desc => {
-            val clazz         = desc.targetClass
+            val clazz = desc.targetClass
             desc match {
                 case descriptor: MirroringStructureContractDescriptor[_] =>
                     classes += descriptor.mirroringInfo.stubSyncClass.mainClass
-                case _                                                  =>
+                case _                                                   =>
                     addClass(clazz)
             }
 
@@ -172,12 +170,12 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                 val paramsContracts = method.parameterContracts
                 if (paramsContracts.nonEmpty)
                     paramsContracts.zip(javaMethod.getParameterTypes)
-                            .foreach { case (desc, paramType) => if (desc.registrationKind == Synchronized) addClass(paramType) }
+                        .foreach { case (desc, paramType) => if (desc.registrationKind == Synchronized) addClass(paramType) }
             })
         })
         classes -= classOf[Object]
         classes = classes.filterNot(cl => classCenter.isClassGenerated(SyncClassDefUnique(cl)))
-                .filterNot(c => isNotOverrideable(c.getModifiers))
+            .filterNot(c => isNotOverrideable(c.getModifiers))
 
         if (classes.isEmpty)
             return
@@ -195,7 +193,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     }
 
     protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[A], context: ConnectedObjectContext): StructureContract[A] = {
-        factory.getObjectContract[A](creator.syncClassDef.mainClass.asInstanceOf[Class[A]], context, false)
+        factory.getContract[A](creator.syncClassDef.mainClass.asInstanceOf[Class[A]], context)
     }
 
     private def createNewTree(id: Int, rootObjectOwner: String,
@@ -243,13 +241,13 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
 
     private def findNode(path: Array[Int]): Option[ConnectedObjectNode[A]] = {
         forest
-                .findTree(path.head)
-                .flatMap(tree => {
-                    if (path.length == 1)
-                        Some(tree.rootNode)
-                    else
-                        tree.findNode[A](path)
-                })
+            .findTree(path.head)
+            .flatMap(tree => {
+                if (path.length == 1)
+                    Some(tree.rootNode)
+                else
+                    tree.findNode[A](path)
+            })
     }
 
     private def handleNewObject(treeID: Int,
@@ -278,9 +276,9 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
             } catch {
                 case NonFatal(e) =>
                     throw new SyncObjectInstantiationException(e.getMessage +
-                            s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
-                               | Try to regenerate the sync class of ${creator.syncClassDef.mainClass}.
-                               | """.stripMargin, e)
+                        s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
+                           | Try to regenerate the sync class of ${creator.syncClassDef.mainClass}.
+                           | """.stripMargin, e)
             }
         }
 
@@ -296,8 +294,8 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                     handleInvocationPacket(ip, bundle)
                 case ObjectPacket(location: ConnectedObjectReference) =>
                     bundle.responseSubmitter
-                            .addPacket(BooleanPacket(isObjectPresent(location)))
-                            .submit()
+                        .addPacket(BooleanPacket(isObjectPresent(location)))
+                        .submit()
 
                 case ObjectPacket(ObjectTreeProfile(treeID, rootObject: AnyRef with SynchronizedObject[AnyRef], owner, contracts)) =>
                     handleNewObject(treeID, rootObject, owner, contracts)
@@ -390,5 +388,4 @@ object DefaultSynchronizedObjectCache {
                                               rootObject: A with SynchronizedObject[A],
                                               treeOwner: String,
                                               contracts: ContractDescriptorData) extends Serializable
-
 }

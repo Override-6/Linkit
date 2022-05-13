@@ -18,7 +18,7 @@ agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_ow
 agreement only_owner = discard * -> accept owner -> appoint owner
 agreement broadcast = accept*
 
-describe Path {
+describe mirroring Path {
     foreach method enable following only_cache_owner
 }
 describe statics Path {

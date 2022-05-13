@@ -69,16 +69,18 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-                .map(new FieldContractImpl[Any](_, desc.state.kind))
-                .toArray
+            .map(new FieldContractImpl[Any](_, desc.state.kind))
+            .toArray
     }
 
     private def foreachMethods(classDesc: SyncStructureDescription[_])
                               (descOpt: Option[MethodDescription]): Array[MethodContractDescriptor] = {
         if (descOpt.isEmpty)
             return Array()
-        val desc    = descOpt.get
+        val desc = descOpt.get
+
         def cast[X](y: Any) = y.asInstanceOf[X]
+
         val methods = classDesc match {
             case desc: SyncObjectDescription[_]  => desc.listMethods(cast(desc.specs.mainClass))
             case desc: SyncStaticsDescription[_] => desc.listMethods()
@@ -155,9 +157,9 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         }
                     }
                     val agreement          = desc.agreement
-                            .map(ag => getAgreement(ag.name))
-                            .orElse(referent.map(_.agreement))
-                            .getOrElse(EmptyBuilder)
+                        .map(ag => getAgreement(ag.name))
+                        .orElse(referent.map(_.agreement))
+                        .getOrElse(EmptyBuilder)
                     val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                     val parameterContracts = {
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
@@ -209,7 +211,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
 
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {
         agreementBuilders
-                .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
+            .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
     }
 
     private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {

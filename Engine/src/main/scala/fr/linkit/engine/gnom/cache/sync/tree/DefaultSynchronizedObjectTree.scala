@@ -179,7 +179,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     }
 
     private def initChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, adapter: ChippedObjectAdapter[B], ownerID: String): ChippedObjectNode[B] = {
-        val data = dataFactory.newChippedOnlyObjectData(parent, id, adapter, ownerID)
+        val data = dataFactory.newNodeData(new ChippedObjectNodeDataRequest[B](parent, id, adapter, ownerID))
         val node = new ChippedObjectNodeImpl[B](data)
         parent.addChild(node)
         adapter.initialize(node)
@@ -192,7 +192,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         if (syncObject.isInitialized)
             throw new ConnectedObjectAlreadyInitialisedException(s"Could not register synchronized object '${syncObject.getClass.getName}' : Object already initialized.")
 
-        val data = dataFactory.newSyncObjectData[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerID)
+        val data = dataFactory.newNodeData(new SyncNodeDataRequest[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerID))
         val node = new ObjectSyncNodeImpl[B](data)
         forest.registerReference(node.reference)
         parent.addChild(node)
@@ -234,17 +234,17 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]
 
-    private def createUnknownObjectNode[B <: AnyRef](path: Array[Int]): MutableNode[B] = {
+    private def createUnknownObjectNode(path: Array[Int]): MutableNode[AnyRef] = {
         val parent = getParent(path.dropRight(1))
-        val data   = dataFactory.newObjectData[AnyRef](parent, path)
+        val data   = dataFactory.newNodeData(new NormalNodeDataRequest[AnyRef](parent, path, null))
         val node   = new UnknownObjectSyncNode(data)
         parent.addChild(node)
-        node.asInstanceOf[MutableNode[B]]
+        node
     }
 
     private def getParent[B <: AnyRef](parentPath: Array[Int]): MutableNode[B] = {
         findNode[B](parentPath).getOrElse {
-            createUnknownObjectNode(parentPath)
+            createUnknownObjectNode(parentPath).asInstanceOf[MutableNode[B]]
         }
     }
 
