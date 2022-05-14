@@ -20,6 +20,8 @@ import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
 import fr.linkit.engine.internal.language.bhv.parser.ParserErrorMessageHelper.makeErrorMessage
 
+import java.io.File
+
 object BehaviorFileParser extends BehaviorLanguageParser {
 
     private val nameParser          = Name ~> literal ^^ FileName
@@ -43,9 +45,9 @@ object BehaviorFileParser extends BehaviorLanguageParser {
         }
         r match {
             case NoSuccess(msg, n) =>
-                throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, context.fileSource, context.filePath.drop(1)))
+                throw new BHVLanguageException(makeErrorMessage(msg, "Failure", n.pos, context.fileSource, context.filePath))
             case Success(x, _)     =>
-                val fileName = context.filePath.drop(context.filePath.lastIndexOf('\\'))
+                val fileName = context.filePath.takeWhile(_ == File.separatorChar)
                 unpack(fileName, x)
         }
     }

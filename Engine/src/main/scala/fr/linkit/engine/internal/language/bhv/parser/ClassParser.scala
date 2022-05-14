@@ -17,15 +17,16 @@ import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.engine.internal.language.bhv.ast
 import fr.linkit.engine.internal.language.bhv.ast._
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword.{Sync, _}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
 
 object ClassParser extends BehaviorLanguageParser {
 
     private val classParser = {
-        val syncParser                 = (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly | Regular ^^^ NotRegistered).? ^^
+        val syncParser = (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly | Regular ^^^ NotRegistered).? ^^
                 (s => RegistrationState(s.isDefined, s.getOrElse(NotRegistered)))
-        val properties                 = {
+        val properties = {
             val property = SquareBracketLeft ~> (identifier <~ Equal) ~ identifier <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
             repsep(property, Comma.?)
         }
@@ -72,18 +73,16 @@ object ClassParser extends BehaviorLanguageParser {
         }
         val methodsParser              = enabledMethodParser | disabledMethodParser | hiddenMethodParser
         val fieldsParser               = syncParser ~ identifier ^^ { case state ~ name => AttributedFieldDescription(name, state) }
-        val targetKind                 = {
+        val targetLevels               = {
             val stubParser = ParenLeft ~> identifier <~ ParenRight
-            val stubed     = (Mirror ^^^ (MirroringDescription(_)) | (Chip ^^^ (ChipDescription(_)))) ~ stubParser ^^ { case f ~ s => f(s) }
-            stubed | (Sync ^^^ SyncDescription)
+            val mirroring  = Mirror ~> stubParser.? ^^ (MirroringLevel)
+            mirroring | (Sync ^^^ SynchronizeLevel) | (Chip ^^^ ChipLevel)
         }
-        val targetedKinds              = (SquareBracketLeft ~> rep1(targetKind, Comma) <~ SquareBracketRight).? ^^ (_.getOrElse(List()))
-        val staticsHead                = Describe ~> Statics ~ identifier
-        val instanceHead               = Describe ~> identifier ~ targetedKinds
-        val classHead                  = (staticsHead | instanceHead) ^^ {
-            case Statics ~ (className: String)                        => ClassDescriptionHead(Seq(StaticsDescription), className)
-            case (className: String) ~ (kinds: List[DescriptionKind]) => ClassDescriptionHead(kinds, className)
-        }
+        val targetedLevels             = SquareBracketLeft ~> rep1sep(targetLevels, Comma) <~ SquareBracketRight
+        val staticsHead                = Describe ~> BehaviorLanguageKeyword.Statics ~> identifier ^^ (ClassDescriptionHead(StaticsDescription, _))
+        val instanceHead               = Describe ~> identifier ~ targetedLevels ^^ { case name ~ levels => ClassDescriptionHead(LeveledDescription(levels), name) }
+        val regularHead                = Describe ~> identifier ^^ (ClassDescriptionHead(RegularDescription, _))
+        val classHead                  = staticsHead | instanceHead | regularHead
         val attributedFieldsAndMethods = rep(methodsParser | fieldsParser) ^^ { x =>
             val fields  = x.filter(_.isInstanceOf[AttributedFieldDescription]).map { case d: AttributedFieldDescription => d }
             val methods = x.filter(_.isInstanceOf[AttributedMethodDescription]).map { case d: AttributedMethodDescription => d }

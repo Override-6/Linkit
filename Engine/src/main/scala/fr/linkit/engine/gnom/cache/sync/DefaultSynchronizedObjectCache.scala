@@ -139,13 +139,13 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
 
     private def precompileClasses(data: ContractDescriptorData): Unit = data match {
         case data: ContractDescriptorDataImpl if !data.isPrecompiled =>
-            val descs = data.profiles.flatMap(_.descriptors.toSeq)
+            val descs = data.groups.flatMap(_.descriptors.toSeq)
             precompileClasses(descs)
             data.markAsPrecompiled()
         case _                                                         =>
     }
 
-    private def precompileClasses(descs: Array[StructureContractDescriptor[_]]): Unit = {
+    private def precompileClasses(descs: Array[StructureContractDescriptor[AnyRef]]): Unit = {
         var classes = mutable.HashSet.empty[Class[_]]
 
         def addClass(clazz: Class[_]): Unit = {

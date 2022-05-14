@@ -39,21 +39,23 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
 
     private def extractMethodModifiers(desc: AttributedEnabledMethodDescription, classDesc: ClassDescription): Unit = {
         val signature = desc.signature
+        val kind      = classDesc.head.kind
         desc.modifiers.foreach {
             case exp: ModifierExpression =>
-                val classSystemDesc = classDesc.head.kind match {
-                    case _@(SyncDescription | _: MirroringDescription) => SyncObjectDescription(SyncClassDefUnique(file.findClass(classDesc.head.className)))
-                    case StaticsDescription                            => SyncStaticsDescription(file.findClass(classDesc.head.className))
+                val classSystemDesc = kind match {
+                    case _@(RegularDescription | _: LeveledDescription) => SyncObjectDescription(SyncClassDefUnique(file.findClass(classDesc.head.className)))
+                    case StaticsDescription                             => SyncStaticsDescription(file.findClass(classDesc.head.className))
                 }
                 val className       = exp.target match {
                     case "returnvalue" =>
-                        file.getMethodDescFromSignature(classDesc.head.kind, signature, classSystemDesc).javaMethod.getReturnType.getName
+                        file.getMethodDescFromSignature(kind, signature, classSystemDesc).javaMethod.getReturnType.getName
                     case paramName     =>
                         file.findClass(signature.params.find(_.name.contains(paramName)).get.tpe).getName
                 }
                 val mDesc           = file.getMethodDescFromSignature(classDesc.head.kind, desc.signature, classSystemDesc)
                 submitAll(s"method_${encodedIntMethodString(mDesc.methodId)}", className, exp)
-            case _                       => //fallback will be for modifier references, they don't hold any lambda expression so let's skip them
+            case _                       =>
+            //fallback will be for modifier references, they don't hold any lambda expression so let's skip them
         }
     }
 

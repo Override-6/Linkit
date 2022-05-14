@@ -12,9 +12,6 @@ agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_ow
 agreement only_owner = discard * -> accept owner -> appoint owner
 agreement broadcast = accept*
 
-describe Path {
-    foreach method enable following only_cache_owner
-}
 describe Path [mirror, chip, sync] {
     foreach method enable following only_cache_owner
 }
@@ -32,9 +29,9 @@ describe statics Files {
     }
 }
 
-describe mirroring OutputStream {
+describe OutputStream [mirror] {
     foreach method enable following only_owner
 }
-describe mirroring InputStream {
+describe InputStream [mirror] {
     foreach method enable following only_owner
 }

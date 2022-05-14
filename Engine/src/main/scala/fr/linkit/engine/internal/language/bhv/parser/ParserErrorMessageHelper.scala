@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
+import java.io.File
 import scala.util.parsing.input.Position
 
 object ParserErrorMessageHelper {
@@ -28,7 +29,7 @@ object ParserErrorMessageHelper {
         val identCount = line.takeWhile(_ == ' ').length
         val cursor     = " " * (start - 1 - identCount) + "^" * (end - start + 1)
         s"""
-           |$kind in ${filePath.tail}: $pos:
+           |$kind in ${filePath.dropWhile(_ == File.separatorChar)}: $pos:
            |${unescape(msg)}
            |${line.trim}
            |$cursor

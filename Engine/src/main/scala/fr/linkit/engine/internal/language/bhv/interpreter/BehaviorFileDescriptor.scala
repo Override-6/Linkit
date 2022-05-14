@@ -4,7 +4,7 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDefUnique, SyncStructureDescription}
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorGroup, MethodContractDescriptor, MirroringStructureContractDescriptor, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, ModifiableValueContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
@@ -25,7 +25,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
     private val valueModifiers   : Map[String, (Class[_], ValueModifier[Any])] = computeValueModifiers()
     private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
-    private val contracts        : Seq[ContractDescriptorGroup[_]]             = computeContracts()
+    private val contracts        : Seq[ContractDescriptorGroup[AnyRef]]        = computeContracts()
 
     lazy val data = {
         new ContractDescriptorDataImpl(contracts.toArray) with LangContractDescriptorData {
@@ -36,36 +36,58 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
         }
     }
 
-    private def computeContracts(): Seq[ContractDescriptorGroup[_]] = {
-        ast.classDescriptions.groupBy(_.head.className).map { case (className, descs) => {
-            val clazz       = file.findClass(className).asInstanceOf[Class[AnyRef]]
-            val defaults    = descs.filter(_.head.kinds.empty)
-            val descriptors = descs.filter(_.head.kinds.nonEmpty)
-                .flatMap {
-                    case ClassDescription(ClassDescriptionHead(kinds, _), foreachMethod, foreachField, fieldDescs, methodDescs) => {
-                        kinds.map { kind =>
-                            val (mirroringInfo0, classDesc) = kind match {
-                                case SyncDescription                => (None, SyncObjectDescription(SyncClassDefUnique(clazz)))
-                                case StaticsDescription             => (None, SyncStaticsDescription(clazz))
-                                case MirroringDescription(stubName) => (Some(MirroringInfo(SyncClassDefUnique(file.findClass(stubName)))), SyncObjectDescription(SyncClassDefUnique(clazz)))
-                            }
-                            val methods0                    = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs)
-                            val fields0                     = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs)
-                            mirroringInfo0.fold(new StructureContractDescriptor[AnyRef] {
-                                override val syncLevel  : SyncLevel                       = kind.syncLevel
-                                override val targetClass: Class[AnyRef]                   = clazz
-                                override val methods    : Array[MethodContractDescriptor] = methods0
-                                override val fields     : Array[FieldContract[Any]]       = fields0
-                            })(mi => new MirroringStructureContractDescriptor[AnyRef] {
-                                override val mirroringInfo: MirroringInfo                   = mi
-                                override val targetClass  : Class[AnyRef]                   = clazz
-                                override val methods      : Array[MethodContractDescriptor] = methods0
-                                override val fields       : Array[FieldContract[Any]]       = fields0
-                            })
-                        }
+    private def computeContracts(): Seq[ContractDescriptorGroup[AnyRef]] = {
+        ast.classDescriptions.groupBy(x => file.findClass(x.head.className)).map { case (clazz, descs) => {
+            implicit val castedClass = clazz.asInstanceOf[Class[AnyRef]]
+            val descriptors0 = descs.map {
+                case ClassDescription(ClassDescriptionHead(kind, _), foreachMethod, foreachField, fieldDescs, methodDescs) => {
+                    val classDesc = kind match {
+                        case StaticsDescription => SyncStaticsDescription(clazz)
+                        case _                  => SyncObjectDescription(SyncClassDefUnique(clazz))
+                    }
+                    implicit val methods0 = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs)
+                    implicit val fields0  = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs)
+
+                    def cast[X](y: Any): X = y.asInstanceOf[X]
+
+                    kind match {
+                        case StaticsDescription         => scd(Statics)
+                        case RegularDescription         => scd()
+                        case LeveledDescription(levels) =>
+                            levels.find(_.isInstanceOf[MirroringLevel])
+                                    .map { case MirroringLevel(stub) =>
+                                        MirroringInfo(SyncClassDefUnique(stub.fold(clazz)(cast(file.findClass(_)))))
+                                    }
+                                    .fold(scd(levels.map(_.syncLevel).filter(_ != Mirroring): _*))(
+                                        mi => new MirroringStructureContractDescriptor[AnyRef] {
+                                            override val mirroringInfo = mi
+                                            override val targetClass   = castedClass
+                                            override val methods       = methods0
+                                            override val fields        = fields0
+                                        })
                     }
                 }
+            }
+            new ContractDescriptorGroup[AnyRef] {
+                override val clazz      : Class[AnyRef]                              = castedClass
+                override val modifier   : Option[ValueModifier[AnyRef]]              = typeModifiers.get(castedClass)
+                override val descriptors: Array[StructureContractDescriptor[AnyRef]] = descriptors0.toArray
+            }
         }
+        }.toSeq
+    }
+
+    private def scd(levels: SyncLevel*)(implicit clazz0: Class[AnyRef], methods0: Array[MethodContractDescriptor], fields0: Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
+        if (levels.isEmpty) return new OverallStructureContractDescriptor[AnyRef] {
+            override val targetClass: Class[AnyRef]                   = clazz0
+            override val methods    : Array[MethodContractDescriptor] = methods0
+            override val fields     : Array[FieldContract[Any]]       = fields0
+        }
+        new MultiStructureContractDescriptor[AnyRef] {
+            override val syncLevels  = levels.toSet
+            override val targetClass = clazz0
+            override val methods     = methods0
+            override val fields      = fields0
         }
     }
 
@@ -75,8 +97,8 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-            .map(new FieldContractImpl[Any](_, desc.state.kind))
-            .toArray
+                .map(new FieldContractImpl[Any](_, desc.state.kind))
+                .toArray
     }
 
     private def foreachMethods(classDesc: SyncStructureDescription[_])
@@ -163,9 +185,9 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         }
                     }
                     val agreement          = desc.agreement
-                        .map(ag => getAgreement(ag.name))
-                        .orElse(referent.map(_.agreement))
-                        .getOrElse(EmptyBuilder)
+                            .map(ag => getAgreement(ag.name))
+                            .orElse(referent.map(_.agreement))
+                            .getOrElse(EmptyBuilder)
                     val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                     val parameterContracts = {
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
@@ -217,7 +239,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
 
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {
         agreementBuilders
-            .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
+                .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
     }
 
     private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {

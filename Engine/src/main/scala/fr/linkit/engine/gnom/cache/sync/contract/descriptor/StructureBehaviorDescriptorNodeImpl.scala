@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, ObjectContractFactory}
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.network.Engine
@@ -23,7 +23,7 @@ import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, EmptyStr
 import org.jetbrains.annotations.Nullable
 
 class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[A],
-                                                       descriptors: Array[StructureContractDescriptor[A]],
+                                                       descriptors: Array[UniqueStructureContractDescriptor[A]],
                                                        val modifier: Option[ValueModifier[A]],
                                                        @Nullable val superClass: StructureBehaviorDescriptorNodeImpl[_ >: A],
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
@@ -31,11 +31,12 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
     private lazy val leveledNodes = computeLeveledNodes()
 
     /*
-    * performs verifications on the node to ensure that the resulted StructureContract would not
-    * throw any exception while being used by synchronized / chipped / mirroring / static connected objects.
-    * */
+        * performs verifications on the node to ensure that the resulted StructureContract would not
+        * throw any exception while being used by synchronized / chipped / mirroring / static connected objects.
+        * */
     private def verify(): Unit = {
         //ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
+        ensureAllDescriptorsConcernsConnectableLevel()
         ensureAllDescriptorsAreAtSameLevel()
         leveledNodes.foreach(_.verify())
     }
@@ -53,9 +54,17 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         new HeritageValueModifier(factory, limit)
     }
 
+    private def ensureAllDescriptorsConcernsConnectableLevel(): Unit = {
+        descriptors.find(!_.syncLevel.isConnectable) match {
+            case None       =>
+            case Some(desc) =>
+                throw new BadContractException(s"Contract for '$clazz' have a structure descriptor contract that describes a behavior contract at a non-connectable level (${desc.syncLevel})")
+        }
+    }
+
     private def ensureAllDescriptorsAreAtSameLevel(): Unit = {
         descriptors.foreach(d => if (d.targetClass != clazz)
-            throw new BadContractException(s"SBD node for $clazz contains illegal descriptor for ${d.targetClass}"))
+            throw new BadContractException(s"contract for $clazz contains illegal descriptor for ${d.targetClass}"))
     }
 
     private def computeLeveledNodes(): Array[LeveledSBDN[A]] = {
@@ -64,11 +73,13 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         })
     }
 
-    private def getMatchingSuperVerifier(descriptor: StructureContractDescriptor[_ <: A]): LeveledSBDN[A] = {
-        leveledNodes.find(_.descriptor.syncLevel == descriptor.syncLevel).getOrElse(
-            new LeveledSBDN(null,
+    private def getMatchingSuperVerifier(descriptor: UniqueStructureContractDescriptor[_ <: A]): LeveledSBDN[A] = {
+        leveledNodes.find(_.descriptor.syncLevel == descriptor.syncLevel).getOrElse {
+            if (superClass == null) null
+            else new LeveledSBDN(null,
                 superClass.getMatchingSuperVerifier(descriptor),
-                interfaces.map(_.getMatchingSuperVerifier(descriptor))))
+                interfaces.map(_.getMatchingSuperVerifier(descriptor)))
+        }
     }
 
     private class HeritageValueModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]) extends ValueModifier[A] {

@@ -1,9 +1,22 @@
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
+ *
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
+ */
+
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, ContractDescriptorGroup, StructureBehaviorDescriptorNode}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, ContractDescriptorGroup, ObjectContractDescriptorGroup, StructureBehaviorDescriptorNode}
 import fr.linkit.engine.internal.utils.ClassMap
 
-class ContractDescriptorDataImpl(val profiles: Array[ContractDescriptorGroup[_]]) extends ContractDescriptorData {
+class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRef]]) extends ContractDescriptorData {
 
     private val nodeMap = computeDescriptors()
 
@@ -20,9 +33,9 @@ class ContractDescriptorDataImpl(val profiles: Array[ContractDescriptorGroup[_]]
     private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
         val descriptors      = rearrangeDescriptors()
         val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()
-        val objDescriptor = descriptors.head
+        var objDescriptor = descriptors.head
         if (objDescriptor.clazz != classOf[Object])
-            throw new IllegalArgumentException("Descriptions sequence's first element must be the java.lang.Object type behavior description.")
+            objDescriptor = ObjectContractDescriptorGroup
 
         val objectRelation = new SyncObjectClassRelation[AnyRef](objDescriptor.clazz, objDescriptor.modifier, null)
         relations.put(objDescriptor.clazz, objectRelation)
@@ -54,9 +67,9 @@ class ContractDescriptorDataImpl(val profiles: Array[ContractDescriptorGroup[_]]
     * */
     private def rearrangeDescriptors(): Array[ContractDescriptorGroup[AnyRef]] = {
         type S = ContractDescriptorGroup[_]
-        profiles.distinct.sorted((a: S, b: S) => {
+        groups.distinct.sorted((a: S, b: S) => {
             getClassHierarchicalDepth(a.clazz) - getClassHierarchicalDepth(b.clazz)
-        }).asInstanceOf[Array[ContractDescriptorGroup[AnyRef]]]
+        })
     }
 
     private def cast[X](y: Any): X = y.asInstanceOf[X]

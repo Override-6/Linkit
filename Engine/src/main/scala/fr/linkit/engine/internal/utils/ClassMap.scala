@@ -27,6 +27,8 @@ class ClassMap[V] extends mutable.HashMap[Class[_], V]() {
         addAll(other.iterator)
     }
 
+    override def apply(key: Class[_]): V = get(key).get
+
     override def get(key: Class[_]): Option[V] = {
         val opt = super.get(key)
         if (opt.isDefined)

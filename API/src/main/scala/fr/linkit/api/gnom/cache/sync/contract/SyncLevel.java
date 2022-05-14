@@ -17,34 +17,45 @@ public enum SyncLevel {
 
     /**
      * don't register the targeted object, ignore it.
-     * */
-    NotRegistered,
+     */
+    NotRegistered(false),
     /**
      * Register the object and make the object become a chipped object.
      * see {@link fr.linkit.api.gnom.cache.sync.ChippedObject}
-     * */
-    ChippedOnly,
+     */
+    ChippedOnly(true),
     /**
      * Register and start synchronized object registration / generation process for the targeted object.
      * The object is also chipped, see {@link fr.linkit.api.gnom.cache.sync.SynchronizedObject}
-     * */
-    Synchronized,
+     */
+    Synchronized(true),
 
     /**
      * Register a synchronized object that mirrors a distant Chipped Object / Synchronized Object.<br>
      * the object is a SynchronizedObject.
-     * */
-    Mirroring,
+     */
+    Mirroring(true),
 
     /**
      * Only registers the object, this way, the same instance of the object is sent <br>
      * to the remote engines instead of sending copy of it (see {@link fr.linkit.api.gnom.reference.NetworkObject})
-     * */
-    Register,
+     */
+    Register(false),
 
     /**
      * Specific state for {@link fr.linkit.api.gnom.network.statics.StaticAccess} and Static accessors.
-     * */
-    Statics,
+     */
+    Statics(true),
+    ;
 
+
+    private final boolean isConnectable;
+
+    SyncLevel(boolean isConnectable) {
+        this.isConnectable = isConnectable;
+    }
+
+    public boolean isConnectable() {
+        return isConnectable;
+    }
 }

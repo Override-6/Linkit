@@ -15,11 +15,23 @@ package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncLevel}
 
-trait StructureContractDescriptor[A <: AnyRef] {
+sealed trait StructureContractDescriptor[A <: AnyRef] {
 
-    val syncLevel  : SyncLevel
     val targetClass: Class[A]
 
-    val methods : Array[MethodContractDescriptor]
-    val fields  : Array[FieldContract[Any]]
+    val methods: Array[MethodContractDescriptor]
+    val fields : Array[FieldContract[Any]]
+}
+
+trait OverallStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A]
+
+trait UniqueStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A] {
+
+    val syncLevel: SyncLevel
+
+}
+
+trait MultiStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A] {
+
+    val syncLevels: Set[SyncLevel]
 }

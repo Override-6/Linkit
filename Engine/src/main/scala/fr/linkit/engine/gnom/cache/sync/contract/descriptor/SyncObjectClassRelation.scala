@@ -13,17 +13,18 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, MirroringStructureContractDescriptor, StructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, SyncLevel}
 import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 
 import scala.collection.mutable.ListBuffer
 
-class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A], modifier: Option[ValueModifier[A]], nextSuperRelation: SyncObjectClassRelation[_ >: A]) {
-    relation =>
+class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A],
+                                           modifier: Option[ValueModifier[A]],
+                                           nextSuperRelation: SyncObjectClassRelation[_ >: A]) { relation =>
 
-    private val descriptors       = ListBuffer.empty[StructureContractDescriptor[A]]
+    private val descriptors       = ListBuffer.empty[UniqueStructureContractDescriptor[A]]
     private val interfaceRelation = ListBuffer.empty[SyncObjectClassRelation[_ >: A]]
 
     def addInterface(interface: SyncObjectClassRelation[_ >: A]): Unit = {
@@ -31,7 +32,26 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A], modifier: 
             interfaceRelation += interface
     }
 
-    def addDescriptor(descriptor: StructureContractDescriptor[A]): Unit = descriptors += descriptor
+    def addDescriptor(descriptor: StructureContractDescriptor[A]): Unit = {
+        descriptor match {
+            case multi: MultiStructureContractDescriptor[A]     =>
+                multi.syncLevels.foreach { lvl =>
+                    descriptors += uscd(lvl, descriptor)
+                }
+            case unique: UniqueStructureContractDescriptor[A]   => descriptors += unique
+            case overall: OverallStructureContractDescriptor[A] =>
+                SyncLevel.values().filter(_.isConnectable).foreach(descriptors += uscd(_, overall))
+        }
+    }
+
+    private def uscd(lvl: SyncLevel, d: StructureContractDescriptor[A]): UniqueStructureContractDescriptor[A] = {
+        new UniqueStructureContractDescriptor[A] {
+            override val syncLevel  : SyncLevel                       = lvl
+            override val targetClass: Class[A]                        = d.targetClass
+            override val methods    : Array[MethodContractDescriptor] = d.methods
+            override val fields     : Array[FieldContract[Any]]       = d.fields
+        }
+    }
 
     def mirroringFusion(implicit t: (MirroringStructureContractDescriptor[A], MirroringStructureContractDescriptor[A])): MirroringStructureContractDescriptor[A] = {
         type D = MirroringStructureContractDescriptor[A]
@@ -44,10 +64,10 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A], modifier: 
         }
     }
 
-    def regularFusion(implicit t: (StructureContractDescriptor[A], StructureContractDescriptor[A])): StructureContractDescriptor[A] = {
-        type D = StructureContractDescriptor[A]
+    def regularFusion(implicit t: (UniqueStructureContractDescriptor[A], UniqueStructureContractDescriptor[A])): UniqueStructureContractDescriptor[A] = {
+        type D = UniqueStructureContractDescriptor[A]
 
-        new StructureContractDescriptor[A] {
+        new UniqueStructureContractDescriptor[A] {
             override val targetClass = t._1.targetClass
             override val syncLevel   = fusion[D, SyncLevel](_.syncLevel, _ == _, (a, _) => a, "sync level")
             override val methods     = fusion[D, Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(b.contains), _ ++ _, "method contract.")
@@ -58,16 +78,15 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A], modifier: 
     private def fusion[D <: StructureContractDescriptor[A], B]
     (extract: D => B, clashes: (B, B) => Boolean, fusion: (B, B) => B, compName: String)(implicit t: (D, D)): B = {
         val (desc, next) = t
-        val a = extract(desc)
-        val b = extract(next)
+        val a            = extract(desc)
+        val b            = extract(next)
         if (clashes(a, b)) err(compName) else fusion(a, b)
     }
-
 
     lazy val asNode: StructureBehaviorDescriptorNodeImpl[A] = {
         val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.asNode
         val descs         = descriptors.groupBy(_.syncLevel).map { case (_, descriptors) =>
-            descriptors.foldLeft(null: StructureContractDescriptor[A])((desc, next) => {
+            descriptors.foldLeft(null: UniqueStructureContractDescriptor[A])((desc, next) => {
 
                 (desc, next) match {
                     case (desc: MirroringStructureContractDescriptor[A], next: MirroringStructureContractDescriptor[A]) =>
@@ -85,8 +104,8 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A], modifier: 
         new StructureBehaviorDescriptorNodeImpl[A](targetClass, descs, modifier, nextSuperNode, interfaceRelation.map(_.asNode).toArray)
     }
 
-    private def emptyDescriptor(next: MirroringStructureContractDescriptor[A]): StructureContractDescriptor[A] = {
-        if (next == null) new StructureContractDescriptor[A] {
+    private def emptyDescriptor(next: MirroringStructureContractDescriptor[A]): UniqueStructureContractDescriptor[A] = {
+        if (next == null) new UniqueStructureContractDescriptor[A] {
             override val syncLevel  : SyncLevel                       = SyncLevel.Mirroring
             override val targetClass: Class[A]                        = SyncObjectClassRelation.this.targetClass
             override val methods    : Array[MethodContractDescriptor] = Array()
