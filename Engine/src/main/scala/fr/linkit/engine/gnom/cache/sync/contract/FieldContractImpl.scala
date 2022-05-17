@@ -18,13 +18,13 @@ import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncLevel, SyncObj
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, SynchronizedObject}
 import fr.linkit.engine.internal.utils.ScalaUtils
 
-class FieldContractImpl[A](val desc: FieldDescription,
+class FieldContractImpl[A](val description: FieldDescription,
                            val registrationKind: SyncLevel) extends FieldContract[A] {
 
     private val isRegistered = registrationKind != SyncLevel.NotRegistered
 
     override def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manip: SyncObjectFieldManipulation): Unit = {
-        val field      = desc.javaField
+        val field      = description.javaField
         var fieldValue = ScalaUtils.getValue(obj, field)
         //As the given object is being synchronized,
         fieldValue = manip.findConnectedVersion(fieldValue).getOrElse(fieldValue)

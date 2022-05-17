@@ -32,7 +32,7 @@ final class SyncClassDefUnique(val mainClass: Class[_]) extends SyncClassDef {
 
     val id: Int = mainClass.getName.hashCode.abs
 
-    override def toString: String = s"class def $mainClass"
+    override def toString: String = s"class def ${mainClass.getName}"
 
     def isAssignableFromThis(clazz: Class[_]): Boolean = clazz.isAssignableFrom(mainClass)
 
@@ -45,7 +45,7 @@ final class SyncClassDefMultiple(val mainClass: Class[_], val interfaces: Array[
 
     override val id: Int = util.Arrays.hashCode(Array[AnyRef](mainClass.getName) ++ interfaces.map(_.getName)).abs
 
-    override def toString: String = s"class def $mainClass with interfaces ${interfaces.map(_.getName).mkString(", ")}"
+    override def toString: String = s"class def ${mainClass.getName} with interfaces ${interfaces.map(_.getName).mkString(", ")}"
 
     override def isAssignableFromThis(clazz: Class[_]): Boolean = clazz.isAssignableFrom(mainClass) || interfaces.exists(clazz.isAssignableFrom)
 

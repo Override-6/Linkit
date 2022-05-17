@@ -40,14 +40,10 @@ class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
     override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator     =>
-                factory.getContract(creator.targettedClass.asInstanceOf[Class[StaticsCaller]], context)
+                factory.getContract(creator.targettedClass.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
             case InstanceWrapper(methodCaller: StaticsCaller) =>
                 val cl = methodCaller.staticsTarget
-                if (context.syncLevel != SyncLevel.Statics) {
-                    throw new IllegalArgumentException(
-                        s"attempted to create a connected statics accessor for $cl, but the given context does not say the resulting object will be used as a statics accessor. (context.syncLevel = ${context.syncLevel} and should be SyncLevel.${SyncLevel.Statics})")
-                }
-                factory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context)
+                factory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
             case _                                            =>
                 throwUOE()
         }

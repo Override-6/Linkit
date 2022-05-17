@@ -84,7 +84,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     override def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not owner by this tree's cache.")
-        insertObject[B](parent.treePath, source, ownerID, insertionKind)
+        insertObject[B](parent.nodePath, source, ownerID, insertionKind)
     }
 
     override def insertObject[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
@@ -115,15 +115,15 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                     case _                  => throw new IllegalArgumentException("inserting mirroring object but 'obj' argument is not a java.lang.Class object.")
                 }
                 val syncObject                     = instantiator.newSynchronizedInstance[B](new MirroringInstanceCreator[B](classDef))
-                val result: ConnectedObjectNode[B] = initSynchronizedObject[B](parentNode, id, syncObject, None, ownerID)
+                val result: ConnectedObjectNode[B] = initSynchronizedObject[B](parentNode, id, syncObject, None, ownerID, true)
                 result
         }
     }
 
-    private def findNode0[B <: AnyRef](path: Array[Int]): Option[ObjectSyncNodeImpl[B]] = {
+    private def findNode0[B <: AnyRef](path: Array[Int]): Option[MutableNode[B]] = {
         if (!path.headOption.contains(root.id))
             return None
-        var ch: ObjectSyncNodeImpl[_ <: AnyRef] = root
+        var ch: MutableNode[_ <: AnyRef] = root
         for (childID <- path.drop(1)) {
             val opt = ch.getChild(childID)
             if (opt.isEmpty)
@@ -165,7 +165,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                         newChippedObject(parent, id, source, ownerID)
                     case Synchronized =>
                         val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))
-                        initSynchronizedObject[B](parent, id, syncObject, Some(source), ownerID)
+                        initSynchronizedObject[B](parent, id, syncObject, Some(source), ownerID, false)
                 }
 
         }
@@ -188,11 +188,12 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     private def initSynchronizedObject[B <: AnyRef](parent: MutableNode[_], id: Int,
                                                     syncObject: B with SynchronizedObject[B], origin: Option[B],
-                                                    ownerID: String): ObjectSyncNodeImpl[B] = {
+                                                    ownerID: String, isMirroring: Boolean): ObjectSyncNodeImpl[B] = {
         if (syncObject.isInitialized)
             throw new ConnectedObjectAlreadyInitialisedException(s"Could not register synchronized object '${syncObject.getClass.getName}' : Object already initialized.")
 
-        val data = dataFactory.newNodeData(new SyncNodeDataRequest[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerID))
+        val level = if (isMirroring) SyncLevel.Mirroring else SyncLevel.Synchronized
+        val data = dataFactory.newNodeData(new SyncNodeDataRequest[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerID, level))
         val node = new ObjectSyncNodeImpl[B](data)
         forest.registerReference(node.reference)
         parent.addChild(node)
@@ -216,7 +217,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                 val id = sync.reference.nodePath.last
                 sync match {
                     case sync: SynchronizedObject[AnyRef]         =>
-                        initSynchronizedObject[AnyRef](node, id, sync, Some(sync), ownerID)
+                        initSynchronizedObject[AnyRef](node, id, sync, Some(sync), ownerID, false)
                     case chippedObj: ChippedObjectAdapter[AnyRef] =>
                         initChippedObject[AnyRef](node, id, chippedObj, ownerID)
                 }
@@ -252,7 +253,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                                                               syncObject: B with SynchronizedObject[B], ownerID: String,
                                                               origin: Option[B]): ObjectSyncNode[B] = {
         val wrapperNode = getParent[B](parentPath)
-        initSynchronizedObject[B](wrapperNode, id, syncObject, origin, ownerID)
+        initSynchronizedObject[B](wrapperNode, id, syncObject, origin, ownerID, false)
     }
 
 }

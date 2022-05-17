@@ -49,7 +49,7 @@ case class SimpleResponseHolder(override val id: Int,
         }
 
         queue.add(response)
-        responseConsumer.applyAllLater(response)
+        responseConsumer.applyAll(response)
     }
 
 }

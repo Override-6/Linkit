@@ -14,9 +14,9 @@
 package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.ChippedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ProfilePoolObject, ReferencedPoolObject}
+import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
@@ -234,7 +234,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
 
     private def addTypeOfIfAbsent(ref: AnyRef): Either[Class[_], SyncClassDef] = ref match {
         case sync: ChippedObject[_] =>
-            val implClassDef = sync.getNode.contract.remoteObjectInfo.fold[SyncClassDef](SyncClassDefUnique(sync.getConnectedObjectClass))(_.stubSyncClass)
+            val implClassDef = sync.getNode.contract.remoteObjectInfo.fold[SyncClassDef](sync.getClassDef)(_.stubSyncClass)
 
             val idx = getChunkFromFlag(SyncDef).addIfAbsent(implClassDef)
             if (idx < 0) {

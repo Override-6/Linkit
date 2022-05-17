@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.tree
 
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable
@@ -50,7 +51,7 @@ trait ConnectedObjectNode[A <: AnyRef] {
 
     def obj: ConnectedObject[A]
 
-    lazy val treePath: Array[Int] = {
+    lazy val nodePath: Array[Int] = {
         var parent: ConnectedObjectNode[_] = this
         val buff                = ListBuffer.empty[Int]
         while (parent != null) {

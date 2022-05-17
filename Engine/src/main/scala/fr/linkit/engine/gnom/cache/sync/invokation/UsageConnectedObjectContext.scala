@@ -18,4 +18,8 @@ case class UsageConnectedObjectContext(ownerID: String, rootOwnerID: String,
         case RootOwnerEngine           => rootOwnerID
         case CacheOwnerEngine          => cacheOwnerID
     }
+
+    override def withSyncLevel(syncLevel: SyncLevel): ConnectedObjectContext = {
+        UsageConnectedObjectContext(ownerID, rootOwnerID, currentID, cacheOwnerID, classDef, syncLevel, choreographer)
+    }
 }

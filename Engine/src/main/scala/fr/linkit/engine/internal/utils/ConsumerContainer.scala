@@ -84,8 +84,6 @@ class ConsumerContainer[A]@Persist()() extends Deconstructible {
             } catch {
                 case NonFatal(e) =>
                     onException(e)
-                    //AppLogger.fatal("EXITING VM...")
-                    //System.exit(1)
             }
         })
         this

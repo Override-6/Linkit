@@ -28,7 +28,6 @@ trait SynchronizedObject[A <: AnyRef] extends ChippedObject[A] {
 
     override final def connected: A = this.asInstanceOf[A]
 
-    override final def getConnectedObjectClass: Class[A] = getSourceClass
 
     /**
      * @return The used [[Puppeteer]] of this object.

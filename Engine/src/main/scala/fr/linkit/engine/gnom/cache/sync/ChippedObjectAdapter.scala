@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync
 
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.tree.ChippedObjectNode
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectReference}
@@ -31,7 +32,7 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
 
     override val isMirrored: Boolean = true //pure chipped objects are always mirrored.
 
-    override def getConnectedObjectClass: Class[A] = connected.getClass.asInstanceOf[Class[A]]
+    override def getClassDef: SyncClassDef = SyncClassDefUnique(connected.getClass)
 
     override def reference: ConnectedObjectReference = reference0
 

@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectConnector, ObjectSyncNode}
@@ -54,7 +55,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
-        this.isNotMirroring = !(!isOrigin && contract.remoteObjectInfo.isDefined)
+        this.isNotMirroring = !node.isMirroring
     }
 
     override def isOrigin: Boolean = currentIdentifier == ownerID
@@ -73,7 +74,25 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getNode: ObjectSyncNode[A] = node
 
-    override def isMirrored: Boolean = contract.remoteObjectInfo.isDefined
+    override def isMirrored: Boolean = {
+        contract.remoteObjectInfo.isDefined
+    }
+
+    @transient private lazy val classDef = {
+        var interfaces = getClass.getInterfaces.tail
+        val mainClass = {
+            val superCl = getClass.getSuperclass
+            if (superCl == classOf[Object] || superCl == null) {
+                val itf = interfaces.head
+                interfaces = interfaces.tail
+                itf
+            } else superCl
+        }
+        if (interfaces.nonEmpty) SyncClassDefMultiple(mainClass, interfaces)
+        else SyncClassDefUnique(mainClass)
+    }
+
+    override def getClassDef: SyncClassDef = classDef
 
     protected final def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         if (!isInitialized) {

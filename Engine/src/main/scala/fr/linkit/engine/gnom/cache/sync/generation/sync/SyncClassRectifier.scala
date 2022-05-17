@@ -35,7 +35,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
 
     private val superClass = syncClassDef.mainClass
     private val interfaces = syncClassDef match {
-        case unique: SyncClassDefUnique     => Array()
+        case unique: SyncClassDefUnique     => Array[Class[_]]()
         case multiple: SyncClassDefMultiple => multiple.interfaces
     }
     private val pool       = ClassPool.getDefault
@@ -248,7 +248,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     }
 
     private def getSuperFunBody(javaMethod: Method): String = {
-        if (Modifier.isAbstract(javaMethod.getModifiers)) {
+        if (Modifier.isAbstract(javaMethod.getModifiers) && !Modifier.isNative(javaMethod.getModifiers)) {
             s"""{
                |Throwable x = new ${classOf[AbstractMethodInvocationException].getName}(\"Attempted to call an abstract method on this object. (${javaMethod.getName} in ${superClass} is abstract.)\", null);
                |throw x;

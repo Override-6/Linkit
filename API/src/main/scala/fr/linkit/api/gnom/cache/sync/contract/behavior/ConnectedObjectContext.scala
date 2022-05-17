@@ -33,4 +33,6 @@ trait ConnectedObjectContext {
      * @return true if a is b depending on this context.
      * */
     def areEquals(a: EngineTag, b: EngineTag): Boolean = translate(a) == translate(b)
+
+    def withSyncLevel(syncLevel: SyncLevel): ConnectedObjectContext
 }

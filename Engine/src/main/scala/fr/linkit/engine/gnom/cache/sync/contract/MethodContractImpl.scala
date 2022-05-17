@@ -65,9 +65,10 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any = {
+        if (initialResult == null) return null
         var result = initialResult
         val kind   = returnValueContract.registrationKind
-        if (result != null && kind != NotRegistered && !result.isInstanceOf[ConnectedObject[_]]) {
+        if (kind != NotRegistered && !result.isInstanceOf[ConnectedObject[_]]) {
             val modifier = returnValueContract.modifier.orNull
             if (modifier != null)
                 result = modifier.toRemote(result, remote)

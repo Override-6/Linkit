@@ -5,6 +5,7 @@ import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 
 trait ObjectSyncNode[A <: AnyRef] extends ChippedObjectNode[A] {
 
+    val isMirroring: Boolean
 
     /**
      * The synchronized object.

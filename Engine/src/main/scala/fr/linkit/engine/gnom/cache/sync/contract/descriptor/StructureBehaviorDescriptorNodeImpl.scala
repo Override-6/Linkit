@@ -38,14 +38,14 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         //ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
         ensureAllDescriptorsConcernsConnectableLevel()
         ensureAllDescriptorsAreAtSameLevel()
-        leveledNodes.foreach(_.verify())
+        leveledNodes.values.foreach(_.verify())
     }
 
     override def getContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A] = {
-        leveledNodes.find(_.descriptor.syncLevel == context.syncLevel) match {
+        leveledNodes.get(context.syncLevel) match {
             case Some(sbdn) => sbdn.getContract(clazz, context)
             case None       =>
-                val mirroringInfo = if (context.syncLevel == SyncLevel.Mirroring) Some(autoDefineMirroringInfo(clazz)) else None
+                val mirroringInfo = if (context.syncLevel.mustBeMirrored) Some(autoDefineMirroringInfo(clazz)) else None
                 new EmptyStructureContract[A](clazz, mirroringInfo)
         }
     }
@@ -67,19 +67,19 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
             throw new BadContractException(s"contract for $clazz contains illegal descriptor for ${d.targetClass}"))
     }
 
-    private def computeLeveledNodes(): Array[LeveledSBDN[A]] = {
+    private def computeLeveledNodes(): Map[SyncLevel, LeveledSBDN[A]] = {
         descriptors.map(d => {
-            new LeveledSBDN(d, superClass.getMatchingSuperVerifier(d), interfaces.map(_.getMatchingSuperVerifier(d)))
-        })
+            (d.syncLevel, new LeveledSBDN(d, superClass.getMatchingSuperVerifier(d), interfaces.map(_.getMatchingSuperVerifier(d))))
+        }).toMap
     }
 
     private def getMatchingSuperVerifier(descriptor: UniqueStructureContractDescriptor[_ <: A]): LeveledSBDN[A] = {
-        leveledNodes.find(_.descriptor.syncLevel == descriptor.syncLevel).getOrElse {
+        leveledNodes.getOrElse(descriptor.syncLevel, {
             if (superClass == null) null
             else new LeveledSBDN(null,
                 superClass.getMatchingSuperVerifier(descriptor),
                 interfaces.map(_.getMatchingSuperVerifier(descriptor)))
-        }
+        })
     }
 
     private class HeritageValueModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]) extends ValueModifier[A] {

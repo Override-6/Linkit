@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDefMultiple, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncStructureDescription}
 
 import java.lang.reflect.{Modifier, TypeVariable}
 import scala.collection.immutable.HashSet
@@ -21,13 +21,10 @@ import scala.collection.immutable.HashSet
 object ScalaBlueprintUtilities {
 
     def getGenericParams(desc: SyncStructureDescription[_], transform: TypeVariable[_] => Any): String = {
-        val specs   = desc.specs
-        val classes = specs match {
-            case multiple: SyncClassDefMultiple => specs.mainClass :: multiple.interfaces.toList
-            case _                              => List(specs.mainClass)
-        }
-        val result  = classes
-                .flatMap(_.getTypeParameters)
+        val specs  = desc.specs
+        val main   = specs.mainClass
+        val result = main
+                .getTypeParameters
                 .map(transform)
                 .mkString(",")
         if (result.isEmpty) ""
@@ -77,7 +74,12 @@ object ScalaBlueprintUtilities {
     }
 
     def getParameters(desc: MethodDescription, withTypes: Boolean, withVarargsInlines: Boolean): String = {
-        val params = desc.javaMethod.getParameters
+        val method = desc.javaMethod
+        if (withTypes && method.getName == "equals" &&
+                (method.getParameterTypes sameElements Array(classOf[Object])) &&
+                method.getReturnType == java.lang.Boolean.TYPE)
+            return "arg1: scala.Any" //java.lang.Object method needs a special return
+        val params = method.getParameters
         params.zipWithIndex
                 .map { case (param, idx) => s"arg${idx + 1}" + (if (withTypes) ": " + toScalaString(param.getType)
                 else if (withVarargsInlines && param.isVarArgs) ":_*" else "")

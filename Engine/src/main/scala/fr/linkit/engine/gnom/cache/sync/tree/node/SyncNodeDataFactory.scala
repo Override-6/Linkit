@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 
 trait SyncNodeDataFactory {
@@ -30,7 +31,7 @@ class NormalNodeDataRequest[A <: AnyRef](val parent: MutableNode[_ <: AnyRef],
 
 class SyncNodeDataRequest[A <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
                                        val syncObject: A with SynchronizedObject[A], val origin: Option[A],
-                                       ownerID: String)
+                                       ownerID: String, val syncLevel: SyncLevel)
     extends ChippedObjectNodeDataRequest[A](parent, id, syncObject, ownerID) with NodeDataRequest[A, SyncObjectNodeData[A]]
 
 class ChippedObjectNodeDataRequest[A <: AnyRef](val parent: MutableNode[_ <: AnyRef], val id: Int,

@@ -34,8 +34,8 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
     private val requestConsumers       = ConsumerContainer[DefaultRequestBundle]()
     @volatile private var requestCount = 0
 
-    //debug only
-    private val source = scope.traffic.currentIdentifier
+
+
 
     override def handleBundle(bundle: ChannelPacketBundle): Unit = {
         val packet = bundle.packet

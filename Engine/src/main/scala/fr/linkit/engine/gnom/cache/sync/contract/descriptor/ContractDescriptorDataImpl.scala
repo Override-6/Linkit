@@ -31,22 +31,23 @@ class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRe
     }
 
     private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
-        val descriptors      = rearrangeDescriptors()
+        val groups      = rearrangeGroups()
         val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()
-        var objDescriptor = descriptors.head
-        if (objDescriptor.clazz != classOf[Object])
+        var objDescriptor = groups.head
+        if (objDescriptor.clazz != classOf[Object]) {
             objDescriptor = ObjectContractDescriptorGroup
+        }
 
         val objectRelation = new SyncObjectClassRelation[AnyRef](objDescriptor.clazz, objDescriptor.modifier, null)
         relations.put(objDescriptor.clazz, objectRelation)
-        for (profile <- descriptors.tail) {
-            val clazz  = profile.clazz
+        for (group <- groups) if (group ne objDescriptor) {
+            val clazz  = group.clazz
             val up = relations.get(clazz).getOrElse(objectRelation) //should at least return the java.lang.Object behavior descriptor
             if (up.targetClass == clazz) {
-                profile.descriptors.foreach(up.addDescriptor)
+                group.descriptors.foreach(up.addDescriptor)
             } else {
-                val rel = new SyncObjectClassRelation[AnyRef](clazz, profile.modifier, up)
-                profile.descriptors.foreach(rel.addDescriptor)
+                val rel = new SyncObjectClassRelation[AnyRef](clazz, group.modifier, up)
+                group.descriptors.foreach(rel.addDescriptor)
                 relations.put(clazz, cast(rel))
             }
         }
@@ -65,7 +66,7 @@ class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRe
     * Sorting descriptors by their hierarchy rank, and performing
     * checks to avoid multiple descriptor profiles per class
     * */
-    private def rearrangeDescriptors(): Array[ContractDescriptorGroup[AnyRef]] = {
+    private def rearrangeGroups(): Array[ContractDescriptorGroup[AnyRef]] = {
         type S = ContractDescriptorGroup[_]
         groups.distinct.sorted((a: S, b: S) => {
             getClassHierarchicalDepth(a.clazz) - getClassHierarchicalDepth(b.clazz)

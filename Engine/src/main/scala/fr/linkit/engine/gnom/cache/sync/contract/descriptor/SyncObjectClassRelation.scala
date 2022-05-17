@@ -40,7 +40,7 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A],
                 }
             case unique: UniqueStructureContractDescriptor[A]   => descriptors += unique
             case overall: OverallStructureContractDescriptor[A] =>
-                SyncLevel.values().filter(_.isConnectable).foreach(descriptors += uscd(_, overall))
+                SyncLevel.values().filter(s => s != SyncLevel.Statics && s.isConnectable).foreach(descriptors += uscd(_, overall))
         }
     }
 
@@ -69,7 +69,7 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A],
 
         new UniqueStructureContractDescriptor[A] {
             override val targetClass = t._1.targetClass
-            override val syncLevel   = fusion[D, SyncLevel](_.syncLevel, _ == _, (a, _) => a, "sync level")
+            override val syncLevel   = fusion[D, SyncLevel](_.syncLevel, _ != _, (a, _) => a, "contract at sync level")
             override val methods     = fusion[D, Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(b.contains), _ ++ _, "method contract.")
             override val fields      = fusion[D, Array[FieldContract[Any]]](_.fields, (a, b) => a.exists(b.contains), _ ++ _, "field contract.")
         }
@@ -86,15 +86,17 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A],
     lazy val asNode: StructureBehaviorDescriptorNodeImpl[A] = {
         val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.asNode
         val descs         = descriptors.groupBy(_.syncLevel).map { case (_, descriptors) =>
-            descriptors.foldLeft(null: UniqueStructureContractDescriptor[A])((desc, next) => {
+            descriptors.foldLeft(null: UniqueStructureContractDescriptor[A])((d, next) => {
+                val desc = if (d != null) d else next match {
+                    case next: MirroringStructureContractDescriptor[A] =>
+                        emptyDescriptor(next)
+                    case _                                             =>
+                        emptyDescriptor(next.syncLevel)
+                }
 
-                (desc, next) match {
+                (d, next) match {
                     case (desc: MirroringStructureContractDescriptor[A], next: MirroringStructureContractDescriptor[A]) =>
                         mirroringFusion(desc, next)
-                    case (null, next: MirroringStructureContractDescriptor[A])                                          =>
-                        emptyDescriptor(next)
-                    case (null, _)                                                                                      =>
-                        emptyDescriptor(null)
                     case _                                                                                              =>
                         regularFusion(desc, next)
                 }
@@ -105,18 +107,19 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A],
     }
 
     private def emptyDescriptor(next: MirroringStructureContractDescriptor[A]): UniqueStructureContractDescriptor[A] = {
-        if (next == null) new UniqueStructureContractDescriptor[A] {
-            override val syncLevel  : SyncLevel                       = SyncLevel.Mirroring
-            override val targetClass: Class[A]                        = SyncObjectClassRelation.this.targetClass
-            override val methods    : Array[MethodContractDescriptor] = Array()
-            override val fields     : Array[FieldContract[Any]]       = Array()
-        }
-        else new MirroringStructureContractDescriptor[A] {
+        new MirroringStructureContractDescriptor[A] {
             override val mirroringInfo: MirroringInfo                   = next.mirroringInfo
             override val targetClass  : Class[A]                        = SyncObjectClassRelation.this.targetClass
             override val methods      : Array[MethodContractDescriptor] = Array()
             override val fields       : Array[FieldContract[Any]]       = Array()
         }
+    }
+
+    private def emptyDescriptor(syncLevel0: SyncLevel): UniqueStructureContractDescriptor[A] = new UniqueStructureContractDescriptor[A] {
+        override val syncLevel  : SyncLevel                       = syncLevel0
+        override val targetClass: Class[A]                        = SyncObjectClassRelation.this.targetClass
+        override val methods    : Array[MethodContractDescriptor] = Array()
+        override val fields     : Array[FieldContract[Any]]       = Array()
     }
 
     private def err(compName: String): Nothing = {

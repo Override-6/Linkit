@@ -108,17 +108,17 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             throw new PacketPoolTooLongException(s"Packet total items size exceeded available size (total size: $totalSize, widePacket: $widePacket)")
     }
 
-    private def writeChunk(flag: Byte, poolChunk: PoolChunk[Any]): Unit = {
-        val size = poolChunk.size
+    private def writeChunk(flag: Byte, chunk: PoolChunk[Any]): Unit = {
+        val size = chunk.size
         //Write content
         if (flag >= Int && flag < Char) {
-            ArrayPersistence.writePrimitiveArrayContent(this, poolChunk.array, flag, 0, size)
+            ArrayPersistence.writePrimitiveArrayContent(this, chunk.array, flag, 0, size)
             return
         }
 
         @inline
         def foreach[T](@inline action: T => Unit): Unit = {
-            val items = poolChunk.array.asInstanceOf[Array[T]]
+            val items = chunk.array.asInstanceOf[Array[T]]
             var i     = 0
             while (i < size) {
                 val item = items(i)

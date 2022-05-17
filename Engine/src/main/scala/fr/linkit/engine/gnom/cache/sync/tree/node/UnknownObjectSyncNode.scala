@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.SynchronizedObjectException
 
@@ -29,7 +29,7 @@ class UnknownObjectSyncNode(data: NodeData[AnyRef]) extends MutableSyncNode[AnyR
     override val id            : Int                       = reference.nodePath.last
     private  val childs                                    = mutable.HashMap.empty[Int, MutableNode[_]]
 
-    private var parent0        : MutableNode[_]            = data.parent.getOrElse {
+    private var parent0: MutableNode[_] = data.parent.getOrElse {
         throw new SynchronizedObjectException("Unexpected Unknown Object sync node with no parent")
     }
 
@@ -48,6 +48,8 @@ class UnknownObjectSyncNode(data: NodeData[AnyRef]) extends MutableSyncNode[AnyR
             throw new IllegalArgumentException("can't add self as child")
         childs.put(child.id, child)
     }
+
+    override def getChild[B <: AnyRef](id: Int): Option[MutableNode[B]] = childs.get(id).asInstanceOf[Option[MutableNode[B]]]
 
     override def getMatchingSyncNode(origin: AnyRef): MutableSyncNode[_ <: AnyRef] = {
         for (child <- childs.values) child match {

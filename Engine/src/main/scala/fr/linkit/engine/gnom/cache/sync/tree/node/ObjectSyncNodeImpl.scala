@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.engine.gnom.cache.sync.{AbstractSynchronizedObject, IllegalSynchronizedObjectException}
@@ -26,6 +27,9 @@ class ObjectSyncNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends Chipp
     override def obj: A with SynchronizedObject[A] = data.obj
 
     private val originRef = data.origin.orNull
+
+    override val isMirroring: Boolean = data.syncLevel == SyncLevel.Mirroring
+
 
     initSyncObject()
 

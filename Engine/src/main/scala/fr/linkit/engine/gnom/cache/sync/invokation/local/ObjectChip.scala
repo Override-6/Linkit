@@ -30,7 +30,6 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         extends Chip[A] {
 
     private val chipped     = chippedObject.connected
-    private val sourceClass = chippedObject.getConnectedObjectClass
     private val isDistant   = contract.remoteObjectInfo.isDefined
     private val isOrigin    = chippedObject.isOrigin
 
@@ -40,7 +39,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
 
     override def callMethod(methodID: Int, params: Array[Any], caller: Engine): Any = {
         val methodContract = contract.findMethodContract[Any](methodID).getOrElse {
-            throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${sourceClass}.")
+            throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${chippedObject.getClassDef}.")
         }
         val hideMsg        = methodContract.hideMessage
         if (hideMsg.isDefined)

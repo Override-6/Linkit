@@ -13,10 +13,12 @@
 
 package fr.linkit.api.gnom.cache.sync
 
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectNode
 import fr.linkit.api.gnom.reference.DynamicNetworkObject
 
 trait ConnectedObject[A <: AnyRef] extends DynamicNetworkObject[ConnectedObjectReference] {
+
     def connected: A
 
     /**
@@ -29,13 +31,11 @@ trait ConnectedObject[A <: AnyRef] extends DynamicNetworkObject[ConnectedObjectR
      * */
     def getNode: ConnectedObjectNode[A]
 
-
     /**
      * @return true if this object is the original among other copies of the same object on other clients.<br>
      *         An original object can <b>ONLY</b> be present on the current engine.
      */
     def isOrigin: Boolean
-
 
     /**
      * Note: a connected object is always initialized if it was retrieved normally.
@@ -44,6 +44,6 @@ trait ConnectedObject[A <: AnyRef] extends DynamicNetworkObject[ConnectedObjectR
      */
     def isInitialized: Boolean
 
-    def getConnectedObjectClass: Class[A]
+    def getClassDef: SyncClassDef
 
 }

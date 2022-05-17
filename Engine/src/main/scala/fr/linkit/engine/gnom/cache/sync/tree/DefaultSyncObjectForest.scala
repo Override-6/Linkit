@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
@@ -143,7 +144,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                         throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
                 case node: UnknownObjectSyncNode =>
                     val parent = node.parent.asInstanceOf[MutableNode[AnyRef]]
-                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync, None, reference.ownerID))
+                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync,  None, reference.ownerID, SyncLevel.Synchronized)) //deserialized Mirroring objects are not init here.
                     node.setAsKnownObjectNode(data)
             }
         }

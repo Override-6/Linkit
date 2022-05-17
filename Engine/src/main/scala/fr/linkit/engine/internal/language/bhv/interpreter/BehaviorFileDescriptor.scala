@@ -213,7 +213,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                                         (descriptions: Seq[AttributedFieldDescription]): Array[FieldContract[Any]] = {
         val result = descriptions.map { field =>
             val desc        = file.getFieldDescFromName(kind, field.fieldName, classDesc)
-            val referentPos = foreachResult.indexWhere(_.desc.javaField.getName == field.fieldName)
+            val referentPos = foreachResult.indexWhere(_.description.javaField.getName == field.fieldName)
             val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
             if (referentPos != -1)
                 foreachResult(referentPos) = null //removing old version

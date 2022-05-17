@@ -1,6 +1,7 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
@@ -80,21 +81,17 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
 
     override def toString: String = s"node $reference for chipped object ${obj.connected}"
 
-    def getChild[B <: AnyRef](id: Int): Option[ObjectSyncNodeImpl[B]] = (childs.get(id): Any) match {
-        case None        => None
-        case Some(value) => value match {
-            case node: ObjectSyncNodeImpl[B] => Some(node)
-            case _                           => None
-        }
+    def getChild[B <: AnyRef](id: Int): Option[MutableNode[B]] = {
+        (childs.get(id): Any).asInstanceOf[Option[MutableNode[B]]]
     }
 
     override def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
-        if (!(packet.path sameElements treePath)) {
+        if (!(packet.path sameElements nodePath)) {
             val packetPath = packet.path
-            if (!packetPath.startsWith(treePath))
+            if (!packetPath.startsWith(nodePath))
                 throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ${packetPath.mkString("/")}.")
 
-            tree.findNode[AnyRef](packetPath.drop(treePath.length))
+            tree.findNode[AnyRef](packetPath.drop(nodePath.length))
                     .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
                         case node: TrafficInterestedNode[_] => node.handlePacket(packet, senderID, response)
                         case _                              =>
@@ -141,13 +138,16 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
 
     private def handleInvocationResult(initialResult: AnyRef, engine: Engine, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
         var result: Any = initialResult
-        if (packet.expectedEngineIDReturn == currentIdentifier) {
+
+        result = if (initialResult != null) {
             val methodContract = contract.findMethodContract[Any](packet.methodID).getOrElse {
                 throw new NoSuchElementException(s"Could not find method contract with identifier #$id for ${contract.clazz}.")
             }
-            result = methodContract.handleInvocationResult(initialResult, engine)((ref, registrationKind) => {
+            methodContract.handleInvocationResult(initialResult, engine)((ref, registrationKind) => {
                 tree.insertObject(this, ref, ownerID, registrationKind).obj
             })
+        } else null
+        if (packet.expectedEngineIDReturn == currentIdentifier) {
             response
                     .addPacket(RefPacket[Any](result))
                     .submit()
