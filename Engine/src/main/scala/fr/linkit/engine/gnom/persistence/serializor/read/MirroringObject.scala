@@ -52,7 +52,7 @@ class MirroringObject(override val referenceIdx: Int,
                     throw new NoSuchConnectedObjectTreeException(s"$errPrefix Could not find object tree $treeId in cache $ref")
                 }.asInstanceOf[DefaultSynchronizedObjectTree[_]]
                 val nodePath  = ref.nodePath
-                val connected = tree.insertObject(nodePath.dropRight(1), stubClassDef, ref.ownerID, SyncLevel.Mirroring).obj
+                val connected = tree.insertObject(nodePath.dropRight(1), stubClassDef, ref.ownerID, SyncLevel.Mirroring, nodePath.last).obj
                 connected
         }
     }

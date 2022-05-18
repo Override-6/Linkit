@@ -20,11 +20,11 @@ object RSFCClient {
             Files.createDirectories(srcPath.getParent)
             Files.createFile(srcPath)
         }
-        val content = Files.readAllBytes(srcPath)
         val destPath: Path        = serverStatics[Path].of[Path]("test.txt", Array[String]())
         val a = destPath.equals("test")
         val b = destPath.hashCode()
         val c = destPath.toString
+        val content = Files.readAllBytes(srcPath)
         val serverStream: OutputStream = serverStatics[Files].newOutputStream[OutputStream](destPath)
         serverStream.write(content)
         serverStream.close()

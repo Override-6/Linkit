@@ -14,6 +14,8 @@
 
 package fr.linkit.api.gnom.cache.sync.contract;
 
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext;
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement;
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder;
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule;
 

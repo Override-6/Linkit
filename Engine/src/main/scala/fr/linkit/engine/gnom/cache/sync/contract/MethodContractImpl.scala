@@ -27,6 +27,7 @@ import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
+import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import org.jetbrains.annotations.Nullable
 
 import scala.annotation.switch
@@ -111,7 +112,12 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             val methodID = description.methodId
             s"RMI - Calling method $methodID $name(${args.mkString(", ")})"
         }
-        method.invoke(obj, args: _*)
+        if (description.isMethodAccessible)
+            method.invoke(obj, args: _*)
+        else {
+            //TODO can be optimised (cache the MethodInvoker)
+            new MethodInvoker(method).invoke(obj, args)
+        }
     }
 
     private def isMirroring(obj: ChippedObject[_]): Boolean = obj match {
@@ -138,8 +144,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {
-        // From here we are sure that we want to perform a remote
-        // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
+
         val currentIdentifier = puppeteer.currentIdentifier
         val objectNode        = localInvocation.objectNode
         val obj               = objectNode.obj
@@ -189,7 +194,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     private def makeDispatch(network: Network,
                              dispatcher: Puppeteer[AnyRef]#RMIDispatcher,
                              invocation: LocalMethodInvocation[_]): Unit = {
-        val args    = invocation.methodArguments
+        val args = invocation.methodArguments
         if (parameterContracts.isEmpty) {
             dispatcher.broadcast(args)
             return

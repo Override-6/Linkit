@@ -16,6 +16,7 @@ package fr.linkit.engine.internal.language.bhv.integration
 import fr.linkit.api.internal.generation.compilation.CompilationContext
 
 import java.io.File
+import java.util
 
 case class LambdaRepositoryContext(fileName: String,
                                    expressions: Array[LambdaExpressionInfo],
@@ -23,7 +24,7 @@ case class LambdaRepositoryContext(fileName: String,
                                    parentLoader: ClassLoader,
                                    importedClasses: Seq[Class[_]]) extends CompilationContext {
 
-    override def className: String = s"LambdaRepository_${fileName.replace(File.separator, "$")}"
+    override def className: String = s"LambdaRepository_${fileName.replace(File.separator, "$")}_${util.Arrays.hashCode(blocks).abs}"
 
     override def classPackage: String = "gen.scala.bhv.expression"
 

@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.gnom.cache.sync.invocation.local.AbstractMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassBlueprint.unsupportedMethodFilter
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{JavaKeywords, SuperMethodModifiers, getMethodDescriptor}
 import javassist._
 import javassist.bytecode.annotation._
@@ -153,6 +154,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
 
         val methodDescs      = desc.listMethods()
                 .toSeq
+                .filterNot(unsupportedMethodFilter)
                 .distinctBy(x => (x.javaMethod.getParameterTypes.toList, x.getName))
         val superDescriptors = ListBuffer.empty[String]
         val methodNames      = ListBuffer.empty[String]
@@ -184,6 +186,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
             fixMethod(desc)
         }
     }
+
 
     private def getAnonFun(desc: MethodDescription): CtMethod = {
         val javaMethod       = desc.javaMethod

@@ -87,8 +87,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         insertObject[B](parent.nodePath, source, ownerID, insertionKind)
     }
 
-    override def insertObject[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
-        insertObject0(parentPath, obj, ownerID, insertionKind, ThreadLocalRandom.current().nextInt())
+    override def insertObject[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectNode[B] = {
+        insertObject0(parentPath, obj, ownerID, insertionKind, idHint)
     }
 
     override def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, insertionKind: SyncLevel): ConnectedObject[AnyRef] = {
@@ -121,7 +121,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     }
 
     private def findNode0[B <: AnyRef](path: Array[Int]): Option[MutableNode[B]] = {
-        if (!path.headOption.contains(root.id))
+        if (path.isEmpty || path.head != root.id)
             return None
         var ch: MutableNode[_] = root
         for (childID <- path.drop(1)) {

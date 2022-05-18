@@ -22,13 +22,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDe
     }
 
     override protected def applyNotFilter(e: Executable): Boolean = {
-        isNotOverrideable(e.getModifiers) || containsNotAccessibleElements(e) || isIllegal(e) ||
-                //FIXME Bug occurred for objects that extends NetworkObject[A].
-                // as SynchronizedObject trait also extends NetworkObject[SyncObjectReference],
-                // a collision may occur as the generated method would be
-                // syncClass#reference: A, which overrides SynchronizedObject#reference: SyncObjectReference (there is an incompatible type definition)
-                // Maybe making the GNOLinkage able to support multiple references to an object would help, but certainly overkill
-                (e.getName == "reference" && e.getParameterTypes.isEmpty)
+        isNotOverrideable(e.getModifiers) || containsNotAccessibleElements(e) || isIllegal(e)
     }
 
     override def deconstruct(): Array[Any] = Array(clazz)

@@ -25,11 +25,11 @@ case class MethodDescription(javaMethod: Method,
         this(javaMethod, classDesc, computeID(javaMethod))
     }
 
-    //TODO native method that cals any method reflectively; this is a fast fix.
-    try {
+    val isMethodAccessible = try {
         javaMethod.setAccessible(true)
+        true
     } catch {
-        case _: InaccessibleObjectException => //do nothing
+        case _: InaccessibleObjectException => false
     }
 
     def getName: String = javaMethod.getName

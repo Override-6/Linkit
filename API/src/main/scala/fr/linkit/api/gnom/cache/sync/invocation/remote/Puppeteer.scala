@@ -54,7 +54,7 @@ trait Puppeteer[S <: AnyRef] {
      * @tparam R the return type of the RMI result value.
      * @return the RMI result value
      */
-    def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R //TODO add a timeout.
+    def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R //TODO add an optional timeout.
 
     /**
      * Send an RMI Invocation based on the given agreement and invocation without waiting for any result.

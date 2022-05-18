@@ -22,7 +22,6 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, ResponseHolder}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
-import fr.linkit.engine.gnom.cache.sync.tree.DefaultSyncObjectForest
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.utils.JavaUtils
@@ -73,9 +72,9 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             throw new IllegalStateException("RMI dispatch has been processed asynchronously.")
         requestResult match {
             case r: R with AnyRef =>
-                if (cache.forest.asInstanceOf[DefaultSyncObjectForest[AnyRef]].isObjectLinked(r))
+                /*if (cache.forest.asInstanceOf[DefaultSyncObjectForest[AnyRef]].isObjectLinked(r))
                     ???///tree.insertObject(nodeReference.nodePath, r, agreement.getAppointedEngineReturn).obj.connected
-                else r
+                else */r
             case null => null.asInstanceOf[R]
         }
     }

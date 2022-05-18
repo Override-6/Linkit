@@ -34,7 +34,7 @@ trait ObjectConnector {
      * @tparam B the type of the object.
      * @return the created node
      */
-    //TODO Should be removed (or only used internally)
+    //TODO may not be accessible publicly
     def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B]
 
     /**
@@ -51,7 +51,7 @@ trait ObjectConnector {
      * @tparam B the type of the object.
      * @return the created node
      */
-    def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B]
+    def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectNode[B]
 
     def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, kind: SyncLevel): ConnectedObject[AnyRef]
 

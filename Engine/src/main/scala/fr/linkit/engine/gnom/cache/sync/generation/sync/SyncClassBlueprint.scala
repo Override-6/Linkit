@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDefMultiple, SyncStructureDescription}
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import ScalaBlueprintUtilities._
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassBlueprint.unsupportedMethodFilter
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
 
@@ -37,6 +38,7 @@ class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStr
             desc.listMethods()
                     .toSeq
                     .distinctBy(x => (x.javaMethod.getParameterTypes.toList, x.getName))
+                    .filterNot(unsupportedMethodFilter)
                     .foreach(action)
         })
 
@@ -61,4 +63,16 @@ class SyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncStr
         tpe.getName + " <: " + tpe.getBounds.map(_.getTypeName).mkString(" with ")
     }
 
+}
+
+object SyncClassBlueprint {
+    def unsupportedMethodFilter(x: MethodDescription): Boolean = {
+        //FIXME Bug occurred for objects that extends NetworkObject[A].
+        // as SynchronizedObject trait also extends NetworkObject[SyncObjectReference],
+        // a collision may occur as the generated method would be
+        // syncClass#reference: A, which overrides SynchronizedObject#reference: SyncObjectReference (there is an incompatible type definition)
+        // Maybe making the GNOLinkage able to support multiple references to an object would help, but certainly overkill
+        val m = x.javaMethod
+        m.getName == "reference" && m.getParameterCount == 0
+    }
 }
