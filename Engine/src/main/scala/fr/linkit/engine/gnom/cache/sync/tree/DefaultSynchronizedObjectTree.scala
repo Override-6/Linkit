@@ -123,20 +123,14 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     private def findNode0[B <: AnyRef](path: Array[Int]): Option[MutableNode[B]] = {
         if (!path.headOption.contains(root.id))
             return None
-        var ch: MutableNode[_ <: AnyRef] = root
+        var ch: MutableNode[_] = root
         for (childID <- path.drop(1)) {
-            val opt = ch.getChild(childID)
+            val opt = ch.getChild[B](childID)
             if (opt.isEmpty)
                 return None
             ch = opt.get
         }
-        Option(ch) match {
-            case None        => None
-            case Some(value) => value match {
-                case node: ObjectSyncNodeImpl[B] => Some(node)
-                case _                           => None
-            }
-        }
+        Option(ch.asInstanceOf[MutableNode[B]])
     }
 
     private def genConnectedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,

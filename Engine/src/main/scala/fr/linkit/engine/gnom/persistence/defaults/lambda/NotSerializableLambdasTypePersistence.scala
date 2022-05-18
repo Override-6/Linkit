@@ -14,10 +14,8 @@
 package fr.linkit.engine.gnom.persistence.defaults.lambda
 
 import fr.linkit.api.gnom.persistence.context.LambdaTypePersistence
-import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 
-import java.lang.invoke.{LambdaMetafactory, MethodHandles, MethodType}
-import java.lang.reflect.Modifier
+import java.lang.invoke.MethodHandles
 
 object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPRepresentation] {
 

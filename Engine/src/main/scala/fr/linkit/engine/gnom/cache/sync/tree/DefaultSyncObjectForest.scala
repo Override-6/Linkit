@@ -73,10 +73,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
             return None
         val path = location.nodePath
         trees.get(path.head)
-            .flatMap(_.findNode(path).flatMap((x: ConnectedObjectNode[_]) => x match {
-                case node: ObjectSyncNode[_] => Some(node.obj)
-                case _                       => None
-            }))
+            .flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
     }
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)

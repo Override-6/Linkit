@@ -13,14 +13,16 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIRulesAgreement}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureContractDescriptor, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{autoDefineMirroringInfo, findReasonTypeCantBeSync}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{autoDefineMirroringInfo, findReasonTypeCantBeSync, syncClasses}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import org.jetbrains.annotations.Nullable
 
@@ -37,15 +39,13 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         if (descriptor == null) return
         verifyMirroringHierarchy()
         ensureNoSyncFieldIsPrimitive()
-        ensureNoSyncFieldIsStatic()
+        ensureNoSyncFieldIsStaticOrMirroring()
         ensureNoMethodContainsPrimitiveSyncComp()
         ensureFieldsAndMethodsCorrespondToTheRightLevel()
         warnAllHiddenMethodsWithDescribedBehavior()
     }
 
     private def ensureAllMethodDescribedWhenMirroring(contracts: Iterable[MethodContract[_]], clazzDef: SyncClassDef): Unit = {
-        val selfIsMirrorable = descriptor.isInstanceOf[MirroringStructureContractDescriptor[_]]
-        if (!selfIsMirrorable) return
         val classMethods = listMethods(clazzDef)
         for (contract <- contracts) {
             val contractMethod = contract.description.methodId
@@ -69,6 +69,8 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         val methods = mutable.HashMap.empty[Int, Method]
 
         def acc(clazz: Class[_]): Unit = {
+            if (syncClasses.contains(clazz))
+                return
             var cl = clazz
             while (cl != null) {
                 methods ++= cl.getDeclaredMethods
@@ -83,27 +85,34 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             case multiple: SyncClassDefMultiple => multiple.interfaces.foreach(acc)
             case _: SyncClassDefUnique          =>
         }
-        methods
+        methods.filterNot(m => {
+            val mId = MethodDescription.computeID(m._2)
+            syncClasses.exists(_.getDeclaredMethods.exists(MethodDescription.computeID(_) == mId))
+        })
     }
 
-    private def ensureNoSyncFieldIsStatic(): Unit = {
-        if (descriptor.fields.exists(fc => fc.registrationKind != NotRegistered && Modifier.isStatic(fc.description.javaField.getModifiers)))
+    private def ensureNoSyncFieldIsStaticOrMirroring(): Unit = {
+        val level = descriptor.syncLevel
+        if (descriptor.fields.exists(fc => fc.registrationKind != NotRegistered && (level == Mirroring || Modifier.isStatic(fc.description.javaField.getModifiers)))) {
+            if (level == Mirroring)
+                throw new BadContractException(s"in $clazz: synchronized fields in mirroring objects are not supported.")
             throw new BadContractException(s"in $clazz: static synchronized fields are not supported.")
+        }
     }
 
     private def ensureFieldsAndMethodsCorrespondToTheRightLevel(): Unit = {
         val isStatic = descriptor.syncLevel == Statics
 
-        def ensureCompIsCorrect(comp: Member): Unit = {
-            val isCompStatic = Modifier.isStatic(comp.getModifiers)
+        def ensureMemberIsCorrect(member: Member): Unit = {
+            val isCompStatic = Modifier.isStatic(member.getModifiers)
             if (isCompStatic != isStatic) {
-                throw new BadContractException(s"descriptor for $clazz contains $comp that is ${if (isCompStatic) "static" else "non static"}" +
+                throw new BadContractException(s"descriptor for $clazz contains $member that is ${if (isCompStatic) "static" else "non static"}" +
                         s" but the descriptor's sync level '${descriptor.syncLevel}' can only accept '${if (isStatic) "statics" else "non statics"}' methods and fields")
             }
         }
 
-        descriptor.methods.map(_.description.javaMethod).foreach(ensureCompIsCorrect)
-        descriptor.fields.map(_.description.javaField).foreach(ensureCompIsCorrect)
+        descriptor.methods.map(_.description.javaMethod).foreach(ensureMemberIsCorrect)
+        descriptor.fields.map(_.description.javaField).foreach(ensureMemberIsCorrect)
     }
 
     private def warnAllHiddenMethodsWithDescribedBehavior(): Unit = {
@@ -154,13 +163,17 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
     }
 
     def getContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A] = {
-        if (context.syncLevel != descriptor.syncLevel)
-            throw new IllegalArgumentException(s"context.syncLevel != descriptor.syncLevel (${context.syncLevel} / ${descriptor.syncLevel})")
+        val level = descriptor.syncLevel
+        if (context.syncLevel != level)
+            throw new IllegalArgumentException(s"context.syncLevel != descriptor.syncLevel (${context.syncLevel} / ${level})")
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
         val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
 
         putMethods(methodMap, context)
-        putFields(fieldMap)
+        if (level == Mirroring)
+            ensureAllMethodDescribedWhenMirroring(methodMap.values, context.classDef)
+        if (level != Mirroring && level != Statics) //fields for Mirroring / Statics configurations not supported
+            putFields(fieldMap)
 
         val mirroringInfo = descriptor match {
             case descriptor: MirroringStructureContractDescriptor[_] => Some(descriptor.mirroringInfo)
@@ -206,8 +219,6 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         if (superClass != null)
             superClass.putMethods(map, context)
         interfaces.foreach(_.putMethods(map, context))
-        if (context.syncLevel != Statics)
-            ensureAllMethodDescribedWhenMirroring(map.values, context.classDef)
     }
 
     private def putFields(map: mutable.HashMap[Int, FieldContract[Any]]): Unit = {
@@ -257,6 +268,8 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
 }
 
 object LeveledSBDN {
+
+    private final val syncClasses = Seq(classOf[ConnectedObject[_]], classOf[SynchronizedObject[_]], classOf[ChippedObject[_]], classOf[AbstractSynchronizedObject[_]])
 
     private[descriptor] def autoDefineMirroringInfo(clazz: Class[_]): MirroringInfo = {
         var superClass: Class[_] = clazz

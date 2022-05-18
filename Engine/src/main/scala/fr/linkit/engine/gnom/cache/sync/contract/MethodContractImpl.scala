@@ -105,12 +105,13 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         if (isMirroring(obj))
             throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${obj.reference} on engine ${obj.ownerID}")
         modifyArgsIn(origin, args)
+        val method = description.javaMethod
         AppLogger.debug {
-            val name     = description.javaMethod.getName
+            val name     = method.getName
             val methodID = description.methodId
             s"RMI - Calling method $methodID $name(${args.mkString(", ")})"
         }
-        description.javaMethod.invoke(obj, args: _*)
+        method.invoke(obj, args: _*)
     }
 
     private def isMirroring(obj: ChippedObject[_]): Boolean = obj match {

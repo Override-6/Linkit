@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
-import fr.linkit.api.gnom.cache.sync.OriginReferencedConnectedObjectReference
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, OriginReferencedConnectedObjectReference}
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
@@ -27,9 +27,9 @@ class ReferencedObject(override val referenceIdx: Int,
                        pool: DeserializerObjectPool) extends ReferencedPoolObject {
 
     override lazy val reference: NetworkObjectReference = pool
-        .getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
-        .get(referenceIdx)
-        .value match {
+            .getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
+            .get(referenceIdx)
+            .value match {
         case l: NetworkObjectReference => l
         case o                         =>
             throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
@@ -40,17 +40,17 @@ class ReferencedObject(override val referenceIdx: Int,
     override lazy val value: AnyRef = {
         val loc = reference
         loc.getClass.synchronized {
-            loc match {
+            (loc match {
                 case OriginReferencedConnectedObjectReference(syncRef, originRef) =>
                     val cacheRef = new SharedCacheReference(syncRef.family, syncRef.cacheID)
                     selector.findObject(cacheRef).map {
                         case cache: DefaultSynchronizedObjectCache[AnyRef] =>
-                            val origin   = selector.findObject(originRef).getOrElse {
+                            val origin = selector.findObject(originRef).getOrElse {
                                 throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
                             }
                             cache.forest.linkWithReference(origin, syncRef)
                             origin
-                        case cache =>
+                        case cache                                         =>
                             throw new UnsupportedOperationException(s"Could not deserialize referenced sync object: $cacheRef referer to a shared cache of type '${cache.getClass.getName}', expected: ${classOf[DefaultSynchronizedObjectCache[_]].getName}. ")
                     }.getOrElse(throw new NoSuchElementException(s"could not find any shared cache at $cacheRef"))
 
@@ -58,6 +58,10 @@ class ReferencedObject(override val referenceIdx: Int,
                     selector.findObject(loc).getOrElse {
                         throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
                     }
+            }) match {
+                case c: ConnectedObject[AnyRef] =>
+                    c.connected
+                case o                          => o
             }
         }
     }

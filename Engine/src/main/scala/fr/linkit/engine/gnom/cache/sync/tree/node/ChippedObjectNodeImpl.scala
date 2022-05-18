@@ -139,14 +139,14 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
     private def handleInvocationResult(initialResult: AnyRef, engine: Engine, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
         var result: Any = initialResult
 
-        result = if (initialResult != null) {
+        result = if (initialResult == null) null else {
             val methodContract = contract.findMethodContract[Any](packet.methodID).getOrElse {
                 throw new NoSuchElementException(s"Could not find method contract with identifier #$id for ${contract.clazz}.")
             }
             methodContract.handleInvocationResult(initialResult, engine)((ref, registrationKind) => {
                 tree.insertObject(this, ref, ownerID, registrationKind).obj
             })
-        } else null
+        }
         if (packet.expectedEngineIDReturn == currentIdentifier) {
             response
                     .addPacket(RefPacket[Any](result))
