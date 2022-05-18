@@ -83,7 +83,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     override def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
-            throw new IllegalArgumentException("Parent node's is not owner by this tree's cache.")
+            throw new IllegalArgumentException("Parent node's is not owned by this tree's cache.")
         insertObject[B](parent.nodePath, source, ownerID, insertionKind)
     }
 
@@ -156,7 +156,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             case None                              =>
                 insertionKind match {
                     case ChippedOnly  =>
-                        newChippedObject(parent, id, source, ownerID)
+                        newChippedObject(parent, id, source)
                     case Synchronized =>
                         val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))
                         initSynchronizedObject[B](parent, id, syncObject, Some(source), ownerID, false)
@@ -165,15 +165,15 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         }
     }
 
-    private def newChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chipped: B, ownerID: String): ChippedObjectNode[B] = {
+    private def newChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chipped: B): ChippedObjectNode[B] = {
         //if (ownerID != currentIdentifier)
         //    throw new IllegalConnectedObjectRegistration("Attempted to create a chipped object that is not owned by the current engine. Chipped Objects can only exists on their origin engines.")
         val adapter = new ChippedObjectAdapter[B](chipped)
-        initChippedObject(parent, id, adapter, ownerID)
+        initChippedObject(parent, id, adapter)
     }
 
-    private def initChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, adapter: ChippedObjectAdapter[B], ownerID: String): ChippedObjectNode[B] = {
-        val data = dataFactory.newNodeData(new ChippedObjectNodeDataRequest[B](parent, id, adapter, ownerID))
+    private def initChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, adapter: ChippedObjectAdapter[B]): ChippedObjectNode[B] = {
+        val data = dataFactory.newNodeData(new ChippedObjectNodeDataRequest[B](parent, id, adapter, currentIdentifier))
         val node = new ChippedObjectNodeImpl[B](data)
         parent.addChild(node)
         adapter.initialize(node)
@@ -187,8 +187,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new ConnectedObjectAlreadyInitialisedException(s"Could not register synchronized object '${syncObject.getClass.getName}' : Object already initialized.")
 
         val level = if (isMirroring) SyncLevel.Mirroring else SyncLevel.Synchronized
-        val data = dataFactory.newNodeData(new SyncNodeDataRequest[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerID, level))
-        val node = new ObjectSyncNodeImpl[B](data)
+        val data  = dataFactory.newNodeData(new SyncNodeDataRequest[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerID, level))
+        val node  = new ObjectSyncNodeImpl[B](data)
         forest.registerReference(node.reference)
         parent.addChild(node)
 
@@ -213,7 +213,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                     case sync: SynchronizedObject[AnyRef]         =>
                         initSynchronizedObject[AnyRef](node, id, sync, Some(sync), ownerID, false)
                     case chippedObj: ChippedObjectAdapter[AnyRef] =>
-                        initChippedObject[AnyRef](node, id, chippedObj, ownerID)
+                        newChippedObject[AnyRef](node, id, chippedObj)
                 }
             }
 

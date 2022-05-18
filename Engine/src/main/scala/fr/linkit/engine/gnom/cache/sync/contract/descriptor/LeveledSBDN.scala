@@ -13,21 +13,25 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.OwnerEngine
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIRulesAgreement}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureContractDescriptor, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{autoDefineMirroringInfo, findReasonTypeCantBeSync, syncClasses}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{autoDefineMirroringInfo, findReasonTypeCantBeSync, ownerOnlyAgreement, syncClasses}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
+import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.{Member, Method, Modifier}
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContractDescriptor[A],
                                superClass: LeveledSBDN[_ >: A],
@@ -45,28 +49,31 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         warnAllHiddenMethodsWithDescribedBehavior()
     }
 
-    private def ensureAllMethodDescribedWhenMirroring(contracts: Iterable[MethodContract[_]], clazzDef: SyncClassDef): Unit = {
-        val classMethods = listMethods(clazzDef)
-        for (contract <- contracts) {
-            val contractMethod = contract.description.methodId
-            if (classMethods.contains(contractMethod))
-                classMethods -= contractMethod
+    /**
+     * Applies a default contract for methods of mirroring objects.
+     * should only be applied on contexts with syncLevel set on 'Mirroring'
+     * */
+    private def fixUndescribedMethods(methods: mutable.HashMap[Int, MethodContract[Any]], context: ConnectedObjectContext): Unit = {
+        val clazzDef     = context.classDef
+        val classMethods = listMethodIds(clazzDef)
+        for (contract <- methods.values) {
+            val contractMethodId = contract.description.methodId
+            if (classMethods.contains(contractMethodId))
+                classMethods -= contractMethodId
         }
-        if (classMethods.nonEmpty) {
-            def str(m: Method) = m.getName + m.getParameters.map(_.getType.getName).mkString("(", ", ", ")")
-
-            val methods = classMethods.values.map(str).mkString("- ", "\n- ", "")
-            throw new BadContractException(
-                s"""
-                   |methods below are not bound to any contract, and the resulting connected object is a mirroring object.
-                   |$methods
-                   |for $clazzDef
-                   |""".stripMargin)
+        for (id <- classMethods) {
+            val agreement         = ownerOnlyAgreement.result(context)
+            val methodDesc        = SyncObjectDescription(clazzDef).findMethodDescription(id).get
+            val emergencyContract = new MethodContractImpl[Any](
+                InvocationHandlingMethod.Inherit, context.choreographer,
+                agreement, Array(), SimpleModifiableValueContract.deactivated,
+                methodDesc, None, null)
+            methods.put(id, emergencyContract)
         }
     }
 
-    private def listMethods(syncClassDef: SyncClassDef): mutable.HashMap[Int, Method] = {
-        val methods = mutable.HashMap.empty[Int, Method]
+    private def listMethodIds(syncClassDef: SyncClassDef): ListBuffer[Int] = {
+        val methods = ListBuffer.empty[Int]
 
         def acc(clazz: Class[_]): Unit = {
             if (syncClasses.contains(clazz))
@@ -75,7 +82,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             while (cl != null) {
                 methods ++= cl.getDeclaredMethods
                         .filter(m => !SyncObjectDescription.isNotOverrideable(m.getModifiers))
-                        .map(m => (MethodDescription.computeID(m), m))
+                        .map(MethodDescription.computeID)
                 cl = cl.getSuperclass
             }
         }
@@ -85,9 +92,8 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             case multiple: SyncClassDefMultiple => multiple.interfaces.foreach(acc)
             case _: SyncClassDefUnique          =>
         }
-        methods.filterNot(m => {
-            val mId = MethodDescription.computeID(m._2)
-            syncClasses.exists(_.getDeclaredMethods.exists(MethodDescription.computeID(_) == mId))
+        methods.filterNot(id => {
+            syncClasses.exists(_.getDeclaredMethods.exists(MethodDescription.computeID(_) == id))
         })
     }
 
@@ -171,7 +177,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
 
         putMethods(methodMap, context)
         if (level == Mirroring)
-            ensureAllMethodDescribedWhenMirroring(methodMap.values, context.classDef)
+            fixUndescribedMethods(methodMap, context)
         if (level != Mirroring && level != Statics) //fields for Mirroring / Statics configurations not supported
             putFields(fieldMap)
 
@@ -207,7 +213,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         if (descriptor != null) for (desc <- descriptor.methods) {
             val id = desc.description.methodId
             if (!map.contains(id)) {
-                val agreement = desc.agreement.result(context)
+                val agreement = desc.agreementBuilder.result(context)
                 verifyAgreement(desc.description.javaMethod, agreement, context)
                 val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](NotRegistered))
                 val contract   = new MethodContractImpl[Any](
@@ -269,7 +275,10 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
 
 object LeveledSBDN {
 
-    private final val syncClasses = Seq(classOf[ConnectedObject[_]], classOf[SynchronizedObject[_]], classOf[ChippedObject[_]], classOf[AbstractSynchronizedObject[_]])
+    private final val syncClasses        = Seq(classOf[ConnectedObject[_]], classOf[SynchronizedObject[_]], classOf[ChippedObject[_]], classOf[AbstractSynchronizedObject[_]])
+    private final val ownerOnlyAgreement = new RMIRulesAgreementGenericBuilder()
+            .accept(OwnerEngine)
+            .appointReturn(OwnerEngine)
 
     private[descriptor] def autoDefineMirroringInfo(clazz: Class[_]): MirroringInfo = {
         var superClass: Class[_] = clazz

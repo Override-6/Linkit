@@ -100,7 +100,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val choreographer   = new InvocationChoreographer()
         val reference       = new ConnectedObjectReference(family, cacheID, ownerID, path)
         val presence        = forest.getPresence(reference)
-        val context         = UsageConnectedObjectContext(ownerID, ownerID, currentIdentifier, cacheOwnerId, SyncClassDefUnique(chippedObject.getClass), level, choreographer)
+        val context         = UsageConnectedObjectContext(ownerID, tree.rootNode.ownerID, currentIdentifier, cacheOwnerId, chippedObject.getClassDef, level, choreographer)
         val contract        = contractFactory.getContract[B](originClass, context)
         val chip            = ObjectChip[B](contract, network, chippedObject)
         new ChippedObjectNodeData[B](

@@ -27,10 +27,10 @@ case class MethodContractDescriptorImpl(description: MethodDescription,
                                         parameterContracts: Array[ModifiableValueContract[Any]],
                                         hideMessage: Option[String],
                                         invocationHandlingMethod: InvocationHandlingMethod,
-                                        agreement: RMIRulesAgreementBuilder) extends MethodContractDescriptor {
+                                        agreementBuilder: RMIRulesAgreementBuilder) extends MethodContractDescriptor {
 
     def this(description: MethodDescription, other: MethodContractDescriptor) {
-        this(description, other.forced, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.invocationHandlingMethod, other.agreement)
+        this(description, other.forced, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.invocationHandlingMethod, other.agreementBuilder)
     }
 
 }

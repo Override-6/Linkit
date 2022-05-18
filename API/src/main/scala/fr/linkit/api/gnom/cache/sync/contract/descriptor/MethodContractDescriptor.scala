@@ -28,5 +28,5 @@ trait MethodContractDescriptor {
     val returnValueContract     : Option[ModifiableValueContract[Any]]
     val hideMessage             : Option[String]
     val invocationHandlingMethod: InvocationHandlingMethod
-    val agreement               : RMIRulesAgreementBuilder
+    val agreementBuilder        : RMIRulesAgreementBuilder
 }

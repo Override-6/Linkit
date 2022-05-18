@@ -1,7 +1,6 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
@@ -153,4 +152,5 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
                     .submit()
         }
     }
+
 }

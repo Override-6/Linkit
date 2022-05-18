@@ -186,7 +186,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                     }
                     val agreement          = desc.agreement
                             .map(ag => getAgreement(ag.name))
-                            .orElse(referent.map(_.agreement))
+                            .orElse(referent.map(_.agreementBuilder))
                             .getOrElse(EmptyBuilder)
                     val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                     val parameterContracts = {
