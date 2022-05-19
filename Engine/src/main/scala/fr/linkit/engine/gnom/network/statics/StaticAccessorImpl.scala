@@ -17,19 +17,24 @@ class StaticAccessorImpl(staticCaller: MethodCaller, staticClass: Class[_]) exte
                 .filter(m => Modifier.isStatic(m.getModifiers) && Modifier.isPublic(m.getModifiers))
                 .filter(ScalaUtils.setAccessible)
     }
+
     override def applyDynamic[T: ClassTag](name: String)(params: Any*): T = {
         val returnType                    = classTag[T].runtimeClass
         val arrayParams                   = params.toArray
-        val (methodName, rectifiedParams) = getMethod(name, returnType, arrayParams)
+        val (methodName, rectifiedParams) = searchMethod(name, returnType, arrayParams)
         staticCaller.call(methodName, rectifiedParams).asInstanceOf[T]
     }
 
-    private def getMethod(name: String, returnType: Class[_], params: Array[Any]): (String, Array[Any]) = {
-        val method   = staticMethods.find(m => m.getName == name && m.getReturnType == returnType && isAssignable(params, m))
-                .getOrElse(throw new NoSuchElementException(s"Could not find static method '$name(${params.mkString("Array(", ", ", ")")}): ${returnType.getName}' in class $staticClass"))
-        val methodID = MethodDescription.computeID(method)
-        val nameID = if (methodID < 0) s"_${methodID.abs}" else methodID.toString
-        val lastParameter = method.getParameters.lastOption
+    private def searchMethod(name: String, returnType: Class[_], params: Array[Any]): (String, Array[Any]) = {
+        val mustSpeculate   = returnType == classOf[Nothing] //return type of the method is not specified.
+        val method          = {
+            val found = staticMethods.filter(m => m.getName == name && (mustSpeculate || m.getReturnType == returnType) && isAssignable(params, m))
+            if (found.length == 1) found.head
+            else throw new NoSuchElementException(s"Could not find static method '$name(${params.mkString("Array(", ", ", ")")}): ${if (mustSpeculate) "<?>" else returnType.getName}' in class $staticClass")
+        }
+        val methodID        = MethodDescription.computeID(method)
+        val nameID          = if (methodID < 0) s"_${methodID.abs}" else methodID.toString
+        val lastParameter   = method.getParameters.lastOption
         val rectifiedParams = if (lastParameter.exists(_.isVarArgs)) params :+ Array()(ClassTag(lastParameter.get.getType.componentType())) else params
         (nameID, rectifiedParams)
     }

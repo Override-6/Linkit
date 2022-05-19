@@ -112,11 +112,12 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             val methodID = description.methodId
             s"RMI - Calling method $methodID $name(${args.mkString(", ")})"
         }
+        val target = obj.connected
         if (description.isMethodAccessible)
-            method.invoke(obj, args: _*)
+            method.invoke(target, args: _*)
         else {
             //TODO can be optimised (cache the MethodInvoker)
-            new MethodInvoker(method).invoke(obj, args)
+            new MethodInvoker(method).invoke(target, args)
         }
     }
 

@@ -29,7 +29,7 @@ class InvocationChoreographer(parent: InvocationChoreographer) {
     protected val markedThreads = new mutable.HashSet[Thread]
 
     /**
-     * Disable Sub Invocations<b>
+     * Disable Sub Invocations<br>
      * The provided action will be executed, and during its execution,
      * the current thread will be added into the [[markedThreads]] set.
      *

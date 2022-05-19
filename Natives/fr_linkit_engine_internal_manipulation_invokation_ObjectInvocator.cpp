@@ -30,6 +30,8 @@ JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_invokation
 
 	std::vector<jvalue> values = GetJObjects(env, env->GetByteArrayElements(paramTypes, false), arguments);
 	const jvalue* valuesArray = values.data();
+	if (valuesArray == NULL)
+		valuesArray = {};
 	switch (static_cast<JValueType>(returnType)) {
 	case JValueType::VOID_FLAG:
 		env->CallVoidMethodA(target, methodID, valuesArray);
@@ -57,7 +59,7 @@ JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_invokation
 		return WrapPrimitive(env, "java.lang.Float", "F", val);
 	case JValueType::INT_FLAG:
 		val = env->CallIntMethodA(target, methodID, valuesArray);
-		return WrapPrimitive(env, "java.lang.Int", "I", val);
+		return WrapPrimitive(env, "java.lang.Integer", "I", val);
 	case JValueType::LONG_FLAG:
 		val = env->CallLongMethodA(target, methodID, valuesArray);
 		return WrapPrimitive(env, "java.lang.Long", "J", val);

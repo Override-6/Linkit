@@ -4,7 +4,7 @@ import fr.linkit.examples.ssc.api.{CurrentUserAccount, CurrentUserWallet, UserWa
 
 import scala.collection.mutable
 
-class CurrentUserAccountImpl(override val name: String) extends CurrentUserAccount {
+class CurrentUserAccountImpl(override val getName: String) extends CurrentUserAccount {
 
     private val wallets = mutable.HashMap.empty[String, CurrentUserWallet]
 

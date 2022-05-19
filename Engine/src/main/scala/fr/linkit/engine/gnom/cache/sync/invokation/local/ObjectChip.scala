@@ -26,12 +26,11 @@ import fr.linkit.engine.internal.utils.ScalaUtils
 import scala.annotation.switch
 
 class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
-                                      network: Network, chippedObject: ChippedObject[A])
-        extends Chip[A] {
+                                      network: Network, chippedObject: ChippedObject[A]) extends Chip[A] {
 
-    private val chipped     = chippedObject.connected
-    private val isDistant   = contract.remoteObjectInfo.isDefined
-    private val isOrigin    = chippedObject.isOrigin
+    private val chipped   = chippedObject.connected
+    private val isDistant = contract.remoteObjectInfo.isDefined
+    private val isOrigin  = chippedObject.isOrigin
 
     override def updateObject(obj: A): Unit = {
         ScalaUtils.pasteAllFields(chipped, obj)

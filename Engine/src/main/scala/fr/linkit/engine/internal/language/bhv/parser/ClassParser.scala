@@ -24,8 +24,13 @@ import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol.
 object ClassParser extends BehaviorLanguageParser {
 
     private val classParser = {
-        val syncParser = (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly | Regular ^^^ NotRegistered).? ^^
-                (s => RegistrationState(s.isDefined, s.getOrElse(NotRegistered)))
+        val syncParser = {
+            val options = (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly | Mirror ^^^ Mirroring | Regular ^^^ NotRegistered).?
+            (((Exclamation ^^^ true) ~ options) | (success(false) ~ options)) ^^ {
+                case false ~ s => RegistrationState(s.isDefined, s.getOrElse(NotRegistered))
+                case _         => RegistrationState(true, NotRegistered)
+            }
+        }
         val properties = {
             val property = SquareBracketLeft ~> (identifier <~ Equal) ~ identifier <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
             repsep(property, Comma.?)

@@ -30,7 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue
 
 class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) with RequestPacketChannel {
 
-    private val requestHolders         = new util.LinkedHashMap[Int, WeakReference[SimpleResponseHolder]]()
+    private val requestHolders         = new util.LinkedHashMap[Int, SimpleResponseHolder]()
     private val requestConsumers       = ConsumerContainer[DefaultRequestBundle]()
     @volatile private var requestCount = 0
 
@@ -59,7 +59,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                 val responseID = response.id
                 Option(requestHolders.get(responseID)) match {
                     case Some(request)                     =>
-                        request.get().pushResponse(response)
+                        request.pushResponse(response)
                     case None if responseID > requestCount =>
                         throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
                     case None                              => requestHolders remove responseID
@@ -90,7 +90,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
     }
 
     private[request] def addRequestHolder(holder: SimpleResponseHolder): Unit = {
-        requestHolders.put(holder.id, new WeakReference[SimpleResponseHolder](holder))
+        requestHolders.put(holder.id, holder)
     }
 
 }

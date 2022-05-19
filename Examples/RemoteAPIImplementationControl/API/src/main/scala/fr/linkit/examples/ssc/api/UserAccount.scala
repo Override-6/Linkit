@@ -2,7 +2,7 @@ package fr.linkit.examples.ssc.api
 
 trait UserAccount {
 
-    def name: String
+    def getName: String
 
     def getWallets: Seq[UserWallet]
 

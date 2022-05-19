@@ -44,3 +44,6 @@ describe OutputStream [chip] {
 describe InputStream [chip] {
     foreach method enable following only_owner
 }
+describe statics System {
+    foreach method enable following only_cache_owner
+}

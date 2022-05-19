@@ -25,7 +25,7 @@ class MethodInvoker(method: Method) extends Invoker[Any] {
     private final val paramTypes = method.getParameterTypes.map(ClassTypeTranslator.determineType)
     private final val returnType = ClassTypeTranslator.determineType(method.getReturnType)
 
-    override def invoke(target: AnyRef, args: Array[Any]): Any = {
+    override def invoke(target: Any, args: Array[Any]): Any = {
         ObjectInvocator.invokeMethod0(target, name, signature, paramTypes, returnType, args.asInstanceOf[Array[AnyRef]])
     }
 

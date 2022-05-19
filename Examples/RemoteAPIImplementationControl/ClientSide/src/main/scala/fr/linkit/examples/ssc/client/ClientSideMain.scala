@@ -40,7 +40,7 @@ object ClientSideMain {
     private def connectToAccounts(connection: ConnectionContext): UserAccountContainer = {
         Thread.sleep(250)
         val global     = connection.network.globalCache
-        val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer]())
+        val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer])
         cache.findObject(0).getOrElse(throw new NoSuchElementException("could not find accounts container"))
     }
 

@@ -43,10 +43,10 @@ object ServerBankLauncher {
         val connection = launchApp()
         val network    = connection.network
         val global     = network.globalCache
-        val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer]())
         val app        = connection.getApp
-        val contract   = Contract("BankBehavior")(app, ObjectsProperty.defaults(network))
-        cache.syncObject(0, Constructor[UserAccountContainerImpl](), contract)
+        val contract   = Contract("BankControl", app, ObjectsProperty.defaults(network))
+        val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer](contract))
+        cache.syncObject(0, Constructor[UserAccountContainerImpl]())
     }
 
     private def launchApp(): ServerConnection = {

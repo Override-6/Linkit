@@ -7,6 +7,7 @@ import java.net.URI
 import scala.collection.mutable
 import java.io.*
 import java.nio.file.*
+import java.lang.System
 
 agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_owner
 agreement only_owner = discard * -> accept owner -> appoint owner
@@ -34,4 +35,8 @@ describe OutputStream [mirror] {
 }
 describe InputStream [mirror] {
     foreach method enable following only_owner
+}
+
+describe statics System {
+    foreach method enable following only_cache_owner
 }

@@ -3,6 +3,8 @@ package fr.linkit.server.test
 import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import org.junit.jupiter.api.Test
 
+import java.nio.file.Path
+
 class NativeTests {
     ServerLauncher.launch()
 
@@ -10,13 +12,17 @@ class NativeTests {
         print(s, n, f, i, b, j)
     }
 
-    @Test
-    def methodCaller(): Unit = {
-        val m = getClass.getDeclaredMethods.find(_.getName == "method").get
-        val inv = new MethodInvoker(m)
-        val f = Array("hey", this, 0.8f, 7, true, 8.toLong)
-        inv.invoke(this, f)
+    def method2(): Unit = {
+
     }
 
-
+    @Test
+    def methodCaller(): Unit = {
+        val target = Path.of("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home")
+        val m = target.getClass.getMethods.find(_.getName == "hashCode").get
+        val inv = new MethodInvoker(m)
+        val f = Array[Any]()
+        val x = inv.invoke(target, f)
+        print(s"yeay: ${x}")
+    }
 }

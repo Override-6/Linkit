@@ -15,6 +15,6 @@ package fr.linkit.engine.internal.manipulation.invokation
 
 trait Invoker[R] {
 
-    def invoke(target: AnyRef, args: Array[Any]): R
+    def invoke(target: Any, args: Array[Any]): R
 
 }
