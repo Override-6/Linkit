@@ -33,7 +33,7 @@ describe UserAccountContainer [mirror] {
     foreach method enable following only_cache_owner {
         mirror returnvalue
     }
-    enable listAccounts() {
+    listAccounts() {
         !mirror returnvalue
     }
 }

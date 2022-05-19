@@ -34,7 +34,7 @@ trait ObjectConnector {
      * @tparam B the type of the object.
      * @return the created node
      */
-    //TODO may not be accessible publicly
+    //TODO may not be accessible that publicly
     def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B]
 
     /**

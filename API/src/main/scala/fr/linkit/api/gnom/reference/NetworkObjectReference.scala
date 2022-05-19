@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.reference
 
 trait NetworkObjectReference extends Serializable {
 
-    def parent: Option[NetworkObjectReference]
+    def asSuper: Option[NetworkObjectReference]
 
     def hashCode(): Int
 

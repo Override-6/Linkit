@@ -26,7 +26,7 @@ trait SynchronizedObjectForest[A <: AnyRef] {
      * @param id the tree's identifier.
      * @return Some(SynchronizedObjectTree[A]) if the tree is found, None instead.
      */
-    def findTree(id: Int): Option[SynchronizedObjectTree[A]]
+    def findTree(id: Int): Option[ConnectedObjectTree[A]]
 
     /**
      * Return the content of all stored trees.

@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 trait SyncInstanceCreator[A <: AnyRef] {
 
     val syncClassDef: SyncClassDef
-
+    
     def getInstance(syncClass: Class[A with SynchronizedObject[A]]): A with SynchronizedObject[A]
 
     def getOrigin: Option[A]

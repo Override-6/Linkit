@@ -32,69 +32,70 @@ import scala.collection.mutable
 class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCache[A],
                                            cachePresenceHandler: NetworkPresenceHandler[SharedCacheReference],
                                            omc: ObjectManagementChannel)
-    extends AbstractNetworkPresenceHandler[ConnectedObjectReference](cachePresenceHandler, omc)
-        with InitialisableNetworkObjectLinker[ConnectedObjectReference] with SynchronizedObjectForest[A] {
-
-    private val trees        = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
+        extends AbstractNetworkPresenceHandler[ConnectedObjectReference](cachePresenceHandler, omc)
+                with InitialisableNetworkObjectLinker[ConnectedObjectReference] with SynchronizedObjectForest[A] {
+    
+    private val trees        = new mutable.HashMap[Int, DefaultConnectedObjectTree[A]]
     private val unknownTrees = new mutable.HashMap[Int, UnknownTree]()
-
+    
     /*
     * used to store objects whose synchronized version of keys already have bound references.
     * */
     private val linkedOrigins = mutable.HashMap.empty[AnyRef, ConnectedObjectReference]
-
+    
     override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ConnectedObjectReference]
-
-    override def findTree(id: Int): Option[SynchronizedObjectTree[A]] = {
+    
+    override def findTree(id: Int): Option[ConnectedObjectTree[A]] = {
         trees.get(id)
     }
-
+    
     override def registerReference(ref: ConnectedObjectReference): Unit = {
         super.registerReference(ref)
     }
-
+    
     override def unregisterReference(ref: ConnectedObjectReference): Unit = {
         super.unregisterReference(ref)
     }
-
+    
     override def snapshotContent: CacheRepoContent[A] = {
-        def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {
+        def toProfile(tree: ConnectedObjectTree[A]): ObjectTreeProfile[A] = {
             val node       = tree.rootNode
             val syncObject = node.obj
-            ObjectTreeProfile[A](tree.id, syncObject, node.ownerID, tree.contractFactory.data)
+            val mirror  = syncObject.isMirroring || syncObject.isMirrored
+            ObjectTreeProfile[A](tree.id, syncObject, node.ownerID, mirror, tree.contractFactory.data)
         }
-
+        
         val array = trees.values.map(toProfile).toArray
         new CacheRepoContent[A](array)
     }
-
+    
     override def findObject(location: ConnectedObjectReference): Option[NetworkObject[ConnectedObjectReference]] = {
         if (location.cacheID != center.cacheID || location.family != center.family)
             return None
         val path = location.nodePath
         trees.get(path.head)
-            .flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
+                .flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
     }
-
+    
     override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
-
+    
     override def initializeObject(obj: NetworkObject[_ <: ConnectedObjectReference]): Unit = {
         obj match {
             case syncObj: A with SynchronizedObject[A] => initializeSyncObject(syncObj)
             case _                                     => throwUnknownObject(obj)
         }
     }
-
+    
     def linkWithReference(obj: AnyRef, ref: ConnectedObjectReference): Unit = {
         linkedOrigins(obj) = ref
     }
-
+    
     def removeLinkedReference(obj: AnyRef): Option[ConnectedObjectReference] = linkedOrigins.remove(obj)
-
+    
     def isObjectLinked(obj: AnyRef): Boolean = linkedOrigins.contains(obj)
-
+    
     def isRegisteredAsUnknown(id: Int): Boolean = unknownTrees.contains(id)
-
+    
     def transferUnknownTree(id: Int): Unit = {
         if (!trees.contains(id))
             throw new IllegalStateException(s"Can not transfer unknown tree with id $id: a tree with the same id must be created before transfering all UnknownTree objects into its 'Known' tree ")
@@ -104,7 +105,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                 initializeSyncObject(obj)
         }
     }
-
+    
     private[tree] def findMatchingNode(nonSyncNode: AnyRef): Option[ObjectSyncNode[_]] = {
         for (tree <- trees.values) {
             val opt = tree.findMatchingSyncNode(nonSyncNode)
@@ -113,7 +114,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         }
         None
     }
-
+    
     private def initializeSyncObject(syncObj: SynchronizedObject[_]): Unit = {
         val reference = syncObj.reference
         if (syncObj.isInitialized)
@@ -129,9 +130,9 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         val tree       = treeOpt.get
         val nodeOpt    = tree.findNode[AnyRef](path)
         val parentPath = path.dropRight(1)
-
+        
         def castedSync[X <: AnyRef]: X with SynchronizedObject[X] = syncObj.asInstanceOf[X with SynchronizedObject[X]]
-
+        
         if (nodeOpt.isEmpty) {
             tree.registerSynchronizedObject(parentPath, path.last, castedSync, reference.ownerID, None).obj
         } else {
@@ -141,13 +142,13 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                         throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
                 case node: UnknownObjectSyncNode =>
                     val parent = node.parent.asInstanceOf[MutableNode[AnyRef]]
-                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync,  None, reference.ownerID, SyncLevel.Synchronized)) //deserialized Mirroring objects are not init here.
+                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync, None, reference.ownerID, SyncLevel.Synchronized)) //deserialized Mirroring objects are not init here.
                     node.setAsKnownObjectNode(data)
             }
         }
     }
-
-    private[sync] def addTree(id: Int, tree: DefaultSynchronizedObjectTree[A]): Unit = {
+    
+    private[sync] def addTree(id: Int, tree: DefaultConnectedObjectTree[A]): Unit = {
         if (trees.contains(id))
             throw new SynchronizedObjectException(s"A tree of id '$id' already exists.")
         if (tree.dataFactory ne center)
@@ -155,8 +156,8 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         registerReference(tree.rootNode.reference)
         trees.put(id, tree)
     }
-
-    private[sync] def findTreeInternal(id: Int): Option[DefaultSynchronizedObjectTree[A]] = {
+    
+    private[sync] def findTreeInternal(id: Int): Option[DefaultConnectedObjectTree[A]] = {
         trees.get(id)
     }
 }

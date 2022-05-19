@@ -14,11 +14,12 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, ObjectContractFactory}
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefMultiple
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.{MirroringInfo, StructureContract, SyncLevel}
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.autoDefineMirroringInfo
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{findReasonTypeCantBeSync, getSyncableInterface}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, EmptyStructureContract}
 import org.jetbrains.annotations.Nullable
 
@@ -27,9 +28,9 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
                                                        val modifier: Option[ValueModifier[A]],
                                                        @Nullable val superClass: StructureBehaviorDescriptorNodeImpl[_ >: A],
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
-
+    
     private lazy val leveledNodes = computeLeveledNodes()
-
+    
     /*
         * performs verifications on the node to ensure that the resulted StructureContract would not
         * throw any exception while being used by synchronized / chipped / mirroring / static connected objects.
@@ -40,7 +41,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         ensureAllDescriptorsAreAtSameLevel()
         leveledNodes.values.foreach(_.verify())
     }
-
+    
     override def getContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A] = {
         leveledNodes.get(context.syncLevel) match {
             case Some(sbdn) => sbdn.getContract(clazz, context)
@@ -49,11 +50,20 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
                 new EmptyStructureContract[A](clazz, mirroringInfo)
         }
     }
-
+    
+    private def autoDefineMirroringInfo(clazz: Class[_]): MirroringInfo = {
+        var superClass: Class[_] = clazz
+        while (findReasonTypeCantBeSync(superClass).isDefined) //will be at least java.lang.Object
+            superClass = superClass.getSuperclass
+        
+        val interfaces = clazz.getInterfaces.flatMap(getSyncableInterface)
+        MirroringInfo(SyncClassDefMultiple(superClass, interfaces))
+    }
+    
     override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {
         new HeritageValueModifier(factory, limit)
     }
-
+    
     private def ensureAllDescriptorsConcernsConnectableLevel(): Unit = {
         descriptors.find(!_.syncLevel.isConnectable) match {
             case None       =>
@@ -61,42 +71,42 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
                 throw new BadContractException(s"Contract for '$clazz' have a structure descriptor contract that describes a behavior contract at a non-connectable level (${desc.syncLevel})")
         }
     }
-
+    
     private def ensureAllDescriptorsAreAtSameLevel(): Unit = {
         descriptors.foreach(d => if (d.targetClass != clazz)
             throw new BadContractException(s"contract for $clazz contains illegal descriptor for ${d.targetClass}"))
     }
-
+    
     private def computeLeveledNodes(): Map[SyncLevel, LeveledSBDN[A]] = {
         descriptors.map(d => {
             (d.syncLevel, new LeveledSBDN(d, superClass.getMatchingSuperVerifier(d), interfaces.map(_.getMatchingSuperVerifier(d))))
         }).toMap
     }
-
+    
     private def getMatchingSuperVerifier(descriptor: UniqueStructureContractDescriptor[_ <: A]): LeveledSBDN[A] = {
         leveledNodes.getOrElse(descriptor.syncLevel, {
             if (superClass == null) null
             else new LeveledSBDN(null,
-                superClass.getMatchingSuperVerifier(descriptor),
-                interfaces.map(_.getMatchingSuperVerifier(descriptor)))
+                                 superClass.getMatchingSuperVerifier(descriptor),
+                                 interfaces.map(_.getMatchingSuperVerifier(descriptor)))
         })
     }
-
+    
     private class HeritageValueModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]) extends ValueModifier[A] {
-
+        
         private val modifier = StructureBehaviorDescriptorNodeImpl.this.modifier.orNull
-
+        
         lazy val superClassModifier: Option[ValueModifier[A]] = computeSuperClassModifier()
         lazy val interfacesModifiers                          = computeInterfacesModifiers()
-
+        
         override def fromRemote(input: A, remote: Engine): A = {
             transform(input)(_.fromRemote(_, remote))
         }
-
+        
         override def toRemote(input: A, remote: Engine): A = {
             transform(input)(_.toRemote(_, remote))
         }
-
+        
         def transform(start: A)(f: (ValueModifier[A], A) => A): A = {
             var acc = start
             if (acc == null) {
@@ -113,7 +123,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
             }
             acc
         }
-
+        
         private def handleExternalTransformation(initial: A, externalModifier: ValueModifier[A])(f: (ValueModifier[A], A) => A): A = {
             var a = f(externalModifier, initial)
             if (a == null) {
@@ -127,18 +137,18 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
             else a = f(modifier, a)
             a
         }
-
+        
         private def computeInterfacesModifiers(): Array[ValueModifier[A]] = {
             interfaces.asInstanceOf[Array[StructureBehaviorDescriptorNodeImpl[A]]]
                     .filter(n => limit.isAssignableFrom(n.clazz))
                     .map(_.getInstanceModifier(factory, limit))
         }
-
+        
         private def computeSuperClassModifier(): Option[ValueModifier[A]] = {
             if (!limit.isAssignableFrom(superClass.clazz)) None
             else Some(superClass.asInstanceOf[StructureBehaviorDescriptorNodeImpl[A]].getInstanceModifier(factory, limit))
         }
     }
-
+    
     verify()
 }

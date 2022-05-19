@@ -20,7 +20,7 @@ import java.util
 
 class TrafficObjectReference(val trafficPath: Array[Int]) extends TrafficReference {
 
-    override def parent: Option[NetworkObjectReference] = Some(TrafficReference)
+    override def asSuper: Option[NetworkObjectReference] = Some(TrafficReference)
 
     override def toString: String = {
         s"@traffic/${trafficPath.mkString("/")}"

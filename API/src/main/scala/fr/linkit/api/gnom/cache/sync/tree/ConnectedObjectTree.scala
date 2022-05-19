@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
 
 
-trait SynchronizedObjectTree[A <: AnyRef] {
+trait ConnectedObjectTree[A <: AnyRef] {
 
     /**
      * This tree's identifier (rootNode.id == this.id)

@@ -27,7 +27,7 @@ import scala.collection.mutable.ListBuffer
  */
 trait ConnectedObjectNode[A <: AnyRef] {
 
-    val tree: SynchronizedObjectTree[_]
+    val tree: ConnectedObjectTree[_]
 
     val objectPresence: NetworkObjectPresence
 

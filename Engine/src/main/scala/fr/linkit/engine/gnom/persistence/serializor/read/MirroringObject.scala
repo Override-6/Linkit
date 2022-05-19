@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObjectCache}
 import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, ProfilePoolObject}
-import fr.linkit.engine.gnom.cache.sync.tree.{DefaultSynchronizedObjectTree, NoSuchConnectedObjectTreeException}
+import fr.linkit.engine.gnom.cache.sync.tree.{DefaultConnectedObjectTree, NoSuchConnectedObjectTreeException}
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol.Object
@@ -41,17 +41,17 @@ class MirroringObject(override val referenceIdx: Int,
 
     override lazy val value: AnyRef = {
         val ref      = reference
-        val cacheRef = ref.parent.get
-        lazy val errPrefix = "Could not deserialize mirroring object '$ref':"
+        val cacheRef = ref.asSuper.get
+        lazy val errPrefix = s"Could not deserialize mirroring object '$ref':"
         selector.findObject(cacheRef).getOrElse {
             throw new NoSuchCacheException(s"$errPrefix cache '$cacheRef' not found.")
         } match {
             case cache: SynchronizedObjectCache[_] =>
-                val treeId    = ref.nodePath.head
-                val tree      = cache.forest.findTree(ref.nodePath.head).getOrElse {
-                    throw new NoSuchConnectedObjectTreeException(s"$errPrefix Could not find object tree $treeId in cache $ref")
-                }.asInstanceOf[DefaultSynchronizedObjectTree[_]]
                 val nodePath  = ref.nodePath
+                val treeId    = nodePath.head
+                val tree      = cache.forest.findTree(treeId).getOrElse {
+                    throw new NoSuchConnectedObjectTreeException(s"$errPrefix Could not find object tree $treeId in cache ${cacheRef}")
+                }.asInstanceOf[DefaultConnectedObjectTree[_]]
                 val connected = tree.insertObject(nodePath.dropRight(1), stubClassDef, ref.ownerID, SyncLevel.Mirroring, nodePath.last).obj
                 connected
         }

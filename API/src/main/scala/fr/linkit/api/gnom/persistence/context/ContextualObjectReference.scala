@@ -20,7 +20,7 @@ import java.util
 
 class ContextualObjectReference(trafficPath: Array[Int], val objectID: Int) extends TrafficObjectReference(trafficPath) {
 
-    override def parent: Option[NetworkObjectReference] = Some(new TrafficObjectReference(trafficPath))
+    override def asSuper: Option[NetworkObjectReference] = Some(new TrafficObjectReference(trafficPath))
 
     override def toString: String = super.toString + s"/~$objectID"
 

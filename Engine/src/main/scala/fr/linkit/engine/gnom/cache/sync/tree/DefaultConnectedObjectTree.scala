@@ -29,13 +29,13 @@ import java.util.concurrent.ThreadLocalRandom
 import scala.annotation.switch
 import scala.util.Try
 
-final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
-                                                               network: Network,
-                                                               private[sync] val forest: DefaultSyncObjectForest[A],
-                                                               val instantiator: SyncInstanceInstantiator,
-                                                               val dataFactory: SyncNodeDataFactory,
-                                                               override val id: Int,
-                                                               override val contractFactory: ObjectContractFactory) extends SynchronizedObjectTree[A] with ObjectConnector {
+final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: String,
+                                                            network: Network,
+                                                            private[sync] val forest: DefaultSyncObjectForest[A],
+                                                            val instantiator: SyncInstanceInstantiator,
+                                                            val dataFactory: SyncNodeDataFactory,
+                                                            override val id: Int,
+                                                            override val contractFactory: ObjectContractFactory) extends ConnectedObjectTree[A] with ObjectConnector {
 
     private var root: RootObjectNodeImpl[A] = _
 
@@ -45,7 +45,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
              id: Int,
              instantiator: SyncInstanceInstantiator,
              dataFactory: SyncNodeDataFactory,
-             behaviorTree: ObjectContractFactory)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectNodeImpl[A]) = {
+             behaviorTree: ObjectContractFactory)(rootSupplier: DefaultConnectedObjectTree[A] => RootObjectNodeImpl[A]) = {
         this(currentIdentifier, network, center, instantiator, dataFactory, id, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)

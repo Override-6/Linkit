@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReferen
 
 class NetworkReference() extends NetworkObjectReference {
 
-    override def parent: Option[NetworkObjectReference] = None
+    override def asSuper: Option[NetworkObjectReference] = None
 
     override def toString: String = s"@network"
 

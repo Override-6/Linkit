@@ -44,7 +44,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
 
     override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
         AppLogger.debug(s"Wondering if '$ref' present on engine '$engineId'")
-        val isPresent = (parent == null || ref.parent.exists(r => parent.isPresentOnEngine(engineId, casted(r)))) &&
+        val isPresent = (parent == null || ref.asSuper.exists(r => parent.isPresentOnEngine(engineId, casted(r)))) &&
                 (getPresence(ref).getPresenceFor(engineId) eq PRESENT)
         AppLogger.debug(s"is '$ref' present on engine '$engineId' ? $isPresent")
         isPresent
@@ -62,7 +62,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
         if (traffic != null && traffic.currentIdentifier == engineId)
             return isLocationReferenced(location)
 
-        val parentIsPresent = parent == null || location.parent.exists(r => parent.isPresentOnEngine(engineId, casted(r)))
+        val parentIsPresent = parent == null || location.asSuper.exists(r => parent.isPresentOnEngine(engineId, casted(r)))
         parentIsPresent && {
             AppLogger.debug(s"Asking if $location is present on engine: $engineId")
             val isPresent = channel

@@ -25,7 +25,7 @@ class ConstructorInvoker(constructor: Constructor[_]) extends Invoker[Unit] {
     private final val paramTypes = params.map(ClassTypeTranslator.determineType)
     private final val returnType = ClassTypeTranslator.determineType(Void.TYPE)
 
-    override def invoke(target: AnyRef, args: Array[Any]): Unit = {
+    override def invoke(target: Any, args: Array[Any]): Unit = {
         ObjectInvocator.invokeMethod0(target, "<init>", signature, paramTypes, returnType, args.asInstanceOf[Array[AnyRef]])
     }
 }

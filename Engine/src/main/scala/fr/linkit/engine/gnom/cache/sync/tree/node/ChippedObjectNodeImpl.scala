@@ -10,7 +10,7 @@ import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
-import fr.linkit.engine.gnom.cache.sync.tree.DefaultSynchronizedObjectTree
+import fr.linkit.engine.gnom.cache.sync.tree.DefaultConnectedObjectTree
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 
@@ -26,9 +26,9 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
     private var parent0            : ConnectedObjectNode[_]           = data.parent.orNull
     override  val reference        : ConnectedObjectReference         = data.reference
     override  val id               : Int                              = reference.nodePath.last
-    override  val chip             : Chip[A]                          = data.chip
-    override  val tree             : DefaultSynchronizedObjectTree[_] = data.tree
-    override  val contract         : StructureContract[A]             = data.contract
+    override  val chip             : Chip[A]                       = data.chip
+    override  val tree             : DefaultConnectedObjectTree[_] = data.tree
+    override  val contract         : StructureContract[A]          = data.contract
     override  val choreographer    : InvocationChoreographer          = data.choreographer
     /**
      * The identifier of the engine that posted this object.

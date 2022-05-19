@@ -94,7 +94,7 @@ class SyncObjectClassRelation[A <: AnyRef](val targetClass: Class[A],
                         emptyDescriptor(next.syncLevel)
                 }
 
-                (d, next) match {
+                (desc, next) match {
                     case (desc: MirroringStructureContractDescriptor[A], next: MirroringStructureContractDescriptor[A]) =>
                         mirroringFusion(desc, next)
                     case _                                                                                              =>

@@ -28,5 +28,4 @@ trait ChippedObject[A <: AnyRef] extends ConnectedObject[A] {
 
     def isMirrored: Boolean
 
-
 }

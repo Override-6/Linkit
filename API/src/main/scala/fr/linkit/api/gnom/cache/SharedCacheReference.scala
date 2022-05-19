@@ -17,7 +17,7 @@ import java.util
 
 class SharedCacheReference(family: String, val cacheID: Int) extends SharedCacheManagerReference(family) {
 
-    override def parent: Option[SharedCacheManagerReference] = Some(new SharedCacheManagerReference(family))
+    override def asSuper: Option[SharedCacheManagerReference] = Some(new SharedCacheManagerReference(family))
 
     override def toString: String = {
         s"@network/caches/$family/$cacheID"
