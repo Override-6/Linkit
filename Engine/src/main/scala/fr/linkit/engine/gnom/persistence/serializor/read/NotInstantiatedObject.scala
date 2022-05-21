@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypeProfile}
-import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, PoolObject, RegistrablePoolObject}
+import fr.linkit.api.gnom.persistence.obj.{PoolObject, ProfilePoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
@@ -25,12 +25,12 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
                                          controlBox: ControlBox,
                                          selector: ObjectSelector,
                                          pool: DeserializerObjectPool) extends ProfilePoolObject[T] with RegistrablePoolObject[T] {
-
+    
     private var isInit      : Boolean = false
     private var isRegistered: Boolean = false
     private val obj         : T       = ScalaUtils.allocate[T](clazz)
     private val contentObjects        = new Array[RegistrablePoolObject[AnyRef]](content.length)
-
+    
     override def register(): Unit = {
         if (isRegistered)
             return
@@ -48,17 +48,17 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
             i += 1
         }
     }
-
+    
     override def value: T = {
         if (!isInit)
             initObject()
         obj
     }
-
+    
     override val identity: Int = System.identityHashCode(obj)
-
+    
     override def equals(obj: Any): Boolean = JavaUtils.sameInstance(obj, this.obj)
-
+    
     private def initObject(): Unit = {
         isInit = true
         val content = this.content
@@ -79,5 +79,5 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         }
         profile.getPersistence(args).initInstance(obj, args, controlBox)
     }
-
+    
 }

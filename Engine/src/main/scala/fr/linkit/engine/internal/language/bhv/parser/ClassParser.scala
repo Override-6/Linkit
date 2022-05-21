@@ -13,19 +13,20 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.engine.internal.language.bhv.ast
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword
-import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword.{Sync, _}
+import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
 
 object ClassParser extends BehaviorLanguageParser {
-
+    
     private val classParser = {
         val syncParser = {
-            val options = (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly | Mirror ^^^ Mirroring | Regular ^^^ NotRegistered).?
+            val options = (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly | BehaviorLanguageKeyword.Mirror ^^^ SyncLevel.Mirror | Regular ^^^ NotRegistered).?
             (((Exclamation ^^^ true) ~ options) | (success(false) ~ options)) ^^ {
                 case false ~ s => RegistrationState(s.isDefined, s.getOrElse(NotRegistered))
                 case _         => RegistrationState(true, NotRegistered)
@@ -35,7 +36,7 @@ object ClassParser extends BehaviorLanguageParser {
             val property = SquareBracketLeft ~> (identifier <~ Equal) ~ identifier <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
             repsep(property, Comma.?)
         }
-
+        
         val methodModifierParser       = {
             ((identifier | ReturnValue ^^^ "returnvalue") <~ Arrow) ~ (identifier | modifiers) ^^ {
                 case target ~ (ref: String)                 => ValueModifierReference(target, ref)
@@ -43,13 +44,14 @@ object ClassParser extends BehaviorLanguageParser {
             }
         }
         val returnvalueState           = syncParser <~ ReturnValue | success(RegistrationState(false, NotRegistered))
-        val as                         = Following ~> identifier ^^ AgreementReference
+        val following                  = Following ~> identifier ^^ AgreementReference
         val invHandlingTypeParser      = (Ensinv ^^^ EnableSubInvocations | Disinv ^^^ DisableSubInvocations) | success(Inherit)
         val foreachMethodEnable        = {
             val notModifiers = not(rep1(methodModifierParser)) withFailureMessage "Global method description can't have any modifier"
-            (properties <~ Foreach <~ Method <~ Enable) ~ invHandlingTypeParser ~ as.? ~ (BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight).? ^^ {
-                case properties ~ invMethod ~ ref ~ rvState =>
-                    new EnabledMethodDescription(invMethod, properties, ref, rvState.getOrElse(RegistrationState(false, NotRegistered)))
+            (properties <~ Foreach <~ Method <~ Enable) ~ invHandlingTypeParser ~ following.? ~ (BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight).? ^^ {
+                case properties ~ invMethod ~ agreementRef ~ rvState =>
+                    val state = rvState.getOrElse(RegistrationState(false, NotRegistered))
+                    new EnabledMethodDescription(invMethod, properties, agreementRef, state)
             }
         }
         val foreachMethodDisable       = Foreach ~ Method ~> Disable ^^^ new DisabledMethodDescription()
@@ -58,14 +60,14 @@ object ClassParser extends BehaviorLanguageParser {
         val methodSignature            = {
             val param  = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case sync ~ name ~ id => MethodParam(sync, name, id) }
             val params = repsep(param, Comma)
-
+            
             identifier ~ (ParenLeft ~> params <~ ParenRight).? ^^ { case name ~ params => MethodSignature(name, params.getOrElse(Seq())) }
         }
         val enabledMethodCore          = {
             (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ RegistrationState(false, NotRegistered))
         }
         val enabledMethodParser        = {
-            invHandlingTypeParser ~ properties ~ (Enable.? ~> methodSignature) ~ as.? ~ enabledMethodCore ^^ {
+            invHandlingTypeParser ~ properties ~ (Enable.? ~> methodSignature) ~ following.? ~ enabledMethodCore ^^ {
                 case invMethod ~ properties ~ sig ~ referent ~ (modifiers ~ syncRv) =>
                     EnabledMethodDescription(invMethod, properties, referent, syncRv)(sig, modifiers)
             }
@@ -80,7 +82,7 @@ object ClassParser extends BehaviorLanguageParser {
         val fieldsParser               = syncParser ~ identifier ^^ { case state ~ name => AttributedFieldDescription(name, state) }
         val targetLevels               = {
             val stubParser = ParenLeft ~> identifier <~ ParenRight
-            val mirroring  = Mirror ~> stubParser.? ^^ (MirroringLevel)
+            val mirroring  = BehaviorLanguageKeyword.Mirror ~> stubParser.? ^^ (MirroringLevel)
             mirroring | (Sync ^^^ SynchronizeLevel) | (Chip ^^^ ChipLevel)
         }
         val targetedLevels             = SquareBracketLeft ~> rep1sep(targetLevels, Comma) <~ SquareBracketRight
@@ -97,7 +99,7 @@ object ClassParser extends BehaviorLanguageParser {
             case head ~ foreachFields ~ foreachMethods ~ (fields ~ methods) => ClassDescription(head, foreachMethods, foreachFields, fields, methods)
         }
     }
-
+    
     private[parser] def parser: Parser[ClassDescription] = classParser
-
+    
 }

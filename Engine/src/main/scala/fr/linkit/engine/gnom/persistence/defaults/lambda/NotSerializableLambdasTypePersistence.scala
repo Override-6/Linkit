@@ -38,7 +38,7 @@ object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPR
     }
 
     override def toLambda(representation: JLTPRepresentation): AnyRef = {
-        ???
+        throw new UnsupportedOperationException("Can't deserialize non serializable lambdas.")
         /*val enclosing       = representation.enclosingClass
         val interface       = representation.interface
         val interfaceMethod = interface.getDeclaredMethods.find(m => Modifier.isAbstract(m.getModifiers)).get

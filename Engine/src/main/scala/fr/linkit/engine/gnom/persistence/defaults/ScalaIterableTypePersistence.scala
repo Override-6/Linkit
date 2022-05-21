@@ -22,7 +22,7 @@ import scala.collection.IterableFactory
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal
 
-class ScalaIterableTypePersistence extends TypePersistence[Iterable[Any]] {
+object ScalaIterableTypePersistence extends TypePersistence[Iterable[Any]] {
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 

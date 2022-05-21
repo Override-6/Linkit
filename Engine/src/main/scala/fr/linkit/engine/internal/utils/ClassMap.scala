@@ -16,30 +16,30 @@ package fr.linkit.engine.internal.utils
 import scala.collection.mutable
 
 class ClassMap[V] extends mutable.HashMap[Class[_], V]() {
-
+    
     def this(other: ClassMap[V]) {
         this()
         addAll(other.iterator)
     }
-
+    
     def this(other: Map[Class[_], V]) {
         this()
         addAll(other.iterator)
     }
-
+    
     override def apply(key: Class[_]): V = get(key).get
-
+    
     override def get(key: Class[_]): Option[V] = {
         val opt = super.get(key)
         if (opt.isDefined)
             opt
         else getFirstSuper(key)
     }
-
+    
     private def getFirstSuper(key: Class[_]): Option[V] = {
         if (key == null)
             return super.get(classOf[Object])
-
+            
         val interfaces = key.getInterfaces
         for (interface <- interfaces) {
             val opt = super.get(interface)
@@ -53,6 +53,5 @@ class ClassMap[V] extends mutable.HashMap[Class[_], V]() {
         }
         get(key.getSuperclass)
     }
-
-
+    
 }

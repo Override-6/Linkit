@@ -15,13 +15,13 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.ChippedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, PoolObject}
+import fr.linkit.api.gnom.persistence.obj.{SyncPoolObject, PoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-class MirroringObject(override val stubClassDef: SyncClassDef,
-                      override val referenceIdx: Int,
-                      override val reference: NetworkObjectReference,
-                      override val value: ChippedObject[_]) extends MirroringPoolObject {
+class MirroredObjectWrite(override val stubClassDef: SyncClassDef,
+                          override val referenceIdx: Int,
+                          override val reference: NetworkObjectReference,
+                          override val value: ChippedObject[_]) extends SyncPoolObject {
     override def equals(obj: Any): Boolean = {
         obj match {
             case ref: PoolObject[_] => ref.value == value.connected

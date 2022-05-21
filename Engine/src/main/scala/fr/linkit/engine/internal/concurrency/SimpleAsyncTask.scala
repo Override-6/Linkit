@@ -195,9 +195,10 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     override def isPaused: Boolean = paused
 
     override def wakeup(): Unit = {
-        setContinue()
-        if (isExecuting)
+        if (isExecuting) {
             worker.getController.wakeup(this)
+        }
+        setContinue()
     }
 
     override def setPaused(): Unit = {

@@ -14,12 +14,13 @@
 package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, ConnectedObject, ConnectedObjectReference}
 
 import java.util.concurrent.ThreadLocalRandom
 
 trait ObjectConnector {
-
+    
     /**
      *
      * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
@@ -36,7 +37,7 @@ trait ObjectConnector {
      */
     //TODO may not be accessible that publicly
     def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B]
-
+    
     /**
      *
      * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
@@ -52,7 +53,9 @@ trait ObjectConnector {
      * @return the created node
      */
     def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectNode[B]
-
+    
+    def createMirroredObject[B <: AnyRef](parentPath: Array[Int], classDef: SyncClassDef, ownerID: String, idHint: Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectNode[B]
+    
     def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, kind: SyncLevel): ConnectedObject[AnyRef]
-
+    
 }

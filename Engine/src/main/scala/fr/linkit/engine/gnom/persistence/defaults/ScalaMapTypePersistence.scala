@@ -21,7 +21,7 @@ import fr.linkit.engine.internal.utils.ScalaUtils
 import scala.collection.{IterableFactory, MapFactory}
 import scala.util.control.NonFatal
 
-class ScalaMapTypePersistence extends TypePersistence[collection.Map[Any, Any]] {
+object ScalaMapTypePersistence extends TypePersistence[collection.Map[Any, Any]] {
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 

@@ -59,7 +59,7 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
     override def presence: NetworkObjectPresence = presence0
 
     def initialize(node: ChippedObjectNode[A]): Unit = {
-        if (node.contract.remoteObjectInfo.isEmpty)
+        if (node.contract.mirroringInfo.isEmpty)
             throw new IllegalConnectedObjectException("Pure chipped object's contract must define mirroring information.")
         this.choreographer = node.choreographer
         this.reference0 = node.reference

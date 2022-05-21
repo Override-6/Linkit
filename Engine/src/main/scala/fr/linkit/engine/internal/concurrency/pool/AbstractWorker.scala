@@ -29,20 +29,20 @@ import scala.util.Try
  * */
 private[concurrency] trait AbstractWorker
         extends Worker with WorkerThreadController {
-
+    
     private var isParkingForWorkflow   : Boolean    = false
     private var taskRecursionDepthCount: Int        = 0
     private var currentTask            : ThreadTask = _
     private val workingTasks                        = new mutable.LinkedHashMap[Int, TaskProfile]
     private val forcedTasks                         = ListBuffer.empty[ThreadTask]
     override val pool: WorkerPool
-
+    
     override def getCurrentTask: Option[ThreadTask] = Option(currentTask)
-
+    
     override def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit = {
         ensureCurrentThreadEqualsThis()
         //AppLogger.vError("Entering workflow loop...")
-
+        
         while (loopCondition) {
             //AppLogger.vError("This thread is about to park.")
             isParkingForWorkflow = true
@@ -58,36 +58,37 @@ private[concurrency] trait AbstractWorker
         }
         //AppLogger.vError("Exiting workflow loop...")
     }
-
+    
     override def runTask(task: ThreadTask): Unit = {
         ensureCurrentThreadEqualsThis()
-
+        
         pushTask(task)
         task.runTask()
         removeTask(task)
     }
-
+    
     override def runSubTask(task: Runnable): Unit = {
         taskRecursionDepthCount += 1
         task.run()
         taskRecursionDepthCount -= 1
     }
-
+    
     override def wakeup(task: ThreadTask): Unit = {
         val blocker = LockSupport.getBlocker(thread)
+        AppLogger.debug(s"waking up task ${task.taskID}")
         if (blocker == task) {
             LockSupport.unpark(thread)
             task.setContinue()
-        } else {
-            AppLogger.error(s"Could not wakeup task ${task.taskID}. ($this)")
+        } else if (task.taskID != -1) { //-1 task identifier is for mocked tasks
+            AppLogger.error(s"Could not wakeup task ${task.taskID}. ($blocker, $this)")
         }
     }
-
+    
     private def pushTask(task: ThreadTask): Unit = {
         workingTasks.put(task.taskID, TaskProfile(task))
         currentTask = task
     }
-
+    
     private def removeTask(task: AsyncTask[_]): Unit = {
         val id = task.taskID
         workingTasks.remove(id)
@@ -96,7 +97,7 @@ private[concurrency] trait AbstractWorker
                 .map(_._2.task)
                 .orNull
     }
-
+    
     override def runWhileSleeping(task: => Unit): Unit = {
         if (!isSleeping)
             throw new IllegalThreadStateException("Thread isn't sleeping.")
@@ -105,27 +106,27 @@ private[concurrency] trait AbstractWorker
         if (currentTask != null)
             wakeup(currentTask)
     }
-
+    
     override def taskRecursionDepth: Int = taskRecursionDepthCount
-
+    
     override def getController: WorkerThreadController = this
-
+    
     override def isSleeping: Boolean = isParkingForWorkflow
-
+    
     @inline
     private def ensureCurrentThreadEqualsThis(): Unit = {
         if (Thread.currentThread() != thread)
             throw IllegalThreadException(s"method not called by thread $thread")
     }
-
+    
 }
 
 object AbstractWorker {
-
+    
     case class TaskProfile(task: AsyncTask[_] with AsyncTaskController) {
-
+        
         val taskID: Int = task.taskID
-
+        
     }
-
+    
 }

@@ -138,7 +138,7 @@ class PersistenceConfigBuilder {
             throw new NullPointerException("ObjectManagementChannel is null")
         var config: PersistenceConfig = null
         val store                     = new TypeProfileStore {
-            private def check(): Unit = if (config eq null) throw new IllegalStateException("config not initialized")
+            @inline private def check(): Unit = if (config eq null) throw new IllegalStateException("config not initialized")
 
             override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
                 check()

@@ -61,22 +61,20 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     override def isOrigin: Boolean = currentIdentifier == ownerID
 
     override def isMirroring: Boolean = !isNotMirroring
-
+    
+    override def isMirrored: Boolean = node.isMirrored
+    
     override def reference: ConnectedObjectReference = location
-
+    
     override def presence: NetworkObjectPresence = presenceOnNetwork
-
+    
     override def getSourceClass: Class[A] = originClass.asInstanceOf[Class[A]]
-
+    
     override def getChoreographer: InvocationChoreographer = choreographer
-
+    
     override def getPuppeteer: Puppeteer[A] = puppeteer
 
     override def getNode: ObjectSyncNode[A] = node
-
-    override def isMirrored: Boolean = {
-        contract.remoteObjectInfo.isDefined
-    }
 
     @transient private lazy val classDef = {
         var interfaces = getClass.getInterfaces.tail

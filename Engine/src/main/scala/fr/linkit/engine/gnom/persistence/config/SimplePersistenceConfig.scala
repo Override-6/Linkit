@@ -15,12 +15,12 @@ package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.context._
-import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
+import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.config.profile.DefaultTypeProfile
-import fr.linkit.engine.gnom.persistence.config.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectPersistence, RegularTypePersistence}
-import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
+import fr.linkit.engine.gnom.persistence.config.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, RegularTypePersistence, SynchronizedObjectPersistence}
+import fr.linkit.engine.gnom.persistence.defaults.special.EmptyObjectTypePersistence
 import fr.linkit.engine.internal.utils.ClassMap
 
 import scala.collection.mutable
@@ -31,34 +31,42 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
                                               override val autoContextObjects: Boolean,
                                               override val useUnsafe: Boolean,
                                               override val widePacket: Boolean) extends PersistenceConfig {
-
+    
     private val cachedProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
-
+    
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
         var profile = cachedProfiles.get(clazz).orNull
         if (profile eq null) {
             val isSync = isSyncClass(clazz)
             profile = customProfiles.get(clazz) match {
-                case Some(value: TypeProfile[T]) if isSync => warpTypePersistencesWithSyncPersist[T](value)
-                case Some(value)                           => value
-                case None                                  => newDefaultProfile(clazz)
+                case Some(profile: TypeProfile[T]) if isSync => warpTypePersistencesWithSyncPersist[T](profile)
+                case Some(profile)                           => profile
+                case None                                    => newDefaultProfile(clazz)
             }
             cachedProfiles.put(clazz, profile)
         }
         profile.asInstanceOf[TypeProfile[T]]
     }
-
+    
     override def getProfile[T <: AnyRef](ref: T): TypeProfile[T] = {
+        val clazz = ref.getClass
         ref match {
-            case sync: SynchronizedObject[T] => sync.getNode.contract.remoteObjectInfo match {
-                // force warp because the output of getProfile will be a regular type profile a not a sync type profile
-                case Some(info) => warpTypePersistencesWithSyncPersist(getProfile(info.stubSyncClass.asInstanceOf[Class[T]]))
-                case None       => getProfile(sync.getClass)
-            }
-            case _                           => getProfile(ref.getClass)
+            case sync: SynchronizedObject[T] =>
+                if (sync.isMirrored) newMirroredObjectProfile[T](clazz)
+                else getProfile[T](clazz)
+            case _                           =>
+                ChippedObjectAdapter.findAdapter(ref) match {
+                    case Some(_) => newMirroredObjectProfile(clazz)
+                    case None    => getProfile(clazz)
+                }
         }
     }
-
+    
+    private def newMirroredObjectProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
+        val syncPersist = new SynchronizedObjectPersistence[Nothing](EmptyObjectTypePersistence).asInstanceOf[TypePersistence[T]]
+        new DefaultTypeProfile[T](clazz, this, Array(syncPersist))
+    }
+    
     private def getSyncOriginClass(clazz: Class[_]): Class[_] = {
         val sc = clazz.getSuperclass
         if (sc eq classOf[Object]) {
@@ -66,7 +74,7 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         }
         else sc
     }
-
+    
     private def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
         val isSync                          = isSyncClass(clazz)
         val nonSyncClass                    = if (isSync) getSyncOriginClass(clazz) else clazz
@@ -76,7 +84,7 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         }
         new DefaultTypeProfile[T](nonSyncClass, this, Array(persistence))
     }
-
+    
     private def determinePersistence[T <: AnyRef](clazz: Class[_]): TypePersistence[T] = {
         val constructor = context.findConstructor[T](clazz)
         if (classOf[Deconstructible].isAssignableFrom(clazz)) {
@@ -96,12 +104,12 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
             }
         }
     }
-
+    
     @inline
     private def isSyncClass(clazz: Class[_]): Boolean = {
         classOf[SynchronizedObject[_]].isAssignableFrom(clazz)
     }
-
+    
     private def getSafestTypeProfileOfAnyClass[T <: AnyRef](clazz: Class[_], deconstructor: Option[Deconstructor[T]]): TypePersistence[T] = {
         val constructor = if (classOf[Deconstructible].isAssignableFrom(clazz)) ConstructorTypePersistence.findPersistConstructor[T](clazz) else None
         if (constructor.isEmpty || deconstructor.isEmpty) {
@@ -111,22 +119,10 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         }
         new ConstructorTypePersistence[T](constructor.get, deconstructor.get)
     }
-
+    
     private def warpTypePersistencesWithSyncPersist[T <: AnyRef](profile: TypeProfile[T]): TypeProfile[T] = {
         val persistences = profile.getPersistences.map(new SynchronizedObjectPersistence[Nothing](_).asInstanceOf[TypePersistence[T]])
         new DefaultTypeProfile[T](profile.typeClass, this, persistences)
     }
-
-}
-
-object SimplePersistenceConfig {
-
-    //Used for Remote Synchronized Objects
-    private final val FullRemoteObjectPersistence = new TypePersistence[AnyRef] {
-        override val structure: ObjectStructure = ArrayObjectStructure()
-
-        override def initInstance(allocatedObject: AnyRef, args: Array[Any], box: ControlBox): Unit = ()
-
-        override def toArray(t: AnyRef): Array[Any] = Array.empty
-    }
+    
 }

@@ -15,14 +15,15 @@ package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.persistence.Freezable
-import fr.linkit.api.gnom.persistence.obj.{LambdaObject, MirroringPoolObject, ProfilePoolObject, ReferencedPoolObject}
+import fr.linkit.api.gnom.persistence.obj.{LambdaObject, SyncPoolObject, ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 
 import java.lang
+
 abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
-
+    
     private var frozen = false
-
+    
     protected val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects classes
         new PoolChunk[Class[_]](Class, true, this, sizes(Class)),
@@ -41,25 +42,24 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
         // Objects
         new PoolChunk[Enum[_]](Enum, true, this, sizes(Enum)),
         new PoolChunk[ProfilePoolObject[AnyRef]](Object, false, this, sizes(Object)),
-        new PoolChunk[LambdaObject](Lambda, false,this, sizes(Lambda)),
+        new PoolChunk[LambdaObject](Lambda, false, this, sizes(Lambda)),
         // Arrays
         new PoolChunk[Array[_]](Array, false, this, sizes(Array)),
         // Context Objects Locations
-        new PoolChunk[ReferencedPoolObject](RNO, false, this, sizes(RNO)),
-        new PoolChunk[MirroringPoolObject](Mirroring, false, this, sizes(Mirroring))
-    )
-
+        new PoolChunk[ReferencedPoolObject](RNO, false, this, sizes(RNO))
+        )
+    
     override def freeze(): Unit = frozen = true
-
+    
     override def isFrozen: Boolean = frozen
-
+    
     @inline
     def getChunkFromFlag[T](idx: Byte): PoolChunk[T] = {
         chunks(idx).asInstanceOf[PoolChunk[T]]
     }
-
+    
     def getContextRefChunk: PoolChunk[ReferencedPoolObject] = getChunkFromFlag(RNO)
-
+    
     def getChunks: Array[PoolChunk[Any]] = chunks.asInstanceOf[Array[PoolChunk[Any]]]
-
+    
 }

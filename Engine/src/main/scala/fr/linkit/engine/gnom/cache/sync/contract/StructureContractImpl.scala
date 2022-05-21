@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract._
 
 class StructureContractImpl[A <: AnyRef](override val clazz: Class[_],
-                                         override val remoteObjectInfo: Option[MirroringInfo],
+                                         override val mirroringInfo: Option[MirroringInfo],
                                          val methodContracts: Map[Int, MethodContract[Any]],
                                          val fieldContracts: Array[FieldContract[Any]]) extends StructureContract[A] {
 

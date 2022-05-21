@@ -17,11 +17,13 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefMultiple
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{MirroringInfo, StructureContract, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, MirroringInfo, StructureContract, SyncLevel}
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{findReasonTypeCantBeSync, getSyncableInterface}
-import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, EmptyStructureContract}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{findReasonTypeCantBeSync, fixUndescribedMethods, getSyncableInterface}
+import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, EmptyStructureContract, StructureContractImpl}
 import org.jetbrains.annotations.Nullable
+
+import scala.collection.mutable
 
 class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[A],
                                                        descriptors: Array[UniqueStructureContractDescriptor[A]],
@@ -47,7 +49,11 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
             case Some(sbdn) => sbdn.getContract(clazz, context)
             case None       =>
                 val mirroringInfo = if (context.syncLevel.mustBeMirrored) Some(autoDefineMirroringInfo(clazz)) else None
-                new EmptyStructureContract[A](clazz, mirroringInfo)
+                if (context.syncLevel == SyncLevel.Mirror) {
+                    val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
+                    fixUndescribedMethods(methodMap, context)
+                    new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, Array())
+                } else new EmptyStructureContract[A](clazz, mirroringInfo)
         }
     }
     
@@ -79,16 +85,17 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
     
     private def computeLeveledNodes(): Map[SyncLevel, LeveledSBDN[A]] = {
         descriptors.map(d => {
-            (d.syncLevel, new LeveledSBDN(d, superClass.getMatchingSuperVerifier(d), interfaces.map(_.getMatchingSuperVerifier(d))))
+            val level = d.syncLevel
+            (level, new LeveledSBDN(d, superClass.getLeveledNode(level), interfaces.map(_.getLeveledNode(level))))
         }).toMap
     }
     
-    private def getMatchingSuperVerifier(descriptor: UniqueStructureContractDescriptor[_ <: A]): LeveledSBDN[A] = {
-        leveledNodes.getOrElse(descriptor.syncLevel, {
+    private def getLeveledNode(level: SyncLevel): LeveledSBDN[A] = {
+        leveledNodes.getOrElse(level, {
             if (superClass == null) null
             else new LeveledSBDN(null,
-                                 superClass.getMatchingSuperVerifier(descriptor),
-                                 interfaces.map(_.getMatchingSuperVerifier(descriptor)))
+                                 superClass.getLeveledNode(level),
+                                 interfaces.map(_.getLeveledNode(level)))
         })
     }
     

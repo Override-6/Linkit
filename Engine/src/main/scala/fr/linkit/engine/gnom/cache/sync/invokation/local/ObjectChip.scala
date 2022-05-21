@@ -29,7 +29,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
                                       network: Network, chippedObject: ChippedObject[A]) extends Chip[A] {
 
     private val chipped   = chippedObject.connected
-    private val isDistant = contract.remoteObjectInfo.isDefined
+    private val isDistant = contract.mirroringInfo.isDefined
     private val isOrigin  = chippedObject.isOrigin
 
     override def updateObject(obj: A): Unit = {

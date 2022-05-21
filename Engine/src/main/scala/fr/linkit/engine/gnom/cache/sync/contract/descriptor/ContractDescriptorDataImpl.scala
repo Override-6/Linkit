@@ -32,13 +32,13 @@ class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRe
 
     private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
         val groups      = rearrangeGroups()
-        val relations        = new ClassMap[SyncObjectClassRelation[AnyRef]]()
+        val relations        = new ClassMap[ContractClassRelation[AnyRef]]()
         var objDescriptor = groups.head
         if (objDescriptor.clazz != classOf[Object]) {
             objDescriptor = ObjectContractDescriptorGroup
         }
 
-        val objectRelation = new SyncObjectClassRelation[AnyRef](objDescriptor.clazz, objDescriptor.modifier, null)
+        val objectRelation = new ContractClassRelation[AnyRef](objDescriptor.clazz, objDescriptor.modifier, null)
         relations.put(objDescriptor.clazz, objectRelation)
         for (group <- groups) if (group ne objDescriptor) {
             val clazz  = group.clazz
@@ -46,7 +46,7 @@ class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRe
             if (up.targetClass == clazz) {
                 group.descriptors.foreach(up.addDescriptor)
             } else {
-                val rel = new SyncObjectClassRelation[AnyRef](clazz, group.modifier, up)
+                val rel = new ContractClassRelation[AnyRef](clazz, group.modifier, up)
                 group.descriptors.foreach(rel.addDescriptor)
                 relations.put(clazz, cast(rel))
             }

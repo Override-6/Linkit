@@ -19,7 +19,7 @@ trait StructureContract[A <: AnyRef] {
 
     val clazz: Class[_]
 
-    val remoteObjectInfo: Option[MirroringInfo]
+    val mirroringInfo: Option[MirroringInfo]
 
     def findMethodContract[R](id: Int): Option[MethodContract[R]]
 

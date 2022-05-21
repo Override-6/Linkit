@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncCla
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
-import fr.linkit.api.gnom.persistence.obj.{MirroringPoolObject, PoolObject, ReferencedPoolObject}
+import fr.linkit.api.gnom.persistence.obj.{PoolObject, ReferencedPoolObject, SyncPoolObject}
 import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
@@ -94,20 +94,12 @@ class ObjectReader(bundle: PersistenceBundle,
             case Array     => collectAndUpdateChunk[PoolObject[_ <: AnyRef]](ArrayPersistence.readArray(this))
             case Object    => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
             case Lambda    => collectAndUpdateChunk[NotInstantiatedLambdaObject](readLambdaObject())
-            case RNO       => collectAndUpdateChunk[ReferencedPoolObject](readReferencedObject())
-            case Mirroring => collectAndUpdateChunk[MirroringPoolObject](readMirroringObject())
+            case RNO => collectAndUpdateChunk[ReferencedPoolObject](readReferencedObject())
         }
     }
 
     private def readReferencedObject(): ReferencedPoolObject = {
         new ReferencedObject(readNextRef, selector, pool)
-    }
-
-    private def readMirroringObject(): MirroringPoolObject = {
-        val stubClassDef = pool.getChunkFromFlag[SyncClassDef](SyncDef).get(readNextRef)
-        syncClassCenter.getSyncClass(stubClassDef)
-        val refIdx = readNextRef
-        new MirroringObject(refIdx, stubClassDef, selector, pool)
     }
 
     private def readSyncDef(): SyncClassDef = {

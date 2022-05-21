@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, MirroringInfo, StructureContract, SyncObjectFieldManipulation}
 
 case class EmptyStructureContract[A <: AnyRef](override val clazz: Class[_],
-                                               override val remoteObjectInfo: Option[MirroringInfo]) extends StructureContract[A] {
+                                               override val mirroringInfo: Option[MirroringInfo]) extends StructureContract[A] {
 
     override def findMethodContract[R](id: Int): Option[MethodContract[R]] = None
 

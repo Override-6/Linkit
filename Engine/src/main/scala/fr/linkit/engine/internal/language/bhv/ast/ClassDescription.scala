@@ -23,7 +23,7 @@ case object ChipLevel extends DescriptionLevel {
 }
 
 case class MirroringLevel(stub: Option[String]) extends DescriptionLevel {
-    override val syncLevel: SyncLevel = SyncLevel.Mirroring
+    override val syncLevel: SyncLevel = SyncLevel.Mirror
 }
 
 case class ClassDescriptionHead(kind: DescriptionKind, className: String)

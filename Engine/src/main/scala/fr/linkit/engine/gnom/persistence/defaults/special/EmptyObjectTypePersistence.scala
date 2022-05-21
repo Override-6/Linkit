@@ -11,27 +11,17 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.defaults
+package fr.linkit.engine.gnom.persistence.defaults.special
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
-import fr.linkit.engine.internal.utils.ScalaUtils
-
-import java.util
-
-object JavaHashSetTypePersistence extends TypePersistence[util.HashSet[Any]]{
-
-    override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
-
-    override def initInstance(allocatedObject: util.HashSet[Any], args: Array[Any], box: ControlBox): Unit = {
-        val data = new util.HashSet[Any]()
-        args.head.asInstanceOf[Array[AnyRef]]
-                .foreach(data.add)
-        ScalaUtils.pasteAllFields(allocatedObject, data)
-    }
-
-    override def toArray(t: util.HashSet[Any]): Array[Any] = {
-        Array(t.toArray)
-    }
+//a TP that does nothing (used to create Mirroring objects)
+object EmptyObjectTypePersistence extends TypePersistence[AnyRef] {
+    
+    override val structure: ObjectStructure = ArrayObjectStructure()
+    
+    override def initInstance(allocatedObject: AnyRef, args: Array[Any], box: ControlBox): Unit = ()
+    
+    override def toArray(t: AnyRef): Array[Any] = Array()
 }

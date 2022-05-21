@@ -24,7 +24,7 @@ import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, Synchroniz
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{findReasonTypeCantBeSync, getSyncableInterface, syncClasses}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{findReasonTypeCantBeSync, fixUndescribedMethods, getSyncableInterface}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import org.jetbrains.annotations.Nullable
@@ -49,65 +49,10 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         warnAllHiddenMethodsWithDescribedBehavior()
     }
     
-    /**
-     * Applies a default contract for methods of mirroring objects.
-     * should only be applied on contexts with syncLevel set on 'Mirroring'
-     * */
-    private def fixUndescribedMethods(methods: mutable.HashMap[Int, MethodContract[Any]], context: ConnectedObjectContext): Unit = {
-        val clazzDef   = context.classDef
-        val missingIds = listMethodIds(clazzDef)
-        for (contract <- methods.values) {
-            val contractMethodId = contract.description.methodId
-            if (missingIds.contains(contractMethodId))
-                missingIds -= contractMethodId
-        }
-        if (missingIds.isEmpty)
-            return
-        val desc = SyncObjectDescription(clazzDef)
-        for (id <- missingIds) {
-            desc.findMethodDescription(id) match {
-                case Some(methodDesc) =>
-                    val builder           = new RMIRulesAgreementGenericBuilder()
-                    val agreement         = (if (context.syncLevel == Mirroring) ONLY_ORIGIN(builder) else ONLY_CURRENT(builder)).result(context)
-                    val emergencyContract = new MethodContractImpl[Any](
-                        InvocationHandlingMethod.Inherit, context.choreographer,
-                        agreement, Array(), SimpleModifiableValueContract.deactivated,
-                        methodDesc, None, null)
-                    methods.put(id, emergencyContract)
-                case None             =>
-            }
-        }
-    }
-    
-    private def listMethodIds(syncClassDef: SyncClassDef): ListBuffer[Int] = {
-        val methods = ListBuffer.empty[Int]
-        
-        def acc(clazz: Class[_]): Unit = {
-            if (syncClasses.contains(clazz))
-                return
-            var cl = clazz
-            while (cl != null) {
-                methods ++= cl.getDeclaredMethods
-                        .filter(m => !SyncObjectDescription.isNotOverrideable(m.getModifiers))
-                        .map(MethodDescription.computeID)
-                cl = cl.getSuperclass
-            }
-        }
-        
-        acc(syncClassDef.mainClass)
-        syncClassDef match {
-            case multiple: SyncClassDefMultiple => multiple.interfaces.foreach(acc)
-            case _: SyncClassDefUnique          =>
-        }
-        methods.filterNot(id => {
-            syncClasses.exists(_.getDeclaredMethods.exists(MethodDescription.computeID(_) == id))
-        })
-    }
-    
     private def ensureNoSyncFieldIsStaticOrMirroring(): Unit = {
         val level = descriptor.syncLevel
-        if (descriptor.fields.exists(fc => fc.registrationKind != NotRegistered && (level == Mirroring || Modifier.isStatic(fc.description.javaField.getModifiers)))) {
-            if (level == Mirroring)
+        if (descriptor.fields.exists(fc => fc.registrationKind != NotRegistered && (level == Mirror || Modifier.isStatic(fc.description.javaField.getModifiers)))) {
+            if (level == Mirror)
                 throw new BadContractException(s"in $clazz: synchronized fields in mirroring objects are not supported.")
             throw new BadContractException(s"in $clazz: static synchronized fields are not supported.")
         }
@@ -183,7 +128,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         val fieldMap  = mutable.HashMap.empty[Int, FieldContract[Any]]
         
         putMethods(methodMap, context)
-        if (level != Mirroring && level != Statics) //fields for Mirroring / Statics configurations not supported
+        if (level != Mirror && level != Statics) //fields for Mirroring / Statics configurations not supported
             putFields(fieldMap)
         
         val mirroringInfo = descriptor match {
@@ -191,14 +136,14 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             case _                                                   =>
                 if (context.syncLevel.mustBeMirrored()) Some(autoDefineMirroringInfo(clazz)) else None
         }
-        //set a generic description to all methods that are not bound with a contract.
+        //set a generic description to all methods that are not bound with any contract.
         fixUndescribedMethods(methodMap, context)
         new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }
     
     private def verifyAgreement(method: Method, agreement: RMIRulesAgreement, context: ConnectedObjectContext): Unit = {
         val acceptAll = agreement.isAcceptAll
-        if (!acceptAll && agreement.acceptedEngines.length == 0)
+        if (!acceptAll && agreement.acceptedEngines.isEmpty)
             throw new BadContractException(s"method agreement $method have nowhere to invoke the method.")
         if (context.syncLevel == Statics)
             return
@@ -344,4 +289,61 @@ object LeveledSBDN {
             interface.getInterfaces.flatMap(getSyncableInterface)
         else Array(interface)
     }
+    
+    /**
+     * Applies a default contract for methods of mirroring objects.
+     * should only be applied on contexts with syncLevel set on 'Mirroring'
+     * */
+    def fixUndescribedMethods(methods: mutable.HashMap[Int, MethodContract[Any]], context: ConnectedObjectContext): Unit = {
+        val clazzDef   = context.classDef
+        val missingIds = listMethodIds(clazzDef)
+        for (contract <- methods.values) {
+            val contractMethodId = contract.description.methodId
+            if (missingIds.contains(contractMethodId))
+                missingIds -= contractMethodId
+        }
+        if (missingIds.isEmpty)
+            return
+        val desc = SyncObjectDescription(clazzDef)
+        for (id <- missingIds) {
+            desc.findMethodDescription(id) match {
+                case Some(methodDesc) =>
+                    val builder           = new RMIRulesAgreementGenericBuilder()
+                    val agreement         = (if (context.syncLevel == Mirror) ONLY_ORIGIN(builder) else ONLY_CURRENT(builder)).result(context)
+                    val emergencyContract = new MethodContractImpl[Any](
+                        InvocationHandlingMethod.Inherit, context.choreographer,
+                        agreement, Array(), SimpleModifiableValueContract.deactivated,
+                        methodDesc, None, null)
+                    methods.put(id, emergencyContract)
+                case None             =>
+            }
+        }
+    }
+    
+    private def listMethodIds(syncClassDef: SyncClassDef): mutable.HashSet[Int] = {
+        val methods = mutable.HashSet.empty[Int]
+        
+        def acc(clazz: Class[_]): Unit = {
+            if (syncClasses.contains(clazz))
+                return
+            clazz.getInterfaces.foreach(acc)
+            var cl = clazz
+            while (cl != null) {
+                methods ++= cl.getDeclaredMethods
+                        .filter(m => !SyncObjectDescription.isNotOverrideable(m.getModifiers))
+                        .map(MethodDescription.computeID)
+                cl = cl.getSuperclass
+            }
+        }
+        acc(classOf[Object])
+        acc(syncClassDef.mainClass)
+        syncClassDef match {
+            case multiple: SyncClassDefMultiple => multiple.interfaces.foreach(acc)
+            case _: SyncClassDefUnique          =>
+        }
+        methods.filterNot(id => {
+            syncClasses.exists(_.getDeclaredMethods.exists(MethodDescription.computeID(_) == id))
+        })
+    }
+    
 }

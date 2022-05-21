@@ -34,7 +34,7 @@ public enum SyncLevel {
      * Register a synchronized object that mirrors a distant Chipped Object / Synchronized Object.<br>
      * the object is a SynchronizedObject.
      */
-    Mirroring(true, true),
+    Mirror(true, true),
 
     /**
      * Only registers the object, this way, the same instance of the object is sent <br>

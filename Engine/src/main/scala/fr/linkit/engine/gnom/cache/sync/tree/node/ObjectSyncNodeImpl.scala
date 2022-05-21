@@ -27,8 +27,9 @@ class ObjectSyncNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends Chipp
     override def obj: A with SynchronizedObject[A] = data.obj
 
     private val originRef = data.origin.orNull
-
-    override val isMirroring: Boolean = data.syncLevel == SyncLevel.Mirroring
+    
+    override val isMirrored: Boolean = data.syncLevel == SyncLevel.Mirror
+    override val isMirroring: Boolean = isMirrored && puppeteer.currentIdentifier != ownerID
 
 
     initSyncObject()
