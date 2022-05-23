@@ -23,22 +23,23 @@ import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
-
+    
     protected final          var location         : ConnectedObjectReference = _
+    protected final          var isMirrored0      : Boolean                  = _
     @transient private final var puppeteer        : Puppeteer[A]             = _
     @transient private final var contract         : StructureContract[A]     = _
     @transient private final var choreographer    : InvocationChoreographer  = _
     @transient private final var presenceOnNetwork: NetworkObjectPresence    = _
     @transient private final var node             : ObjectSyncNode[A]        = _
     @transient private final var connector        : ObjectConnector          = _
-
+    
     //cached values for handleCall
     @transient private final var currentIdentifier: String  = _
     @transient private final var ownerID          : String  = _
     @transient private final var isNotMirroring   : Boolean = _
-
+    
     def originClass: Class[_]
-
+    
     def initialize(node: ObjectSyncNodeImpl[A]): Unit = {
         if (isInitialized)
             throw new ConnectedObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
@@ -46,23 +47,25 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
         val puppeteer = node.puppeteer
         this.location = node.reference
+        this.isMirrored0 = node.isMirrored
+        
         this.puppeteer = node.puppeteer
         this.contract = node.contract
         this.presenceOnNetwork = node.objectPresence
         this.node = node
         this.choreographer = node.choreographer
         this.connector = node.tree
-
+        
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
         this.isNotMirroring = !node.isMirroring
     }
-
+    
     override def isOrigin: Boolean = currentIdentifier == ownerID
-
+    
     override def isMirroring: Boolean = !isNotMirroring
     
-    override def isMirrored: Boolean = node.isMirrored
+    override def isMirrored: Boolean = isMirrored0
     
     override def reference: ConnectedObjectReference = location
     
@@ -73,12 +76,12 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     override def getChoreographer: InvocationChoreographer = choreographer
     
     override def getPuppeteer: Puppeteer[A] = puppeteer
-
+    
     override def getNode: ObjectSyncNode[A] = node
-
+    
     @transient private lazy val classDef = {
         var interfaces = getClass.getInterfaces.tail
-        val mainClass = {
+        val mainClass  = {
             val superCl = getClass.getSuperclass
             if (superCl == classOf[Object] || superCl == null) {
                 val itf = interfaces.head
@@ -89,9 +92,9 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         if (interfaces.nonEmpty) SyncClassDefMultiple(mainClass, interfaces)
         else SyncClassDefUnique(mainClass)
     }
-
+    
     override def getClassDef: SyncClassDef = classDef
-
+    
     protected final def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         if (!isInitialized) {
             //throw new IllegalStateException(s"Synchronized object at '${location}' is not initialised")
@@ -100,7 +103,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         val methodContract = {
             val opt = contract.findMethodContract(id)
             if (opt.isEmpty) { //no contract specified so we just execute the method.
-                 return superCall(args).asInstanceOf[R]
+                return superCall(args).asInstanceOf[R]
             }
             opt.get
         }
@@ -116,7 +119,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             override val connector: ObjectConnector  = AbstractSynchronizedObject.this.connector
             override val puppeteer: Puppeteer[_]     = AbstractSynchronizedObject.this.puppeteer
             override val arguments: Array[Any]       = args
-
+            
             override def doSuperCall(): Any = {
                 if (isNotMirroring) {
                     superCall(args)
@@ -125,11 +128,11 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         }
         methodContract.executeRemoteMethodInvocation(data)
     }
-
+    
     private def getMirroringCallExceptionMessage: String = {
         s"Attempted to call a method on a distant object representation. This object is mirroring $reference on engine ${ownerID}"
     }
-
+    
     @inline override def isInitialized: Boolean = node != null
-
+    
 }

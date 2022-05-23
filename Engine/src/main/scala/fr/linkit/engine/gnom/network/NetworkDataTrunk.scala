@@ -54,7 +54,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
             if (network.currentEngine ne current) getDistantCache(engineIdentifier)
             else network.newCacheManager(engineIdentifier)
         }
-        addEngine(new DefaultEngine(engineIdentifier, cacheManager))
+        addEngine(new DefaultEngine(engineIdentifier, cacheManager, network))
     }
 
     def removeEngine(engine: Engine): Unit = engines -= engine.identifier
@@ -112,7 +112,7 @@ object NetworkDataTrunk {
         val network = data.network
         val trunk   = new NetworkDataTrunk(network)
         data.engines.foreach { identifier =>
-            trunk.addEngine(new DefaultEngine(identifier, trunk.getDistantCache(identifier)))
+            trunk.addEngine(new DefaultEngine(identifier, trunk.getDistantCache(identifier), network))
         }
         data.caches.foreach(info => {
             import info._

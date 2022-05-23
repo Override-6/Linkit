@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.CacheHandler
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 class DefaultCachePacketChannel(scope: ChannelScope,
@@ -28,6 +29,7 @@ class DefaultCachePacketChannel(scope: ChannelScope,
     private var handler: Option[CacheHandler] = None
 
     override def setHandler(handler: CacheHandler): Unit = {
+        AppLogger.trace(s"Setting handler '$handler' in cache packet channel $reference")
         if (this.handler.isDefined)
             throw new IllegalStateException("Handler is already defined !")
         if (handler == null)

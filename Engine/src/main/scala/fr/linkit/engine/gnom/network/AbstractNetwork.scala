@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
+import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.statics.StaticAccess
@@ -22,18 +23,20 @@ import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
-import fr.linkit.engine.internal.utils.ConsumerContainer
+import fr.linkit.engine.internal.language.bhv.Contract
+import fr.linkit.engine.internal.mapping.RemoteClassMappings
 
 import java.sql.Timestamp
 
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
-
+    
     override           val reference              : NetworkReference           = new NetworkReference()
     override           val connection             : ConnectionContext          = traffic.connection
     override           val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
@@ -47,29 +50,29 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     protected lazy     val trunk                  : NetworkDataTrunk           = initDataTrunk()
     private var engine0                           : Engine                     = _
     private var staticAccesses                    : StaticAccesses             = _
-
+    
     private var trunkInitializing = false
-
+    
     override def currentEngine: Engine = engine0
-
+    
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
         throw new NoSuchElementException("Server Engine not found.")
     }
-
+    
     override def startUpDate: Timestamp = trunk.startUpDate
-
+    
     override def listEngines: List[Engine] = trunk.listEngines
-
+    
     override def countConnections: Int = trunk.countConnection
-
+    
     override def findEngine(identifier: String): Option[Engine] = {
         if (trunkInitializing)
             return None
         trunk.findEngine(identifier)
     }
-
+    
     override def isConnected(identifier: String): Boolean = findEngine(identifier).isDefined
-
+    
     override def findCacheManager(family: String): Option[SharedCacheManager] = {
         if (family == GlobalCacheID)
             return Some(globalCache)
@@ -77,11 +80,11 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
             return None
         trunk.findCache(family)
     }
-
+    
     override def attachToCacheManager(family: String): SharedCacheManager = {
         findCacheManager(family).getOrElse(declareNewCacheManager(family))
     }
-
+    
     override def declareNewCacheManager(family: String): SharedCacheManager = {
         if (trunkInitializing)
             throw new UnsupportedOperationException("Trunk is initializing.")
@@ -89,23 +92,23 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
             throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
         newCacheManager(family)
     }
-
+    
     override def getStaticAccess(id: Int): StaticAccess = {
         staticAccesses.getStaticAccess(id)
     }
-
+    
     override def newStaticAccess(id: Int, contract: ContractDescriptorData): StaticAccess = {
         staticAccesses.newStaticAccess(id, contract)
     }
-
+    
     override def newStaticAccess(id: Int): StaticAccess = {
         newStaticAccess(id, EmptyContractDescriptorData)
     }
-
+    
     protected def addCacheManager(manager: SharedCacheManager, storePath: Array[Int]): Unit = {
         trunk.addCacheManager(manager, storePath)
     }
-
+    
     private[network] def newCacheManager(family: String): SharedCacheManager = {
         AppLogger.vDebug(s" ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
         val store       = networkStore.createStore(family.hashCode)
@@ -115,42 +118,56 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         addCacheManager(manager, trafficPath)
         manager
     }
-
+    
     private def initDataTrunk(): NetworkDataTrunk = {
         trunkInitializing = true
         val trunk = retrieveDataTrunk()
         trunkInitializing = false
         trunk
     }
-
+    
     protected def retrieveDataTrunk(): NetworkDataTrunk
-
+    
     protected def createGlobalCache: SharedCacheManager
-
+    
     def initialize(): this.type = {
         //init those lazy vals, do not change the order!
         gnol
         globalCache
+        
         trunk.reinjectEngines()
         engine0 = trunk.newEngine(currentIdentifier)
         staticAccesses = trunk.staticAccesses
         engine0.asInstanceOf[DefaultEngine].classMappings
-
+        
         ExecutorEngine.initDefaultEngine(currentEngine)
         this
     }
-
+    
     //TODO Private this or find an alternative ! - not private because used in NetworkContract.bhv contract file
     def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {
         val family = cache.family
         val store  = networkStore.createStore(family.hashCode)
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
     }
-
+    
+    private var isMappingCacheInitialising                                             = false
+    private var mappingsCacheOpt: Option[SynchronizedObjectCache[RemoteClassMappings]] = None
+    
+    private[network] def mappingsCache = {
+        if (mappingsCacheOpt.isEmpty && !isMappingCacheInitialising) {
+            isMappingCacheInitialising = true
+            val contract = Contract("NetworkContract")(this)
+            mappingsCacheOpt = Some(globalCache.attachToCache(2, DefaultSynchronizedObjectCache[RemoteClassMappings](contract)))
+            isMappingCacheInitialising = false
+        }
+        mappingsCacheOpt
+    }
+    
     override def onNewEngine(f: Engine => Unit): Unit = trunk.onNewEngine(f)
 }
 
 object AbstractNetwork {
-
+    
     final val GlobalCacheID = "Global Cache"
 }

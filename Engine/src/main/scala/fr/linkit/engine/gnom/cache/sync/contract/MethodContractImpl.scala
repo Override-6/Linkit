@@ -61,7 +61,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     override def applyReturnValue(rv: Any, syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
-        if (returnValueContract.registrationKind != NotRegistered) syncAction(rv, returnValueContract.registrationKind).connected
+        if (rv != null && returnValueContract.registrationKind != NotRegistered) syncAction(rv, returnValueContract.registrationKind).connected
         else rv
     }
 

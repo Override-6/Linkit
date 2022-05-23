@@ -114,12 +114,12 @@ object WorkerPools {
      * @return Some if the current thread is a member of a [[WorkerPool]], None instead
      * */
     implicit def currentPool: Option[WorkerPool] = {
-        findCurrentWorker.map(_.pool)
+        currentWorkerOpt.map(_.pool)
     }
 
     @workerExecution
     def currentTask: Option[AsyncTask[_]] = {
-        findCurrentWorker.flatMap(_.getCurrentTask)
+        currentWorkerOpt.flatMap(_.getCurrentTask)
     }
 
     implicit def currentExecutionContext: ExecutionContext = {
@@ -129,7 +129,7 @@ object WorkerPools {
         }
     }
 
-    def findCurrentWorker: Option[Worker] = {
+    def currentWorkerOpt: Option[Worker] = {
         currentThread match {
             case worker: Worker => Some(worker)
             case other          => boundedThreads.get(other)
@@ -138,7 +138,7 @@ object WorkerPools {
 
     @workerExecution
     def currentWorker: Worker = {
-        findCurrentWorker.getOrElse(throw IllegalThreadException(s"Current thread is not a WorkerThread. ($currentThread)"))
+        currentWorkerOpt.getOrElse(throw IllegalThreadException(s"Current thread is not a WorkerThread. ($currentThread)"))
     }
 
     @workerExecution

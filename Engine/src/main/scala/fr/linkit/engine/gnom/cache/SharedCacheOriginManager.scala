@@ -48,7 +48,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
         }
     }
 
-    override protected def preCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
+    override protected def remoteCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
         //DO Nothing, This cache is the origin, it can do whatever he wants, so no checks have to be performed here.
     }
 

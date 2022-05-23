@@ -142,7 +142,8 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                         throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
                 case node: UnknownObjectSyncNode =>
                     val parent = node.parent.asInstanceOf[MutableNode[AnyRef]]
-                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync, None, reference.ownerID, SyncLevel.Synchronized)) //deserialized Mirroring objects are not init here.
+                    val level = if (syncObj.isMirrored) SyncLevel.Mirror else SyncLevel.Synchronized
+                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync, None, reference.ownerID, level))
                     node.setAsKnownObjectNode(data)
             }
         }

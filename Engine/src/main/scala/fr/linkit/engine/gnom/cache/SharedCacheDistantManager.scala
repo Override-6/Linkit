@@ -50,7 +50,7 @@ final class SharedCacheDistantManager @Persist()(family: String,
             }
     }
 
-    override protected def preCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
+    override protected def remoteCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
         channel.makeRequest(ownerScope)
                 .addPacket(ObjectPacket((cacheID, cacheType)))
                 .submit()

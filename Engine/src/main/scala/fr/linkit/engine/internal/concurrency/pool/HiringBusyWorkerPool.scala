@@ -9,7 +9,7 @@ class HiringBusyWorkerPool(name: String) extends AbstractWorkerPool(name) {
     private val workQueue = new LinkedBlockingQueue[Runnable]()
 
     def hireCurrentThread(): Unit = {
-        val currentWorker = WorkerPools.findCurrentWorker
+        val currentWorker = WorkerPools.currentWorkerOpt
         if (currentWorker.isDefined)
             throw IllegalThreadException("could not hire current thread: current thread is a worker thread")
 

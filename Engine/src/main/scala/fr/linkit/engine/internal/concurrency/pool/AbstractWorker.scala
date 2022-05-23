@@ -39,24 +39,28 @@ private[concurrency] trait AbstractWorker
     
     override def getCurrentTask: Option[ThreadTask] = Option(currentTask)
     
+    override def getTaskStack: Array[Int] = workingTasks.keys.toArray
+    
     override def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit = {
         ensureCurrentThreadEqualsThis()
-        //AppLogger.vError("Entering workflow loop...")
+        //AppLogger.trace("Entering workflow loop...")
+        //Thread.dumpStack()
         
         while (loopCondition) {
-            //AppLogger.vError("This thread is about to park.")
+            //AppLogger.trace("This thread is about to park.")
             isParkingForWorkflow = true
             val t = parkAction
             isParkingForWorkflow = false
-            //AppLogger.vError("This thread has been unparked.")
+            //AppLogger.trace("This thread has been unparked.")
             forcedTasks.foreach(runTask)
+            forcedTasks.clear()
             if (!loopCondition) {
                 return
             }
-            //AppLogger.vError("Continuing workflow...")
+            //AppLogger.trace("Continuing workflow...")
             workflow(t)
         }
-        //AppLogger.vError("Exiting workflow loop...")
+        //AppLogger.trace("Exiting workflow loop...")
     }
     
     override def runTask(task: ThreadTask): Unit = {
@@ -76,9 +80,8 @@ private[concurrency] trait AbstractWorker
     override def wakeup(task: ThreadTask): Unit = {
         val blocker = LockSupport.getBlocker(thread)
         AppLogger.debug(s"waking up task ${task.taskID}")
-        if (blocker == task) {
+        if (blocker eq task) {
             LockSupport.unpark(thread)
-            task.setContinue()
         } else if (task.taskID != -1) { //-1 task identifier is for mocked tasks
             AppLogger.error(s"Could not wakeup task ${task.taskID}. ($blocker, $this)")
         }

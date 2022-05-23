@@ -107,7 +107,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                         .removeLinkedReference(obj)
                         .map(_.nodePath.last)
                         .getOrElse(idHint)
-                genConnectedObject[B](parentNode, id, obj.asInstanceOf[B], insertionKind)(ownerID)
+                getOrGenConnectedObject[B](parentNode, id, obj.asInstanceOf[B], insertionKind)(ownerID)
         }
     }
     
@@ -134,11 +134,11 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         Option(ch.asInstanceOf[MutableNode[B]])
     }
     
-    private def genConnectedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
-                                                source: B, insertionKind: SyncLevel)(ownerID: String): ConnectedObjectNode[B] = {
+    private def getOrGenConnectedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
+                                                     source: B, level: SyncLevel)(ownerID: String): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not present in this tree.")
-        if (insertionKind == NotRegistered)
+        if (level == NotRegistered)
             throw new IllegalArgumentException("insertionKind = NotRegistered.")
         if (source == null)
             throw new NullPointerException("source object is null.")
@@ -147,20 +147,20 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         
         forest.findMatchingNode(source) match {
             case Some(value: ObjectSyncNode[B])    =>
-                if (insertionKind != Synchronized)
-                    throw new IllegalObjectNodeException(s"requested $insertionKind object node but the source object '$source' is bound to a SynchronizedObject node")
+                if (level != Synchronized && level != Mirror)
+                    throw new IllegalObjectNodeException(s"requested $level object node but the source object '$source' is bound to a SynchronizedObject node")
                 value
             case Some(value: ChippedObjectNode[B]) =>
-                if (insertionKind != ChippedOnly)
-                    throw new IllegalObjectNodeException(s"requested $insertionKind object node but the source object '$source' is bound to a ChippedObject node")
+                if (level != ChippedOnly && level != Mirror)
+                    throw new IllegalObjectNodeException(s"requested $level object node but the source object '$source' is bound to a ChippedObject node")
                 value
             case None                              =>
-                insertionKind match {
+                level match {
                     case ChippedOnly           =>
                         newChippedObject(parent, id, source)
                     case Synchronized | Mirror =>
                         val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))
-                        initSynchronizedObject[B](parent, id, syncObject, Some(source), ownerID, insertionKind == Mirror)
+                        initSynchronizedObject[B](parent, id, syncObject, Some(source), ownerID, level == Mirror)
                 }
             
         }
@@ -222,7 +222,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                 val id = forest.removeLinkedReference(obj)
                         .map(_.nodePath.last)
                         .getOrElse(ThreadLocalRandom.current().nextInt())
-                genConnectedObject(node, id, obj, kind)(ownerID).obj
+                getOrGenConnectedObject(node, id, obj, kind)(ownerID).obj
             }
         }
         node.contract.applyFieldsContracts(syncObject, manipulation)
@@ -248,7 +248,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                                                               syncObject: B with SynchronizedObject[B], ownerID: String,
                                                               origin: Option[B]): ObjectSyncNode[B] = {
         val wrapperNode = getParent[B](parentPath)
-        initSynchronizedObject[B](wrapperNode, id, syncObject, origin, ownerID, false)
+        initSynchronizedObject[B](wrapperNode, id, syncObject, origin, ownerID, syncObject.isMirrored)
     }
     
 }

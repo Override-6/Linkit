@@ -16,12 +16,22 @@ package fr.linkit.engine.gnom.persistence.config.structure
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 
-class SyncObjectStructure(objectStruct: ObjectStructure) extends ObjectStructure {
-    override def isAssignable(args: Array[Class[_]], from: Int, to: Int): Boolean = {
-        args.last.isAssignableFrom(classOf[ConnectedObjectReference]) && objectStruct.isAssignable(args, 0, args.length - 1)
-    }
+import java.lang
 
+class SyncObjectStructure(objectStruct: ObjectStructure) extends ObjectStructure {
+    
+    override def isAssignable(args: Array[Class[_]], from: Int, to: Int): Boolean = {
+        val last   = args.last
+        val stLast = args(args.length - 2)
+        last.isAssignableFrom(classOf[ConnectedObjectReference]) &&
+                (stLast == lang.Boolean.TYPE) && objectStruct.isAssignable(args, 0, args.length - 2)
+    }
+    
     override def isAssignable(args: Array[Any], from: Int, to: Int): Boolean = {
-        args.last.isInstanceOf[ConnectedObjectReference] && objectStruct.isAssignable(args, 0, args.length - 1)
+        val last   = args.last
+        val stLast = args(args.length - 2)
+        last.isInstanceOf[ConnectedObjectReference] &&
+                stLast.isInstanceOf[Boolean] &&
+                objectStruct.isAssignable(args, 0, args.length - 2)
     }
 }

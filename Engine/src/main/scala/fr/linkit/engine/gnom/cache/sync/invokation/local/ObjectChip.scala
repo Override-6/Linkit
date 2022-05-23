@@ -83,7 +83,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         val pool                  = worker.pool
         contract.procrastinator.runLater {
             result = callMethod(contract, params, caller)
-            task.wakeup()
+            task.continue()
         }
         if (result == NoResult)
             pool.pauseCurrentTask()

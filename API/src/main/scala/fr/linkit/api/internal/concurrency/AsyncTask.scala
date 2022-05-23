@@ -30,13 +30,24 @@ trait AsyncTask[A] extends Future[A] {
 
     def getWorker: Worker
 
+    /**
+     * true if the worker thread is running the task or if the worker is executing other tasks while this one is paused
+     * */
     def isExecuting: Boolean
 
+    /**
+     * true if the task has been paused
+     * */
     def isPaused: Boolean
+    
+    /**
+     * true if the worker is running this task
+     * */
+    def isRunning: Boolean
 
     @Nullable val parent: AsyncTask[_]
 
-    def wakeup(): Unit
+    def continue(): Unit
 
     def join(): Try[A]
 

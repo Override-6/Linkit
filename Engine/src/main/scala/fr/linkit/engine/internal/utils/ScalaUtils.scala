@@ -178,7 +178,7 @@ object ScalaUtils {
 
     @inline
     def allocate[A](clazz: Class[_]): A = {
-        if (clazz == null)
+        if (clazz eq null)
             throw new NullPointerException("class is null.")
         ObjectCreator.allocate(clazz).asInstanceOf[A]
     }

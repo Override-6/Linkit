@@ -20,21 +20,25 @@ import fr.linkit.engine.gnom.persistence.config.structure.SyncObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 class SynchronizedObjectPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T]) extends TypePersistence[T] {
-
+    
     override val structure: ObjectStructure = new SyncObjectStructure(objectPersistence.structure)
-
+    
     override def initInstance(syncObj: T, args: Array[Any], box: ControlBox): Unit = {
-        setReference(syncObj, args.last.asInstanceOf[ConnectedObjectReference])
-        objectPersistence.initInstance(syncObj, args.dropRight(1), box)
+        setReference(syncObj, args)
+        objectPersistence.initInstance(syncObj, args.dropRight(2), box)
     }
-
-    private def setReference(syncObj: SynchronizedObject[T], reference: ConnectedObjectReference): Unit = {
-        val field = syncObj.getClass.getDeclaredField("location")
+    
+    private def setReference(syncObj: SynchronizedObject[T], args: Array[Any]): Unit = {
+        val reference  : ConnectedObjectReference = args.last.asInstanceOf[ConnectedObjectReference]
+        val isMirrored0: Boolean                  = args(args.length - 2).asInstanceOf[Boolean]
+        val clazz: Class[_] = syncObj.getClass
+        
+        val field = clazz.getDeclaredField("location")
         ScalaUtils.setValue(syncObj, field, reference)
+        val field1 = clazz.getDeclaredField("isMirrored0")
+        ScalaUtils.setValue(syncObj, field1, isMirrored0)
     }
-
-    override def toArray(t: T): Array[Any] = {
-        (objectPersistence.toArray(t): Array[Any]) :+ (t.reference: Any)
-    }
-
+    
+    override def toArray(t: T): Array[Any] = objectPersistence.toArray(t) :+ t.isMirrored :+ t.reference
+    
 }

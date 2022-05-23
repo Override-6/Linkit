@@ -16,50 +16,51 @@ package fr.linkit.engine.gnom.network
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.internal.system.Versions
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
-import fr.linkit.engine.internal.language.bhv.Contract
 import fr.linkit.engine.internal.mapping.RemoteClassMappings
 import fr.linkit.engine.internal.system.StaticVersions
 
 import java.sql.Timestamp
 
 class DefaultEngine(override val identifier: String,
-                    override val cache: SharedCacheManager) extends Engine {
-
+                    override val cache: SharedCacheManager,
+                    network0: AbstractNetwork) extends Engine {
+    
     override val reference: EngineReference = new EngineReference(identifier)
-    override val network  : Network         = cache.network
-
+    override val network  : Network         = network0
+    
     //val reference: EngineReference = new EngineReference(identifier)
     override val versions: Versions = StaticVersions.currentVersions
-
+    
     private var mappings              : Option[RemoteClassMappings] = None
     private var isMappingsInitializing: Boolean                     = false
-
+    
     def isCurrentEngine = identifier == network.connection.currentIdentifier
-
+    
     def classMappings: Option[RemoteClassMappings] = {
-        if (mappings.isEmpty && !isMappingsInitializing) {
-            isMappingsInitializing = true
-            val contracts = Contract("NetworkContract")(network)
-            val cache     = network.globalCache.attachToCache(2, DefaultSynchronizedObjectCache[RemoteClassMappings](contracts))
-            mappings = {
-                if (isCurrentEngine)
-                    Some(cache.syncObject(identifier.hashCode, Constructor[RemoteClassMappings](identifier)))
-                else
-                    cache.findObject(identifier.hashCode)
-            }
-            isMappingsInitializing = false
+        if (mappings.isEmpty && !isMappingsInitializing) network0.mappingsCache match {
+            case None        =>
+            case Some(cache) =>
+                isMappingsInitializing = true
+                mappings = {
+                    if (isCurrentEngine)
+                        Some(cache.syncObject(identifier.hashCode, Constructor[RemoteClassMappings](identifier)))
+                    else
+                        cache.findObject(identifier.hashCode)
+                }
+                isMappingsInitializing = false
         }
         mappings
     }
-
+    
+    override def toString: String = if (isCurrentEngine) s"CurrentEngine($identifier)" else s"DistantEngine($identifier)"
+    
     override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())
-
+    
     private var connectionState: ExternalConnectionState = ExternalConnectionState.CONNECTED
-
+    
     def updateState(state: ExternalConnectionState): Unit = connectionState = state
-
+    
     override def getConnectionState: ExternalConnectionState = connectionState
-
+    
 }
