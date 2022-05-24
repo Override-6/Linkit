@@ -15,7 +15,7 @@ package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.internal.concurrency.WorkerPools.currentWorker
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerController, WorkerPools, workerExecution}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController.ControlTicket
 
 import scala.collection.mutable

@@ -15,11 +15,11 @@ package fr.linkit.engine.gnom.cache.sync.generation.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, InvalidSyncClassDefinitionException, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, SynchronizedObject}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsCallerDescription}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
@@ -61,13 +61,13 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         val result = center.processRequest {
             clazz match {
                 case multiple: SyncClassDefMultiple =>
-                    AppLogger.info(s"Compiling Sync class for ${clazz.mainClass.getName} with additional interfaces ${multiple.interfaces.mkString(", ")}...")
+                    AppLoggers.Compilation.info(s"Compiling Sync class for ${clazz.mainClass.getName} with additional interfaces ${multiple.interfaces.mkString(", ")}...")
                 case _                              =>
-                    AppLogger.info(s"Compiling Sync class for ${clazz.mainClass.getName}...")
+                    AppLoggers.Compilation.info(s"Compiling Sync class for ${clazz.mainClass.getName}...")
             }
             requestFactory.makeRequest(desc)
         }
-        AppLogger.info(s"Compilation done. (${result.getCompileTime} ms).")
+        AppLoggers.Compilation.info(s"Compilation done. (${result.getCompileTime} ms).")
         val syncClass = result.getValue
                 .get
                 .asInstanceOf[Class[S with SynchronizedObject[S]]]
@@ -126,12 +126,12 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
             return
         toCompile.foreach(checkClassDefValidity)
         val result = center.processRequest {
-            AppLogger.info(s"Compiling Sync Classes for ${toCompile.map(_.mainClass.getName).mkString(", ")}...")
+            AppLoggers.Compilation.info(s"Compiling Sync Classes for ${toCompile.map(_.mainClass.getName).mkString(", ")}...")
             requestFactory.makeMultiRequest(toCompile.map(SyncObjectDescription(_)))
         }
         result.getValue.get.foreach(ClassMappings.putClass)
         val ct = result.getCompileTime
-        AppLogger.info(s"Compilation done in $ct ms.")
+        AppLoggers.Compilation.info(s"Compilation done in $ct ms.")
     }
 
     override def isClassGenerated(classDef: SyncClassDef): Boolean = {

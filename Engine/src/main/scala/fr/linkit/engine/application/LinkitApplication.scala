@@ -18,14 +18,14 @@ import fr.linkit.api.application.resource.external.{LocalFolder, ResourceFolder}
 import fr.linkit.api.application.{ApplicationContext, ApplicationReference}
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
-import fr.linkit.api.internal.system.{ApiConstants, AppException, AppLogger, Version}
+import fr.linkit.api.internal.system.{ApiConstants, AppException, AppLoggers, Version}
 import fr.linkit.engine.application.LinkitApplication.setInstance
 import fr.linkit.engine.application.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.Contract
-import fr.linkit.engine.internal.mapping.MappingEngine
+import fr.linkit.engine.internal.mapping.{ClassMappings, MappingEngine}
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
 
 import java.nio.file.{Files, Path}
@@ -57,7 +57,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
 
     protected def preShutdown(): Unit = {
         wrapCloseAction("Resource listener") {
-            AppLogger.error("REMEMBER TO CLOSE RESOURCE LISTENER IN A FUTURE UPDATE WIH A DEDICATED CLASS FOR APP RESOURCES ROOT")
+            AppLoggers.App.error("REMEMBER TO CLOSE RESOURCE LISTENER IN A FUTURE UPDATE WIH A DEDICATED CLASS FOR APP RESOURCES ROOT")
             //resourceListener.close()
         }
         wrapCloseAction("Resource management") {
@@ -85,7 +85,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             throw new AppException("Client is already started")
         }
         alive = true
-        AppLogger.info("Parsing found behavior contracts...")
+        AppLoggers.App.info("Parsing found behavior contracts...")
         Contract.precompute(this)
     }
 
@@ -133,14 +133,13 @@ object LinkitApplication {
     def prepareApplication(implVersion: Version, configuration: ApplicationConfiguration, otherSources: Seq[Class[_]]): ResourceFolder = this.synchronized {
 
         System.setProperty(EngineConstants.ImplVersionProperty, implVersion.toString)
-
-        AppLogger.info("-------------------------- Linkit Framework --------------------------")
-        AppLogger.info(s"\tApi Version            | ${ApiConstants.Version}")
-        AppLogger.info(s"\tEngine Version         | ${EngineConstants.Version}")
-        AppLogger.info(s"\tImplementation Version | ${implVersion}")
-        AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
-
-        AppLogger.info("Mapping classes...")
+    
+        AppLoggers.App.info("-------------------------- Linkit Framework --------------------------")
+        AppLoggers.App.info(s"\tApi Version            | ${ApiConstants.Version}")
+        AppLoggers.App.info(s"\tEngine Version         | ${EngineConstants.Version}")
+        AppLoggers.App.info(s"\tImplementation Version | ${implVersion}")
+        AppLoggers.App.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
+    
         mapEnvironment(otherSources)
 
         val appResources        = prepareAppResources(configuration)
@@ -150,9 +149,9 @@ object LinkitApplication {
                 Files.write(res.getPath, getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes())
                 res
             }
-        AppLogger.info("Loading properties...")
+        AppLoggers.App.info("Loading properties...")
         properties.load(Files.newInputStream(propertiesResources.getPath))
-        AppLogger.info("Loading Native Libraries...")
+        AppLoggers.App.info("Loading Native Libraries...")
         InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
 
         isPrepared = true
@@ -160,13 +159,15 @@ object LinkitApplication {
     }
 
     def mapEnvironment(otherSources: Seq[Class[_]]): Unit = {
+        AppLoggers.App.info("Mapping classes...")
         MappingEngine.mapAllSourcesOfClasses(Seq(getClass, MappingEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
         MappingEngine.mapJDK()
         MappingEngine.mapAllSourcesOfClasses(otherSources)
+        AppLoggers.Mappings.info(s"Environment mapped: mapped total of ${ClassMappings.classCount} classes.")
     }
 
     private def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
-        AppLogger.trace("Loading app resources...")
+        AppLoggers.App.trace("Loading app resources...")
         val resourceListener = new SimpleResourceListener()
         resourceListener.startWatchService()
         val rootPath = Path.of(Objects.requireNonNull(configuration.resourceFolder, "provided null resource folder"))
@@ -190,8 +191,8 @@ object LinkitApplication {
                 }
             }
         }
-
-        AppLogger.trace("App resources successfully loaded.")
+    
+        AppLoggers.App.trace("App resources successfully loaded.")
         root
     }
 
@@ -201,8 +202,8 @@ object LinkitApplication {
             Runtime.getRuntime.halt(code)
             return
         }
-
-        AppLogger.info("Exiting application...")
+    
+        AppLoggers.App.info("Exiting application...")
         instance.runLaterControl {
             instance.preShutdown()
             instance.shutdown()

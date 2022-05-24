@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureCont
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{findReasonTypeCantBeSync, fixUndescribedMethods, getSyncableInterface}
@@ -80,7 +80,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                 .filter(_.returnValueContract.isDefined)
                 .foreach { method =>
                     val javaMethod = method.description.javaMethod
-                    AppLogger.warn(s"Method $javaMethod is hidden but seems to contain behavior contracts in its return value nor its parameters")
+                    AppLoggers.SyncObj.warn(s"Method $javaMethod is hidden but seems to contain behavior contracts in its return value nor its parameters")
                 }
     }
     

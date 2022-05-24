@@ -13,7 +13,7 @@
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.client.connection.ClientDynamicSocket.UnsetIdentifier
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 
@@ -42,9 +42,9 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
                 newSocket()
                 notConnected = false
             } catch {
-                case _@(_: SocketException | _: ConnectException) =>
-                    AppLogger.warn("Unable to connect to server.")
-                    AppLogger.warn(s"Waiting for $reconnectionPeriod ms before another try...")
+                case e@(_: SocketException | _: ConnectException) =>
+                    AppLoggers.Traffic.warn("Unable to connect to server.")
+                    AppLoggers.Traffic.warn(s"Waiting for $reconnectionPeriod ms before another try...")
                     Thread.sleep(reconnectionPeriod)
             }
         }

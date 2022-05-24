@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttr
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.concurrency.pool.{AbstractWorkerPool, ClosedWorkerPool}
@@ -63,11 +63,11 @@ class ServerConnection(applicationContext: ServerApplication,
 
         val port = configuration.port
 
-        AppLogger.info(s"Server '$currentIdentifier' on port $port prepares to shutdown...")
+        AppLoggers.Connection.info(s"Server '$currentIdentifier' on port $port prepares to shutdown...")
         applicationContext.unregister(this)
 
         connectionsManager.close()
-        AppLogger.info(s"Server '$currentIdentifier' shutdown.")
+        AppLoggers.Connection.info(s"Server '$currentIdentifier' shutdown.")
     }
 
     @workerExecution
@@ -75,15 +75,15 @@ class ServerConnection(applicationContext: ServerApplication,
         WorkerPools.ensureCurrentIsWorker("Must start server connection in a worker thread.")
         if (alive)
             throw new ServerException(this, "Server is already started.")
-        AppLogger.info(s"Server '$currentIdentifier' starts on port ${configuration.port}")
-        AppLogger.trace(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
+        AppLoggers.Connection.info(s"Server '$currentIdentifier' starts on port ${configuration.port}")
+        AppLoggers.Connection.debug(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
         sideNetwork.initialize()
 
         try {
             loadSocketListener()
         } catch {
             case NonFatal(e) =>
-                AppLogger.printStackTrace(e)
+                e.printStackTrace()
                 shutdown()
         }
     }
@@ -132,7 +132,7 @@ class ServerConnection(applicationContext: ServerApplication,
     private def listenSocketConnection(): Unit = {
         val socketContainer = new SocketContainer(true)
         val port            = configuration.port
-        AppLogger.debug(s"Ready to accept next connection on port $port")
+        AppLoggers.Connection.info(s"Ready to accept next connection on port $port")
 
         try {
             val socket = serverSocket.accept()
@@ -147,13 +147,13 @@ class ServerConnection(applicationContext: ServerApplication,
                 Console.err.println(msg)
                 onException(e)
             case NonFatal(e)        =>
-                AppLogger.printStackTrace(e)
+                e.printStackTrace()
                 onException(e)
         }
 
-        AppLogger.debug(s"Socket accepted (${socketContainer.getCurrent})")
+        AppLoggers.Connection.info(s"Socket accepted (${socketContainer.getCurrent})")
         runLater {
-            AppLogger.trace(s"Handling client socket ${socketContainer.getCurrent}...")
+            AppLoggers.Connection.debug(s"Handling client socket ${socketContainer.getCurrent}...")
             val count = connectionsManager.countConnections
             handleSocket(socketContainer)
             val newCount = connectionsManager.countConnections
@@ -201,7 +201,7 @@ class ServerConnection(applicationContext: ServerApplication,
             WelcomePacketVerdict(identifier, true)
         } catch {
             case NonFatal(e) =>
-                AppLogger.printStackTrace(e)
+                e.printStackTrace()
                 WelcomePacketVerdict(null, false, e.getMessage)
         }
     }
@@ -213,7 +213,7 @@ class ServerConnection(applicationContext: ServerApplication,
             verdict.concludeRefusal(socket)
             return
         }
-        AppLogger.info("Stage 1 Completed : Connection seems able to support this server configuration.")
+        AppLoggers.Connection.info("Stage 1 Completed : Connection seems able to support this server configuration.")
         val identifier = verdict.identifier
         socket.identifier = identifier
         handleNewConnection(identifier, socket)
@@ -247,11 +247,11 @@ class ServerConnection(applicationContext: ServerApplication,
         if (!conflicted.isConnected) {
             conflicted.updateSocket(socket.getCurrent)
             sendAuthorisedConnection(socket)
-            AppLogger.info(s"The connection of ${conflicted.boundIdentifier} has been resumed.")
+            AppLoggers.Connection.info(s"The connection with '${conflicted.boundIdentifier}' has been resumed.")
             return
         }
         val strategy = configuration.identifierAmbiguityStrategy
-        AppLogger.trace(s"Connection '$identifier' conflicts with socket $socket. Applying Ambiguity Strategy '$strategy'...")
+        AppLoggers.Connection.warn(s"Connection '$identifier' conflicts with socket $socket. Applying Ambiguity Strategy '$strategy'...")
 
         val rejectMsg = s"Another engine with id '$identifier' is currently connected on the targeted network."
         import fr.linkit.server.config.AmbiguityStrategy._
@@ -293,9 +293,9 @@ class ServerConnection(applicationContext: ServerApplication,
 
         def concludeRefusal(socket: DynamicSocket): Unit = {
             if (identifier == null) {
-                AppLogger.error(s"An unknown connection have been discarded: $refusalMessage")
+                AppLoggers.Connection.error(s"An unknown connection have been discarded: $refusalMessage")
             } else {
-                AppLogger.error(s"Connection $identifier has been discarded: $refusalMessage")
+                AppLoggers.Connection.error(s"Connection $identifier has been discarded: $refusalMessage")
             }
             sendRefusedConnection(socket, s"Connection discarded by the server: $refusalMessage")
         }

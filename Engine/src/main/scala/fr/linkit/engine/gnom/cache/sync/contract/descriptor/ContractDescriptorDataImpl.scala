@@ -13,36 +13,95 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorData, ContractDescriptorGroup, ObjectContractDescriptorGroup, StructureBehaviorDescriptorNode}
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique
+import fr.linkit.api.gnom.cache.sync.contract.descriptor._
+import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
+import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverrideable
 import fr.linkit.engine.internal.utils.ClassMap
 
-class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRef]]) extends ContractDescriptorData {
+import java.lang.reflect.Modifier
+import scala.collection.mutable
 
+class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]]) extends ContractDescriptorData {
+    
     private val nodeMap = computeDescriptors()
-
+    
     private var precompiled: Boolean = false
-
+    
+    def precompile(center: SyncClassCenter): Unit = {
+        if (isPrecompiled) {
+            throw new IllegalStateException("This contract descriptor data has already been pre compiled")
+        }
+        precompileClasses(center)
+        precompiled = true
+    }
+    
+    private def precompileClasses(center: SyncClassCenter): Unit = {
+        var classes = mutable.HashSet.empty[Class[_]]
+        val descs   = groups.flatMap(_.descriptors)
+        
+        def addClass(clazz: Class[_]): Unit = {
+            if (!Modifier.isAbstract(clazz.getModifiers))
+                classes += clazz
+        }
+        
+        descs.foreach(desc => {
+            val clazz = desc.targetClass
+            desc match {
+                case descriptor: MirroringStructureContractDescriptor[_] =>
+                    classes += descriptor.mirroringInfo.stubSyncClass.mainClass
+                case _                                                   =>
+                    addClass(clazz)
+            }
+            
+            desc.fields.filter(_.registrationKind == Synchronized).foreach(f => addClass(f.description.javaField.getType))
+            desc.methods.foreach(method => {
+                val javaMethod = method.description.javaMethod
+                if (method.returnValueContract.exists(_.registrationKind == Synchronized))
+                    addClass(javaMethod.getReturnType)
+                val paramsContracts = method.parameterContracts
+                if (paramsContracts.nonEmpty)
+                    paramsContracts.zip(javaMethod.getParameterTypes)
+                            .foreach { case (desc, paramType) => if (desc.registrationKind == Synchronized) addClass(paramType) }
+            })
+        })
+        classes -= classOf[Object]
+        classes = classes.filterNot(cl => center.isClassGenerated(SyncClassDefUnique(cl)))
+                .filterNot(c => isNotOverrideable(c.getModifiers))
+        
+        if (classes.isEmpty) {
+            
+            return
+        }
+        AppLoggers.Compilation.info(s"Found ${classes.size} classes to compile in their sync versions")
+        AppLoggers.Compilation.debug("Classes to compile :")
+        classes.foreach(clazz => AppLoggers.Compilation.debug(s"\tgen.${clazz}Sync"))
+        center.preGenerateClasses(classes.toList.map(SyncClassDefUnique(_)))
+    }
+    
     def markAsPrecompiled(): Unit = precompiled = true
-
+    
     def isPrecompiled: Boolean = precompiled
-
+    
     override def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A] = {
         nodeMap(clazz).asInstanceOf[StructureBehaviorDescriptorNode[A]]
     }
-
+    
     private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
-        val groups      = rearrangeGroups()
-        val relations        = new ClassMap[ContractClassRelation[AnyRef]]()
+        val groups        = rearrangeGroups()
+        val relations     = new ClassMap[ContractClassRelation[AnyRef]]()
         var objDescriptor = groups.head
         if (objDescriptor.clazz != classOf[Object]) {
             objDescriptor = ObjectContractDescriptorGroup
         }
-
+        
         val objectRelation = new ContractClassRelation[AnyRef](objDescriptor.clazz, objDescriptor.modifier, null)
         relations.put(objDescriptor.clazz, objectRelation)
         for (group <- groups) if (group ne objDescriptor) {
-            val clazz  = group.clazz
-            val up = relations.get(clazz).getOrElse(objectRelation) //should at least return the java.lang.Object behavior descriptor
+            val clazz = group.clazz
+            val up    = relations.get(clazz).getOrElse(objectRelation) //should at least return the java.lang.Object behavior descriptor
             if (up.targetClass == clazz) {
                 group.descriptors.foreach(up.addDescriptor)
             } else {
@@ -61,7 +120,7 @@ class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRe
         val map = relations.map(pair => (pair._1, pair._2.asNode)).toMap
         new ClassMap[StructureBehaviorDescriptorNode[_]](map)
     }
-
+    
     /*
     * Sorting descriptors by their hierarchy rank, and performing
     * checks to avoid multiple descriptor profiles per class
@@ -72,9 +131,9 @@ class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRe
             getClassHierarchicalDepth(a.clazz) - getClassHierarchicalDepth(b.clazz)
         })
     }
-
+    
     private def cast[X](y: Any): X = y.asInstanceOf[X]
-
+    
     private def getClassHierarchicalDepth(clazz: Class[_]): Int = {
         if (clazz == null)
             throw new NullPointerException("clazz is null")
@@ -88,5 +147,5 @@ class ContractDescriptorDataImpl(val groups: Array[ContractDescriptorGroup[AnyRe
         }
         depth
     }
-
+    
 }

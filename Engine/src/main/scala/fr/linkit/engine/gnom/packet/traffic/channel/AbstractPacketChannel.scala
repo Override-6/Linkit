@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.workerExecution
-import fr.linkit.api.internal.system.{AppLogger, Reason}
+import fr.linkit.api.internal.system.{AppLoggers, Reason}
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 import fr.linkit.engine.gnom.packet.traffic.DefaultChannelPacketBundle
 
@@ -62,7 +62,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
     override def canInjectFrom(identifier: String): Boolean = scope.areAuthorised(Array(identifier))
 
     override def storeBundle(bundle: ChannelPacketBundle): Unit = {
-        AppLogger.vDebug(s" STORING BUNDLE $bundle INTO $storedBundles")
+        AppLoggers.GNOM.trace(s"in packet channel $reference: storing bundle $bundle.")
         if (bundle.getChannel ne this) {
             throw new IllegalArgumentException("The stored bundle's channel is not this.")
         }
@@ -75,7 +75,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
     override def injectStoredBundles(): Unit = {
         var clone: Array[ChannelPacketBundle] = null
         storedBundles.synchronized {
-            AppLogger.vDebug(s" REINJECTING STORED PACKETS $storedBundles")
+            AppLoggers.GNOM.trace(s"in packet channel $reference: reinjecting stored bundles (size: ${storedBundles.size})")
             clone = Array.from(storedBundles)
             storedBundles.clear()
         }
@@ -85,7 +85,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
         val injected = builder.result()
 
         clone.foreach(stored => {
-            AppLogger.vDebug(s" Reinjecting stored = $stored")
+            AppLoggers.GNOM.trace(s"in packet channel $reference: reinjecting stored bundle $stored")
             if (injected.contains(stored))
                 throw new Error("Double instance packet in storage.")
 

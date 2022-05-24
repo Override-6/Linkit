@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.packet.traffic.channel.request
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{ResponseHolder, Submitter}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 
 import java.util.concurrent.BlockingQueue
@@ -41,9 +41,9 @@ sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends
 
     override def submit(): P = {
         ensureNotSubmit()
-        AppLogger.vDebug(s" Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
+        AppLoggers.GNOM.trace(s" Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
         val result = makeSubmit()
-        AppLogger.vDebug(s" ${getClass.getSimpleName} ($id) submitted !")
+        AppLoggers.GNOM.trace(s" ${getClass.getSimpleName} ($id) submitted !")
         isSubmit = true
         result
     }

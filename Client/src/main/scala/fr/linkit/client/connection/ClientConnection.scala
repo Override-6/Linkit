@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork
@@ -168,13 +168,13 @@ object ClientConnection {
         socket.identifier = serverIdentifier
 
         //Constructing connection instance session
-        AppLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
+        AppLoggers.Connection.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
         val sessionInfo = ClientConnectionSessionInfo(context, configuration, serverIdentifier, translator)
         val session     = ClientConnectionSession(socket, sessionInfo)
         //Constructing connection instance...
         //Stage 2 will be completed into ClientConnection constructor.
         val connection  = new ClientConnection(session)
-        AppLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
+        AppLoggers.Connection.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
         connection
     }
 

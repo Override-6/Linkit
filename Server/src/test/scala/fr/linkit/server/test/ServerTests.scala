@@ -25,7 +25,7 @@ package fr.linkit.server.test
  *  questions.
  */
 
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.api.test.HierarchyRaiserOrderer
 import fr.linkit.api.test.TestUtils._
 import fr.linkit.server.ServerApplication
@@ -65,7 +65,7 @@ object ServerTests {
         application = Assertions.assertDoesNotThrow {
             ServerApplication.launch(config, getClass)
         }
-        AppLogger.info(s"Launch complete: $application")
+        AppLoggers.App.trace(s"Launch complete: $application")
 
         Assertions.assertAll("App launch conclusion",
             Assertions.assertNotNull(application)
@@ -75,7 +75,7 @@ object ServerTests {
     @AfterAll
     def sleep(): Unit = {
         //Thread.currentThread().setDaemon(true)
-        AppLogger.debug("Sleeping...")
+        AppLoggers.App.trace("Sleeping...")
         Thread.sleep(9999999999999L)
     }
 }

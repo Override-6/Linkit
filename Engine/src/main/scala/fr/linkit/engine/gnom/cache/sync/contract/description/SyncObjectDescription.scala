@@ -3,7 +3,7 @@ package fr.linkit.engine.gnom.cache.sync.contract.description
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncClassDef}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.{SyntheticMod, isNotOverrideable}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.JavaKeywords
 
@@ -29,7 +29,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDe
 
     private def isIllegal(e: Executable): Boolean = {
         val isNameJKeyword = JavaKeywords(e.getName)
-        if (isNameJKeyword) AppLogger.warn(s"Could not handle method ${e} because its name is a java keyword.")
+        if (isNameJKeyword) AppLoggers.SyncObj.warn(s"Could not handle method ${e} because its name is a java keyword.")
         isNameJKeyword
     }
 
@@ -41,7 +41,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDe
             import Modifier._
             val notAccessible = isPrivate(mods) || !(isProtected(mods) || isPublic(mods))
             if (notAccessible)
-                AppLogger.warn(s"Could not handle method ${e} because $tpe '${clazz.getName}' is not accessible for the generated Sync implementation class of '${this.clazz}'")
+                AppLoggers.SyncObj.warn(s"Could not handle method ${e} because $tpe '${clazz.getName}' is not accessible for the generated Sync implementation class of '${this.clazz}'")
             notAccessible
         }
 

@@ -17,7 +17,7 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile, ScriptHandler, ScriptInstantiator}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
@@ -43,12 +43,12 @@ object ScriptExecutor {
     def newScalaScript[S <: ScriptFile](scriptName: String, additionalArguments: Map[String, Class[_]] = Map.empty)(scriptCode: String)(implicit scriptHandler: ScriptHandler[S], center: CompilerCenter): ScriptInstantiator[S] = {
         val classLoader = Thread.currentThread().getContextClassLoader
         val result      = center.processRequest {
-            AppLogger.debug(s"Performing Class generation for script '$scriptName'")
+            AppLoggers.Compilation.info(s"Performing Class generation for script '$scriptName'")
             val blueprint = new ScalaScriptBlueprint(scriptHandler.scriptClassBlueprint).asInstanceOf[ClassBlueprint[ScriptContext]]
             new ClassCompilationRequestFactory[ScriptContext, S](blueprint)
                 .makeRequest(scriptHandler.newScriptContext(scriptCode, scriptName, additionalArguments, classLoader))
         }
-        AppLogger.debug(s"Script '$scriptName' class generation ended in ${result.getCompileTime} ms.")
+        AppLoggers.Compilation.info(s"Script '$scriptName' class generation ended in ${result.getCompileTime} ms.")
         val clazz = result.getValue.get
         if (clazz == null)
             throw new ScriptCompileException(s"Some exception occurred during class compilation of script '$scriptName'. See above messages for further details.")

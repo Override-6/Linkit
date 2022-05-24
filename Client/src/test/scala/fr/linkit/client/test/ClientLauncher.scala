@@ -13,7 +13,7 @@
 
 package fr.linkit.client.test
 
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
@@ -34,7 +34,7 @@ object ClientLauncher {
     def main(args: Array[String]): Unit = launch(args)
 
     def launch(args: Array[String]): ClientApplication = {
-        AppLogger.info(s"Running client with arguments '${args.mkString(" ")}'")
+        AppLoggers.App.info(s"Running client with arguments '${args.mkString(" ")}'")
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path")("/Plugins")
 
         val address     = Localhost
@@ -132,8 +132,8 @@ object ClientLauncher {
             }
         }
         val clientApp = ClientApplication.launch(config, getClass)
-        AppLogger.trace(s"Build completed: $clientApp")
-        AppLogger.info("Client Application launched.")
+        AppLoggers.App.trace(s"Build completed: $clientApp")
+        AppLoggers.App.info("Client Application launched.")
         clientApp
     }
 }

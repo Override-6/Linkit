@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout disableAnsi="false"  pattern="%style{[%d{HH:mm:ss,SSS}]}{magenta} [%-28.28t] %highlight{[%-5p _ %-12logger]}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank} - %highlight{%m%n}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank}"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="Application" level="ALL" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="GNOM" level="INFO" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="GNOM.SyncObj" level="ALL" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="Mappings" level="ALL" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="Persistence" level="INFO" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="Traffic" level="ALL" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="Resource" level="ALL" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="Compilation" level="DEBUG" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="Worker" level="INFO" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+        <Logger name="Connection" level="ALL" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Root level="ALL" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Root>
+    </Loggers>
+</Configuration>

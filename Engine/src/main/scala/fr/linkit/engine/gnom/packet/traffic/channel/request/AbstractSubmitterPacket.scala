@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.packet.traffic.channel.request
 
 import fr.linkit.api.gnom.packet.channel.request.SubmitterPacket
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 import fr.linkit.engine.internal.utils.ScalaUtils.ensurePacketType
 
@@ -57,7 +57,7 @@ sealed abstract class AbstractSubmitterPacket(id: Int, packets: Array[Packet]) e
     private[packet] def setAttributes(attributes: PacketAttributes): Unit = {
         if (this.attributes != null && this.attributes.ne(attributes))
             throw new IllegalStateException("Attributes already set !")
-        AppLogger.vDebug(s"SETTING ATTRIBUTES FOR SUBMITTER PACKET $this : $attributes")
+        AppLoggers.GNOM.trace(s"setting attributes for submitter packet $this : $attributes")
         this.attributes = attributes
     }
 

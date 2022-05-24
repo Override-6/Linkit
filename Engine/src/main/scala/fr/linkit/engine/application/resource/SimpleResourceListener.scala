@@ -14,7 +14,7 @@
 package fr.linkit.engine.application.resource
 
 import fr.linkit.api.application.resource.{ResourceKey, ResourceListener, ResourcesMaintainer}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import java.io.Closeable
 import java.nio.file._
 import java.util
@@ -39,7 +39,7 @@ class SimpleResourceListener extends ResourceListener with Closeable {
                 }
             } catch {
                 case _: ClosedWatchServiceException =>
-                    AppLogger.trace("Resources Listener has been closed.")
+                    AppLoggers.Resource.trace("Resources Listener has been closed.")
             }
         }, "Resources Maintainers Listener").start()
     }

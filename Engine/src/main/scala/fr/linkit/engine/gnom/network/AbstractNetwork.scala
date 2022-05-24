@@ -22,7 +22,7 @@ import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkRefer
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
@@ -110,7 +110,6 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
     
     private[network] def newCacheManager(family: String): SharedCacheManager = {
-        AppLogger.vDebug(s" ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
         val store       = networkStore.createStore(family.hashCode)
         val manager     = new SharedCacheOriginManager(family, this, store)
         val trafficPath = store.trafficPath

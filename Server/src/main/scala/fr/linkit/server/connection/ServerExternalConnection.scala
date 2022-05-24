@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import org.jetbrains.annotations.NotNull
 
@@ -53,7 +53,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         session.close()
 
         connectionManager.unregister(currentIdentifier)
-        AppLogger.trace(s"Connection closed for $currentIdentifier")
+        AppLoggers.Connection.info(s"Connection closed for $currentIdentifier")
     }
 
     override def isAlive: Boolean = alive

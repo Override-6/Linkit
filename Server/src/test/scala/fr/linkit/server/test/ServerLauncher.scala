@@ -13,7 +13,7 @@
 
 package fr.linkit.server.test
 
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
@@ -32,7 +32,7 @@ object ServerLauncher {
     def main(args: Array[String]): Unit = launch(args: _*)
 
     def launch(args: String*): ServerApplication = {
-        AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
+        AppLoggers.App.info(s"Running server with arguments '${args.mkString(" ")}'")
 
         //val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
         val resourcesFolder0 = getOrElse(Array(args:_*), "--home-path", getDefaultLinkitHome)
@@ -52,8 +52,8 @@ object ServerLauncher {
             }
         }
         val serverApp = ServerApplication.launch(config, getClass)
-        AppLogger.trace(s"Build complete: $serverApp")
-        AppLogger.info("Server Application launched.")
+        AppLoggers.App.trace(s"Build complete: $serverApp")
+        AppLoggers.App.info("Server Application launched.")
         serverApp
     }
 

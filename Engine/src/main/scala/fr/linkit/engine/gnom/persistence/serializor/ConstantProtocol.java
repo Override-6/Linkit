@@ -16,7 +16,11 @@ package fr.linkit.engine.gnom.persistence.serializor;
 public class ConstantProtocol {
 
     //increment each time the write protocol changes
-    public static final short ProtocolVersion = 3;
+    public static final short ProtocolVersion = 4;
+
+    public static final byte UByteSize = 1;
+    public static final byte UShortSize = 2;
+    public static final byte IntSize = 3;
 
     public static final byte Class = 0;     // announcement mark = 0b0000000000000001
     public static final byte SyncDef = 1; // announcement mark = 0b0000000000000010

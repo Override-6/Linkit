@@ -40,7 +40,6 @@ class PersistenceConfigBuilder {
 
     protected var unsafeUse           = true
     protected var referenceAllObjects = false
-    protected var wide                = false
 
     def this(other: PersistenceConfigBuilder) {
         this()
@@ -67,7 +66,6 @@ class PersistenceConfigBuilder {
         referenceStore ++= other.referenceStore
         unsafeUse = other.unsafeUse
         referenceAllObjects = other.referenceAllObjects
-        wide = other.wide
         profiles.customProfiles ++= other.profiles.customProfiles
         this
     }
@@ -156,7 +154,7 @@ class PersistenceConfigBuilder {
         refStore ++= referenceStore.toMap
         config = new SimplePersistenceConfig(
             context, profiles, refStore,
-            unsafeUse, referenceAllObjects, wide
+            unsafeUse, referenceAllObjects
         )
         config
     }

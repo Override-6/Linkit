@@ -138,7 +138,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
             new SimplePersistenceConfig(
                 context, new ClassMap(), linker,
-                false, true, false
+                false, true
             )
         }
         val objectChannel       = {

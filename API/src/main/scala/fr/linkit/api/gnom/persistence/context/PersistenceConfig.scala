@@ -20,9 +20,7 @@ trait PersistenceConfig extends TypeProfileStore {
 
 
     def contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH
-
-    def widePacket: Boolean
-
+    
     def useUnsafe: Boolean
 
     def autoContextObjects: Boolean

@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.reference.presence
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
 import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
@@ -43,7 +43,7 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
             .filter(_._2 eq NOT_PRESENT)
             .keys
             .toArray
-        AppLogger.warn(s"presence modified for $location to present on this engine. Affected engines : ${enginesID.mkString("&")}")
+        AppLoggers.GNOM.debug(s"presence modified for $location to present on this engine. Affected engines : ${enginesID.mkString(", ")}")
         if (enginesID.isEmpty)
             return
         handler.informPresence(enginesID, location, PRESENT)

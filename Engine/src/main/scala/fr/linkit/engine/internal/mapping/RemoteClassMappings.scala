@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.mapping
 
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 
 import scala.collection.mutable
 
@@ -27,9 +27,10 @@ class RemoteClassMappings(val ownerId: String) extends ClassMappingsListener {
     def addClassToMap(className: String): Unit = {
         try {
             ClassMappings.putClass(className)
+            AppLoggers.Mappings.trace(s"a new class has been added to mappings ('$className') from distant engine.")
         } catch {
-            case e: ClassNotFoundException =>
-                AppLogger.warn(s"class mappings for engine '$ownerId' now contains class '$ownerId' (id: ${className.hashCode}) that is not present on this engine.")
+            case _: ClassNotFoundException =>
+                AppLoggers.Mappings.warn(s"class mappings for engine '$ownerId' now contains class '$ownerId' (id: ${className.hashCode}) that is not present on this engine.")
         }
     }
 

@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilerCenter}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassCompilationRequestFactory.ClassBlueprint
 import fr.linkit.engine.internal.generation.compilation.RuntimeClassOperations
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
@@ -36,8 +36,8 @@ class SyncClassCompilationRequestFactory()
         val wrapperClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
         if (Files.notExists(wrapperClassFile))
             throw new NoSuchFileException(s"Class file for class $className at ${req.classDir} not found.")
-
-        AppLogger.debug("Performing post compilation modifications in the class file...")
+    
+        AppLoggers.Compilation.trace("Performing post compilation modifications in the class file...")
         val (byteCode, syncClass) = new SyncClassRectifier(context, className, loader, context.specs).rectifiedClass
         Files.write(wrapperClassFile, byteCode)
         RuntimeClassOperations.prepareClass(syncClass)

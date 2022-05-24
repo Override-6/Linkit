@@ -15,7 +15,7 @@ package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.gnom.network.ExecutorEngine
 import fr.linkit.api.internal.concurrency._
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
 
 import java.util.concurrent._
@@ -130,7 +130,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
                 currentWorker
                     .getController
                     .runTask(childTask)
-                AppLogger.info(s"Task ${childTask.taskID} just ended !")
+                AppLoggers.Worker.debug(s"Task ${childTask.taskID} just ended !")
             } catch {
                 case e: Throwable =>
                     e.printStackTrace()
@@ -268,7 +268,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         }
 
         currentTask.setContinue()
-        AppLogger.vError(s"${currentTask.taskID} is continuing...")
+        AppLoggers.Worker.debug(s"task ${currentTask.taskID} is continuing...")
     }
 
     def ensureCurrentThreadNotOwned(): Unit = {

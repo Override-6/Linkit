@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.mapping
 
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 
 import java.security.CodeSource
 import scala.collection.mutable
@@ -32,6 +32,8 @@ object ClassMappings {
     private var haveListeners = false
 
     private[mapping] def classCodes: Array[Int] = classes.keys.toArray
+    
+    def classCount: Int = classes.size
 
     def putClass(className: String, loader: ClassLoader): Unit = {
         //println(s"Class put ! ($className) of hash code ${className.hashCode}")
@@ -86,7 +88,7 @@ object ClassMappings {
     def codeOfClass(clazz: Class[_]): Int = {
         val name = clazz.getName
         if (!classes.contains(name.hashCode)) {
-            AppLogger.warn(s"Class map did not contained $clazz. (code: ${name.hashCode})")
+            AppLoggers.Mappings.warn(s"Class map did not contained $clazz. (code: ${name.hashCode})")
             putClass(clazz)
         }
         name.hashCode

@@ -44,7 +44,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     override def shutdown(): Unit = {
         appPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
-        AppLogger.info("Client application is shutting down...")
+        AppLoggers.App.info("Client application is shutting down...")
 
         listConnections.foreach(connection => {
             try {
@@ -52,7 +52,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
                 connection.shutdown()
                 connectionCount -= 1
             } catch {
-                case NonFatal(e) => AppLogger.printStackTrace(e)
+                case NonFatal(e) => e.printStackTrace()
             }
         })
     }
@@ -79,12 +79,12 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         connectionCount += 1
         appPool.setThreadCount(configuration.nWorkerThreadFunction(connectionCount)) //expand the pool for the new connection that will be opened
 
-        AppLogger.info(s"Creating connection to address '${config.remoteAddress}'...")
+        AppLoggers.App.info(s"Creating connection to address '${config.remoteAddress}'...")
         val address       = config.remoteAddress
         val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
         dynamicSocket.reconnectionPeriod = config.reconnectionMillis
         dynamicSocket.connect("UnknownServerIdentifier")
-        AppLogger.trace("Socket accepted !")
+        AppLoggers.App.trace("Socket accepted !")
 
         val connection = try {
             ClientConnection.open(dynamicSocket, this, config)
@@ -97,7 +97,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         connectionCache.put(identifier, connection)
 
         val serverIdentifier: String = connection.boundIdentifier
-        AppLogger.info(s"Connection Sucessfully bound to $address ($serverIdentifier)")
+        AppLoggers.App.info(s"Connection Sucessfully bound to $address ($serverIdentifier)")
         connection
     }
 
@@ -110,7 +110,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         //val newThreadCount = Math.max(configuration.nWorkerThreadFunction(connectionCount), 1)
         //appPool.setThreadCount(newThreadCount)
 
-        AppLogger.info(s"Connection '$currentIdentifier' bound to $boundIdentifier was detached from application.")
+        AppLoggers.App.info(s"Connection '$currentIdentifier' bound to $boundIdentifier was detached from application.")
     }
 
 }
@@ -128,7 +128,7 @@ object ClientApplication {
         val resources = LinkitApplication.prepareApplication(Version, config, otherSources)
 
         val clientApp = try {
-            AppLogger.info("Instantiating Client application...")
+            AppLoggers.App.info("Instantiating Client application...")
             new ClientApplication(config, resources)
         } catch {
             case NonFatal(e) =>
@@ -136,12 +136,12 @@ object ClientApplication {
         }
 
         clientApp.runLaterControl {
-            AppLogger.info("Starting Client Application...")
+            AppLoggers.App.info("Starting Client Application...")
             clientApp.start()
             val loadSchematic = config.loadSchematic
-            AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
+            AppLoggers.App.debug(s"Applying schematic '${loadSchematic.name}'...")
             loadSchematic.setup(clientApp)
-            AppLogger.trace("Schematic applied successfully.")
+            AppLoggers.App.trace("Schematic applied successfully.")
         }.join() match {
             case Failure(e) =>
                 throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)

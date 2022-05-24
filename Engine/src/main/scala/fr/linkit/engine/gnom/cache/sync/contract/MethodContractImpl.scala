@@ -25,7 +25,7 @@ import fr.linkit.api.gnom.cache.sync.tree.ObjectConnector
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import org.jetbrains.annotations.Nullable
@@ -107,7 +107,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${obj.reference} on engine ${obj.ownerID}")
         modifyArgsIn(origin, args)
         val method = description.javaMethod
-        AppLogger.debug {
+        AppLoggers.SyncObj.debug {
             val name     = method.getName
             val methodID = description.methodId
             s"RMI - Calling method $methodID $name(${args.mkString(", ")})"
@@ -177,7 +177,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
                 makeDispatch(puppeteer.network, dispatcher, localInvocation)
             }
         }
-        AppLogger.debug {
+        AppLoggers.SyncObj.debug {
             val name     = description.javaMethod.getName
             val methodID = description.methodId
             s"RMI - performing method invocation $methodID $name(${localInvocation.methodArguments.mkString(", ")})"

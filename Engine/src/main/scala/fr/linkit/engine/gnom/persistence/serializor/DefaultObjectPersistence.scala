@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.persistence.serializor.read.ObjectReader
 import fr.linkit.engine.gnom.persistence.serializor.write.{ObjectWriter, SerializerObjectPool}
 
@@ -35,7 +35,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
     }
 
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disinv {
-        AppLogger.debug("Starting Serializing objects...")
+        AppLoggers.Persistence.debug("Starting Serializing objects...")
         val t0 = System.currentTimeMillis()
         val buffer = bundle.buff
         buffer.put(signature.toArray)
@@ -47,7 +47,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         val pool = writer.getPool
         writeEntries(objects, writer, pool)
         val t1 = System.currentTimeMillis()
-        AppLogger.debug(s"Objects serialized (took ${t1 - t0} ms) - resulting buff length = ${buffer.position()}.")
+        AppLoggers.Persistence.debug(s"Objects serialized (took ${t1 - t0} ms) - resulting buff length = ${buffer.position()}.")
     }
 
     private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,
@@ -64,8 +64,8 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
     override def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit = InvocationChoreographer.disinv {
         val buff = bundle.buff
         checkSignatureAndProtocol(buff)
-
-        AppLogger.debug(s"Starting Deserializing objects... (from buff length: ${buff.limit()})")
+    
+        AppLoggers.Persistence.debug(s"Starting Deserializing objects... (from buff length: ${buff.limit()})")
         val t0 = System.currentTimeMillis()
 
 
@@ -87,7 +87,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
             forEachObjects(obj)
         }
         val t1 = System.currentTimeMillis()
-        AppLogger.debug(s"Objects deserialized (took ${t1 - t0} ms).")
+        AppLoggers.Persistence.debug(s"Objects deserialized (took ${t1 - t0} ms).")
     }
 
 

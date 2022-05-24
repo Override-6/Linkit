@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.internal.concurrency._
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorker.TaskProfile
 
@@ -79,11 +79,11 @@ private[concurrency] trait AbstractWorker
     
     override def wakeup(task: ThreadTask): Unit = {
         val blocker = LockSupport.getBlocker(thread)
-        AppLogger.debug(s"waking up task ${task.taskID}")
+        AppLoggers.Worker.debug(s"waking up task ${task.taskID}")
         if (blocker eq task) {
             LockSupport.unpark(thread)
         } else if (task.taskID != -1) { //-1 task identifier is for mocked tasks
-            AppLogger.error(s"Could not wakeup task ${task.taskID}. ($blocker, $this)")
+            AppLoggers.Worker.error(s"Could not wakeup task ${task.taskID}. ($blocker, $this)")
         }
     }
     

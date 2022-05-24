@@ -21,6 +21,7 @@ import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, SyncNodeDataRequest, UnknownObjectSyncNode}
 import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
@@ -119,6 +120,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         val reference = syncObj.reference
         if (syncObj.isInitialized)
             return
+        AppLoggers.SyncObj.debug(s"Initialising synchronized object at $reference.")
         val path    = reference.nodePath
         val treeID  = path.head
         val treeOpt = findTreeInternal(treeID)
@@ -154,6 +156,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
             throw new SynchronizedObjectException(s"A tree of id '$id' already exists.")
         if (tree.dataFactory ne center)
             throw new SynchronizedObjectException("Attempted to attach a tree that comes from an unknown cache.")
+        AppLoggers.SyncObj.debug(s"New tree added ($tree) in forest of cache ${center.reference}")
         registerReference(tree.rootNode.reference)
         trees.put(id, tree)
     }

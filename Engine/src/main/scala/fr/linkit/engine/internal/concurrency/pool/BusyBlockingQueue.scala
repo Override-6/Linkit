@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.internal.concurrency.workerExecution
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 
 import java.util
 import java.util.concurrent.{BlockingQueue, TimeUnit}
@@ -37,7 +37,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
             throw new NullPointerException("attempted to add a null item.")
         content.synchronized {
             content.add(e)
-            AppLogger.vError(s"Added ${e} in content $this (${System.identityHashCode(this)})")
+            AppLoggers.Worker.trace(s"Added ${e} in content $this (${System.identityHashCode(this)})")
         }
         controller.wakeupAnyTask()
         true
@@ -62,14 +62,14 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
 
     @workerExecution
     override def take(): A = {
-        AppLogger.trace(s" Taking item in $this (${System.identityHashCode(this)})...")
+        AppLoggers.Worker.trace(s" Taking item in $this (${System.identityHashCode(this)})...")
         if (content.isEmpty) {
             controller.pauseTask() //will be released once the queue isn't empty anymore
             content.synchronized {
                 return poll()
             }
         }
-        AppLogger.trace(s"Something has been added ! $this (${System.identityHashCode(this)})")
+        AppLoggers.Worker.trace(s"Something has been added ! $this (${System.identityHashCode(this)})")
         if (content.isEmpty)
             throw new Error("Content can't be empty.")
         poll()

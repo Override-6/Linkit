@@ -16,7 +16,7 @@ package fr.linkit.engine.internal.language.bhv.integration
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
@@ -69,10 +69,10 @@ class FileIntegratedLambdas(center: CompilerCenter,
     private def genClass(context: LambdaRepositoryContext): Class[_ <: MethodCaller] = {
         val result = center
             .processRequest {
-                AppLogger.info(s"Compiling Lambdas Class for behavior file '$fileName'...")
+                AppLoggers.Compilation.info(s"Compiling Lambdas Class for behavior file '$fileName'...")
                 FileIntegratedLambdas.CompilationRequestFactory.makeRequest(context)
             }
-        AppLogger.info(s"Compilation done in ${result.getCompileTime} ms.")
+        AppLoggers.Compilation.info(s"Compilation done in ${result.getCompileTime} ms.")
         result.getValue.get
     }
 

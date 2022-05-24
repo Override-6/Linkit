@@ -54,7 +54,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         * */
         appPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
-        AppLogger.info("Server application is shutting down...")
+        AppLoggers.App.info("Server application is shutting down...")
 
         val totalConnectionCount = countConnections
         var downCount            = 0
@@ -72,7 +72,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             appPool.pauseCurrentTask()
 
         alive = false
-        AppLogger.info("Server application successfully shutdown.")
+        AppLoggers.App.info("Server application successfully shutdown.")
     }
 
     override def listConnections: Iterable[ServerConnection] = {
@@ -88,13 +88,13 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             throw new IllegalArgumentException(s"Server identifier length > ${Rules.MaxConnectionIDLength}")
 
         securityManager.checkConnectionConfig(configuration)
-        AppLogger.debug("Instantiating server connection...")
+        AppLoggers.App.debug("Instantiating server connection...")
         val serverConnection = new ServerConnection(this, configuration)
 
         serverConnection.runLaterControl {
-            AppLogger.debug("Starting server...")
+            AppLoggers.App.debug("Starting server...")
             serverConnection.start()
-            AppLogger.debug("Server started !")
+            AppLoggers.App.debug("Server started !")
         }.derivate() match {
             case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.identifier} on port ${configuration.port}", e)
             case Success(_) =>
@@ -162,12 +162,12 @@ object ServerApplication {
         }
 
         serverAppContext.runLaterControl {
-            AppLogger.info("Starting Server Application...")
+            AppLoggers.App.info("Starting Server Application...")
             serverAppContext.start()
             val loadSchematic = config.loadSchematic
-            AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
+            AppLoggers.App.debug(s"Applying schematic '${loadSchematic.name}'...")
             loadSchematic.setup(serverAppContext)
-            AppLogger.trace("Schematic applied successfully.")
+            AppLoggers.App.debug("Schematic applied successfully.")
         }.join() match {
             case Failure(exception) => throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
             case Success(_)         =>

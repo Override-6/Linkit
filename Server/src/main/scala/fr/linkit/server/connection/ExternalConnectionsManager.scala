@@ -17,7 +17,7 @@ import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnecti
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.persistence.ObjectTransferResult
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
-import fr.linkit.api.internal.system.{AppLogger, JustifiedCloseable, Reason}
+import fr.linkit.api.internal.system.{AppLoggers, JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable
@@ -38,10 +38,10 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
 
     override def close(reason: Reason): Unit = {
         for ((_, connection) <- connections) try {
-            AppLogger.trace(s"Shutting down connection '${connection.boundIdentifier}'...")
+            AppLoggers.App.info(s"Shutting down connection '${connection.boundIdentifier}'...")
             connection.shutdown()
         } catch {
-            case NonFatal(e) => AppLogger.printStackTrace(e)
+            case NonFatal(e) => e.printStackTrace()
         }
         closed = true
     }
@@ -58,7 +58,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     @throws[ServerException]("if the registered connection count exceeded configuration limit.")
     def registerConnection(identifier: String,
                            socket: SocketContainer): Unit = {
-        AppLogger.trace(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
+        AppLoggers.App.debug(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
         //Ensure that the connection's identifier that is about to be created isn't registered yet.
         if (connections.contains(identifier))
             throw ConnectionException(connections(identifier), s"This connection identifier is taken ! ('$identifier')")
@@ -74,17 +74,17 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
 
         val connectionSession = ExternalConnectionSession(identifier, socket, info)
         val connection        = ServerExternalConnection.open(connectionSession)
-        AppLogger.info(s"Stage 2 completed : Connection '$identifier' created.")
+        AppLoggers.Connection.info(s"Stage 2 completed : Connection '$identifier' created.")
         connections.put(identifier, connection)
         server.sendAuthorisedConnection(socket)
 
         val canConnect = true //server.configuration.checkConnection(connection)
         if (canConnect) {
-            AppLogger.info(s"Stage 3 completed : Connection of '$identifier' was registered into connection manager")
+            AppLoggers.Connection.info(s"Stage 3 completed : Connection of '$identifier' was registered into connection manager")
             return
         }
-
-        AppLogger.error(s"Security Manager discarded connection $identifier from the server.")
+    
+        AppLoggers.Connection.error(s"Security Manager discarded connection $identifier from the server.")
 
         connections.remove(identifier)
         connection.shutdown()

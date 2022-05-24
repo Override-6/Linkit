@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
@@ -69,14 +69,14 @@ final class SharedCacheDistantManager @Persist()(family: String,
 
     override def handleRequest(requestBundle: RequestPacketBundle): Unit = {
         val response = requestBundle.responseSubmitter
-        AppLogger.error(s"RECEIVED REQUEST $requestBundle IN DISTANT MANAGER")
+        AppLoggers.GNOM.error(s"RECEIVED REQUEST $requestBundle IN DISTANT MANAGER.")
         val msg =
             s"""This request can't be processed by this engine.
                | The request must be send to the engine that hosts the manager.
                | (Current Identifier = $currentIdentifier, host identifier = $ownerID)""".stripMargin
         response.putAttribute("errorMsg", msg)
         response.submit()
-        AppLogger.error(msg)
+        AppLoggers.GNOM.error(msg)
     }
 
 }

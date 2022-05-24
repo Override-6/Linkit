@@ -31,7 +31,7 @@ import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
@@ -67,16 +67,19 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     channel.setHandler(CenterHandler)
     
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A] = {
+        AppLoggers.SyncObj.debug(s"creating synchronized object at $reference with id $id.")
         makeSyncObject(id, creator, contracts, false)
     }
     
     override def mirrorObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A] = {
+        AppLoggers.SyncObj.debug(s"creating mirrored synchronized object at $reference with id $id.")
         makeSyncObject(id, creator, contracts, true)
     }
     
     private def makeSyncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData, mirror: Boolean): A with SynchronizedObject[A] = {
         val tree        = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], mirror, contracts)
         val treeProfile = ObjectTreeProfile(id, tree.getRoot.obj, currentIdentifier, mirror, contracts)
+        AppLoggers.SyncObj.debug(s"Notifying other caches located on '$reference' that a new synchronized object has been added on the cache.")
         channel.makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(ObjectPacket(treeProfile))
                 .putAllAttributes(this)
@@ -134,51 +137,10 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     
     private def precompileClasses(data: ContractDescriptorData): Unit = data match {
         case data: ContractDescriptorDataImpl if !data.isPrecompiled =>
-            val descs = data.groups.flatMap(_.descriptors.toSeq)
-            precompileClasses(descs)
-            data.markAsPrecompiled()
+            data.precompile(classCenter)
         case _                                                       =>
     }
     
-    private def precompileClasses(descs: Array[StructureContractDescriptor[AnyRef]]): Unit = {
-        var classes = mutable.HashSet.empty[Class[_]]
-        
-        def addClass(clazz: Class[_]): Unit = {
-            if (!Modifier.isAbstract(clazz.getModifiers))
-                classes += clazz
-        }
-        
-        descs.foreach(desc => {
-            val clazz = desc.targetClass
-            desc match {
-                case descriptor: MirroringStructureContractDescriptor[_] =>
-                    classes += descriptor.mirroringInfo.stubSyncClass.mainClass
-                case _                                                   =>
-                    addClass(clazz)
-            }
-            
-            desc.fields.filter(_.registrationKind == Synchronized).foreach(f => addClass(f.description.javaField.getType))
-            desc.methods.foreach(method => {
-                val javaMethod = method.description.javaMethod
-                if (method.returnValueContract.exists(_.registrationKind == Synchronized))
-                    addClass(javaMethod.getReturnType)
-                val paramsContracts = method.parameterContracts
-                if (paramsContracts.nonEmpty)
-                    paramsContracts.zip(javaMethod.getParameterTypes)
-                            .foreach { case (desc, paramType) => if (desc.registrationKind == Synchronized) addClass(paramType) }
-            })
-        })
-        classes -= classOf[Object]
-        classes = classes.filterNot(cl => classCenter.isClassGenerated(SyncClassDefUnique(cl)))
-                .filterNot(c => isNotOverrideable(c.getModifiers))
-        
-        if (classes.isEmpty)
-            return
-        AppLogger.info(s"Found ${classes.size} classes to compile in their sync versions")
-        AppLogger.debug("Classes to compile :")
-        classes.foreach(clazz => AppLogger.debug(s"\tgen.${clazz}Sync"))
-        classCenter.preGenerateClasses(classes.toList.map(SyncClassDefUnique(_)))
-    }
     
     private def isObjectPresent(location: ConnectedObjectReference): Boolean = {
         (location.cacheID == cacheID) && location.family == family && {
@@ -231,7 +193,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val path     = ip.path
         val node     = findNode(path)
         val senderID = bundle.coords.senderID
-        node.fold(AppLogger.error(s"Could not find sync object node for synchronised object located at $reference/~${path.mkString("/")}")) {
+        node.fold(AppLoggers.SyncObj.error(s"Could not find sync object node for synchronised object located at $reference/~${path.mkString("/")}")) {
             case node: TrafficInterestedNode[_] => node.handlePacket(ip, senderID, bundle.responseSubmitter)
             case _                              =>
                 throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedNode[_]].getSimpleName} in order to handle a member rmi request.")
@@ -331,7 +293,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         override def getContent: CacheRepoContent[A] = forest.snapshotContent
         
         override def onEngineAttached(engine: Engine): Unit = {
-            AppLogger.debug(s"Engine ${engine.identifier} attached to this synchronized object cache !")
+            AppLoggers.SyncObj.debug(s"Engine ${engine} attached to this synchronized object cache")
         }
         
         override def inspectEngine(engine: Engine, requestedCacheType: Class[_]): Option[String] = {
@@ -342,7 +304,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         }
         
         override def onEngineDetached(engine: Engine): Unit = {
-            AppLogger.debug(s"Engine ${engine.identifier} detached to this synchronized object cache !")
+            AppLoggers.SyncObj.debug(s"Engine ${engine} detached to this synchronized object cache")
         }
         
         override val objectLinker: Option[NetworkObjectLinker[_ <: SharedCacheReference] with TrafficInterestedNPH] = Some(forest)

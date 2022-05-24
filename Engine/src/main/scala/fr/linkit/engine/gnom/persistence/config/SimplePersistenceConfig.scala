@@ -29,8 +29,7 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
                                               customProfiles: ClassMap[TypeProfile[_]],
                                               override val contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH,
                                               override val autoContextObjects: Boolean,
-                                              override val useUnsafe: Boolean,
-                                              override val widePacket: Boolean) extends PersistenceConfig {
+                                              override val useUnsafe: Boolean) extends PersistenceConfig {
     
     private val cachedProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
     

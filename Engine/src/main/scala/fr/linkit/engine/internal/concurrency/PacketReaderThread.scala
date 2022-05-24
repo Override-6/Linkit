@@ -16,7 +16,7 @@ package fr.linkit.engine.internal.concurrency
 import fr.linkit.api.gnom.packet.traffic.PacketReader
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.concurrency.{IllegalThreadException, packetWorkerExecution}
-import fr.linkit.api.internal.system.{AppLogger, JustifiedCloseable, Reason}
+import fr.linkit.api.internal.system.{AppLoggers, JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread.packetReaderThreadGroup
 
 import java.nio.channels.AsynchronousCloseException
@@ -46,7 +46,7 @@ class PacketReaderThread(reader: PacketReader,
             }
         } catch {
             case NonFatal(e) =>
-                AppLogger.error("Packet reading threw an error", e)
+                AppLoggers.Traffic.error("Packet reading threw an error", e)
                 open = false
         } finally {
             //println("STOPPED PACKET WORKER")
@@ -72,12 +72,12 @@ class PacketReaderThread(reader: PacketReader,
                 onException("Asynchronous close.")
 
             case NonFatal(e) =>
-                AppLogger.printStackTrace(e)
+                e.printStackTrace()
                 onException(s"Suddenly disconnected from the server.")
         }
 
         def onException(msg: String): Unit = {
-            AppLogger.warn(msg)
+            AppLoggers.Traffic.error(msg)
             onReadException()
         }
     }

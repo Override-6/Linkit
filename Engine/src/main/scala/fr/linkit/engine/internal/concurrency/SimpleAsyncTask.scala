@@ -15,7 +15,7 @@ package fr.linkit.engine.internal.concurrency
 
 import fr.linkit.api.internal.concurrency.WorkerPools.{currentTask, currentWorker}
 import fr.linkit.api.internal.concurrency._
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.internal.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
 
@@ -207,7 +207,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         if (isExecuting && worker.isSleeping) {
             worker.getController.wakeup(this)
         } else {
-            AppLogger.error(s"Could not wakeup task '$this'")
+            AppLoggers.Worker.error(s"Could not wakeup task '$this'")
         }
     }
     

@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.mapping
 
-import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.engine.internal.language.bhv.Contract
 import org.jetbrains.annotations.Nullable
 
@@ -40,7 +40,7 @@ object MappingEngine {
             val url      = source.getLocation
             val root     = Path.of(url.toURI)
             val rootPath = root.toString
-            AppLogger.debug(s"Mapping source $rootPath...")
+            AppLoggers.Mappings.info(s"Mapping source $rootPath...")
             ClassMappings.addClassPath(source)
 
             mapDirectory(rootPath, root, classLoader, EmptyFilter)
@@ -62,11 +62,11 @@ object MappingEngine {
     def mapJDK(): Unit = {
         val jdkRoot = System.getProperty("java.home")
         val adapter = Path.of(jdkRoot)
-        AppLogger.debug(s"Mapping JDK ($adapter)...")
+        AppLoggers.Mappings.info(s"Mapping JDK ($adapter)...")
         mapDir(adapter, getClass.getClassLoader, DefaultFilter)
-        AppLogger.debug("JDK Mapping done, classes were mapped in packages : ")
+        AppLoggers.Mappings.debug("JDK Mapping done, classes were mapped in packages : ")
         DefaultFilter.filters.foreach(filter => {
-            AppLogger.debug(s"\t${filter.line}")
+            AppLoggers.Mappings.debug(s"\t${filter.line}")
         })
     }
 
@@ -138,7 +138,7 @@ object MappingEngine {
                     ClassMappings.putClass(className, classLoader)
                 } catch {
                     case _: NoClassDefFoundError =>
-                        AppLogger.warn(s"$className is not a valid class")
+                        AppLoggers.Mappings.trace(s"$className is not a valid class")
                 }
             }
         } else if (path.endsWith(".bhv")) {
