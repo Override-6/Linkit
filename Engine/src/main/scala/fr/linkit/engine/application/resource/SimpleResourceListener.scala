@@ -14,11 +14,11 @@
 package fr.linkit.engine.application.resource
 
 import fr.linkit.api.application.resource.{ResourceKey, ResourceListener, ResourcesMaintainer}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
+
 import java.io.Closeable
 import java.nio.file._
 import java.util
-
 import scala.collection.mutable
 
 class SimpleResourceListener extends ResourceListener with Closeable {

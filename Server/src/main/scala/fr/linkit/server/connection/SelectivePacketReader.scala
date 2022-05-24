@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.gnom.packet.traffic.PacketReader
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.internal.concurrency.workerExecution
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.{DefaultPacketReader, DynamicSocket, SocketClosedException}
 
 import java.net.SocketException

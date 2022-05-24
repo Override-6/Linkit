@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.reference.presence
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
 import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable

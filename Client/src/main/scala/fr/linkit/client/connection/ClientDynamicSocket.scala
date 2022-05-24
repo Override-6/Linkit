@@ -13,7 +13,7 @@
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.connection.ClientDynamicSocket.UnsetIdentifier
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 

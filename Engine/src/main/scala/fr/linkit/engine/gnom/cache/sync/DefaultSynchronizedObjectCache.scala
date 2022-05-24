@@ -31,7 +31,7 @@ import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile

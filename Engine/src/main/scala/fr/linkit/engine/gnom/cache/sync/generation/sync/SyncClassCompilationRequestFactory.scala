@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilerCenter}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassCompilationRequestFactory.ClassBlueprint
 import fr.linkit.engine.internal.generation.compilation.RuntimeClassOperations
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory

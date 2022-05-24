@@ -13,9 +13,9 @@
 
 package fr.linkit.server.config.schematic
 
-import fr.linkit.api.internal.system.AppLoggers
 import fr.linkit.api.application.config.ApplicationInstantiationException
 import fr.linkit.api.application.config.schematic.AppSchematic
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.ServerConnectionConfiguration
 

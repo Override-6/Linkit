@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, SyncNodeDataRequest, UnknownObjectSyncNode}
 import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}

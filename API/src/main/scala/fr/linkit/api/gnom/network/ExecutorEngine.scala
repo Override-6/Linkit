@@ -18,7 +18,6 @@ object ExecutorEngine {
 
     private val local = new ThreadLocal[Engine]()
 
-    private var networkStarted        = false
     private var defaultEngine: Engine = _
 
     def currentEngine: Engine = {
@@ -39,9 +38,6 @@ object ExecutorEngine {
     private[linkit] def initDefaultEngine(engine: Engine): Unit = {
         if (engine == null)
             throw new NullPointerException
-        if (networkStarted)
-            throw new IllegalStateException("Default engine already set.")
-        networkStarted = true
         defaultEngine = engine
     }
 

@@ -16,7 +16,8 @@ package fr.linkit.engine.internal.concurrency
 import fr.linkit.api.gnom.packet.traffic.PacketReader
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.concurrency.{IllegalThreadException, packetWorkerExecution}
-import fr.linkit.api.internal.system.{AppLoggers, JustifiedCloseable, Reason}
+import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread.packetReaderThreadGroup
 
 import java.nio.channels.AsynchronousCloseException

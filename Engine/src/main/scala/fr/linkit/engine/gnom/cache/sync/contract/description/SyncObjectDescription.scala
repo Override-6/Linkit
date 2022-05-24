@@ -3,7 +3,7 @@ package fr.linkit.engine.gnom.cache.sync.contract.description
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncClassDef}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.{SyntheticMod, isNotOverrideable}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.JavaKeywords
 

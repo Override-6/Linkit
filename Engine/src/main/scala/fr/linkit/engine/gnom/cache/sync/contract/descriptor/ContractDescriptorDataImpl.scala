@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverrideable
 import fr.linkit.engine.internal.utils.ClassMap
 

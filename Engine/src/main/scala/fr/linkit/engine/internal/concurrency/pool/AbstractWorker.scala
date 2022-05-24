@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.internal.concurrency._
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorker.TaskProfile
 
@@ -52,8 +52,10 @@ private[concurrency] trait AbstractWorker
             val t = parkAction
             isParkingForWorkflow = false
             //AppLogger.trace("This thread has been unparked.")
-            forcedTasks.foreach(runTask)
-            forcedTasks.clear()
+            forcedTasks.synchronized {
+                forcedTasks.foreach(runTask)
+                forcedTasks.clear()
+            }
             if (!loopCondition) {
                 return
             }
@@ -105,7 +107,9 @@ private[concurrency] trait AbstractWorker
         if (!isSleeping)
             throw new IllegalThreadStateException("Thread isn't sleeping.")
         val id = if (currentTask == null) 0 else currentTask.taskID + 1
-        forcedTasks += new SimpleAsyncTask(id, currentTask, () => Try(task))
+        forcedTasks.synchronized {
+            forcedTasks += new SimpleAsyncTask(id, currentTask, () => Try(task))
+        }
         if (currentTask != null)
             wakeup(currentTask)
     }

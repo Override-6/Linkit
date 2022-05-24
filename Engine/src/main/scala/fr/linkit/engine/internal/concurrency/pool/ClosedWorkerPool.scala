@@ -20,7 +20,9 @@ class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWo
 
     override def haveMoreTasks: Boolean = !workQueue.isEmpty
 
-    override protected def nextTask: Runnable = workQueue.take()
+    override protected def takeTask: Runnable = {
+        workQueue.take()
+    }
 
     def setThreadCount(newCount: Int): Unit = {
         if (workers.size > newCount)

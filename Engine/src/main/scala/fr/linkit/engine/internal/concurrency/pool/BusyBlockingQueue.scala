@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.internal.concurrency.workerExecution
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 
 import java.util
 import java.util.concurrent.{BlockingQueue, TimeUnit}

@@ -13,13 +13,13 @@
 
 package fr.linkit.engine.gnom.persistence.config
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
 import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.config.profile.DefaultTypeProfile
-import fr.linkit.engine.gnom.persistence.config.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, RegularTypePersistence, SynchronizedObjectPersistence}
+import fr.linkit.engine.gnom.persistence.config.profile.persistence._
 import fr.linkit.engine.gnom.persistence.defaults.special.EmptyObjectTypePersistence
 import fr.linkit.engine.internal.utils.ClassMap
 
@@ -55,15 +55,19 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
                 else getProfile[T](clazz)
             case _                           =>
                 ChippedObjectAdapter.findAdapter(ref) match {
-                    case Some(_) => newMirroredObjectProfile(clazz)
-                    case None    => getProfile(clazz)
+                    case Some(chi) => newMirroredObjectProfile(clazz, chi)
+                    case None      => getProfile(clazz)
                 }
         }
     }
     
-    private def newMirroredObjectProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        val syncPersist = new SynchronizedObjectPersistence[Nothing](EmptyObjectTypePersistence).asInstanceOf[TypePersistence[T]]
-        new DefaultTypeProfile[T](clazz, this, Array(syncPersist))
+    private def newMirroredObjectProfile[T <: AnyRef](clazz: Class[_], chi: ChippedObject[_] = null): TypeProfile[T] = {
+        val syncPersist = if (chi == null) {
+            new SynchronizedObjectPersistence[Nothing](EmptyObjectTypePersistence)
+        } else {
+            new ChippedObjectPersistence(chi, EmptyObjectTypePersistence)
+        }.asInstanceOf[TypePersistence[T]]
+        new DefaultTypeProfile[T](clazz, this, Array(syncPersist.asInstanceOf[TypePersistence[T]]))
     }
     
     private def getSyncOriginClass(clazz: Class[_]): Class[_] = {

@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.packet.traffic.channel.request
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{ResponseHolder, Submitter}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 
 import java.util.concurrent.BlockingQueue

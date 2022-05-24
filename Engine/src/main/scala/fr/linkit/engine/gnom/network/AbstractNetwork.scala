@@ -22,7 +22,7 @@ import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkRefer
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
@@ -119,6 +119,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
     
     private def initDataTrunk(): NetworkDataTrunk = {
+        AppLoggers.GNOM.info("Initialising Network Trunk.")
         trunkInitializing = true
         val trunk = retrieveDataTrunk()
         trunkInitializing = false
@@ -131,15 +132,19 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     
     def initialize(): this.type = {
         //init those lazy vals, do not change the order!
+        AppLoggers.GNOM.info("Initialising Network.")
+        AppLoggers.GNOM.info("Initialising GNOL and Global Cache.")
         gnol
         globalCache
-        
+    
+        AppLoggers.GNOM.info("Finalizing Network Initialisation.")
         trunk.reinjectEngines()
         engine0 = trunk.newEngine(currentIdentifier)
         staticAccesses = trunk.staticAccesses
         engine0.asInstanceOf[DefaultEngine].classMappings
         
         ExecutorEngine.initDefaultEngine(currentEngine)
+        AppLoggers.GNOM.debug("Network Initialised.")
         this
     }
     

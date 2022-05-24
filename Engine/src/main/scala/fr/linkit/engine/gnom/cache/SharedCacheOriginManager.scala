@@ -21,6 +21,7 @@ import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.AbstractSharedCacheManager.SystemCacheRange
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
@@ -108,6 +109,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
         val behavior         = request.getAttribute[CacheSearchMethod]("behavior").get //TODO orElse throw an exception
 
         def failRequest(msg: String): Nothing = {
+            AppLoggers.GNOM.error(s"Could not send cache content to $senderID: $msg")
             response.addPacket(StringPacket(msg))
                     .submit()
             break

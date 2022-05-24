@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.CacheHandler
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 class DefaultCachePacketChannel(scope: ChannelScope,

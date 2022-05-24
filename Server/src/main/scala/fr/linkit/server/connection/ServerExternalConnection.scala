@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import org.jetbrains.annotations.NotNull
 
@@ -94,7 +94,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
-        /*runLater*/ {
+        runLater {
             val coords       = DedicatedPacketCoordinates(path, boundIdentifier, currentIdentifier)
             val config       = traffic.getPersistenceConfig(coords.path)
             val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network)

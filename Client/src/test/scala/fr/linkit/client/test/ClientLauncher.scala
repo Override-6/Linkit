@@ -13,7 +13,7 @@
 
 package fr.linkit.client.test
 
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}

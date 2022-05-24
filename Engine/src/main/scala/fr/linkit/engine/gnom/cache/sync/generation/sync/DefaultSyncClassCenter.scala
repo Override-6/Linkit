@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, SynchronizedO
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsCallerDescription}
 import fr.linkit.engine.internal.mapping.ClassMappings
 

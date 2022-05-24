@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.internal.system
+package fr.linkit.api.internal.system.log
 
 import org.apache.logging.log4j.{LogManager, Logger}
 
@@ -28,7 +28,6 @@ object AppLoggers {
     final val Compilation = logger("Compilation")
     final val Worker      = logger("Worker")
     final val Connection  = logger("Connection")
-
     
     private def logger(name: String): Logger = LogManager.getLogger(name)
 }

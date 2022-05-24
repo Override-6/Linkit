@@ -19,6 +19,7 @@ import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system
 import fr.linkit.api.internal.system._
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication.Version
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}

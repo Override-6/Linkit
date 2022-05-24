@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.packet.traffic
 import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTranslator}
 import fr.linkit.api.gnom.packet.traffic.{PacketReader, PacketTraffic}
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.security.BytesHasher
 import fr.linkit.engine.internal.utils.NumberSerializer
 import org.jetbrains.annotations.Nullable

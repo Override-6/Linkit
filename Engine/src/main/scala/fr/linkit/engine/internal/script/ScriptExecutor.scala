@@ -17,7 +17,7 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile, ScriptHandler, ScriptInstantiator}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory

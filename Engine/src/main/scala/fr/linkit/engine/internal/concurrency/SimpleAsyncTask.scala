@@ -15,7 +15,7 @@ package fr.linkit.engine.internal.concurrency
 
 import fr.linkit.api.internal.concurrency.WorkerPools.{currentTask, currentWorker}
 import fr.linkit.api.internal.concurrency._
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
 
@@ -213,13 +213,12 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     
     override def setPaused(): Unit = {
         paused = true
-        //AppLogger.info(s"TASK $this MARKED AS PAUSED")
+        AppLoggers.Worker.debug(s"task $this marked as paused")
     }
     
     override def setContinue(): Unit = {
         paused = false
-        //AppLogger.info(s"TASK $this MARKED AS CONTINUE")
-        //Thread.dumpStack()
+        AppLoggers.Worker.debug(s"task $this marked as continue")
     }
     
     override def toString: String = s"SimpleAsyncTask($taskID, $parent){paused = $isPaused; executing = $isExecuting; running = $isRunning}"

@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttr
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.concurrency.pool.{AbstractWorkerPool, ClosedWorkerPool}
@@ -32,8 +32,8 @@ import fr.linkit.server.connection.packet.ServerPacketTraffic
 import fr.linkit.server.network.ServerSideNetwork
 import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
-import java.net.{ServerSocket, SocketException}
 
+import java.net.{ServerSocket, SocketException}
 import scala.util.control.NonFatal
 
 class ServerConnection(applicationContext: ServerApplication,

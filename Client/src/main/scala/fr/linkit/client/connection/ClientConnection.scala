@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork

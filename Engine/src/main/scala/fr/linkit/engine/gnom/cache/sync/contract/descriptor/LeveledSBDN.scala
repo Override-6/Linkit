@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureCont
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{findReasonTypeCantBeSync, fixUndescribedMethods, getSyncableInterface}

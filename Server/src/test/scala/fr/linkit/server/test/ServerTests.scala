@@ -25,7 +25,7 @@ package fr.linkit.server.test
  *  questions.
  */
 
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.test.HierarchyRaiserOrderer
 import fr.linkit.api.test.TestUtils._
 import fr.linkit.server.ServerApplication

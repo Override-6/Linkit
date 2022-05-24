@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.mapping
 
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 
 import java.security.CodeSource
 import scala.collection.mutable

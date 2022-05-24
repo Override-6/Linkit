@@ -26,7 +26,7 @@ import fr.linkit.api.gnom.reference.linker.{InitialisableNetworkObjectLinker, Ne
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, TrafficInterestedNPH}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
@@ -62,14 +62,14 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
     override def getCachesLinker: InitialisableNetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH = ManagerCachesLinker
 
-    override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], method: CacheSearchMethod): A = this.synchronized {
+    override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], method: CacheSearchMethod): A = /*this.synchronized*/ {
         AppLoggers.GNOM.debug(s"Attaching to cache $cacheID in $family. (method=$method, expected cache type: ${classTag[A].runtimeClass.getName})")
         LocalCachesStore
             .findCacheSecure[A](cacheID)
             .getOrElse(createCache(cacheID, factory, method))
     }
 
-    override def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A = this.synchronized {
+    override def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A = /*this.synchronized */{
         LocalCachesStore
             .findCacheSecure[A](cacheID)
             .getOrElse {

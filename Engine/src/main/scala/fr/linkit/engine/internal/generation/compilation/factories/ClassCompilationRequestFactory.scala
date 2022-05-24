@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.api.internal.generation.compilation.{CompilationContext, CompilationRequest, CompilationResult}
-import fr.linkit.api.internal.system.AppLoggers
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.internal.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
 

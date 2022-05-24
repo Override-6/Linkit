@@ -27,7 +27,7 @@ class HiringBusyWorkerPool(name: String) extends AbstractWorkerPool(name) {
         !workQueue.isEmpty
     }
 
-    override protected def nextTask: Runnable = {
+    override protected def takeTask: Runnable = {
         workQueue.take()
     }
 }

@@ -18,10 +18,12 @@ import fr.linkit.api.application.resource.external.{LocalFolder, ResourceFolder}
 import fr.linkit.api.application.{ApplicationContext, ApplicationReference}
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
-import fr.linkit.api.internal.system.{ApiConstants, AppException, AppLoggers, Version}
+import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.api.internal.system.{ApiConstants, AppException, Version}
 import fr.linkit.engine.application.LinkitApplication.setInstance
 import fr.linkit.engine.application.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
+import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.Contract
@@ -134,9 +136,9 @@ object LinkitApplication {
 
         System.setProperty(EngineConstants.ImplVersionProperty, implVersion.toString)
     
-        AppLoggers.App.info("-------------------------- Linkit Framework --------------------------")
+        AppLoggers.App.info("-------------------------------------- Linkit Framework --------------------------------------")
         AppLoggers.App.info(s"\tApi Version            | ${ApiConstants.Version}")
-        AppLoggers.App.info(s"\tEngine Version         | ${EngineConstants.Version}")
+        AppLoggers.App.info(s"\tEngine Version         | ${EngineConstants.Version} - Packet protocol version: ${ConstantProtocol.ProtocolVersion}")
         AppLoggers.App.info(s"\tImplementation Version | ${implVersion}")
         AppLoggers.App.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
     

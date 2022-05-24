@@ -17,7 +17,8 @@ import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnecti
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.persistence.ObjectTransferResult
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
-import fr.linkit.api.internal.system.{AppLoggers, JustifiedCloseable, Reason}
+import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable

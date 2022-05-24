@@ -21,7 +21,8 @@ import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.workerExecution
-import fr.linkit.api.internal.system.{AppLoggers, Reason}
+import fr.linkit.api.internal.system.Reason
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 import fr.linkit.engine.gnom.packet.traffic.DefaultChannelPacketBundle
 

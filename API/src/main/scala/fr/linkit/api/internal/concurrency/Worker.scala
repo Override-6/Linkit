@@ -33,5 +33,6 @@ trait Worker {
 
     @throws[IllegalThreadStateException]("if isSleeping = false")
     def runWhileSleeping(task: => Unit): Unit
+    
 
 }
