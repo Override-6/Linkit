@@ -19,7 +19,7 @@ object RFSCServer {
         println("Server launched !")
         val network = server.network
         network.onNewEngine { client => {
-            val path = Path.of(s"C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Server\\${client.identifier}\\")
+            val path = Path.of(s"C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Server\\${client.identifier}\\")
             if (Files.notExists(path))
                 Files.createDirectories(path)
             clientsHomes.put(client,path)
@@ -31,7 +31,7 @@ object RFSCServer {
 
     private def createConnection(identifier0: String): CentralConnection = {
         val config = new ServerApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = "C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = identifier0

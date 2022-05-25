@@ -11,6 +11,7 @@
 /Examples/RemoteFileSystemControl/src
 /Examples/RemoteAPIImplementationControl/src
 /src
+/Engine/src/main/resources/natives/
 CMakeSettings.json
 .idea_modules
 *.class
