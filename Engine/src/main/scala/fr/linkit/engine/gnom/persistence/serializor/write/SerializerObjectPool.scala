@@ -122,23 +122,6 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         }
     }
     
-    private def addLambda(lambdaObject: AnyRef): Unit = {
-        val nrlOpt = selector.findObjectReference(lambdaObject)
-        if (nrlOpt.nonEmpty) {
-            addReferencedObject(lambdaObject, nrlOpt.get)
-            return
-        }
-        
-        val ltp            = lambdaObject match {
-            case _: Serializable => SerializableLambdasTypePersistence
-            case _               => NotSerializableLambdasTypePersistence
-        }
-        val representation = ltp.toRepresentation(lambdaObject)
-        val decomposed     = addObjectDecomposed(representation)
-        val slo            = new SimpleLambdaObject(lambdaObject, decomposed, representation)
-        getChunkFromFlag(Lambda).add(slo)
-    }
-    
     private def addObj(ref: AnyRef): Unit = {
         //just do not add null elements (automatically referenced to '0' when written)
         //nor do not add elements that are already contained in the pool
@@ -158,27 +141,36 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
                 getChunk(ref).add(ref)
             case _ if isLambdaObject(ref)               =>
                 addLambda(ref)
-            /*case chi: ChippedObject[_] if chi.isMirrored =>
-                addMirroredObject(chi, null)*/
             case _ =>
                 addObj0(ref)
         }
     }
     
-    /*private def addMirroredObject(chi: ChippedObject[_], @Nullable refHint: Option[NetworkObjectReference]): Unit = {
-        val nrlOpt = if (refHint == null) selector.findObjectReference(chi) else refHint
-        if (nrlOpt.isEmpty) {
-            addTypeOfIfAbsent(chi)
-            val chunk        = getChunkFromFlag[ReferencedPoolObject](Mirroring)
-            val pos          = chunks(Object).size
-            val ref          = chi.reference
-            val stubClassDef = chi.getNode.contract.remoteObjectInfo.get.stubSyncClass
-            chunk.add(new MirroredObjectWrite(stubClassDef, pos, ref, chi))
-            addObj(ref)
-        } else {
-            addReferencedObject(chi, nrlOpt.get)
+    private def addLambda(lambdaObject: AnyRef): Unit = {
+        val nrlOpt = selector.findObjectReference(lambdaObject)
+        if (nrlOpt.nonEmpty) {
+            addReferencedObject(lambdaObject, nrlOpt.get)
+            return
         }
-    }*/
+        
+        val ltp            = lambdaObject match {
+            case _: Serializable => SerializableLambdasTypePersistence
+            case _               => NotSerializableLambdasTypePersistence
+        }
+        val representation = ltp.toRepresentation(lambdaObject)
+        val decomposed     = addObjectDecomposed(representation)
+        val slo            = new SimpleLambdaObject(lambdaObject, decomposed, representation)
+        getChunkFromFlag(Lambda).add(slo)
+    }
+    
+    private def addObj0(ref: AnyRef): Unit = {
+        val nrlOpt = selector.findObjectReference(ref)
+        if (nrlOpt.isEmpty) {
+            addObjectDecomposed(ref)
+        } else {
+            addReferencedObject(ref, nrlOpt.get)
+        }
+    }
     
     @inline
     private def isLambdaObject(ref: AnyRef): Boolean = {
@@ -199,15 +191,6 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         addAll(decomposed)
         
         decomposed
-    }
-    
-    private def addObj0(ref: AnyRef): Unit = {
-        val nrlOpt = selector.findObjectReference(ref)
-        if (nrlOpt.isEmpty) {
-            addObjectDecomposed(ref)
-        } else {
-            addReferencedObject(ref, nrlOpt.get)
-        }
     }
     
     private def addReferencedObject(ref: AnyRef, nrl: NetworkObjectReference): Unit = {

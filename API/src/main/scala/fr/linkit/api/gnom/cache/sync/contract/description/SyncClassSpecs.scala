@@ -84,8 +84,9 @@ object SyncClassDef {
     }
     
     def apply(superClass: Class[_], interfaces: Array[Class[_]]): SyncClassDef = {
-        if (interfaces.isEmpty) apply(superClass)
-        else new SyncClassDefMultiple(superClass, interfaces)
+        val ifs = interfaces.filterNot(_.isAssignableFrom(superClass)).distinct
+        if (ifs.isEmpty) apply(superClass)
+        else new SyncClassDefMultiple(superClass, ifs)
     }
     
     private[description] def check(clazz: Class[_]): Unit = {

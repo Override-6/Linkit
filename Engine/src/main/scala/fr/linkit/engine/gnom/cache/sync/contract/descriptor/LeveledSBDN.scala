@@ -92,14 +92,14 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             val paramContractCount = paramsContracts.length
             if (!paramsContracts.isEmpty && paramCount != paramContractCount)
                 throw new BadContractException(s"Contract of method $javaMethod for $clazz contains a list of the method's arguments contracts with a different length as the method's parameter count (method parameter count: $paramCount vs method's params contracts count: $paramContractCount).")
-            method.parameterContracts.filter(_.registrationKind == Synchronized)
+            method.parameterContracts.filter(_.registrationKind.isConnectable)
                     .zip(javaMethod.getParameters)
                     .foreach { case (_, param) =>
                         val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' for parameter '${param.getName}' of type ${param.getType.getName}: ${kind} cannot be synchronized."
                         ensureTypeCanBeSync(param.getType, msg)
                     }
-            if (method.returnValueContract.exists(_.registrationKind == Synchronized)) {
-                val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' of return type ${javaMethod.getReturnType.getName}: ${kind} cannot be synchronized."
+            if (method.returnValueContract.exists(_.registrationKind.isConnectable)) {
+                val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' with return type ${javaMethod.getReturnType.getName}: ${kind} cannot be synchronized."
                 ensureTypeCanBeSync(javaMethod.getReturnType, msg)
             }
         })

@@ -6,6 +6,8 @@ import fr.linkit.**
 import java.net.URI
 import scala.collection.mutable
 import java.io.*
+import java.util.function.*
+import java.util.*
 import java.nio.file.**
 
 code ${
@@ -31,13 +33,27 @@ describe FileSystem {
         chip returnvalue
     }
 }
-describe Path [chip] {
+describe Path  {
     foreach method enable following only_cache_owner
     register(WatchService, WatchEvent.Kind[]) {
         chip returnvalue
     }
 }
-describe WatchService [chip] {
+describe WatchKey {
+    foreach method enable following only_cache_owner {
+        chip returnvalue
+    }
+}
+
+describe ArrayList [chip] {
+    foreach method enable following only_owner
+    toArray() following only_owner {
+        chip returnvalue
+    }
+}
+
+
+describe WatchService  {
     foreach method enable following only_cache_owner {
         chip returnvalue
     }

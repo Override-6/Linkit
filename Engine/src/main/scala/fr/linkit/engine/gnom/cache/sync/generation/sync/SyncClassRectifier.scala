@@ -262,11 +262,8 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
                 val declaringClass = javaMethod.getDeclaringClass
                 val enclosing      = {
                     if (declaringClass.isInterface) {
-                        if (declaringClass.isAssignableFrom(superClass))
-                            s"${superClass.getName}."
-                        else {
-                            interfaces.find(declaringClass.isAssignableFrom).get.getName + "."
-                        }
+                        if (declaringClass.isAssignableFrom(superClass)) s""
+                        else interfaces.find(declaringClass.isAssignableFrom).get.getName + "."
                     } else ""
                 }
 

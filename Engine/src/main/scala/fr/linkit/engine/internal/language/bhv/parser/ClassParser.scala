@@ -60,7 +60,7 @@ object ClassParser extends BehaviorLanguageParser {
         val methodSignature            = {
             val param  = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case sync ~ name ~ id => MethodParam(sync, name, id) }
             val params = repsep(param, Comma)
-            
+    
             identifier ~ (ParenLeft ~> params <~ ParenRight).? ^^ { case name ~ params => MethodSignature(name, params.getOrElse(Seq())) }
         }
         val enabledMethodCore          = {

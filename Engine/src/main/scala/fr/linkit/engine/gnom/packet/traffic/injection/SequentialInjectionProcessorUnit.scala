@@ -28,16 +28,15 @@ import scala.collection.mutable.ListBuffer
 
 class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
     
-    private final var executor: Worker = _
     private final val queue            = mutable.PriorityQueue.empty[ObjectDeserializationResult] { case (a, b) => a.ordinal - b.ordinal }
     private final val locker           = new SimpleWorkerController()
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
+    private final var executor: Worker = _
     
     override def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit = {
         AppLoggers.GNOM.trace(s"SIPU: adding packet injection for channel '${injectable.reference}'. Current unit executor: $executor. packet queue length = ${queue.size}")
         
         val currentWorker = WorkerPools.currentWorker
-        //AppLogger.debug(s"posting serialization result in sipu, executor = $executor")
         queue.synchronized {
             queue.enqueue(result)
         }
@@ -49,7 +48,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
                     AppLoggers.GNOM.debug(s"SIPU: Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
-                    executor.runWhileSleeping(deserializeAll(injectable))
+                    executor.runWhileSleeping(deserializeAll(true, injectable))
                     return
                 }
                 val threadState = executor.thread.getState
@@ -62,21 +61,23 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                         //thread is blocked, let's transfer all the remaining deserialisation / injection work to this thread.
                         //This operation has been made up in order to avoid possible deadlocks in local, or through the network.
                         //If the initial executor is notified or unparked, it will simply give up this SIPU.
-                        executor = currentWorker
-                    
+                        
+                        //don't return and let the thread enter in the deserialization process
+                        
                     case other =>
                         throw new IllegalThreadStateException(s"Could not inject packet into SIPU: unit's executor is ${other.name().toLowerCase()}.")
                 }
             }
-            executor = currentWorker
         }
-        deserializeAll(injectable)
+        
+        executor = currentWorker
+        deserializeAll(false, injectable)
     }
     
-    private def deserializeAll(injectable: PacketInjectable): Unit = {
+    private def deserializeAll(duringSleep: Boolean, injectable: PacketInjectable): Unit = {
         // If any of the chained SIPU is processing,
         // the current unit will wait until the whole chain is complete.
-        val currentWorker = WorkerPools.currentWorker
+        val currentWorker   = WorkerPools.currentWorker
         for (unit <- chain) {
             unit.join()
             if (executor ne currentWorker) {
@@ -95,14 +96,14 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
             return
         //everything deserialized, now realising this deserialization unit.
         this.synchronized {
-            executor = null
+            if (!duringSleep) executor = null
             locker.wakeupAllTasks()
             this.notifyAll()
         }
     }
     
     /**
-     * Will make the current thread wait until this unit have terminated all his deserialisation work.
+     * Will make the current thread wait until this unit have terminated all his deserialisation / injection work.
      * */
     def join(): Unit = {
         val currentTask = this.synchronized {

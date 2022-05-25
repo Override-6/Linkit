@@ -127,7 +127,10 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     }
     
     private def warpTypePersistencesWithSyncPersist[T <: AnyRef](profile: TypeProfile[T]): TypeProfile[T] = {
-        val persistences = profile.getPersistences.map(new SynchronizedObjectPersistence[Nothing](_).asInstanceOf[TypePersistence[T]])
+        val persistences = {
+            (profile.getPersistences :+ EmptyObjectTypePersistence)
+                    .map(new SynchronizedObjectPersistence[Nothing](_).asInstanceOf[TypePersistence[T]])
+        }
         new DefaultTypeProfile[T](profile.typeClass, this, persistences)
     }
     

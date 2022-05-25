@@ -60,7 +60,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                         .nextResponse
                         .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
-                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeReference, executed by engine '$desiredEngineReturn' failed :\n $exceptionString")
+                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeReference, executed on engine '$desiredEngineReturn' failed :\n $exceptionString")
                     case p: RefPacket[R]                     =>
                         requestResult = p.value
                         isResultSet = true

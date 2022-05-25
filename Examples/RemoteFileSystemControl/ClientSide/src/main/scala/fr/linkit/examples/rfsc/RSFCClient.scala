@@ -18,6 +18,7 @@ object RSFCClient {
         val serverStatics = network.getStaticAccess(1)
         
         listenDistantDir(serverStatics)
+        Thread.sleep(5615656)
         sendFile(serverStatics)
         
         serverStatics[System].exit(0)
@@ -30,9 +31,11 @@ object RSFCClient {
         dir.register(watcher, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE)
         new Thread(() => while (true) {
             val key = watcher.take()
-            key.pollEvents().forEach { event =>
-                println(s"${event.context()}: ${event.kind()}")
-            }
+            key.pollEvents()
+                    .toArray(new Array[WatchEvent[Path]](0))
+                    .foreach {
+                        event => println(s"${event.context()}: ${event.kind()}")
+                    }
         }, "remote directory listener").start()
     }
     
