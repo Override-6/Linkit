@@ -39,6 +39,8 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
     private val trees        = new mutable.HashMap[Int, DefaultConnectedObjectTree[A]]
     private val unknownTrees = new mutable.HashMap[Int, UnknownTree]()
     
+    private[tree] val cacheOwnerID: String = center.ownerID
+    
     /*
     * used to store objects whose synchronized version of keys already have bound references.
     * */
@@ -62,7 +64,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         def toProfile(tree: ConnectedObjectTree[A]): ObjectTreeProfile[A] = {
             val node       = tree.rootNode
             val syncObject = node.obj
-            val mirror  = syncObject.isMirroring || syncObject.isMirrored
+            val mirror     = syncObject.isMirroring || syncObject.isMirrored
             ObjectTreeProfile[A](tree.id, syncObject, node.ownerID, mirror, tree.contractFactory.data)
         }
         
@@ -144,7 +146,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                         throw new UnsupportedOperationException(s"Synchronized object already exists at $reference")
                 case node: UnknownObjectSyncNode =>
                     val parent = node.parent.asInstanceOf[MutableNode[AnyRef]]
-                    val level = if (syncObj.isMirrored) SyncLevel.Mirror else SyncLevel.Synchronized
+                    val level  = if (syncObj.isMirrored) SyncLevel.Mirror else SyncLevel.Synchronized
                     val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync, None, reference.ownerID, level))
                     node.setAsKnownObjectNode(data)
             }

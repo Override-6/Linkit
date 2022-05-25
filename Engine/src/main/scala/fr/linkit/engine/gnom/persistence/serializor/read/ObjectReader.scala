@@ -109,7 +109,7 @@ class ObjectReader(bundle: PersistenceBundle,
         def readDef(): SyncClassDef = {
             val classCount = buff.getChar.toInt
             if (classCount == 1) {
-                return new SyncClassDefUnique(pool.getType(readNextRef))
+                return SyncClassDef(pool.getType(readNextRef))
             }
             if (classCount < 1)
                 throw new ObjectDeserializationException("class count < 1 when reading sync class definition.")
@@ -119,7 +119,7 @@ class ObjectReader(bundle: PersistenceBundle,
                 classes(i) = pool.getType(readNextRef)
                 i += 1
             }
-            new SyncClassDefMultiple(classes.head, classes.tail)
+            SyncClassDef(classes.head, classes.tail)
         }
         
         val result = readDef()

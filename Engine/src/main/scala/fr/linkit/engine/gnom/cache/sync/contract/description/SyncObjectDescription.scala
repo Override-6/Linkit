@@ -70,6 +70,6 @@ object SyncObjectDescription {
 
     def isNotOverrideable(mods: Int): Boolean = {
         import Modifier._
-        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods)
+        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods) || mods == 0
     }
 }

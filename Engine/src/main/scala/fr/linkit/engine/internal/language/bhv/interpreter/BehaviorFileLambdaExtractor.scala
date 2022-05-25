@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
@@ -22,10 +22,10 @@ import fr.linkit.engine.internal.language.bhv.PropertyClass
 import fr.linkit.engine.internal.language.bhv.ast._
 
 class BehaviorFileLambdaExtractor(file: BehaviorFile) {
-
+    
     private val ast     = file.ast
     private val lambdas = file.lambdas
-
+    
     ast.typesModifiers.foreach(t => submitAll("type", t.typeName, t))
     ast.valueModifiers.foreach(v => submitAll(s"value_${v.name}", v.typeName, v))
     ast.classDescriptions.foreach(classDesc => {
@@ -34,17 +34,18 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
             case _                                        =>
         }
     })
-
+    
     def compileLambdas(app: ApplicationContext): PropertyClass => MethodCaller = lambdas.compileLambdas(app)
-
+    
     private def extractMethodModifiers(desc: AttributedEnabledMethodDescription, classDesc: ClassDescription): Unit = {
         val signature = desc.signature
         val kind      = classDesc.head.kind
         desc.modifiers.foreach {
             case exp: ModifierExpression =>
+                val clazz = file.findClass(classDesc.head.className)
                 val classSystemDesc = kind match {
-                    case _@(RegularDescription | _: LeveledDescription) => SyncObjectDescription(SyncClassDefUnique(file.findClass(classDesc.head.className)))
-                    case StaticsDescription                             => SyncStaticsDescription(file.findClass(classDesc.head.className))
+                    case _@(RegularDescription | _: LeveledDescription) => SyncObjectDescription(SyncClassDef(clazz))
+                    case StaticsDescription                             => SyncStaticsDescription(clazz)
                 }
                 val className       = exp.target match {
                     case "returnvalue" =>
@@ -58,17 +59,17 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
             //fallback will be for modifier references, they don't hold any lambda expression so let's skip them
         }
     }
-
+    
     private def encodedIntMethodString(i: Int): String = {
         if (i > 0) i.toString
         else "_" + i.abs.toString
     }
-
+    
     private def submitAll(tpe: String, className: String, holder: LambdaExpressionHolder): Unit = {
         submitLambda(holder.in, tpe, className)
         submitLambda(holder.out, tpe, className)
     }
-
+    
     private def submitLambda(exp: Option[LambdaExpression], tpe: String, className: String): Unit = exp.foreach { exp =>
         val clazz              = file.findClass(className)
         val classNameFormatted = file.formatClassName(clazz)
@@ -78,5 +79,5 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
         }
         lambdas.submitLambda(exp.block.sourceCode, s"${tpe}_${kind}_$classNameFormatted", clazz, classOf[Engine])
     }
-
+    
 }

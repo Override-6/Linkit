@@ -6,29 +6,37 @@ import fr.linkit.**
 import java.net.URI
 import scala.collection.mutable
 import java.io.*
-import java.nio.file.*
+import java.nio.file.**
 import java.lang.System
 
 agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_owner
 agreement only_owner = discard * -> accept owner -> appoint owner
 agreement broadcast = accept*
 
-describe Path [mirror] {
-    foreach method enable following only_cache_owner
-}
-
 describe statics FileSystems {
+    foreach method enable following only_cache_owner
     getDefault() {
         mirror returnvalue
     }
 }
-
+describe WatchService [chip] {
+    foreach method enable following only_cache_owner {
+        chip returnvalue
+    }
+}
 describe FileSystem {
+    foreach method enable following only_cache_owner
     newWatchService() {
         mirror returnvalue
     }
 }
 
+describe Path [mirror] {
+    foreach method enable following only_cache_owner
+    register(WatchService, WatchEvent.Kind[]) {
+        mirror returnvalue
+    }
+}
 describe statics Path {
     of(path: String, String[]) following only_cache_owner
     hide method of(URI) "Please use method of(String, String[]) instead."

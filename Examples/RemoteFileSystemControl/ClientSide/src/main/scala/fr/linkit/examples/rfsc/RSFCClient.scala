@@ -12,32 +12,32 @@ import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
 
 object RSFCClient {
-
+    
     def main(args: Array[String]): Unit = {
         val network       = launchApp("x").network
         val serverStatics = network.getStaticAccess(1)
-
+        
         listenDistantDir(serverStatics)
         sendFile(serverStatics)
-
+        
         serverStatics[System].exit(0)
         print("Done.")
     }
-
+    
     private def listenDistantDir(serverStatics: StaticAccess): Unit = {
         val dir: Path = serverStatics[Path].of("/")
         val watcher   = (serverStatics[FileSystems].getDefault(): FileSystem).newWatchService()
         dir.register(watcher, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE)
-        new Thread(() => {
-            val key = watcher.poll()
+        new Thread(() => while (true) {
+            val key = watcher.take()
             key.pollEvents().forEach { event =>
                 println(s"${event.context()}: ${event.kind()}")
             }
         }, "remote directory listener").start()
     }
-
+    
     private def sendFile(serverStatics: StaticAccess): Unit = {
-        val srcPath = Path.of("C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Client\\test.txt")
+        val srcPath = Path.of("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Client\\test.txt")
         if (Files.notExists(srcPath)) {
             Files.createDirectories(srcPath.getParent)
             Files.createFile(srcPath)
@@ -52,10 +52,10 @@ object RSFCClient {
         serverStream.write(content)
         serverStream.close()
     }
-
+    
     private def launchApp(identifier0: String): ExternalConnection = {
         val config = new ClientApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {
                     override val identifier    = identifier0
@@ -65,8 +65,8 @@ object RSFCClient {
             }
         }
         ClientApplication.launch(config, getClass)
-            .findConnection(identifier0)
-            .get
+                .findConnection(identifier0)
+                .get
     }
-
+    
 }

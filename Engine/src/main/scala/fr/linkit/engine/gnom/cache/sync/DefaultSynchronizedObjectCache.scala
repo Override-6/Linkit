@@ -61,7 +61,6 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                                                             override val network: Network)
         extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
     
-    private  val cacheOwnerId     : String                     = channel.manager.ownerID
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val forest           : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, channel.manager.getCachesLinker, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
@@ -96,14 +95,14 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val path            = parent.nodePath :+ id
         val contractFactory = tree.contractFactory
         val choreographer   = new InvocationChoreographer()
-        val reference       = new ConnectedObjectReference(family, cacheID, ownerID, path)
+        val reference       = new ConnectedObjectReference(family, cacheID, req.ownerID, path)
         val presence        = forest.getPresence(reference)
-        val context         = UsageConnectedObjectContext(ownerID, tree.rootNode.ownerID, currentIdentifier, cacheOwnerId, chippedObject.getClassDef, level, choreographer)
+        val context         = UsageConnectedObjectContext(req.ownerID, tree.rootNode.ownerID, currentIdentifier, this.ownerID, chippedObject.getClassDef, level, choreographer)
         val contract        = contractFactory.getContract[B](originClass, context)
         val chip            = ObjectChip[B](contract, network, chippedObject)
         new ChippedObjectNodeData[B](
             network, chip, contract, choreographer, chippedObject,
-            )(new NodeData[B](reference, presence, tree, currentIdentifier, ownerID, Some(parent)))
+            )(new NodeData[B](reference, presence, tree, currentIdentifier, req.ownerID, Some(parent)))
     }
     
     private def newSyncObjectData[B <: AnyRef](req: SyncNodeDataRequest[B]): SyncObjectNodeData[B] = {
@@ -115,10 +114,10 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     
     private def newRegularNodeData[B <: AnyRef](req: NormalNodeDataRequest[B]): NodeData[B] = {
         import req._
-        val reference = new ConnectedObjectReference(family, cacheID, ownerID, path)
+        val reference = new ConnectedObjectReference(family, cacheID, req.ownerID, path)
         val presence  = forest.getPresence(reference)
         val tree      = parent.tree.asInstanceOf[DefaultConnectedObjectTree[_]] //TODO REMOVE THIS CAST
-        new NodeData[B](reference, presence, tree, currentIdentifier, ownerID, Some(parent))
+        new NodeData[B](reference, presence, tree, currentIdentifier, req.ownerID, Some(parent))
     }
     
     override def newNodeData[B <: AnyRef, N <: NodeData[B]](req: NodeDataRequest[B, N]): N = {
@@ -166,7 +165,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val syncLevel     = if (mirroring) Mirror else Synchronized //root objects can either be mirrored or fully sync objects.
         val context       = UsageConnectedObjectContext(
             rootObjectOwner, rootObjectOwner,
-            currentIdentifier, cacheOwnerId,
+            currentIdentifier, this.ownerID,
             creator.syncClassDef, syncLevel,
             choreographer)
         val factory       = SyncObjectContractFactory(contracts)

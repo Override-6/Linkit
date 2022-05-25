@@ -28,11 +28,10 @@ trait SyncClassCenter {
 
     def getSyncClassFromDesc[S<: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]]
 
-    def getSyncClassFromTpe[S<: AnyRef: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](SyncClassDefUnique(classTag[S].runtimeClass))
+    def getSyncClassFromTpe[S<: AnyRef: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](SyncClassDef(classTag[S].runtimeClass))
 
     def preGenerateClasses(classes: Seq[SyncClassDef]): Unit
 
-    //def isClassGenerated[T<: AnyRef: ClassTag]: Boolean = isClassGenerated(new SyncClassDef(classTag[T].runtimeClass))
 
     def isClassGenerated(classDef: SyncClassDef): Boolean
 

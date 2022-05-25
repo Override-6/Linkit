@@ -21,7 +21,7 @@ import fr.linkit.engine.internal.utils.ScalaUtils
 
 class ContentSwitcher[T <: AnyRef](source: T) extends SyncInstanceCreator[T] {
 
-    override val syncClassDef: SyncClassDef = SyncClassDefUnique(source.getClass)
+    override val syncClassDef: SyncClassDef = SyncClassDef(source.getClass)
 
     override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
         val instance = ScalaUtils.allocate[T with SynchronizedObject[T]](syncClass)

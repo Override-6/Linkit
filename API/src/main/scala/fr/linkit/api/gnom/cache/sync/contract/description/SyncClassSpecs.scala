@@ -14,66 +14,87 @@
 package fr.linkit.api.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.InvalidSyncClassDefinitionException
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique.check
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef.check
 
 import java.util
 
 sealed trait SyncClassDef {
-
+    
     val mainClass: Class[_]
     val id       : Int
-
+    
     def isAssignableFromThis(clazz: Class[_]): Boolean
-
+    
     def ensureOverrideable(): Unit
 }
 
-final class SyncClassDefUnique(val mainClass: Class[_]) extends SyncClassDef {
-
+final class SyncClassDefUnique private[description](val mainClass: Class[_]) extends SyncClassDef {
+    
     val id: Int = mainClass.getName.hashCode.abs
-
+    
     override def toString: String = s"class def ${mainClass.getName}"
-
+    
     def isAssignableFromThis(clazz: Class[_]): Boolean = clazz.isAssignableFrom(mainClass)
-
-    override def ensureOverrideable(): Unit = check(mainClass)
-}
-
-final class SyncClassDefMultiple(val mainClass: Class[_], val interfaces: Array[Class[_]] = Array()) extends SyncClassDef {
-
-    interfaces.foreach(cl => if (!cl.isInterface) throw new IllegalArgumentException(s"$cl is not an interface."))
-
-    override val id: Int = util.Arrays.hashCode(Array[AnyRef](mainClass.getName) ++ interfaces.map(_.getName)).abs
-
-    override def toString: String = s"class def ${mainClass.getName} with interfaces ${interfaces.map(_.getName).mkString(", ")}"
-
-    override def isAssignableFromThis(clazz: Class[_]): Boolean = clazz.isAssignableFrom(mainClass) || interfaces.exists(clazz.isAssignableFrom)
-
+    
+    @transient private var notOverrideableException: InvalidSyncClassDefinitionException = _
+    
     override def ensureOverrideable(): Unit = {
-        check(mainClass)
-        interfaces.foreach(check)
+        if (notOverrideableException != null) throw notOverrideableException
+        try {
+            check(mainClass)
+        } catch {
+            case e: InvalidSyncClassDefinitionException =>
+                notOverrideableException = e
+                throw e
+        }
     }
-
 }
 
-object SyncClassDefUnique {
+final class SyncClassDefMultiple private[description](val mainClass: Class[_], val interfaces: Array[Class[_]] = Array()) extends SyncClassDef {
+    
+    interfaces.foreach(cl => if (!cl.isInterface) throw new IllegalArgumentException(s"$cl is not an interface."))
+    
+    override val id: Int = util.Arrays.hashCode(Array[AnyRef](mainClass.getName) ++ interfaces.map(_.getName)).abs
+    
+    override def toString: String = s"class def ${mainClass.getName} with interfaces ${interfaces.map(_.getName).mkString(", ")}"
+    
+    override def isAssignableFromThis(clazz: Class[_]): Boolean = clazz.isAssignableFrom(mainClass) || interfaces.exists(clazz.isAssignableFrom)
+    
+    @transient private var notOverrideableException: InvalidSyncClassDefinitionException = _
+    
+    override def ensureOverrideable(): Unit = {
+        if (notOverrideableException != null) throw notOverrideableException
+        try {
+            check(mainClass)
+            interfaces.foreach(check)
+        } catch {
+            case e: InvalidSyncClassDefinitionException =>
+                notOverrideableException = e
+                throw e
+        }
+    }
+    
+}
 
+
+object SyncClassDef {
+    
+    def apply(superClass: Class[_]): SyncClassDef = {
+        new SyncClassDefUnique(superClass)
+    }
+    
+    def apply(superClass: Class[_], interfaces: Array[Class[_]]): SyncClassDef = {
+        if (interfaces.isEmpty) apply(superClass)
+        else new SyncClassDefMultiple(superClass, interfaces)
+    }
+    
     private[description] def check(clazz: Class[_]): Unit = {
         if (clazz.isArray)
             throw new InvalidSyncClassDefinitionException(s"Provided class definition array class. ($clazz)")
-
+        
         import java.lang.reflect.Modifier._
         val mods = clazz.getModifiers
         if (isFinal(mods) || !isPublic(mods))
             throw new InvalidSyncClassDefinitionException(s"Provided class definition is not overrideable. ($clazz)")
     }
-
-    def apply(superClass: Class[_]): SyncClassDefUnique = {
-        new SyncClassDefUnique(superClass)
-    }
-}
-
-object SyncClassDefMultiple {
-
-    def apply(superClass: Class[_], interfaces: Array[Class[_]]): SyncClassDefMultiple = new SyncClassDefMultiple(superClass, interfaces)
 }

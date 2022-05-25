@@ -33,13 +33,13 @@ class SyncClassCompilationRequestFactory()
                            context: SyncStructureDescription[_],
                            className: String,
                            loader: GeneratedClassLoader): Class[_] = {
-        val wrapperClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
-        if (Files.notExists(wrapperClassFile))
+        val syncClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
+        if (Files.notExists(syncClassFile))
             throw new NoSuchFileException(s"Class file for class $className at ${req.classDir} not found.")
     
         AppLoggers.Compilation.trace("Performing post compilation modifications in the class file...")
         val (byteCode, syncClass) = new SyncClassRectifier(context, className, loader, context.specs).rectifiedClass
-        Files.write(wrapperClassFile, byteCode)
+        Files.write(syncClassFile, byteCode)
         RuntimeClassOperations.prepareClass(syncClass)
         ClassMappings.putClass(syncClass)
         syncClass

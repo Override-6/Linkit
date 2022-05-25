@@ -75,7 +75,7 @@ class PersistenceConfigBuilder {
         clazz.getDeclaredFields.foreach {field =>
             val mods = field.getModifiers
             if (Modifier.isStatic(mods) && Modifier.isFinal(mods))
-                putContextReference(field.get(null))
+                putContextReference(field.hashCode, field.get(null))
         }
     }
 
@@ -121,8 +121,6 @@ class PersistenceConfigBuilder {
     }
 
     def putContextReference(id: Int, ref: AnyRef): Unit = {
-        //if (ref == null)
-        //    throw new NullPointerException("can't bind null objects to references")
         referenceStore put(id, ref)
     }
 

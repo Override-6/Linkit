@@ -19,12 +19,14 @@ import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 
 abstract class AbstractSharedCache(channel: CachePacketChannel) extends AbstractAttributesPresence with SharedCache {
-
+    
     private val manager = channel.manager
-
-    override val family   : String                = manager.family
+    
+    override val family: String = manager.family
+    
+    override val ownerID  : String                = channel.ownerID
     override val cacheID  : Int                   = channel.cacheID
     override val reference: SharedCacheReference  = new SharedCacheReference(family, cacheID)
     override val presence : NetworkObjectPresence = manager.getCachesLinker.findPresence(reference).get
-
+    
 }

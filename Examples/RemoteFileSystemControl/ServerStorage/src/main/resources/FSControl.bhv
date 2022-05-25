@@ -6,7 +6,7 @@ import fr.linkit.**
 import java.net.URI
 import scala.collection.mutable
 import java.io.*
-import java.nio.file.*
+import java.nio.file.**
 
 code ${
     import scala.collection.mutable
@@ -19,22 +19,29 @@ agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_ow
 agreement only_owner = discard * -> accept owner -> appoint owner
 agreement broadcast = accept*
 
-describe Path [chip] {
-    foreach method enable following only_cache_owner
-}
-
 describe statics FileSystems {
+    foreach method enable following only_cache_owner
     getDefault() {
-        mirror returnvalue
+        chip returnvalue
     }
 }
 
 describe FileSystem {
     newWatchService() {
-        mirror returnvalue
+        chip returnvalue
     }
 }
-
+describe Path [chip] {
+    foreach method enable following only_cache_owner
+    register(WatchService, WatchEvent.Kind[]) {
+        chip returnvalue
+    }
+}
+describe WatchService [chip] {
+    foreach method enable following only_cache_owner {
+        chip returnvalue
+    }
+}
 describe statics Path {
     of(path: String, String[]) following only_cache_owner {
         path -> in: ${(path, remote) => homes(remote).toString + s"/$path"}

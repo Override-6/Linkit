@@ -4,7 +4,7 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.CurrentEngine
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDefUnique, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, ModifiableValueContract, SyncLevel}
@@ -46,7 +46,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                 case ClassDescription(ClassDescriptionHead(kind, _), foreachMethod, foreachField, fieldDescs, methodDescs) => {
                     val classDesc = kind match {
                         case StaticsDescription => SyncStaticsDescription(clazz)
-                        case _                  => SyncObjectDescription(SyncClassDefUnique(clazz))
+                        case _                  => SyncObjectDescription(SyncClassDef(clazz))
                     }
                     implicit val methods0 = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs)
                     implicit val fields0  = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs)
@@ -59,7 +59,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         case LeveledDescription(levels) =>
                             levels.find(_.isInstanceOf[MirroringLevel])
                                     .map { case MirroringLevel(stub) =>
-                                        MirroringInfo(SyncClassDefUnique(stub.fold(clazz)(cast(file.findClass(_)))))
+                                        MirroringInfo(SyncClassDef(stub.fold(clazz)(cast(file.findClass(_)))))
                                     }
                                     .fold(scd(levels.map(_.syncLevel).filter(_ != Mirror): _*))(
                                         mi => new MirroringStructureContractDescriptor[AnyRef] {

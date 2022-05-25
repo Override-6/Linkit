@@ -59,7 +59,7 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
         val pureName   = name.take(arrayIndex)
         val arrayDepth = (name.length - pureName.length) / 2
         val clazz      = imports
-                .find(_.isDefinedAt(pureName)).map(_.apply(pureName))
+                .find(x => x.isDefinedAt(pureName)).map(_.apply(pureName))
                 .orElse(Try(Class.forName(pureName)).toOption)
                 .orElse(PrimitiveClasses.get(pureName))
                 .orElse(Try(Class.forName("java.lang." + pureName)).toOption)

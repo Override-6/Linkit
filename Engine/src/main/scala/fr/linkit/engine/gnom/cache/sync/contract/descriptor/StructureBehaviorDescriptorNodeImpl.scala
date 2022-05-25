@@ -14,16 +14,17 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, ObjectContractFactory}
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefMultiple
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, MirroringInfo, StructureContract, SyncLevel}
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{findReasonTypeCantBeSync, fixUndescribedMethods, getSyncableInterface}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{collectInterfaces, findReasonTypeCantBeSync, fixUndescribedMethods, getSyncableInterface}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, EmptyStructureContract, StructureContractImpl}
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[A],
                                                        descriptors: Array[UniqueStructureContractDescriptor[A]],
@@ -49,11 +50,9 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
             case Some(sbdn) => sbdn.getContract(clazz, context)
             case None       =>
                 val mirroringInfo = if (context.syncLevel.mustBeMirrored) Some(autoDefineMirroringInfo(clazz)) else None
-                if (context.syncLevel == SyncLevel.Mirror) {
-                    val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
-                    fixUndescribedMethods(methodMap, context)
-                    new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, Array())
-                } else new EmptyStructureContract[A](clazz, mirroringInfo)
+                val methodMap     = mutable.HashMap.empty[Int, MethodContract[Any]]
+                fixUndescribedMethods(methodMap, context)
+                new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, Array())
         }
     }
     
@@ -62,8 +61,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         while (findReasonTypeCantBeSync(superClass).isDefined) //will be at least java.lang.Object
             superClass = superClass.getSuperclass
         
-        val interfaces = clazz.getInterfaces.flatMap(getSyncableInterface)
-        MirroringInfo(SyncClassDefMultiple(superClass, interfaces))
+        val interfaces = collectInterfaces(clazz).flatMap(getSyncableInterface)
+        MirroringInfo(SyncClassDef(superClass, interfaces))
     }
     
     override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {

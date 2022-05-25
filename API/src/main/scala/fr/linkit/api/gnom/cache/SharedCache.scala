@@ -25,6 +25,8 @@ trait SharedCache extends DynamicNetworkObject[SharedCacheReference] {
      * The [[SharedCacheManager]] family that manages this cache.
      */
     val family: String
+    
+    val ownerID: String
 
     /**
      * The cache ID of this cache.

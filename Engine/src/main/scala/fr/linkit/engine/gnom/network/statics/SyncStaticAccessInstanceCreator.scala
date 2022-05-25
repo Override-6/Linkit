@@ -10,7 +10,7 @@ class SyncStaticAccessInstanceCreator(tpeClass: Class[StaticsCaller],
                                       arguments: Array[Any],
                                       val targettedClass: Class[_]) extends SyncInstanceCreator[StaticsCaller] {
 
-    override val syncClassDef: SyncClassDef = SyncClassDefUnique(tpeClass)
+    override val syncClassDef: SyncClassDef = SyncClassDef(tpeClass)
 
     override def getInstance(syncClass: Class[StaticsCaller with SynchronizedObject[StaticsCaller]]): StaticsCaller with SynchronizedObject[StaticsCaller] = {
         val constructor = getAssignableConstructor(syncClass, arguments)

@@ -145,6 +145,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     def getPool: SerializerObjectPool = pool
     
     private def writeSyncClassDef(syncDef: SyncClassDef): Unit = {
+        syncDef.ensureOverrideable()
         val (classCount, classes) = syncDef match {
             case unique: SyncClassDefUnique     => (1, scala.Array(unique.mainClass))
             case multiple: SyncClassDefMultiple => (1 + multiple.interfaces.length, scala.Array(multiple.mainClass) ++ multiple.interfaces)

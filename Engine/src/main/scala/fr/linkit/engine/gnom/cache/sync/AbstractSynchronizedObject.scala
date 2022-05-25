@@ -83,14 +83,13 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         var interfaces = getClass.getInterfaces.tail
         val mainClass  = {
             val superCl = getClass.getSuperclass
-            if (superCl == classOf[Object] || superCl == null) {
+            if (interfaces.nonEmpty && (superCl == classOf[Object] || superCl == null)) {
                 val itf = interfaces.head
                 interfaces = interfaces.tail
                 itf
             } else superCl
         }
-        if (interfaces.nonEmpty) SyncClassDefMultiple(mainClass, interfaces)
-        else SyncClassDefUnique(mainClass)
+        SyncClassDef(mainClass, interfaces)
     }
     
     override def getClassDef: SyncClassDef = classDef

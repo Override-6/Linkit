@@ -1,6 +1,7 @@
 package fr.linkit.engine.internal.mapping
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 object MappedClassesTree {
 
@@ -20,11 +21,15 @@ object MappedClassesTree {
         private val subPackages = mutable.HashMap.empty[String, PackageItem]
 
         def findClass(className: String): Option[Class[_]] = {
+            findClass0(className.split('.').last)
+        }
+        
+        private def findClass0(className: String): Option[Class[_]] = {
             val result = classes.get(className)
             if (result.nonEmpty)
                 return result
             for ((_, pck) <- subPackages) {
-                val opt = pck.findClass(className)
+                val opt = pck.findClass0(className)
                 if (opt.nonEmpty)
                     return opt
             }
@@ -42,11 +47,32 @@ object MappedClassesTree {
             val first = pckName.take(if (idx == -1) pckName.length else idx)
             subPackages.get(first).flatMap(_.findPackage(pckName))
         }
+        
+        private def getFullPackageName(clazz: Class[_]): String = {
+            val packageName = clazz.getPackageName
+            var c = clazz.getDeclaringClass
+            if (c == null) {
+                return packageName
+            }
+            
+            val classes = ListBuffer.empty[String]
+            while (c != null) {
+                classes += c.getSimpleName
+                c = c.getDeclaringClass
+            }
+            packageName + "." + classes.reverse.mkString(".")
+        }
 
-        private[MappedClassesTree] def addClass(clazz: Class[_]): Unit = {
-            val classPackage = clazz.getPackageName
+        private[MappedClassesTree] def addClass(clazz: Class[_]): Unit = addClass(getFullPackageName(clazz), clazz)
+        
+        private def addClass(classPackage: String, clazz: Class[_]): Unit = {
             if (classPackage == name) {
                 classes.put(clazz.getSimpleName, clazz)
+                for (inner <- clazz.getDeclaredClasses) {
+                    val nextPackageName = classPackage + "." + clazz.getSimpleName
+                    val nextPackage = subPackages.getOrElseUpdate(nextPackageName, PackageItem(nextPackageName))
+                    nextPackage.addClass(nextPackageName, inner)
+                }
                 return
             }
             if (!classPackage.startsWith(name))
@@ -54,8 +80,10 @@ object MappedClassesTree {
             val idx = classPackage.indexOf('.', name.length + 1)
             val nextPackageName = if (idx == -1) classPackage else classPackage.take(idx)
             val nextPackage = subPackages.getOrElseUpdate(nextPackageName, PackageItem(nextPackageName))
-            nextPackage.addClass(clazz)
+            nextPackage.addClass(classPackage, clazz)
         }
+        
+
     }
 
 }

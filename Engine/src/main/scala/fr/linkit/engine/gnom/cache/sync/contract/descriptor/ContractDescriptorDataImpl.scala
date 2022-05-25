@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDefUnique
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -68,7 +68,7 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]])
             })
         })
         classes -= classOf[Object]
-        classes = classes.filterNot(cl => center.isClassGenerated(SyncClassDefUnique(cl)))
+        classes = classes.filterNot(cl => center.isClassGenerated(SyncClassDef(cl)))
                 .filterNot(c => isNotOverrideable(c.getModifiers))
         
         if (classes.isEmpty) {
@@ -78,7 +78,7 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]])
         AppLoggers.Compilation.info(s"Found ${classes.size} classes to compile in their sync versions")
         AppLoggers.Compilation.debug("Classes to compile :")
         classes.foreach(clazz => AppLoggers.Compilation.debug(s"\tgen.${clazz}Sync"))
-        center.preGenerateClasses(classes.toList.map(SyncClassDefUnique(_)))
+        center.preGenerateClasses(classes.toList.map(SyncClassDef(_)))
     }
     
     def markAsPrecompiled(): Unit = precompiled = true

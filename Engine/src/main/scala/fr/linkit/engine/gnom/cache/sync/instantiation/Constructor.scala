@@ -25,7 +25,7 @@ import scala.reflect.{ClassTag, classTag}
 class Constructor[A <: AnyRef](clazz: Class[A],
                                arguments: Array[Any]) extends SyncInstanceCreator[A] {
     
-    override val syncClassDef: SyncClassDef = SyncClassDefUnique(clazz)
+    override val syncClassDef: SyncClassDef = SyncClassDef(clazz)
     
     override def getInstance(syncClass: Class[A with SynchronizedObject[A]]): A with SynchronizedObject[A] = {
         val constructor = getAssignableConstructor(syncClass, arguments)

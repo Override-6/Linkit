@@ -28,4 +28,6 @@ findProject(':Examples:RemoteAPIImplementationControl:API')?.name = 'API'
 findProject(':Examples:RemoteFileSystemControl:ServerStorage')?.name = 'ServerStorage'
 findProject(':Examples:RemoteFileSystemControl:ClientSide')?.name = 'ClientSide'
 include 'Misc-Codebin'
+include 'Examples:RemoteFileSystemControl:Common'
+findProject(':Examples:RemoteFileSystemControl:Common')?.name = 'Common'
 

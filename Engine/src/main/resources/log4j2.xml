@@ -10,7 +10,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="GNOM" level="DEBUG" additivity="false" includeLocation="false">
+        <Logger name="GNOM" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

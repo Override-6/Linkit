@@ -32,7 +32,7 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
 
     override val isMirrored: Boolean = true //pure chipped objects are always mirrored.
 
-    override def getClassDef: SyncClassDef = SyncClassDefUnique(connected.getClass)
+    override def getClassDef: SyncClassDef = SyncClassDef(connected.getClass)
 
     override def reference: ConnectedObjectReference = reference0
 

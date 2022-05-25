@@ -81,12 +81,10 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = {
         bundle.linkerReference match {
-            case ref: ContextualObjectReference if codeToRef.containsKey(ref.objectID) =>
+            case ref: ContextualObjectReference =>
                 handleBundle(bundle)
             case _ if parent != null                                                   =>
                 parent.injectRequest(bundle)
-            case ref: ContextualObjectReference                                        =>
-                throw new EndOfInjectionChainException(s"Could not inject Linker Request Bundle : all context linkers from channel ${ref.trafficPath.mkString("/")} to the root context linker does not contains any object referenced with $ref.")
         }
     }
 

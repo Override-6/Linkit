@@ -49,7 +49,7 @@ object SyncStaticsCallerDescription {
 
     def apply[A <: StaticsCaller](clazz: Class[_]): SyncStaticsCallerDescription[A] = {
         cache.getOrElseUpdate(clazz, {
-            new SyncStaticsCallerDescription[A](new SyncClassDefUnique(clazz))
+            new SyncStaticsCallerDescription[A](SyncClassDef(clazz))
         }).asInstanceOf[SyncStaticsCallerDescription[A]]
     }
 

@@ -16,13 +16,15 @@ package fr.linkit.engine.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.{SyncLevel, SyncObjectFieldManipulation}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.cache.sync.instantiation.{ContentSwitcher, MirroringInstanceCreator}
+import fr.linkit.engine.gnom.cache.sync.invokation.UsageConnectedObjectContext
 import fr.linkit.engine.gnom.cache.sync.tree.node._
 
 import java.util.concurrent.ThreadLocalRandom
@@ -156,7 +158,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                 value
             case None                              =>
                 level match {
-                    case ChippedOnly           =>
+                    case ChippedOnly  =>
                         newChippedObject(parent, id, source)
                     case Synchronized | Mirror =>
                         val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))
@@ -187,7 +189,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         if (syncObject.isInitialized)
             throw new ConnectedObjectAlreadyInitialisedException(s"Could not register synchronized object '${syncObject.getClass.getName}' : Object already initialized.")
         
-        val level = if (isMirroring) SyncLevel.Mirror else SyncLevel.Synchronized
+        val level = if (isMirroring) Mirror else Synchronized
         val data  = dataFactory.newNodeData(new SyncNodeDataRequest[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerID, level))
         val node  = new ObjectSyncNodeImpl[B](data)
         forest.registerReference(node.reference)

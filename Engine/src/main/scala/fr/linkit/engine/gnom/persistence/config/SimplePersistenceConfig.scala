@@ -73,7 +73,10 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     private def getSyncOriginClass(clazz: Class[_]): Class[_] = {
         val sc = clazz.getSuperclass
         if (sc eq classOf[Object]) {
-            clazz.getInterfaces()(1) //the head is AbstractSynchronizedObject
+            val interfaces = clazz.getInterfaces
+            if (interfaces.length > 1)
+                interfaces(1) //the head is AbstractSynchronizedObject
+            else sc
         }
         else sc
     }
