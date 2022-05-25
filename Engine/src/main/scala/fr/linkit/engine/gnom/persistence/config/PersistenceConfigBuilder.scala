@@ -70,6 +70,15 @@ class PersistenceConfigBuilder {
         this
     }
 
+    def bindConstants[C: ClassTag]: Unit = {
+        val clazz = classTag[C].runtimeClass
+        clazz.getDeclaredFields.foreach {field =>
+            val mods = field.getModifiers
+            if (Modifier.isStatic(mods) && Modifier.isFinal(mods))
+                putContextReference(field.get(null))
+        }
+    }
+
     def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A, procrastinator: => Procrastinator = null): this.type = {
         val fromClass                     = classTag[A].runtimeClass
         val toClass                       = classTag[B].runtimeClass

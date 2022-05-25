@@ -40,7 +40,6 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def loadLib(path: Path): Unit = {
-        //FIXME
         val name = path.getFileName.toString
         System.load(path.toString + File.separator + name + ".dll")
     }

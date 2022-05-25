@@ -19,7 +19,7 @@ import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.util
-object JavaHashMapTypePersistence extends TypePersistence[util.HashMap[Any, Any]]{
+class JavaHashMapTypePersistence extends TypePersistence[util.HashMap[Any, Any]]{
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 

@@ -22,7 +22,7 @@ object RFSCServer {
             val path = Path.of(s"C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Server\\${client.identifier}\\")
             if (Files.notExists(path))
                 Files.createDirectories(path)
-            clientsHomes.put(client,path)
+            clientsHomes.put(client, path)
         }
         }
         val contracts = Contract("FSControl", network.connection.getApp, ObjectsProperty(Map("homes" -> clientsHomes)))
@@ -34,14 +34,15 @@ object RFSCServer {
             val resourcesFolder: String = "C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
-                    override val identifier: String = identifier0
-                    override val port      : Int    = 48489
+                    override val identifier = identifier0
+                    override val port       = 48489
+                    defaultPersistenceConfigScript = Some(getClass.getResource("/FS_persistence.sc"))
                 }
             }
         }.buildConfig()
         ServerApplication.launch(config, getClass)
-                .findConnection(identifier0)
-                .get
+            .findConnection(identifier0)
+            .get
     }
 
 }

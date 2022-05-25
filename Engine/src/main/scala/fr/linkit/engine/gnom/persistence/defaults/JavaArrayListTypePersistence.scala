@@ -20,7 +20,7 @@ import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.util
 
-object JavaArrayListTypePersistence extends TypePersistence[util.ArrayList[AnyRef]] {
+class JavaArrayListTypePersistence extends TypePersistence[util.ArrayList[AnyRef]] {
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 

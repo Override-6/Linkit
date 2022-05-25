@@ -16,6 +16,19 @@ agreement broadcast = accept*
 describe Path [mirror] {
     foreach method enable following only_cache_owner
 }
+
+describe statics FileSystems {
+    getDefault() {
+        mirror returnvalue
+    }
+}
+
+describe FileSystem {
+    newWatchService() {
+        mirror returnvalue
+    }
+}
+
 describe statics Path {
     of(path: String, String[]) following only_cache_owner
     hide method of(URI) "Please use method of(String, String[]) instead."

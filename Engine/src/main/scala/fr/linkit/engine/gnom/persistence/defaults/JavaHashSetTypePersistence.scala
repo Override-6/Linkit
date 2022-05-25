@@ -20,7 +20,7 @@ import fr.linkit.engine.internal.utils.ScalaUtils
 
 import java.util
 
-object JavaHashSetTypePersistence extends TypePersistence[util.HashSet[Any]]{
+class JavaHashSetTypePersistence extends TypePersistence[util.HashSet[Any]]{
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 

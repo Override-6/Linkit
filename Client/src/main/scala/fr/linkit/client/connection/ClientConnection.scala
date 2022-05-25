@@ -62,7 +62,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     @workerExecution
     override def shutdown(): Unit = {
-        WorkerPools.ensureCurrentIsWorker("Shutdown must be performed in a contextual thread pool.")
+        WorkerPools.ensureCurrentIsWorker("Shutdown must be performed in a worker thread pool.")
         if (!alive)
             return //already shutdown
 
@@ -111,8 +111,10 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
 
         if (state == ExternalConnectionState.CONNECTED && socket.isOpen) runLater {
-            socket.write(welcomePacket) //The welcome packet will let the server continue its socket handling
-            systemChannel.nextPacket[BooleanPacket]
+            if (isAlive) {
+                socket.write(welcomePacket) //The welcome packet will let the server continue its socket handling
+                systemChannel.nextPacket[BooleanPacket]
+            }
         }
     }
 

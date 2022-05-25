@@ -35,7 +35,8 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
     
     private def getMethodCaller(clazz: Class[_]): SyncStaticAccessInstanceCreator = {
         val staticsDesc = SyncStaticsDescription(clazz)
-        val mcClass     = resource.findClass[StaticsCaller](staticsDesc.classPackage + "." + clazz.getSimpleName + "StaticsCaller", staticsDesc.parentLoader).getOrElse {
+        val className = staticsDesc.classPackage + "." + clazz.getSimpleName + "StaticsCaller"
+        val mcClass     = resource.findClass[StaticsCaller](className, staticsDesc.parentLoader).getOrElse {
             genClass(staticsDesc)
         }.asInstanceOf[Class[StaticsCaller]]
         new SyncStaticAccessInstanceCreator(mcClass, Array(), clazz)
@@ -53,7 +54,6 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
 }
 
 object StaticAccessImpl {
-    
     private final val Blueprint                 = new StaticsCallerClassBlueprint(getClass.getResourceAsStream("/generation/statics_caller.scbp"))
     private final val CompilationRequestFactory = new ClassCompilationRequestFactory[SyncStaticsDescription[_], StaticsCaller](Blueprint)
 }

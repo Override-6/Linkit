@@ -37,6 +37,6 @@ modifier SharedCacheOriginManager {
 }
 modifier DefaultEngine {
     out: ${(e, _) => {
-       new DefaultEngine(e.identifier, network.findCacheManager(e.identifier).get)
+       new DefaultEngine(e.identifier, network.findCacheManager(e.identifier).get, network)
    }}
 }

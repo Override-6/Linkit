@@ -21,9 +21,9 @@ setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.
 setTConverter[LangContractDescriptorData, (ApplicationContext, String, PropertyClass)](d => (d.app, d.fileName, d.propertyClass)){case (app, name, p) => Contract(name, app, p)}
 //putPersistence(new ScalaIterableTypePersistence)
 //putPersistence(new ScalaMapTypePersistence)
-putPersistence(JavaArrayListTypePersistence)
-putPersistence(JavaHashMapTypePersistence)
-putPersistence(JavaHashSetTypePersistence)
+putPersistence(new JavaArrayListTypePersistence)
+putPersistence(new JavaHashMapTypePersistence)
+putPersistence(new JavaHashSetTypePersistence)
 //setTConverter[File, String](_.getAbsolutePath)(new File(_))
 //setTConverter[Date, Long](_.getTime)(new Date(_))
 //setTConverter[Timestamp, Long](_.getTime)(new Timestamp(_))
