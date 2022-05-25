@@ -17,11 +17,14 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.internal.system.log.AppLoggers
 
 class PerformantInjectionProcessorUnit extends InjectionProcessorUnit {
 
     override def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit = {
         //performance is simplicity
+        AppLoggers.GNOM.trace(s"PIPU: adding packet injection for channel '${injectable.reference}'.")
+    
         result.makeDeserialization()
         val bundle = new PacketBundle {
             override val packet    : Packet            = result.packet

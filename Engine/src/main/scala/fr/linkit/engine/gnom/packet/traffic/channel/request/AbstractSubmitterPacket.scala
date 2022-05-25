@@ -57,7 +57,6 @@ sealed abstract class AbstractSubmitterPacket(id: Int, packets: Array[Packet]) e
     private[packet] def setAttributes(attributes: PacketAttributes): Unit = {
         if (this.attributes != null && this.attributes.ne(attributes))
             throw new IllegalStateException("Attributes already set !")
-        AppLoggers.GNOM.trace(s"setting attributes for submitter packet $this : $attributes")
         this.attributes = attributes
     }
 

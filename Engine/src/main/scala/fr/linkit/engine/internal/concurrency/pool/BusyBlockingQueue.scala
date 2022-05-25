@@ -62,7 +62,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
 
     @workerExecution
     override def take(): A = {
-        AppLoggers.Worker.trace(s" Taking item in $this (${System.identityHashCode(this)})...")
+        AppLoggers.Worker.trace(s"Taking item in $this (${System.identityHashCode(this)})...")
         if (content.isEmpty) {
             controller.pauseTask() //will be released once the queue isn't empty anymore
             content.synchronized {

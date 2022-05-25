@@ -18,50 +18,81 @@ import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.concurrency.{Worker, WorkerPools}
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
 
-import scala.annotation.StaticAnnotation
+import java.lang.Thread.State._
+import scala.annotation.switch
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
-
+    
     private final var executor: Worker = _
     private final val queue            = mutable.PriorityQueue.empty[ObjectDeserializationResult] { case (a, b) => a.ordinal - b.ordinal }
     private final val locker           = new SimpleWorkerController()
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
-
+    
     override def post(result: ObjectDeserializationResult, injectable: PacketInjectable): Unit = {
-        val methodExecutor = WorkerPools.currentWorker
+        AppLoggers.GNOM.trace(s"SIPU: adding packet injection for channel '${injectable.reference}'. Current unit executor: $executor. packet queue length = ${queue.size}")
+        
+        val currentWorker = WorkerPools.currentWorker
         //AppLogger.debug(s"posting serialization result in sipu, executor = $executor")
         queue.synchronized {
             queue.enqueue(result)
         }
         this.synchronized {
-            if (executor != null && methodExecutor != executor) {
+            if (executor != null && (currentWorker ne executor)) {
                 //the current thread is not the thread in charge of deserializing
                 //and injecting packets for this InjectionProcessorUnit.
                 if (executor.isSleeping) {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
+                    AppLoggers.GNOM.debug(s"SIPU: Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
                     executor.runWhileSleeping(deserializeAll(injectable))
+                    return
                 }
-                return
+                val threadState = executor.thread.getState
+                (threadState: @switch) match {
+                    case RUNNABLE | TIMED_WAITING =>
+                        //thread is running (or is partially waiting),
+                        // just add the packet and let the executor handling it once it come back here
+                        return
+                    case WAITING | BLOCKED        =>
+                        //thread is blocked, let's transfer all the remaining deserialisation / injection work to this thread.
+                        //This operation has been made up in order to avoid possible deadlocks in local, or through the network.
+                        //If the initial executor is notified or unparked, it will simply give up this SIPU.
+                        executor = currentWorker
+                    
+                    case other =>
+                        throw new IllegalThreadStateException(s"Could not inject packet into SIPU: unit's executor is ${other.name().toLowerCase()}.")
+                }
             }
-            executor = methodExecutor
+            executor = currentWorker
         }
         deserializeAll(injectable)
     }
-
+    
     private def deserializeAll(injectable: PacketInjectable): Unit = {
         // If any of the chained SIPU is processing,
         // the current unit will wait until the whole chain is complete.
-        chain.foreach(_.join())
+        val currentWorker = WorkerPools.currentWorker
+        for (unit <- chain) {
+            unit.join()
+            if (executor ne currentWorker) {
+                //work of the initial executor thread has been stolen by another thread (see #post)
+                return //abort
+            }
+        }
         // Only the executor thread can run here
         //deserializing all packets that are added in the queue
         while (queue.nonEmpty) {
+            if (executor ne currentWorker)
+                return
             deserializeNextResult(injectable)
         }
+        if (executor ne currentWorker)
+            return
         //everything deserialized, now realising this deserialization unit.
         this.synchronized {
             executor = null
@@ -69,28 +100,28 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
             this.notifyAll()
         }
     }
-
+    
     /**
      * Will make the current thread wait until this unit have terminated all his deserialisation work.
      * */
     def join(): Unit = {
         val currentTask = this.synchronized {
-            if (executor == null)
-                return //the current IPU is not processing any injection
+            if (executor == null) return //the current IPU is not processing any injection
             WorkerPools.currentTask.orNull
         }
+        AppLoggers.GNOM.debug(s"SIPU: Waiting for chained unit to end injections before continuing")
         if (currentTask == null && executor != null)
             this.synchronized(wait())
         else if (executor != null)
             locker.pauseTask()
     }
-
+    
     def deserializeNextResult(injectable: PacketInjectable): Unit = {
         val result = queue.synchronized {
             var result = queue.dequeue()
             if (result == null)
                 return
-
+            
             if (queue.nonEmpty && queue.head.ordinal < result.ordinal) {
                 val lastResult = result
                 result = queue.dequeue()
@@ -106,7 +137,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
         }
         injectable.inject(bundle)
     }
-
+    
     def chainWith(unit: SequentialInjectionProcessorUnit): Unit = {
         chain += unit
     }

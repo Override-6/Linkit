@@ -10,7 +10,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="GNOM" level="INFO" additivity="false" includeLocation="false">
+        <Logger name="GNOM" level="TRACE" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
@@ -26,7 +26,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Traffic" level="ALL" additivity="false" includeLocation="false">
+        <Logger name="Traffic" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
@@ -38,7 +38,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Worker" level="INFO" additivity="false" includeLocation="false">
+        <Logger name="Worker" level="ALL" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

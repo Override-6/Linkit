@@ -62,10 +62,10 @@ class DefaultPacketReader(socket: DynamicSocket,
         callback(result)
     }
     
-    private def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isInfoEnabled) {
+    private def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
         val preview     = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
         val finalTarget = if (target == null) "" else target
-        AppLoggers.Traffic.info(s"${Console.CYAN}Received: ↓ $finalTarget ↓ $preview (l: ${bytes.length + 4})")
+        AppLoggers.Traffic.trace(s"${Console.CYAN}Received: ↓ $finalTarget ↓ $preview (l: ${bytes.length + 4})")
     }
     
 }

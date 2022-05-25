@@ -25,6 +25,7 @@ import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
@@ -86,7 +87,9 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
     override def processInjection(bundle: PacketBundle): Unit = {
         val path = bundle.coords.path
-        findNode(path).get.injectable.inject(bundle)
+        val node = findNode(path).get
+        AppLoggers.GNOM.trace(s"Injecting packet bundle ($bundle) into channel ${node.reference}")
+        node.injectable.inject(bundle)
     }
 
     override def processInjection(result: ObjectDeserializationResult): Unit = {
