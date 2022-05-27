@@ -35,7 +35,8 @@ import scala.collection.mutable.ListBuffer
 
 class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContractDescriptor[A],
                                private val superClass: LeveledSBDN[_ >: A],
-                               private val interfaces: Array[LeveledSBDN[_ >: A]]) {
+                               private val interfaces: Array[LeveledSBDN[_ >: A]],
+                               val structNode: StructureBehaviorDescriptorNodeImpl[A]) {
     
     private lazy val clazz = descriptor.targetClass //only called if descriptor is non null
     
@@ -107,7 +108,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
     
     private def ensureNoSyncFieldIsPrimitive(): Unit = {
         descriptor.fields
-                .filter(_.registrationKind == Synchronized)
+                .filter(_.registrationKind.isConnectable)
                 .foreach { field =>
                     val javaField             = field.description.javaField
                     val fieldType             = javaField.getType
@@ -250,7 +251,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
     }
     
     private def getFirstMirroringInfo(node: LeveledSBDN[_]): Option[MirroringInfo] = {
-        var superNode = node
+        var superNode: LeveledSBDN[_] = node.structNode.getSbdn(Mirror).orNull
         while (superNode != null && (superNode.descriptor match { //take the first known mirroring info
             case md: MirroringStructureContractDescriptor[_] =>
                 return Some(md.mirroringInfo)

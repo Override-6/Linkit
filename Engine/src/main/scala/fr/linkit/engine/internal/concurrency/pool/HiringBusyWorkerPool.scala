@@ -22,12 +22,8 @@ class HiringBusyWorkerPool(name: String) extends AbstractWorkerPool(name) {
     override protected def post(runnable: Runnable): Unit = {
         workQueue.put(runnable)
     }
+    
+    override protected def countRemainingTasks: Int = workQueue.size()
 
-    override def haveMoreTasks: Boolean = {
-        !workQueue.isEmpty
-    }
-
-    override protected def takeTask: Runnable = {
-        workQueue.take()
-    }
+    override protected def removeTask: Runnable = workQueue.remove()
 }

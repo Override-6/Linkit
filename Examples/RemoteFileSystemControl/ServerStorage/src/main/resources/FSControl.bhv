@@ -39,15 +39,25 @@ describe Path  {
         chip returnvalue
     }
 }
+describe WatchEvent {
+    context() following only_owner {
+        chip returnvalue
+    }
+}
 describe WatchKey {
     foreach method enable following only_cache_owner {
         chip returnvalue
     }
 }
 
-describe ArrayList [chip] {
+describe ArrayList {
     foreach method enable following only_owner
-    toArray() following only_owner {
+    iterator() following only_owner {
+        chip returnvalue
+    }
+}
+describe Iterator {
+    foreach method enable following only_owner {
         chip returnvalue
     }
 }

@@ -47,7 +47,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                 if (executor.isSleeping) {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
-                    AppLoggers.GNOM.debug(s"SIPU: Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
+                    AppLoggers.GNOM.info(s"SIPU: Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
                     executor.runWhileSleeping(deserializeAll(true, injectable))
                     return
                 }
@@ -61,8 +61,8 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                         //thread is blocked, let's transfer all the remaining deserialisation / injection work to this thread.
                         //This operation has been made up in order to avoid possible deadlocks in local, or through the network.
                         //If the initial executor is notified or unparked, it will simply give up this SIPU.
-                        
-                        //don't return and let the thread enter in the deserialization process
+                        AppLoggers.GNOM.info(s"SIPU: Turns out that the executor is blocked. All injections of the executor ($executor) are transferred to this thread.")
+                        //don't return and let the thread enter in the deserialization process, when the initial executor will get unblocked, the
                         
                     case other =>
                         throw new IllegalThreadStateException(s"Could not inject packet into SIPU: unit's executor is ${other.name().toLowerCase()}.")

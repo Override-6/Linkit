@@ -42,6 +42,8 @@ class FieldContractImpl[A](val description: FieldDescription,
             case fieldValue: AnyRef if isRegistered => manip.createConnectedObject(fieldValue, registrationKind)
             case _                                  => fieldValue
         }
+        if (fieldValue != null && !field.getType.isAssignableFrom(fieldValue.getClass))
+            throw new UnsupportedOperationException(s"Could not change value of field '$field' for object '$obj' to it's synchronized version : the original type of the field is not assignable with the new synchronized value's class (${fieldValue.getClass}).")
         ScalaUtils.setValue(obj, field, fieldValue)
     }
 }

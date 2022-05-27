@@ -45,6 +45,8 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         leveledNodes.values.foreach(_.verify())
     }
     
+    private[descriptor] def getSbdn(lvl: SyncLevel): Option[LeveledSBDN[A]] = leveledNodes.get(lvl)
+    
     override def getContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A] = {
         leveledNodes.get(context.syncLevel) match {
             case Some(sbdn) => sbdn.getContract(clazz, context)
@@ -85,7 +87,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
     private def computeLeveledNodes(): Map[SyncLevel, LeveledSBDN[A]] = {
         descriptors.map(d => {
             val level = d.syncLevel
-            (level, new LeveledSBDN(d, superClass.getLeveledNode(level), interfaces.map(_.getLeveledNode(level))))
+            (level, new LeveledSBDN(d, superClass.getLeveledNode(level), interfaces.map(_.getLeveledNode(level)), this))
         }).toMap
     }
     
@@ -94,7 +96,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
             if (superClass == null) null
             else new LeveledSBDN(null,
                                  superClass.getLeveledNode(level),
-                                 interfaces.map(_.getLeveledNode(level)))
+                                 interfaces.map(_.getLeveledNode(level)), this)
         })
     }
     

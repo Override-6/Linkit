@@ -13,7 +13,6 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.WorkerPools.currentWorker
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerController, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController.ControlTicket
@@ -22,11 +21,11 @@ import scala.collection.mutable
 
 class SimpleWorkerController extends WorkerController {
     
-    private val workingThreads = new mutable.HashMap[Int, ControlTicket]()
+    private val pausedTasks = new mutable.HashMap[Int, ControlTicket]()
     
     private def tickets: mutable.HashMap[Int, ControlTicket] = {
-        workingThreads.filterInPlace((_, tick) => tick.task.isExecuting)
-        workingThreads.filter(_._2.task.isPaused)
+        pausedTasks.filterInPlace((_, tick) => tick.task.isExecuting)
+        pausedTasks.filter(_._2.task.isPaused)
     }
     
     @workerExecution
@@ -44,28 +43,27 @@ class SimpleWorkerController extends WorkerController {
     
     @workerExecution
     override def pauseTaskForAtLeast(millis: Long): Unit = {
-        val worker      = currentWorker
-        val currentTask = worker.getCurrentTask.get
-        val lockDate    = System.currentTimeMillis()
-        workingThreads.put(currentTask.taskID, new ControlTicket(currentTask, System.currentTimeMillis() - lockDate <= millis))
+        val lockDate = System.currentTimeMillis()
+        createControlTicket(System.currentTimeMillis() - lockDate <= millis)
         pauseCurrentTask(millis)
     }
     
     override def wakeupNTask(n: Int): Unit = this.synchronized {
-        val count = workingThreads.size
+        val count = pausedTasks.size
         val x     = if (n > count || n < 0) count else n
         for (_ <- 0 to x) {
             wakeupAnyTask()
         }
     }
     
-    override def toString: String = workingThreads.mkString("SimpleWorkerController(", ",", ")")
+    override def toString: String = pausedTasks.mkString("SimpleWorkerController(", ",", ")")
     
     @workerExecution
     override def wakeupAnyTask(): Unit = this.synchronized {
         val opt = tickets.find(entry => entry._2.shouldWakeup)
         //AppLogger.debug(s"wakeupAnyTask $this (${System.identityHashCode(this)})")
         if (opt.isEmpty) {
+            AppLoggers.Worker.warn("no tickets found.")
             return
         }
         
@@ -77,10 +75,10 @@ class SimpleWorkerController extends WorkerController {
     
     @workerExecution
     override def wakeupTasks(taskIds: Seq[Int]): Unit = this.synchronized {
-        if (workingThreads.isEmpty)
+        if (pausedTasks.isEmpty)
             return
         
-        for ((taskID, ticket) <- workingThreads.clone()) {
+        for ((taskID, ticket) <- pausedTasks.clone()) {
             if (taskIds.contains(taskID)) {
                 wakeupWorkerTask(ticket.task)
             }
@@ -90,12 +88,14 @@ class SimpleWorkerController extends WorkerController {
     @workerExecution
     override def wakeupWorkerTask(task: AsyncTask[_]): Unit = this.synchronized {
         val taskID = task.taskID
-        if (!workingThreads.contains(taskID))
-            throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorker.thread.getName})")
-        
-        workingThreads -= taskID
-        if (task.isPaused)
-            task.continue()
+        pausedTasks remove taskID match {
+            case Some(ticket) =>
+                if (task.isPaused)
+                    task.continue()
+            case None                              =>
+                throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorker.thread.getName})")
+        }
+
     }
     
     private def pauseCurrentTask(): Unit = {
@@ -107,7 +107,7 @@ class SimpleWorkerController extends WorkerController {
     private def createControlTicket(pauseCondition: => Boolean): Unit = {
         this.synchronized {
             val currentTask = WorkerPools.currentTask.get
-            workingThreads.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
+            pausedTasks.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
         }
         pauseCurrentTask()
     }

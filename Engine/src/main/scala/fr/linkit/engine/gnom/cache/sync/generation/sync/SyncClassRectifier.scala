@@ -34,9 +34,9 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
                          classLoader: GeneratedClassLoader,
                          syncClassDef: SyncClassDef) {
 
-    private val superClass = syncClassDef.mainClass
+    private val mainClass = syncClassDef.mainClass
     private val interfaces = syncClassDef match {
-        case unique: SyncClassDefUnique     => Array[Class[_]]()
+        case _: SyncClassDefUnique     => Array[Class[_]]()
         case multiple: SyncClassDefMultiple => multiple.interfaces
     }
     private val pool       = ClassPool.getDefault
@@ -66,7 +66,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
             else throw new UnsupportedOperationException(s"Could not set super class $ctClass0, generated class already extends ${ctClass.getSuperclass.getName}")
         }
 
-        extendClass(superClass)
+        extendClass(mainClass)
         syncClassDef match {
             case multiple: SyncClassDefMultiple => multiple.interfaces.foreach(extendClass)
             case _                              =>
@@ -74,7 +74,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     }
 
     private def fixNetworkObjectInherance(): Unit = {
-        if (!classOf[NetworkObject[_]].isAssignableFrom(superClass))
+        if (!classOf[NetworkObject[_]].isAssignableFrom(mainClass))
             return
 
         def slashDot(cl: Class[_]): String = cl.getName.replace(".", "/")
@@ -97,7 +97,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     }
 
     private def addAllConstructors(): Unit = {
-        superClass.getDeclaredConstructors.foreach(constructor => if (!Modifier.isPrivate(constructor.getModifiers)) {
+        mainClass.getDeclaredConstructors.foreach(constructor => if (!Modifier.isPrivate(constructor.getModifiers)) {
             if (constructor.getParameterCount > 0) {
                 val const  = addConstructor(constructor)
                 val params = constructor.getParameterTypes
@@ -253,7 +253,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     private def getSuperFunBody(javaMethod: Method): String = {
         if (Modifier.isAbstract(javaMethod.getModifiers) && !Modifier.isNative(javaMethod.getModifiers)) {
             s"""{
-               |Throwable x = new ${classOf[AbstractMethodInvocationException].getName}(\"Attempted to call an abstract method on this object. (${javaMethod.getName} in ${superClass} is abstract.)\", null);
+               |Throwable x = new ${classOf[AbstractMethodInvocationException].getName}(\"Attempted to call an abstract method on this object. (${javaMethod.getName} in ${mainClass} is abstract.)\", null);
                |throw x;
                |}
                |""".stripMargin
@@ -262,7 +262,9 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
                 val declaringClass = javaMethod.getDeclaringClass
                 val enclosing      = {
                     if (declaringClass.isInterface) {
-                        if (declaringClass.isAssignableFrom(superClass)) s""
+                        if (declaringClass.isAssignableFrom(mainClass)) {
+                            if (mainClass.isInterface) s"${mainClass.getName}." else ""
+                        }
                         else interfaces.find(declaringClass.isAssignableFrom).get.getName + "."
                     } else ""
                 }

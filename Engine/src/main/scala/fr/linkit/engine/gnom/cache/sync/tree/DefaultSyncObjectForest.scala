@@ -122,7 +122,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         val reference = syncObj.reference
         if (syncObj.isInitialized)
             return
-        AppLoggers.SyncObj.debug(s"Initialising synchronized object at $reference.")
+        AppLoggers.SyncObj.trace(s"Initialising synchronized object at $reference.")
         val path    = reference.nodePath
         val treeID  = path.head
         val treeOpt = findTreeInternal(treeID)

@@ -37,7 +37,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
             throw new NullPointerException("attempted to add a null item.")
         content.synchronized {
             content.add(e)
-            AppLoggers.Worker.trace(s"Added ${e} in content $this (${System.identityHashCode(this)})")
+            AppLoggers.Worker.trace(s"Added $e in content $this (${System.identityHashCode(this)})")
         }
         controller.wakeupAnyTask()
         true
@@ -55,8 +55,8 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
 
     override def poll(): A = content.synchronized {
         val x = content.pollFirst()
-        if (x == null)
-            throw new NullPointerException("poll returned null")
+        /*if (x == null)
+            throw new NullPointerException("poll returned null")*/
         x
     }
 

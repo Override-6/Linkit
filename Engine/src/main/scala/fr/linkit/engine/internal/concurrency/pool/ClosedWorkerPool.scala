@@ -5,10 +5,10 @@ import fr.linkit.api.internal.concurrency.{Worker, WorkerPools}
 import java.util.concurrent.LinkedBlockingQueue
 
 class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWorkerPool(name) {
-
+    
     if (initialThreadCount <= 0)
         throw new IllegalArgumentException(s"Worker pool '$name' must contain at least 1 thread, provided: '$initialThreadCount'")
-
+    
     //The extracted workQueue of the executor which contains all the tasks to execute
     private val workQueue                         = new LinkedBlockingQueue[Runnable]()
     private val workerFactory: Runnable => Worker = target => {
@@ -17,13 +17,13 @@ class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWo
         worker
     }
     setThreadCount(initialThreadCount)
-
-    override def haveMoreTasks: Boolean = !workQueue.isEmpty
-
-    override protected def takeTask: Runnable = {
+    
+    override protected def countRemainingTasks: Int = workQueue.size()
+    
+    override protected def removeTask: Runnable = {
         workQueue.take()
     }
-
+    
     def setThreadCount(newCount: Int): Unit = {
         if (workers.size > newCount)
             throw new IllegalArgumentException(s"newCount < workers.size ($newCount < ${workers.size})")
@@ -32,7 +32,7 @@ class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWo
             worker.thread.start()
         }
     }
-
+    
     override def close(): Unit = {
         super.close()
         val workerCount = workers.size
@@ -41,9 +41,9 @@ class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWo
         //all threads waiting to execute another tasks will see a null task was submit & that super.closed = true so they'll stop executing
             workQueue.add(null)
     }
-
+    
     override protected def post(runnable: Runnable): Unit = workQueue.offer(runnable)
-
+    
     private def waitingRoom(): Unit = {
         val self = WorkerPools.currentWorker.asInstanceOf[BusyWorkerThread]
         self.execWhileCurrentTaskPaused(workQueue.take(), !closed)(_.run())

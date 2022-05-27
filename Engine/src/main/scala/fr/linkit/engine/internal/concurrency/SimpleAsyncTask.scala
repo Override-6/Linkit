@@ -96,10 +96,6 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     }
     
     override def notifyNestThrow(threw: Throwable): Unit = {
-        //AppLogger.debug(s"NotifyNestThrow : $threw")
-        //AppLogger.debug(s"onThrowConsumers: $onThrowConsumers")
-        //AppLogger.debug(s"this            : $this")
-        
         val consumersEmpty = onThrowConsumers.isEmpty
         onThrowConsumers.applyAll(Option(threw))
         if (parent != null && consumersEmpty)
@@ -213,6 +209,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     
     override def setPaused(): Unit = {
         paused = true
+        //Thread.dumpStack()
         AppLoggers.Worker.debug(s"task $this marked as paused")
     }
     

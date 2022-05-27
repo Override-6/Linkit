@@ -60,7 +60,7 @@ case class MethodProperty(name: String, value: String)
 
 case class MethodParam(syncState: RegistrationState, name: Option[String], tpe: String) {
 
-    override def toString: String = (syncState.kind match {
+    override def toString: String = (syncState.lvl match {
         case SyncLevel.NotRegistered => ""
         case SyncLevel.ChippedOnly   => "chip "
         case SyncLevel.Synchronized  => "sync "

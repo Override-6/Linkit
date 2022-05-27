@@ -95,7 +95,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
     override def toString: String = "presence handler " + getClass.getSimpleName
     
     protected def registerReference(ref: R): Unit = ref.getClass.synchronized {
-        AppLoggers.GNOM.info(s"Registering Network Object reference $ref in presence handler '${this}'.")
+        AppLoggers.GNOM.trace(s"Registering Network Object reference $ref in presence handler '${this}'.")
         var presence: InternalNetworkObjectPresence[R] = null
         if (!internalPresences.contains(ref)) {
             presence = new InternalNetworkObjectPresence[R](this, ref)

@@ -23,7 +23,9 @@ describe statics FileSystems {
     }
 }
 describe WatchEvent {
-    foreach method enable following only_owner
+    context() following only_owner {
+        mirror returnvalue
+    }
 }
 describe WatchKey {
     foreach method enable following only_owner {
@@ -31,9 +33,14 @@ describe WatchKey {
     }
 }
 
-describe ArrayList [mirror] {
+describe ArrayList {
     foreach method enable following only_owner
-    toArray() following only_owner {
+    iterator() following only_owner {
+        mirror returnvalue
+    }
+}
+describe Iterator {
+    foreach method enable following only_owner {
         mirror returnvalue
     }
 }

@@ -49,7 +49,5 @@ case class SimpleTrafficNode[C <: TrafficObject[TrafficReference]](override val 
         this
     }
 
-    override def ipu(): InjectionProcessorUnit = {
-        if (preferPerformances0) pipu else sipu
-    }
+    override def ipu(): InjectionProcessorUnit = if (preferPerformances0) pipu else sipu
 }

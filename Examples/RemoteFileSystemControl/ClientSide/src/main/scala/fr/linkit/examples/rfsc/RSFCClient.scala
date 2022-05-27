@@ -10,19 +10,23 @@ import java.io.OutputStream
 import java.net.InetSocketAddress
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
+import java.util.concurrent.ThreadLocalRandom
 
 object RSFCClient {
     
     def main(args: Array[String]): Unit = {
-        val network       = launchApp("x").network
+        val network       = launchApp("x" + ThreadLocalRandom.current().nextInt(10_000, 100_000)).network
         val serverStatics = network.getStaticAccess(1)
         
         listenDistantDir(serverStatics)
-        Thread.sleep(5615656)
         sendFile(serverStatics)
         
-        serverStatics[System].exit(0)
+        //serverStatics[System].exit(0)
         print("Done.")
+    }
+    
+    private def foreach(iterator: java.util.Iterator[WatchEvent[_]])(f: WatchEvent[_] => Unit): Unit = {
+        while (iterator.hasNext) f(iterator.next())
     }
     
     private def listenDistantDir(serverStatics: StaticAccess): Unit = {
@@ -31,11 +35,11 @@ object RSFCClient {
         dir.register(watcher, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE)
         new Thread(() => while (true) {
             val key = watcher.take()
-            key.pollEvents()
-                    .toArray(new Array[WatchEvent[Path]](0))
-                    .foreach {
-                        event => println(s"${event.context()}: ${event.kind()}")
-                    }
+            foreach(key.pollEvents().iterator()) {
+                event => println(s"${event.context()}: ${event.kind()}")
+            }
+            key.reset()
+            
         }, "remote directory listener").start()
     }
     

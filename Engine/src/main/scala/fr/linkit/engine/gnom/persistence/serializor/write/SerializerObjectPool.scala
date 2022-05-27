@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.write
 
-import fr.linkit.api.gnom.cache.sync.ChippedObject
+import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
@@ -24,6 +24,8 @@ import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolCh
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
+
+import java.nio.file.Path
 
 class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Array[Int](ChunkCount).mapInPlace(_ => -1)) {
     
@@ -164,6 +166,8 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     }
     
     private def addObj0(ref: AnyRef): Unit = {
+        if (ref.isInstanceOf[Path])
+            ""
         val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
             addObjectDecomposed(ref)

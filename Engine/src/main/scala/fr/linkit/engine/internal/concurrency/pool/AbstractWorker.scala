@@ -42,16 +42,17 @@ private[concurrency] trait AbstractWorker
     override def getTaskStack: Array[Int] = workingTasks.keys.toArray
     
     override def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit = {
-        ensureCurrentThreadEqualsThis()
-        //AppLogger.trace("Entering workflow loop...")
-        //Thread.dumpStack()
         
+        ensureCurrentThreadEqualsThis()
+        AppLoggers.Worker.trace("Entering workflow loop...")
+    
         while (loopCondition) {
-            //AppLogger.trace("This thread is about to park.")
+            //if (currentTask != null && !currentTask.isPaused) return
+            AppLoggers.Worker.trace("This thread is about to park.")
             isParkingForWorkflow = true
             val t = parkAction
             isParkingForWorkflow = false
-            //AppLogger.trace("This thread has been unparked.")
+            AppLoggers.Worker.trace("This thread has been unparked.")
             forcedTasks.synchronized {
                 forcedTasks.foreach(runTask)
                 forcedTasks.clear()
@@ -59,12 +60,13 @@ private[concurrency] trait AbstractWorker
             if (!loopCondition) {
                 return
             }
-            //AppLogger.trace("Continuing workflow...")
+            AppLoggers.Worker.trace("Continuing workflow...")
             workflow(t)
         }
-        //AppLogger.trace("Exiting workflow loop...")
+        AppLoggers.Worker.trace("Exiting workflow loop...")
     }
     
+
     override def runTask(task: ThreadTask): Unit = {
         ensureCurrentThreadEqualsThis()
         
@@ -82,7 +84,7 @@ private[concurrency] trait AbstractWorker
     override def wakeup(task: ThreadTask): Unit = {
         val blocker = LockSupport.getBlocker(thread)
         AppLoggers.Worker.debug(s"waking up task ${task.taskID}")
-        if (blocker eq task) {
+        if (blocker == null || (blocker eq task)) {
             LockSupport.unpark(thread)
         } else if (task.taskID != -1) { //-1 task identifier is for mocked tasks
             AppLoggers.Worker.error(s"Could not wakeup task ${task.taskID}. ($blocker, $this)")

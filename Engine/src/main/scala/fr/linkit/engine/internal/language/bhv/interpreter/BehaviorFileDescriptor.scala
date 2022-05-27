@@ -4,7 +4,7 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.CurrentEngine
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique, SyncStructureDescription}
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, ModifiableValueContract, SyncLevel}
@@ -13,7 +13,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, MethodContractDescriptorImpl}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, LeveledSBDN, MethodContractDescriptorImpl}
 import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
@@ -30,13 +30,11 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
     private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
     private val contracts        : Seq[ContractDescriptorGroup[AnyRef]]        = computeContracts()
     
-    lazy val data = {
-        new ContractDescriptorDataImpl(contracts.toArray) with LangContractDescriptorData {
-            override val filePath     : String             = file.filePath
-            override val fileName     : String             = ast.fileName
-            override val propertyClass: PropertyClass      = BehaviorFileDescriptor.this.propertyClass
-            override val app          : ApplicationContext = BehaviorFileDescriptor.this.app
-        }
+    lazy val data = new ContractDescriptorDataImpl(contracts.toArray) with LangContractDescriptorData {
+        override val filePath     : String             = file.filePath
+        override val fileName     : String             = ast.fileName
+        override val propertyClass: PropertyClass      = BehaviorFileDescriptor.this.propertyClass
+        override val app          : ApplicationContext = BehaviorFileDescriptor.this.app
     }
     
     private def computeContracts(): Seq[ContractDescriptorGroup[AnyRef]] = {
@@ -100,7 +98,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-                .map(new FieldContractImpl[Any](_, desc.state.kind))
+                .map(new FieldContractImpl[Any](_, desc.state.lvl))
                 .toArray
     }
     
@@ -121,8 +119,14 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                 case _: DisabledMethodDescription   =>
                     MethodContractDescriptorImpl(method, false, None, None, Array.empty, None, Inherit, DefaultBuilder)
                 case desc: EnabledMethodDescription =>
-                    val rvContract = if (desc.syncReturnValue.kind != NotRegistered)
-                        Some(new SimpleModifiableValueContract[Any](desc.syncReturnValue.kind, None)) else None
+                    val rvContract = {
+                        val rvLvl = desc.syncReturnValue.lvl
+                        if (rvLvl != NotRegistered) {
+                            if (rvLvl.isConnectable && LeveledSBDN.findReasonTypeCantBeSync(method.javaMethod.getReturnType).isDefined)
+                                Some(new SimpleModifiableValueContract[Any](NotRegistered, None))
+                            else Some(new SimpleModifiableValueContract[Any](rvLvl, None))
+                        } else None
+                    }
                     
                     val agreement      = desc.agreement.map(ag => getAgreement(ag.name)).getOrElse(DefaultBuilder)
                     val procrastinator = findProcrastinator(desc.properties)
@@ -155,7 +159,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
             }
             
             def checkParams(): Unit = {
-                if (signature.params.exists(_.syncState.kind != NotRegistered))
+                if (signature.params.exists(_.syncState.lvl != NotRegistered))
                     throw new BHVLanguageException("disabled methods can't define connected arguments")
             }
             
@@ -196,7 +200,7 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
                             case MethodParam(syncState, nameOpt, tpe) =>
                                 val modifier = nameOpt.flatMap(name => desc.modifiers.find(_.target == name).map(extractModifier(_, tpe)))
-                                new SimpleModifiableValueContract[Any](syncState.kind, modifier)
+                                new SimpleModifiableValueContract[Any](syncState.lvl, modifier)
                         }.toArray
                         if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
                     }
@@ -313,5 +317,6 @@ class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, proper
 }
 
 object BehaviorFileDescriptor {
+    
     private final val DefaultBuilder = new RMIRulesAgreementGenericBuilder().accept(CurrentEngine)
 }

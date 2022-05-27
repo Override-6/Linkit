@@ -141,7 +141,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
             if (rootExecution)
                 activeThreads -= 1
         }
-        post(runnable)
+        postTask(runnable)
         
         //If there is one busy thread that is waiting for a new task to be performed,
         //It would instantly execute the current task.
@@ -150,6 +150,16 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
     }
     
     protected def post(runnable: Runnable): Unit
+    
+    protected def countRemainingTasks: Int
+    
+    private def postTask(runnable: Runnable): Unit = {
+        post(runnable)
+        val count = countRemainingTasks
+        if (count > 5) {
+            AppLoggers.Worker.warn(s"Worker Pool '$name' is suffocating! there are $count tasks remaining to execute.")
+        }
+    }
     
     protected def addWorker(worker: Worker): Unit = {
         workers.synchronized {
@@ -223,13 +233,13 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         //AppLogger.vError(s"$currentTasksId task '${currentTask.taskID}' is continuing")
     }
     
-    def haveMoreTasks: Boolean
+    final def haveMoreTasks: Boolean = countRemainingTasks > 0
     
     //TODO much better to return a ThreadTask instead of having a runnable that will declare a ThreadTask in it.
-    protected def takeTask: Runnable
+    protected def removeTask: Runnable
     
     @workerExecution
-    private def nextTask: Runnable = takeTask
+    private def nextTask: Runnable = removeTask
     
     /**
      * Keep the current thread busy with task execution for at least
