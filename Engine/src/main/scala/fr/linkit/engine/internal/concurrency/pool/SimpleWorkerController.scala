@@ -63,7 +63,6 @@ class SimpleWorkerController extends WorkerController {
         val opt = tickets.find(entry => entry._2.shouldWakeup)
         //AppLogger.debug(s"wakeupAnyTask $this (${System.identityHashCode(this)})")
         if (opt.isEmpty) {
-            AppLoggers.Worker.warn("no tickets found.")
             return
         }
         
@@ -88,14 +87,10 @@ class SimpleWorkerController extends WorkerController {
     @workerExecution
     override def wakeupWorkerTask(task: AsyncTask[_]): Unit = this.synchronized {
         val taskID = task.taskID
-        pausedTasks remove taskID match {
-            case Some(ticket) =>
-                if (task.isPaused)
-                    task.continue()
-            case None                              =>
-                throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorker.thread.getName})")
-        }
-
+        if ((pausedTasks remove taskID).isEmpty)
+            throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorker.thread.getName})")
+        if (task.isPaused)
+            task.continue()
     }
     
     private def pauseCurrentTask(): Unit = {
@@ -119,7 +114,7 @@ object SimpleWorkerController {
     private class ControlTicket(val task: AsyncTask[_], condition: => Boolean) {
         
         def shouldWakeup: Boolean = !condition
-    
+        
         override def toString: String = s"task: $task"
         
     }

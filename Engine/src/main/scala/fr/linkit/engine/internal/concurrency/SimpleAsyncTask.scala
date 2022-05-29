@@ -198,12 +198,12 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         stack.nonEmpty && stack.last == taskID
     }
     
-    override def continue(): Unit = {
+    override def continue(): Unit = this.synchronized {
         setContinue()
         if (isExecuting && worker.isSleeping) {
             worker.getController.wakeup(this)
         } else {
-            AppLoggers.Worker.error(s"Could not wakeup task '$this'")
+            AppLoggers.Worker.error(s"Could not wakeup task '$this' (worker.isSleeping = ${worker.isSleeping})")
         }
     }
     
@@ -218,7 +218,9 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         AppLoggers.Worker.debug(s"task $this marked as continue")
     }
     
-    override def toString: String = s"SimpleAsyncTask($taskID, $parent){paused = $isPaused; executing = $isExecuting; running = $isRunning}"
+    override def toString: String = {
+        s"$taskID: {paused = $isPaused; executing = $isExecuting; running = $isRunning}"
+    }
     
 }
 

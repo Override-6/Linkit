@@ -111,7 +111,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             val name        = method.getName
             val methodID    = description.methodId
             val methodClass = method.getDeclaringClass.getName
-            s"RMI - Calling method $methodID $methodClass.$name(${args.mkString(", ")})"
+            s"Calling method $methodID $methodClass.$name(${args.mkString(", ")})"
         }
         val target = obj.connected
         if (description.isMethodAccessible)
@@ -198,7 +198,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         val className            = method.getDeclaringClass.getName
         val params               = invocation.methodArguments.mkString(", ")
         val expectedEngineReturn = if (appointed == null) " - no remote return value is expected, the RMI is performed asynchronously." else " - expected return value from " + appointed + "."
-        s"RMI - performing method invocation $methodID $className.$name($params)" + expectedEngineReturn
+        s"sending method invocation ($methodID) $className.$name($params)" + expectedEngineReturn
     }
     
     private def makeDispatch(network: Network,

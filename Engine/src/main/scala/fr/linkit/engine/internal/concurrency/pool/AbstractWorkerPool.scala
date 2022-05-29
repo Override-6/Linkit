@@ -222,24 +222,21 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         ensureCurrentThreadOwned()
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
-        //AppLogger.vError(s"$currentTasksId current task is about to pause indefinitely...")
         currentTask.setPaused()
         executeRemainingTasksWhilePaused()
+        if (!currentTask.isPaused) return
         
         worker.execWhileCurrentTaskPaused(LockSupport.park(currentTask), currentTask.isPaused) { _ =>
             executeRemainingTasksWhilePaused()
         }
-        currentTask.setContinue()
-        //AppLogger.vError(s"$currentTasksId task '${currentTask.taskID}' is continuing")
     }
     
     final def haveMoreTasks: Boolean = countRemainingTasks > 0
     
     //TODO much better to return a ThreadTask instead of having a runnable that will declare a ThreadTask in it.
-    protected def removeTask: Runnable
+    protected def pollTask: Runnable
+    protected def takeTask: Runnable
     
-    @workerExecution
-    private def nextTask: Runnable = removeTask
     
     /**
      * Keep the current thread busy with task execution for at least
@@ -262,9 +259,9 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         
         def pauseCurrentTaskTimed(): Long = {
             var busiedMillis: Long = 0
-            while (haveMoreTasks && busiedMillis <= timeoutMillis) {
+            while (busiedMillis <= timeoutMillis) {
                 val t0 = now()
-                nextTask.run()
+                takeTask.run()
                 val t1 = now()
                 busiedMillis += (t1 - t0)
             }
@@ -335,7 +332,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         
         val currentController = currentWorker.getController
         while (haveMoreTasks && condition) {
-            val task = nextTask
+            val task = pollTask
             if (task != null) {
                 currentController.runSubTask(task)
             }
@@ -363,4 +360,3 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
         }
     }
 }
-

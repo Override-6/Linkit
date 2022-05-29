@@ -87,11 +87,12 @@ object ClassMappings {
     @inline
     def codeOfClass(clazz: Class[_]): Int = {
         val name = clazz.getName
-        if (!classes.contains(name.hashCode)) {
+        val code = name.hashCode
+        if (!classes.contains(code)) {
             AppLoggers.Mappings.warn(s"Class map did not contained $clazz. (code: ${name.hashCode})")
             putClass(clazz)
         }
-        name.hashCode
+        code
     }
 
     def findKnownClassInfo(code: Int): Option[MappedClassInfo] = {

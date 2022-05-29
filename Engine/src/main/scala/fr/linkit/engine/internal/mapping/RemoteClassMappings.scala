@@ -27,14 +27,14 @@ class RemoteClassMappings(val ownerId: String) extends ClassMappingsListener {
     def addClassToMap(className: String): Unit = {
         try {
             ClassMappings.putClass(className)
-            AppLoggers.Mappings.trace(s"a new class has been added to mappings ('$className') from distant engine.")
+            AppLoggers.Mappings.trace(s"a new class has been added to mappings ($className, code: ${className.hashCode}) from distant engine.")
         } catch {
             case _: ClassNotFoundException =>
                 AppLoggers.Mappings.warn(s"class mappings for engine '$ownerId' now contains class '$className' (id: ${className.hashCode}) that is not present on this engine.")
         }
     }
 
-    //called by the other engines
+    //called on current engine to check if this owner mappings contains the class code
     def isClassCodeMapped(classCode: Int): Boolean = mappedClasses.contains(classCode)
 
     //called by the owner engine to update other RemoteClassMappings objects.

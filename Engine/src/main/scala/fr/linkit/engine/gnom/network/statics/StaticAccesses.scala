@@ -11,11 +11,10 @@ import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 class StaticAccesses(network: Network) {
 
     private val cacheManager   = network.attachToCacheManager("StaticAccesses")
-    private val staticAccesses = cacheManager.attachToCache(-1, DefaultSynchronizedObjectCache[StaticAccess])
+    //static accesses cache
+    private val staCache = cacheManager.attachToCache(-1, DefaultSynchronizedObjectCache[StaticAccess])
 
-    def getStaticAccess(id: Int): StaticAccess = {
-        staticAccesses.findObject(id).get
-    }
+    def getStaticAccess(id: Int): StaticAccess = staCache.findObject(id).get
 
     def newStaticAccess(id: Int, contract: ContractDescriptorData = EmptyContractDescriptorData): StaticAccess = {
         if (id == -1)
@@ -24,11 +23,11 @@ class StaticAccesses(network: Network) {
     }
 
     protected def newStaticAccess0(id: Int, contract: ContractDescriptorData): StaticAccess = {
-        staticAccesses.findObject(id) match {
+        staCache.findObject(id) match {
             case Some(_) =>
                 throw new CacheAlreadyDeclaredException(s"Static access already exists for id '$id'")
             case None    =>
-                staticAccesses.syncObject(id, Constructor[StaticAccessImpl](id, cacheManager, contract), contract)
+                staCache.syncObject(id, Constructor[StaticAccessImpl](id, cacheManager, contract), contract)
         }
     }
 }

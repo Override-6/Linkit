@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.network
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.internal.system.Versions
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
 import fr.linkit.engine.internal.mapping.RemoteClassMappings
 import fr.linkit.engine.internal.system.StaticVersions
@@ -43,10 +44,15 @@ class DefaultEngine(override val identifier: String,
             case Some(cache) =>
                 isMappingsInitializing = true
                 mappings = {
-                    if (isCurrentEngine)
+                    if (isCurrentEngine) {
+                        AppLoggers.Persistence.info(s"Class mappings of this engine has been sent over the network.")
                         Some(cache.syncObject(identifier.hashCode, Constructor[RemoteClassMappings](identifier)))
-                    else
-                        cache.findObject(identifier.hashCode)
+                    } else {
+                        val r = cache.findObject(identifier.hashCode)
+                        if (r.isDefined)
+                            AppLoggers.Persistence.info(s"Established connection with class mappings of '$identifier'.")
+                        r
+                    }
                 }
                 isMappingsInitializing = false
         }

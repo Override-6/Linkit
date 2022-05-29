@@ -59,7 +59,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
 
     protected def preShutdown(): Unit = {
         wrapCloseAction("Resource listener") {
-            AppLoggers.App.error("REMEMBER TO CLOSE RESOURCE LISTENER IN A FUTURE UPDATE WIH A DEDICATED CLASS FOR APP RESOURCES ROOT")
+            //AppLoggers.App.error("REMEMBER TO CLOSE RESOURCE LISTENER IN A FUTURE UPDATE WIH A DEDICATED CLASS FOR APP RESOURCES ROOT")
             //resourceListener.close()
         }
         wrapCloseAction("Resource management") {
