@@ -52,10 +52,18 @@ trait ObjectConnector {
      * @tparam B the type of the object.
      * @return the created node
      */
-    def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectNode[B]
+    def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
+        insertObject(parentPath, source, ownerID, insertionKind, ThreadLocalRandom.current().nextInt())
+    }
+    
+    def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int): ConnectedObjectNode[B]
     
     def createMirroredObject[B <: AnyRef](parentPath: Array[Int], classDef: SyncClassDef, ownerID: String, idHint: Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectNode[B]
     
-    def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, kind: SyncLevel): ConnectedObject[AnyRef]
+    def createConnectedObj(parentRef: ConnectedObjectReference)(obj: Any, kind: SyncLevel): ConnectedObject[AnyRef] = {
+        createConnectedObj(parentRef, ThreadLocalRandom.current().nextInt())(obj, kind)
+    }
+    
+    def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int)(obj: Any, kind: SyncLevel): ConnectedObject[AnyRef]
     
 }

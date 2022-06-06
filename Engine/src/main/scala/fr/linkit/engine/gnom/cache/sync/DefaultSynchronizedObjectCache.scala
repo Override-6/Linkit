@@ -160,6 +160,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                               contracts: ContractDescriptorData = defaultContracts): DefaultConnectedObjectTree[A] = {
         precompileClasses(contracts)
         
+        
         val nodeReference = ConnectedObjectReference(family, cacheID, rootObjectOwner, Array(id))
         val choreographer = new InvocationChoreographer()
         val syncLevel     = if (mirroring) Mirror else Synchronized //root objects can either be mirrored or fully sync objects.

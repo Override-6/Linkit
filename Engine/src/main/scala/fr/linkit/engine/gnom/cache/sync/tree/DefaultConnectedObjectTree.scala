@@ -16,15 +16,13 @@ package fr.linkit.engine.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.{SyncLevel, SyncObjectFieldManipulation}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.cache.sync.instantiation.{ContentSwitcher, MirroringInstanceCreator}
-import fr.linkit.engine.gnom.cache.sync.invokation.UsageConnectedObjectContext
 import fr.linkit.engine.gnom.cache.sync.tree.node._
 
 import java.util.concurrent.ThreadLocalRandom
@@ -89,11 +87,25 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         insertObject[B](parent.nodePath, source, ownerID, insertionKind)
     }
     
-    override def insertObject[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectNode[B] = {
+    override def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
+        insertObject(parentPath, source, ownerID, insertionKind, source match {
+            case e: Engine => e.hashCode() //as Engines are handled specifically by the system, they need a hash-based id
+            case _         => ThreadLocalRandom.current().nextInt()
+        })
+    }
+    
+    override def createConnectedObj(parentRef: ConnectedObjectReference)(obj: Any, kind: SyncLevel): ConnectedObject[AnyRef] = {
+        createConnectedObj(parentRef, obj match {
+            case e: Engine => e.hashCode() //as Engines are handled specifically by the system, they need a hash-based id
+            case _         => ThreadLocalRandom.current().nextInt()
+        })(obj, kind)
+    }
+    
+    override def insertObject[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int): ConnectedObjectNode[B] = {
         insertObject0(parentPath, obj, ownerID, insertionKind, idHint)
     }
     
-    override def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int = ThreadLocalRandom.current().nextInt())(obj: Any, insertionKind: SyncLevel): ConnectedObject[AnyRef] = {
+    override def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int)(obj: Any, insertionKind: SyncLevel): ConnectedObject[AnyRef] = {
         val currentPath = parentRef.nodePath
         insertObject0(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier, insertionKind, idHint).obj
     }
@@ -158,7 +170,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                 value
             case None                              =>
                 level match {
-                    case ChippedOnly  =>
+                    case ChippedOnly           =>
                         newChippedObject(parent, id, source)
                     case Synchronized | Mirror =>
                         val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))

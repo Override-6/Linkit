@@ -25,7 +25,6 @@ import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 class ServerSideNetwork(traffic: AbstractPacketTraffic)
         extends AbstractNetwork(traffic) {
 
-    addCacheManager(globalCache, networkStore.trafficPath :+ globalCache.family.hashCode)
 
     override def serverIdentifier: String = traffic.currentIdentifier
 
@@ -41,5 +40,11 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
 
     def removeEngine(identifier: String): Unit = {
         findEngine(identifier).foreach(trunk.removeEngine)
+    }
+    
+    override def initialize(): this.type = {
+        super.initialize()
+        addCacheManager(globalCache, networkStore.trafficPath :+ globalCache.family.hashCode)
+        this
     }
 }

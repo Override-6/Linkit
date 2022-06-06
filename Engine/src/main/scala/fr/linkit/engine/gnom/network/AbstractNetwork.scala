@@ -123,6 +123,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         trunkInitializing = true
         val trunk = retrieveDataTrunk()
         trunkInitializing = false
+        AppLoggers.GNOM.info("Network Trunk Initialised .")
         trunk
     }
     
@@ -141,7 +142,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         engine0 = trunk.newEngine(currentIdentifier)
         trunk.reinjectEngines()
         staticAccesses = trunk.staticAccesses
-        
+    
         ExecutorEngine.initDefaultEngine(currentEngine)
         AppLoggers.GNOM.debug("Network Initialised.")
         this
