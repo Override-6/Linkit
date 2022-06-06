@@ -127,7 +127,6 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
                 activeThreads += 1
             
             try {
-                AppLoggers.Worker.trace(s"Task ${childTask.taskID} started")
                 currentWorker
                         .getController
                         .runTask(childTask)

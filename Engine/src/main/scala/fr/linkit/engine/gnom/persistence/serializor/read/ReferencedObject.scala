@@ -52,7 +52,7 @@ class ReferencedObject(override val referenceIdx: Int,
                             origin
                         case cache                                         =>
                             throw new UnsupportedOperationException(s"Could not deserialize referenced sync object: $cacheRef referer to a shared cache of type '${cache.getClass.getName}', expected: ${classOf[DefaultSynchronizedObjectCache[_]].getName}. ")
-                    }.getOrElse(throw new NoSuchElementException(s"could not find any shared cache at $cacheRef"))
+                    }.getOrElse(throw new NoSuchElementException(s"Could not find any shared cache at $cacheRef"))
 
                 case loc =>
                     selector.findObject(loc).getOrElse {

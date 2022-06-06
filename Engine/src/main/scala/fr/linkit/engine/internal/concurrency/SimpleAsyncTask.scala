@@ -80,13 +80,16 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         paused = false
         setWorker(currentWorker)
         this.attempt = task.apply()
-        //AppLogger.info(s"$this -> Task attempt: $attempt")
         
         onCompleteConsumers.synchronized {
             onCompleteConsumers.applyAll(attempt)
         }
         val opt: Option[Throwable] = attempt match {
             case Failure(exception) =>
+                if (AppLoggers.Worker.isWarnEnabled) {
+                    AppLoggers.Worker.warn(s"exception occurred in task $taskID: ")
+                    exception.printStackTrace()
+                }
                 notifyNestThrow(exception)
                 Option(exception)
             case Success(_)         => None

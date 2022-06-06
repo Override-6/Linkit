@@ -45,26 +45,22 @@ private[concurrency] trait AbstractWorker
     
     override def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit = {
         currentLock.synchronized {
-            ensureCurrentThreadEqualsThis()
+            ensureCurrentThreadEqualsWorker()
             AppLoggers.Worker.trace("Entering workflow loop...")
         }
         
         while (loopCondition) {
             currentLock.synchronized {
                 //if (currentTask != null && !currentTask.isPaused) return
-                AppLoggers.Worker.trace("This thread is about to park.")
                 if (!loopCondition) return
+                AppLoggers.Worker.trace("This thread is about to park.")
                 isParkingForWorkflow = true
             }
             val t = parkAction
             currentLock.synchronized {
                 isParkingForWorkflow = false
                 AppLoggers.Worker.trace("This thread has been unparked.")
-                forcedTasks.synchronized {
-                    forcedTasks.foreach(runTask)
-                    forcedTasks.clear()
-                }
-                if (!loopCondition) {
+                if (executeForcedTasks() && !loopCondition) {
                     return
                 }
                 AppLoggers.Worker.trace("Continuing workflow...")
@@ -74,11 +70,21 @@ private[concurrency] trait AbstractWorker
         AppLoggers.Worker.trace("Exiting workflow loop...")
     }
     
+    private def executeForcedTasks(): Boolean = forcedTasks.synchronized {
+        if (forcedTasks.isEmpty) return true
+        AppLoggers.Worker.trace(s"Executing ${forcedTasks.size} forced tasks.")
+        forcedTasks.foreach(runTask)
+        forcedTasks.clear()
+        false
+    }
+    
     override def runTask(task: ThreadTask): Unit = {
-        ensureCurrentThreadEqualsThis()
+        ensureCurrentThreadEqualsWorker()
         
         pushTask(task)
+        AppLoggers.Worker.trace(s"Task ${task.taskID} started.")
         task.runTask()
+        AppLoggers.Worker.trace(s"Task ${task.taskID} ended.")
         removeTask(task)
     }
     
@@ -88,6 +94,7 @@ private[concurrency] trait AbstractWorker
         taskRecursionDepthCount -= 1
     }
     
+    //use ThreadTask#continue instead of directly calling this method.
     override def wakeup(task: ThreadTask): Unit = {
         val blocker = LockSupport.getBlocker(thread)
         AppLoggers.Worker.debug(s"waking up task ${task.taskID}")
@@ -132,7 +139,7 @@ private[concurrency] trait AbstractWorker
     override def isSleeping: Boolean = isParkingForWorkflow
     
     @inline
-    private def ensureCurrentThreadEqualsThis(): Unit = {
+    private def ensureCurrentThreadEqualsWorker(): Unit = {
         if (Thread.currentThread() != thread)
             throw IllegalThreadException(s"method not called by thread $thread")
     }

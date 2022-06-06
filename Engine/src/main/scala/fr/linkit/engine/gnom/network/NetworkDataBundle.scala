@@ -13,9 +13,8 @@
 
 package fr.linkit.engine.gnom.network
 
-import fr.linkit.api.gnom.network.Network
-import java.sql.Timestamp
-
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
+
+import java.sql.Timestamp
 
 case class NetworkDataBundle(engines: Array[String], caches: Array[CacheManagerInfo], startUpDate: Timestamp, network: AbstractNetwork)

@@ -138,10 +138,9 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         globalCache
     
         AppLoggers.GNOM.info("Finalizing Network Initialisation.")
-        trunk.reinjectEngines()
         engine0 = trunk.newEngine(currentIdentifier)
+        trunk.reinjectEngines()
         staticAccesses = trunk.staticAccesses
-        engine0.asInstanceOf[DefaultEngine].classMappings
         
         ExecutorEngine.initDefaultEngine(currentEngine)
         AppLoggers.GNOM.debug("Network Initialised.")

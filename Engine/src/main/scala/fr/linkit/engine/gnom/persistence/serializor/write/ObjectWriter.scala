@@ -17,7 +17,6 @@ import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncCla
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
-import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -154,7 +153,6 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         buff.putChar(classCount.toChar)
         classes.foreach(putTypeRef)
     }
-    
     
     private def writeClass(clazz: Class[_]): Unit = {
         val code = ClassMappings.codeOfClass(clazz)

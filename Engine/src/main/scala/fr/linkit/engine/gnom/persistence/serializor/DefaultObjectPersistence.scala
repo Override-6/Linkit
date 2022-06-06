@@ -24,19 +24,19 @@ import fr.linkit.engine.gnom.persistence.serializor.write.{ObjectWriter, Seriali
 import java.nio.ByteBuffer
 
 class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistence {
-
+    
     override val signature: Seq[Byte] = Seq(12)
-
+    
     override def isSameSignature(buffer: ByteBuffer): Boolean = {
         val pos    = buffer.position()
         val result = signature.forall(buffer.get.equals)
         buffer.position(pos)
         result
     }
-
+    
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disinv {
         AppLoggers.Persistence.debug("Starting Serializing objects...")
-        val t0 = System.currentTimeMillis()
+        val t0     = System.currentTimeMillis()
         val buffer = bundle.buff
         buffer.put(signature.toArray)
         buffer.putShort(ConstantProtocol.ProtocolVersion)
@@ -49,7 +49,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         val t1 = System.currentTimeMillis()
         AppLoggers.Persistence.debug(s"Objects serialized (took ${t1 - t0} ms) - resulting buff length = ${buffer.position()}.")
     }
-
+    
     private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,
                              pool: SerializerObjectPool): Unit = {
         //Write the number of root objects
@@ -60,37 +60,40 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
             writer.putRef(idx)
         }
     }
-
+    
     override def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit = InvocationChoreographer.disinv {
         val buff = bundle.buff
         checkSignatureAndProtocol(buff)
-    
-        AppLoggers.Persistence.debug(s"Starting Deserializing objects... (from buff length: ${buff.limit()})")
-        val t0 = System.currentTimeMillis()
-
-
-        val reader = new ObjectReader(bundle, center)
-        reader.readAndInit()
-        val contentSize = reader.readNextRef
-        val pool        = reader.getPool
-        for (_ <- 0 until contentSize) {
-            val pos = reader.readNextRef
-            val obj = pool.getAny(pos) match {
-                case o: RegistrablePoolObject[AnyRef] =>
-                    val value = o.value
-                    o.register()
-                    value
-                case o: PoolObject[AnyRef]            => o.value
-                case o: AnyRef                        => o
+        
+        try {
+            AppLoggers.Persistence.debug(s"Starting Deserializing objects... (from buff length: ${buff.limit()})")
+            val t0 = System.currentTimeMillis()
+            
+            val reader = new ObjectReader(bundle, center)
+            reader.readAndInit()
+            val contentSize = reader.readNextRef
+            val pool        = reader.getPool
+            for (_ <- 0 until contentSize) {
+                val pos = reader.readNextRef
+                val obj = pool.getAny(pos) match {
+                    case o: RegistrablePoolObject[AnyRef] =>
+                        val value = o.value
+                        o.register()
+                        value
+                    case o: PoolObject[AnyRef]            => o.value
+                    case o: AnyRef                        => o
+                }
+                reader.controlBox.join()
+                forEachObjects(obj)
             }
-            reader.controlBox.join()
-            forEachObjects(obj)
+            val t1 = System.currentTimeMillis()
+            AppLoggers.Persistence.debug(s"Objects deserialized (took ${t1 - t0} ms).")
+        } catch {
+            case e =>
+                throw e
         }
-        val t1 = System.currentTimeMillis()
-        AppLoggers.Persistence.debug(s"Objects deserialized (took ${t1 - t0} ms).")
     }
-
-
+    
     private def checkSignatureAndProtocol(buff: ByteBuffer): Unit = {
         if (!signature.forall(buff.get.equals))
             throw new IllegalArgumentException("Signature mismatches !")
@@ -98,5 +101,5 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         if (protocolVersion != ConstantProtocol.ProtocolVersion)
             throw new IllegalArgumentException(s"Can't handle this packet: protocol signature mismatches ! (received: v$protocolVersion, can only read v${ConstantProtocol.ProtocolVersion}).")
     }
-
+    
 }
