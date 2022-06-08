@@ -13,6 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.contract;
 
+import java.util.Arrays;
+
 public enum SyncLevel {
 
     /**
@@ -47,7 +49,6 @@ public enum SyncLevel {
      */
     Statics(true, false),
     ;
-
 
     private final boolean isConnectable;
     private final boolean mustBeMirrored;

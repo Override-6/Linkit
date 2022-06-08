@@ -83,21 +83,33 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
         if (clashes(a, b)) err(compName) else fusion(a, b)
     }
     
-    lazy val asNode: StructureBehaviorDescriptorNodeImpl[A] = {
-        val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.asNode
-        val descs         = descriptors.groupBy(_.syncLevel).map { case (_, descriptors) =>
-            descriptors.foldLeft(null: UniqueStructureContractDescriptor[A])((desc, next) => {
-                if (desc == null) next else (desc, next) match {
-                    case (desc: MirroringStructureContractDescriptor[A], next: MirroringStructureContractDescriptor[A]) =>
-                        mirroringFusion(desc, next)
-                    case _                                                                                              =>
-                        regularFusion(desc, next)
-                }
-            })
-        }.toArray
-        
-        new StructureBehaviorDescriptorNodeImpl[A](targetClass, descs, modifier, nextSuperNode, interfaceRelation.map(_.asNode).toArray)
+    def asNode: StructureBehaviorDescriptorNodeImpl[A] = {
+        if (!nodeInitialized) {
+            val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.asNode
+            val descs         = descriptors.groupBy(_.syncLevel).map { case (_, descriptors) =>
+                descriptors.foldLeft(null: UniqueStructureContractDescriptor[A])((desc, next) => {
+                    if (desc == null) next else (desc, next) match {
+                        case (desc: MirroringStructureContractDescriptor[A], next: MirroringStructureContractDescriptor[A]) =>
+                            mirroringFusion(desc, next)
+                        case _                                                                                              =>
+                            regularFusion(desc, next)
+                    }
+                })
+            }.toArray
+            
+            val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]] = interfaceRelation.map(_.asNode).toArray
+            
+            node = try {
+                new StructureBehaviorDescriptorNodeImpl[A](targetClass, descs, modifier, nextSuperNode, interfaces)
+            } finally {
+                nodeInitialized = true
+            }
+        }
+        node
     }
+    
+    private var nodeInitialized                              = false
+    private var node: StructureBehaviorDescriptorNodeImpl[A] = _
     
     private def err(compName: String): Nothing = {
         throw new BadContractException(s"Two Structure Contract Descriptors describes different $compName.")

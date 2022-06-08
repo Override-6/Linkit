@@ -22,6 +22,7 @@ describe statics FileSystems {
         mirror returnvalue
     }
 }
+/*
 describe WatchEvent {
     context() following only_owner {
         mirror returnvalue
@@ -55,7 +56,7 @@ describe FileSystem {
         mirror returnvalue
     }
 }
-
+*/
 describe Path [mirror] {
     foreach method enable following only_owner
     register(WatchService, WatchEvent.Kind[]) {

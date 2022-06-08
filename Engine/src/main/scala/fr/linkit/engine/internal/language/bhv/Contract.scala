@@ -64,7 +64,9 @@ object Contract {
         partial
     }
     
-    private class PartialContractDescriptorData(file: BehaviorFile, app: ApplicationContext, callerFactory: PropertyClass => MethodCaller) {
+    private class PartialContractDescriptorData(file: BehaviorFile,
+                                                app: ApplicationContext,
+                                                callerFactory: PropertyClass => MethodCaller) {
         
         def apply(propertyClass: PropertyClass): LangContractDescriptorData = {
             val caller = callerFactory(propertyClass)

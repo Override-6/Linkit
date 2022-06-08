@@ -2,7 +2,7 @@ package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.CurrentEngine
+import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.{CacheOwnerEngine, CurrentEngine, OwnerEngine, RootOwnerEngine}
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
@@ -13,12 +13,13 @@ import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.StructureBehaviorDescriptorNodeImpl.MandatoryLevels
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, LeveledSBDN, MethodContractDescriptorImpl}
 import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileDescriptor.DefaultBuilder
+import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileDescriptor.{DefaultAgreements, DefaultBuilder}
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, PropertyClass}
 import fr.linkit.engine.internal.utils.ClassMap
 
@@ -72,13 +73,38 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                     }
                 }
             }
-            new ContractDescriptorGroup[AnyRef] {
+            val group = new ContractDescriptorGroup[AnyRef] {
                 override val clazz      : Class[AnyRef]                              = castedClass
                 override val modifier   : Option[ValueModifier[AnyRef]]              = typeModifiers.get(castedClass)
-                override val descriptors: Array[StructureContractDescriptor[AnyRef]] = descriptors0.toArray
+                override val descriptors: Array[StructureContractDescriptor[AnyRef]] = {
+                    (descriptors0 ++ describeDefaults(descriptors0, clazz)).toArray
+                }
             }
+            group
         }
         }.toSeq
+    }
+    
+    private def describeDefaults(descriptors: List[StructureContractDescriptor[AnyRef]], clazz: Class[AnyRef]): Array[StructureContractDescriptor[AnyRef]] = {
+        val classDesc = SyncObjectDescription(SyncClassDef(clazz))
+        val onlyOwner = AgreementReference("only_owner")
+        MandatoryLevels.filterNot(lvl => descriptors.exists {
+            case _: OverallStructureContractDescriptor[_] => true
+            case d: UniqueStructureContractDescriptor[_]  => d.syncLevel == lvl
+            case d: MultiStructureContractDescriptor[_]   => d.syncLevels.contains(lvl)
+        }).map { lvl =>
+            val methods0 = lvl match {
+                case SyncLevel.Synchronized => foreachMethods(classDesc)(None)
+                case SyncLevel.ChippedOnly  => foreachMethods(classDesc)(Some(new EnabledMethodDescription(Inherit, Nil, Some(onlyOwner), RegistrationState(false, SyncLevel.Mirror))))
+                case SyncLevel.Mirror       => foreachMethods(classDesc)(Some(new EnabledMethodDescription(Inherit, Nil, Some(onlyOwner), RegistrationState(false, SyncLevel.ChippedOnly))))
+            }
+            new UniqueStructureContractDescriptor[AnyRef] {
+                override val syncLevel  : SyncLevel                       = lvl
+                override val targetClass: Class[AnyRef]                   = clazz
+                override val methods    : Array[MethodContractDescriptor] = methods0
+                override val fields     : Array[FieldContract[Any]]       = Array()
+            }
+        }
     }
     
     private def scd(levels: SyncLevel*)(implicit clazz0: Class[AnyRef], methods0: Array[MethodContractDescriptor], fields0: Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
@@ -291,7 +317,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
     }
     
     private def computeAgreements(): Map[String, RMIRulesAgreementBuilder] = {
-        ast.agreementBuilders.map(agreement => {
+        DefaultAgreements ++ ast.agreementBuilders.map(agreement => {
             (agreement.name, followInstructions(agreement.instructions))
         }).toMap
     }
@@ -321,5 +347,33 @@ class BehaviorFileDescriptor(file: BehaviorFile,
 
 object BehaviorFileDescriptor {
     
-    private final val DefaultBuilder = new RMIRulesAgreementGenericBuilder().accept(CurrentEngine)
+    private final val DefaultBuilder    = new RMIRulesAgreementGenericBuilder().accept(CurrentEngine)
+    private final val DefaultAgreements = Map(
+        "default" -> DefaultBuilder,
+        "only_owner" -> EmptyBuilder
+                .accept(OwnerEngine)
+                .appointReturn(OwnerEngine),
+        "broadcast" -> EmptyBuilder
+                .acceptAll()
+                .appointReturn(CurrentEngine),
+        "only_cache_owner" -> EmptyBuilder
+                .accept(CacheOwnerEngine)
+                .appointReturn(CacheOwnerEngine),
+        "not_current" -> DefaultBuilder
+                .acceptAll()
+                .discard(CurrentEngine)
+                .appointReturn(OwnerEngine),
+        "broadcast_if_owner" -> DefaultBuilder
+                .assuming(CurrentEngine).is(OwnerEngine, _.acceptAll())
+                .accept(CurrentEngine)
+                .appointReturn(CurrentEngine),
+        "broadcast_if_root_owner" -> DefaultBuilder
+                .assuming(CurrentEngine).is(RootOwnerEngine, _.acceptAll())
+                .accept(CurrentEngine)
+                .appointReturn(CurrentEngine),
+        "current_and_owner" -> DefaultBuilder
+                .accept(CurrentEngine)
+                .accept(OwnerEngine)
+                .appointReturn(CurrentEngine)
+        )
 }

@@ -27,7 +27,7 @@ describe statics FileSystems {
         chip returnvalue
     }
 }
-
+/*
 describe FileSystem {
     newWatchService() {
         chip returnvalue
@@ -44,6 +44,7 @@ describe WatchEvent {
         chip returnvalue
     }
 }
+
 describe WatchKey {
     foreach method enable following only_cache_owner {
         chip returnvalue
@@ -67,7 +68,7 @@ describe WatchService  {
     foreach method enable following only_cache_owner {
         chip returnvalue
     }
-}
+}*/
 describe statics Path {
     of(path: String, String[]) following only_cache_owner {
         path -> in: ${(path, remote) => homes(remote).toString + s"/$path"}

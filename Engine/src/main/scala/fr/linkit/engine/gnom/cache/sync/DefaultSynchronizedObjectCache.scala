@@ -140,7 +140,6 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         case _                                                       =>
     }
     
-    
     private def isObjectPresent(location: ConnectedObjectReference): Boolean = {
         (location.cacheID == cacheID) && location.family == family && {
             val path = location.nodePath

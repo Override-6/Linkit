@@ -25,9 +25,6 @@ object RSFCClient {
         print("Done.")
     }
     
-    private def foreach(iterator: java.util.Iterator[WatchEvent[_]])(f: WatchEvent[_] => Unit): Unit = {
-        while (iterator.hasNext) f(iterator.next())
-    }
     
     private def listenDistantDir(serverStatics: StaticAccess): Unit = {
         val dir: Path = serverStatics[Path].of("/")
@@ -35,7 +32,7 @@ object RSFCClient {
         dir.register(watcher, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE)
         new Thread(() => while (true) {
             val key = watcher.take()
-            foreach(key.pollEvents().iterator()) {
+            key.pollEvents().forEach {
                 event => println(s"${event.context()}: ${event.kind()}")
             }
             key.reset()

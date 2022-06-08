@@ -18,11 +18,13 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverrideable
 import fr.linkit.engine.internal.utils.ClassMap
 
 import java.lang.reflect.Modifier
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]], name: String) extends ContractDescriptorData {
     
@@ -92,16 +94,17 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
     }
     
     private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
-        val groups        = rearrangeGroups()
-        val relations     = new ClassMap[ContractClassRelation[AnyRef]]()
-        var objDescriptor = groups.head
-        if (objDescriptor.clazz != classOf[Object]) {
-            objDescriptor = ObjectContractDescriptorGroup
+        val groups             = rearrangeGroups()
+        val relations          = new ClassMap[ContractClassRelation[AnyRef]]()
+        var objDescriptorGroup = groups.head
+        if (objDescriptorGroup.clazz != classOf[Object]) {
+            objDescriptorGroup = ObjectContractDescriptorGroup
         }
         
-        val objectRelation = new ContractClassRelation[AnyRef](objDescriptor.clazz, objDescriptor.modifier, null)
-        relations.put(objDescriptor.clazz, objectRelation)
-        for (group <- groups) if (group ne objDescriptor) {
+        val objectRelation = new ContractClassRelation[AnyRef](objDescriptorGroup.clazz, objDescriptorGroup.modifier, null)
+        objDescriptorGroup.descriptors.foreach(objectRelation.addDescriptor)
+        relations.put(objDescriptorGroup.clazz, objectRelation)
+        for (group <- groups) if (group ne objDescriptorGroup) {
             val clazz = group.clazz
             val up    = relations.get(clazz).getOrElse(objectRelation) //should at least return the java.lang.Object behavior descriptor
             if (up.targetClass == clazz) {
@@ -119,8 +122,18 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
                 relation.addInterface(cast(interfaceRelation))
             }
         }
-        val map = relations.map(pair => (pair._1, pair._2.asNode)).toMap
-        new ClassMap[StructureBehaviorDescriptorNode[_]](map)
+        val errorMessages = ListBuffer.empty[String]
+        val result        = relations.toList.map(pair => (pair._1, try {
+            pair._2.asNode
+        } catch {
+            case b: BadContractException =>
+                errorMessages += b.getMessage
+                null
+        }))
+        if (errorMessages.nonEmpty) {
+            throw new BadContractException(s"\nBehavior Contract '$name' is invalid:\n\t- " + errorMessages.mkString("\n\t- ") + "\n")
+        }
+        new ClassMap[StructureBehaviorDescriptorNode[_]](result.toMap)
     }
     
     /*

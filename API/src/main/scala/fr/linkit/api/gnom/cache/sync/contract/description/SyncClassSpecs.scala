@@ -76,7 +76,6 @@ final class SyncClassDefMultiple private[description](val mainClass: Class[_], v
     
 }
 
-
 object SyncClassDef {
     
     def apply(superClass: Class[_]): SyncClassDef = {
@@ -86,7 +85,10 @@ object SyncClassDef {
     def apply(superClass: Class[_], interfaces: Array[Class[_]]): SyncClassDef = {
         val ifs = interfaces.filterNot(_.isAssignableFrom(superClass)).distinct
         if (ifs.isEmpty) apply(superClass)
-        else new SyncClassDefMultiple(superClass, ifs)
+        else {
+            if (superClass eq classOf[Object]) apply(ifs.head, ifs.tail)
+            else new SyncClassDefMultiple(superClass, ifs)
+        }
     }
     
     private[description] def check(clazz: Class[_]): Unit = {
