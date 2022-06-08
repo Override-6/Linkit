@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.network
 import fr.linkit.api.application.ApplicationReference
 import fr.linkit.api.application.connection.NetworkConnectionReference
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
-import fr.linkit.api.gnom.network.{Network, NetworkReference}
+import fr.linkit.api.gnom.network.{EngineReference, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.reference._
@@ -26,6 +26,7 @@ import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManageme
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.traffic.channel.request.DefaultRequestBundle
+import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownRef
 
 import scala.collection.mutable.ListBuffer
@@ -87,12 +88,14 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
             }
     }
 
+
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = reference match {
         case ref: SharedCacheManagerReference => cacheNOL.findObject(ref)
         case ref: TrafficReference            => trafficNOL.findObject(ref)
         case _: NetworkConnectionReference    => Some(connection)
         case NetworkReference                 => Some(network)
         case _: ApplicationReference          => Some(application)
+        case er: EngineReference              => network.findEngine(er.identifier)
         case _                                =>
             otherLinkers.find(_.isAssignable(reference)) match {
                 case Some(linker) => linker.findObject(reference)
@@ -110,7 +113,8 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
         reference match {
             case _: SharedCacheManagerReference => cacheNOL.injectRequest(linkerBundle)
             case _: TrafficReference            => trafficNOL.injectRequest(linkerBundle)
-            case _: SystemObjectReference       => throw UnexpectedPacketException("Could not handle Object Manager Request for System objects")
+            case _: SystemObjectReference       =>
+                throw UnexpectedPacketException("Can't handle Object Manager Request for System objects")
             case _                              =>
                 otherLinkers.find(_.isAssignable(reference)) match {
                     case Some(linker: TrafficInterestedNPH) => linker.findPresence(reference)
@@ -124,6 +128,15 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
     }
 
     override def isAssignable(reference: NetworkObjectReference): Boolean = true //all kind of references are accepted at the root of the network object management
+
+    object SystemObjectPresenceHandler extends AbstractNetworkPresenceHandler[SystemObjectReference](null, omc) {
+        override def findObject(location: SystemObjectReference): Option[NetworkObject[_ <: SystemObjectReference]] = {
+
+        }
+
+        override def injectRequest(bundle: LinkerRequestBundle): Unit = ???
+    }
+
 }
 
 object GeneralNetworkObjectLinkerImpl {

@@ -80,8 +80,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
                 .flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
     }
     
-    override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
-    
+
     override def initializeObject(obj: NetworkObject[_ <: ConnectedObjectReference]): Unit = {
         obj match {
             case syncObj: A with SynchronizedObject[A] => initializeSyncObject(syncObj)

@@ -12,9 +12,9 @@
  */
 
 package fr.linkit.api.gnom.network
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
 
-class EngineReference(val identifier: String) extends NetworkReference {
+class EngineReference(val identifier: String) extends NetworkReference with SystemObjectReference {
 
     override def asSuper: Option[NetworkObjectReference] = Some(NetworkReference)
 

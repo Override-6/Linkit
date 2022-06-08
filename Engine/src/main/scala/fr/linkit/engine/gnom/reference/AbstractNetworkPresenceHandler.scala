@@ -120,7 +120,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
             otp2.get.setToNotPresent(currentIdentifier)
     }
     
-    protected def handleBundle(bundle: LinkerRequestBundle): Unit = {
+    protected def injectRequest(bundle: LinkerRequestBundle): Unit = {
         val responseSubmitter = bundle.responseSubmitter
         val request           = bundle.packet
         val reference: R      = bundle.linkerReference.asInstanceOf[R]

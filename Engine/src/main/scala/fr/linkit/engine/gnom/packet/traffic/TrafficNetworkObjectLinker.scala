@@ -46,7 +46,7 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
                         .contextualObjectLinker
                         .injectRequest(bundle)
             case _                                    =>
-                handleBundle(bundle)
+                super.injectRequest(bundle)
         }
     }
 

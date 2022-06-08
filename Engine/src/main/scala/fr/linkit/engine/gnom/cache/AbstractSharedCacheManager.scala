@@ -220,7 +220,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
         override def injectRequest(bundle: LinkerRequestBundle): Unit = {
             val reference = bundle.linkerReference
             if (reference.getClass eq classOf[SharedCacheReference])
-                handleBundle(bundle)
+                super.injectRequest(bundle)
             else {
                 reference match {
                     case ref: SharedCacheReference =>

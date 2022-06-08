@@ -63,7 +63,7 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
                 { manager =>
                     manager.getCachesLinker.injectRequest(bundle)
                 }
-            case _: SharedCacheManagerReference => handleBundle(bundle)
+            case _: SharedCacheManagerReference => super.injectRequest(bundle)
             case ref                            => throwUnknownRef(ref)
         }
     }

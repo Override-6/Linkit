@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.reference.linker
 
-import fr.linkit.api.gnom.reference.linker.{NetworkObjectLinker, RemainingNetworkObjectsLinker}
-import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
+import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
@@ -30,7 +30,6 @@ private[gnom] class MapNetworkObjectsLinker(omc: ObjectManagementChannel) extend
         map.get(reference)
     }
 
-    override def injectRequest(bundle: LinkerRequestBundle): Unit = super.handleBundle(bundle)
 
     def save(no: NetworkObject[NetworkObjectReference]): Unit = {
         val reference = no.reference

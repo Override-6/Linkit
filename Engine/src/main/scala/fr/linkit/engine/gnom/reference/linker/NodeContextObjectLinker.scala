@@ -81,8 +81,8 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     override def injectRequest(bundle: LinkerRequestBundle): Unit = {
         bundle.linkerReference match {
-            case ref: ContextualObjectReference =>
-                handleBundle(bundle)
+            case _: ContextualObjectReference =>
+                super.injectRequest(bundle)
             case _ if parent != null                                                   =>
                 parent.injectRequest(bundle)
         }
