@@ -101,6 +101,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
     }
 
     private def handleContentRetrievalRequest(requestBundle: RequestPacketBundle, cacheID: Int): Unit = breakable {
+        AppLoggers.GNOM.trace(s"handling content retrieval request (cacheID: $cacheID, family: $family)")
         val coords   = requestBundle.coords
         val request  = requestBundle.packet
         val response = requestBundle.responseSubmitter
@@ -116,7 +117,9 @@ final class SharedCacheOriginManager @Persist()(family: String,
         }
 
         def sendContent(content: Option[CacheContent]): Unit = {
-            response.addPacket(RefPacket[Option[CacheContent]](content)).submit()
+            AppLoggers.GNOM.trace(s"sending cache content (cacheID: $cacheID, family: $family)")
+            response.addPacket(RefPacket[Option[CacheContent]](content))
+                    .submit()
         }
 
         def handleContentNotAvailable(): Unit = behavior match {

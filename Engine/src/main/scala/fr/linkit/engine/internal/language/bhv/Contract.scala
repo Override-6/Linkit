@@ -14,8 +14,12 @@
 package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorReference
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
@@ -25,29 +29,29 @@ import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
 
 object Contract {
-
+    
     private final val contracts    = mutable.HashMap.empty[String, PartialContractDescriptorData]
     private final val toPrecompute = mutable.HashSet.empty[(String, String)]
     private final val center       = new DefaultCompilerCenter
-
+    
     def precompute(application: ApplicationContext): Unit = {
         toPrecompute.foreach { case (text, filePath) => partialize(text, filePath, application) }
         toPrecompute.clear()
     }
-
+    
     private[linkit] def addToPrecompute(text: String, filePath: String): Unit = toPrecompute += ((text, filePath))
-
+    
     def apply(name: String, app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(name) match {
         case Some(partial) =>
             partial(propertyClass)
         case None          =>
             throw new NoSuchElementException(s"Could not find any behavior contract bound with the name '$name'")
     }
-
+    
     def apply(name: String)(implicit network: Network): LangContractDescriptorData = {
         apply(name, network.connection.getApp, ObjectsProperty.defaults(network))
     }
-
+    
     private def partialize(text: String, filePath: String, app: ApplicationContext): PartialContractDescriptorData = {
         val tokens        = BehaviorLanguageLexer.tokenize(new CharSequenceReader(text), filePath)
         val ast           = BehaviorFileParser.parse(tokens)
@@ -59,9 +63,9 @@ object Contract {
         contracts.put(fileName, partial)
         partial
     }
-
+    
     private class PartialContractDescriptorData(file: BehaviorFile, app: ApplicationContext, callerFactory: PropertyClass => MethodCaller) {
-
+        
         def apply(propertyClass: PropertyClass): LangContractDescriptorData = {
             val caller = callerFactory(propertyClass)
             try {
@@ -71,7 +75,7 @@ object Contract {
                 case e: BHVLanguageException => throw new BHVLanguageException(s"in: ${file.filePath}: ${e.getMessage}", e)
             }
         }
-
+        
     }
-
+    
 }

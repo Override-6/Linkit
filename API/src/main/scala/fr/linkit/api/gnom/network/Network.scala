@@ -24,7 +24,7 @@ import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 
 import scala.reflect.ClassTag
 
-trait Network extends StaticNetworkObject[NetworkReference] {
+trait Network extends StaticNetworkObject[NetworkReference.type] {
 
     val connection: ConnectionContext
 

@@ -15,4 +15,4 @@ package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ObjectContractDescriptorGroup
 
-object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(ObjectContractDescriptorGroup))
+object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(ObjectContractDescriptorGroup), "<empty>")

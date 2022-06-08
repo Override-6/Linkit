@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -24,9 +24,11 @@ import fr.linkit.engine.internal.utils.ClassMap
 import java.lang.reflect.Modifier
 import scala.collection.mutable
 
-class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]]) extends ContractDescriptorData {
+class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]], name: String) extends ContractDescriptorData {
     
     private val nodeMap = computeDescriptors()
+    
+    override val reference: ContractDescriptorReference = new ContractDescriptorReference(name)
     
     private var precompiled: Boolean = false
     

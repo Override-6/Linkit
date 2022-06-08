@@ -18,7 +18,7 @@ class NativeTests {
 
     @Test
     def methodCaller(): Unit = {
-        val target = Path.of("C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home")
+        val target = Path.of("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home")
         val m = target.getClass.getMethods.find(_.getName == "hashCode").get
         val inv = new MethodInvoker(m)
         val f = Array[Any]()

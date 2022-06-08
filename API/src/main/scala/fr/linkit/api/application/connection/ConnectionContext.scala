@@ -20,26 +20,24 @@ import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.reference.StaticNetworkObject
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
 
-trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference] with ProcrastinatorControl {
-
+trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference.type] with ProcrastinatorControl {
+    
+    override val reference = NetworkConnectionReference
+    
     val currentIdentifier: String
-
-    override val reference: NetworkConnectionReference = NetworkConnectionReference
-
+    
     def port: Int
-
+    
     def traffic: PacketTraffic
-
+    
     def getApp: ApplicationContext
-
+    
     val translator: ObjectTranslator
-
+    
     def network: Network
-
-    //def eventNotifier: EventNotifier
-
+    
     @workerExecution
     def shutdown(): Unit
-
+    
     def isAlive: Boolean
 }

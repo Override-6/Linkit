@@ -13,7 +13,9 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-trait ContractDescriptorData extends /*NetworkObject[ContractDescriptorReference]*/ {
+import fr.linkit.api.gnom.reference.NetworkObject
 
+trait ContractDescriptorData extends NetworkObject[ContractDescriptorReference] {
+    
     def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A]
 }

@@ -13,4 +13,4 @@
 
 package fr.linkit.api.gnom.reference
 
-trait StaticNetworkObject[R <: NetworkObjectReference] extends NetworkObject[R]
+trait StaticNetworkObject[+R <: NetworkObjectReference] extends NetworkObject[R]

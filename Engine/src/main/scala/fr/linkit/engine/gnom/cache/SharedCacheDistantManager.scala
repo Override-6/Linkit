@@ -35,7 +35,7 @@ final class SharedCacheDistantManager @Persist()(family: String,
     override def deconstruct(): Array[Any] = Array(family, ownerID, network, store)
 
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
-        AppLoggers.GNOM.trace(s"retrieve cache content id $cacheID")
+        AppLoggers.GNOM.trace(s"retrieve cache content id $cacheID ($family)")
         val request = channel
                 .makeRequest(ownerScope)
                 .putAttribute("behavior", behavior)

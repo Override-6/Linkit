@@ -16,46 +16,46 @@ package fr.linkit.api.gnom.packet.traffic
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
-import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult}
+import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
+import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.JustifiedCloseable
 
 trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
-
+    
     val currentIdentifier: String
-
+    
     val serverIdentifier: String
-
+    
     def application: ApplicationContext
-
+    
     def connection: ConnectionContext
-
+    
     def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference]
-
+    
     @workerExecution
     @inline
     def processInjection(packet: Packet, attr: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit
-
+    
     @workerExecution
     def processInjection(bundle: PacketBundle): Unit
-
+    
     def processInjection(result: ObjectDeserializationResult): Unit
-
+    
     def newWriter(path: Array[Int]): PacketWriter
-
+    
     def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter
-
+    
     def getPersistenceConfig(path: Array[Int]): PersistenceConfig
-
+    
     def findNode(path: Array[Int]): Option[TrafficNode[PacketInjectable]]
-
+    
 }
 
 object PacketTraffic {
-
+    
     val SystemChannelID = 1
     val RemoteConsoles  = 2
 }

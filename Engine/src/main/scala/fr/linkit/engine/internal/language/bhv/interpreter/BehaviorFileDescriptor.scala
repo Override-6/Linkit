@@ -33,7 +33,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
     private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
     private val contracts        : Seq[ContractDescriptorGroup[AnyRef]]        = computeContracts()
     
-    lazy val data = new ContractDescriptorDataImpl(contracts.toArray) with LangContractDescriptorData {
+    lazy val data = new ContractDescriptorDataImpl(contracts.toArray, ast.fileName) with LangContractDescriptorData {
         override val filePath     : String             = file.filePath
         override val fileName     : String             = ast.fileName
         override val propertyClass: PropertyClass      = BehaviorFileDescriptor.this.propertyClass

@@ -37,7 +37,7 @@ import java.sql.Timestamp
 
 abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     
-    override           val reference              : NetworkReference           = new NetworkReference()
+    override           val reference                                           = NetworkReference
     override           val connection             : ConnectionContext          = traffic.connection
     override           val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
     protected[network] val networkStore           : PacketInjectableStore      = traffic.createStore(0)
@@ -137,12 +137,12 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         AppLoggers.GNOM.info("Initialising GNOL and Global Cache.")
         gnol
         globalCache
-    
+        
         AppLoggers.GNOM.info("Finalizing Network Initialisation.")
         engine0 = trunk.newEngine(currentIdentifier)
         trunk.reinjectEngines()
         staticAccesses = trunk.staticAccesses
-    
+        
         ExecutorEngine.initDefaultEngine(currentEngine)
         AppLoggers.GNOM.debug("Network Initialised.")
         this

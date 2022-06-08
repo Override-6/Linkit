@@ -17,17 +17,18 @@ import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.typeStringClass
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
+import fr.linkit.engine.internal.manipulation.invokation.ConstructorInvoker
 import sun.misc.Unsafe
 
-import java.io.File
+import java.io.{BufferedInputStream, File}
 import java.lang.reflect.{AccessibleObject, Field, InaccessibleObjectException, Modifier}
-import java.nio.ByteBuffer
+import java.nio.{Buffer, ByteBuffer}
 import scala.annotation.switch
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
 object ScalaUtils {
-
+    
     def slowCopy[A: ClassTag](origin: Array[_ <: Any]): Array[A] = {
         val buff = new Array[A](origin.length)
         var i    = 0
@@ -45,7 +46,7 @@ object ScalaUtils {
                 throw e
         }
     }
-
+    
     def ensurePacketType[P <: Packet : ClassTag](packet: Packet): P = {
         val rClass = classTag[P].runtimeClass
         packet match {
@@ -54,7 +55,7 @@ object ScalaUtils {
             case p    => throw UnexpectedPacketException(s"Received unexpected packet type (${p.getClass.getName}), requested : ${rClass.getName}")
         }
     }
-
+    
     implicit def deepToString(array: Array[Any]): String = {
         val sb = new StringBuilder("Array(")
         array.foreach {
@@ -65,14 +66,14 @@ object ScalaUtils {
                 .append(')')
                 .toString()
     }
-
+    
     implicit def deepToString(any: Any): String = {
         any match {
             case array: Array[Any] => deepToString(array)
             case any               => any.toString
         }
     }
-
+    
     def getValue(instance: Any, field: Field): Any = {
         val clazz  = field.getType
         val offset = if (Modifier.isStatic(field.getModifiers)) TheUnsafe.staticFieldOffset(field) else TheUnsafe.objectFieldOffset(field)
@@ -91,11 +92,11 @@ object ScalaUtils {
             TheUnsafe.getObject(instance, offset)
         }
     }
-
+    
     def getValueAnyRef(instance: Any, field: Field): AnyRef = {
         getValue(instance, field).asInstanceOf[AnyRef]
     }
-
+    
     def setValue(instance: Any, field: Field, value: Any): Unit = {
         val fieldOffset = {
             if (instance == null)
@@ -105,15 +106,15 @@ object ScalaUtils {
         }
         val cookie      = if (instance == null) TheUnsafe.staticFieldBase(field) else instance
         import UnWrapper.unwrap
-
+        
         import java.lang
-
+        
         if (value == null) {
             //if (!Modifier.isFinal(field.getModifiers))
             //    field.set(instance, null)
             return
         }
-
+        
         val action: (Any, Long) => Unit = if (field.getType.isPrimitive) {
             value match {
                 case i: Integer      => TheUnsafe.putInt(_, _, i)
@@ -138,25 +139,25 @@ object ScalaUtils {
         }
         action(cookie, fieldOffset)
     }
-
+    
     implicit def toPresentableString(bytes: Array[Byte]): String = {
         new String(bytes)
                 .replace("\r", "R")
                 .replace("\n", "N")
     }
-
+    
     def toPresentableString(buff: ByteBuffer): String = {
         new String(buff.array(), 0, buff.limit())
                 .replace("\r", "R")
                 .replace("\n", "N")
     }
-
+    
     def formatPath(path: String): String = path
             .replace("\\", File.separator)
             .replace("//", File.separator)
-
+    
     private val TheUnsafe = findUnsafe()
-
+    
     @throws[IllegalAccessException]
     def findUnsafe(): Unsafe = {
         val unsafeClass = Class.forName("sun.misc.Unsafe")
@@ -168,21 +169,28 @@ object ScalaUtils {
         }
         throw new IllegalStateException("No instance of Unsafe found")
     }
-
+    
+    def findInternalUnsafe(): jdk.internal.misc.Unsafe = {
+        val unsafeClass = Class.forName("jdk.internal.misc.Unsafe")
+        //val const = unsafeClass.getDeclaredConstructor()
+        allocate(unsafeClass)
+        //throw new IllegalStateException("No instance of Unsafe found")
+    }
+    
     def pasteAllFields[A](instance: A, data: A): Unit = {
         retrieveAllFields(data.getClass)
                 .foreach(field => {
                     ScalaUtils.setValue(instance, field, ScalaUtils.getValue(data, field))
                 })
     }
-
+    
     @inline
     def allocate[A](clazz: Class[_]): A = {
         if (clazz eq null)
             throw new NullPointerException("class is null.")
         ObjectCreator.allocate(clazz).asInstanceOf[A]
     }
-
+    
     def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Array[Field] = {
         var superClass  = clazz
         var superFields = Array.empty[Field]
@@ -196,7 +204,7 @@ object ScalaUtils {
             v.filter(setAccessible)
         v
     }
-
+    
     def setAccessible(field: AccessibleObject): Boolean = {
         try {
             field.setAccessible(true)
@@ -207,9 +215,9 @@ object ScalaUtils {
                 false
         }
     }
-
+    
     private[utils] def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
-
+        
         val sb = new StringBuilder("(")
         params.foreach { clazz =>
             sb.append(typeStringClass(clazz))
@@ -217,5 +225,5 @@ object ScalaUtils {
         sb.append(')').append(typeStringClass(returnType))
         sb.toString()
     }
-
+    
 }

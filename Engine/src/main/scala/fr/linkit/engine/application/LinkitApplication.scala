@@ -40,7 +40,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
     override val compilerCenter  : CompilerCenter = new DefaultCompilerCenter
     @volatile protected var alive: Boolean        = false
     protected val appPool: AbstractWorkerPool
-    override val reference: ApplicationReference = ApplicationReference
+    override val reference = ApplicationReference
 
     setInstance(this)
 

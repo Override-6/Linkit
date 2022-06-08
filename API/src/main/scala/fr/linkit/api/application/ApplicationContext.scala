@@ -21,7 +21,7 @@ import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecutio
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.Versions
 
-trait ApplicationContext extends StaticNetworkObject[ApplicationReference] with ProcrastinatorControl {
+trait ApplicationContext extends StaticNetworkObject[ApplicationReference.type] with ProcrastinatorControl {
 
     val configuration: ApplicationConfiguration
 

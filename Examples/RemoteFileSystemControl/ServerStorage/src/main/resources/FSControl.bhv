@@ -15,8 +15,6 @@ code ${
     import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
     import fr.linkit.api.gnom.network.Engine
     val homes = £{@homes: mutable.HashMap[Engine, Path]}
-    println("IN FSControl.bhv: " + homes, System.identityHashCode(homes))
-    Thread.dumpStack()
 }
 
 agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_owner

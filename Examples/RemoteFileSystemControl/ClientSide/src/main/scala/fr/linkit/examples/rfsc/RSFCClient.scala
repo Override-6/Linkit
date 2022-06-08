@@ -44,7 +44,7 @@ object RSFCClient {
     }
     
     private def sendFile(serverStatics: StaticAccess): Unit = {
-        val srcPath = Path.of("C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Client\\test.txt")
+        val srcPath = Path.of("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Client\\test.txt")
         if (Files.notExists(srcPath)) {
             Files.createDirectories(srcPath.getParent)
             Files.createFile(srcPath)
@@ -62,7 +62,7 @@ object RSFCClient {
     
     private def launchApp(identifier0: String): ExternalConnection = {
         val config = new ClientApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\Maxime\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {
                     override val identifier    = identifier0

@@ -14,7 +14,7 @@
 package fr.linkit.api.application.connection
 
 import fr.linkit.api.gnom.network.NetworkReference
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
 
 class NetworkConnectionReference extends NetworkReference {
 
@@ -27,4 +27,4 @@ class NetworkConnectionReference extends NetworkReference {
     override def equals(obj: Any): Boolean = obj.isInstanceOf[NetworkConnectionReference]
 }
 
-object NetworkConnectionReference extends NetworkConnectionReference
+object NetworkConnectionReference extends NetworkConnectionReference with SystemObjectReference
