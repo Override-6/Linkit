@@ -22,7 +22,10 @@ import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileDescriptor
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, PropertyClass}
 import fr.linkit.engine.internal.utils.ClassMap
 
-class BehaviorFileDescriptor(file: BehaviorFile, app: ApplicationContext, propertyClass: PropertyClass, caller: MethodCaller) {
+class BehaviorFileDescriptor(file: BehaviorFile,
+                             app: ApplicationContext,
+                             propertyClass: PropertyClass,
+                             caller: MethodCaller) {
     
     private val ast                                                            = file.ast
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()

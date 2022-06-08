@@ -19,9 +19,7 @@ class SharedCacheReference(family: String, val cacheID: Int) extends SharedCache
 
     override def asSuper: Option[SharedCacheManagerReference] = Some(new SharedCacheManagerReference(family))
 
-    override def toString: String = {
-        s"@network/caches/$family/$cacheID"
-    }
+    override def toString: String = s"@network/caches/$family/$cacheID"
 
     override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID))
 

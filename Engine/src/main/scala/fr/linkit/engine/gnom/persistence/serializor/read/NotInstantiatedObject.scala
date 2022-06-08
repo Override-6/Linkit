@@ -51,7 +51,7 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
     
     override def value: T = {
         if (!isInit)
-            initObject()
+            buildObject()
         obj
     }
     
@@ -59,7 +59,7 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
     
     override def equals(obj: Any): Boolean = JavaUtils.sameInstance(obj, this.obj)
     
-    private def initObject(): Unit = {
+    private def buildObject(): Unit = {
         isInit = true
         val content = this.content
         val length  = content.length

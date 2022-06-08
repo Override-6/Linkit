@@ -23,7 +23,7 @@ public class ConstantProtocol {
     public static final byte IntSize = 3;
 
     public static final byte Class = 0;     // announcement mark = 0b0000000000000001
-    public static final byte SyncDef = 1; // announcement mark = 0b0000000000000010
+    public static final byte SyncDef = 1;   // announcement mark = 0b0000000000000010
 
     public static final byte String = 2;    // announcement mark = 0b0000000000000100
     public static final byte Int = 3;       // announcement mark = 0b0000000000001000
