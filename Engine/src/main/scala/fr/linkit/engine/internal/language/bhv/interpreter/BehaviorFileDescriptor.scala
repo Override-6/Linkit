@@ -73,11 +73,11 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                     }
                 }
             }
-            val group = new ContractDescriptorGroup[AnyRef] {
+            val group        = new ContractDescriptorGroup[AnyRef] {
                 override val clazz      : Class[AnyRef]                              = castedClass
                 override val modifier   : Option[ValueModifier[AnyRef]]              = typeModifiers.get(castedClass)
                 override val descriptors: Array[StructureContractDescriptor[AnyRef]] = {
-                    (descriptors0 ++ describeDefaults(descriptors0, clazz)).toArray
+                    descriptors0.toArray
                 }
             }
             group
@@ -85,29 +85,9 @@ class BehaviorFileDescriptor(file: BehaviorFile,
         }.toSeq
     }
     
-    private def describeDefaults(descriptors: List[StructureContractDescriptor[AnyRef]], clazz: Class[AnyRef]): Array[StructureContractDescriptor[AnyRef]] = {
-        val classDesc = SyncObjectDescription(SyncClassDef(clazz))
-        val onlyOwner = AgreementReference("only_owner")
-        MandatoryLevels.filterNot(lvl => descriptors.exists {
-            case _: OverallStructureContractDescriptor[_] => true
-            case d: UniqueStructureContractDescriptor[_]  => d.syncLevel == lvl
-            case d: MultiStructureContractDescriptor[_]   => d.syncLevels.contains(lvl)
-        }).map { lvl =>
-            val methods0 = lvl match {
-                case SyncLevel.Synchronized => foreachMethods(classDesc)(None)
-                case SyncLevel.ChippedOnly  => foreachMethods(classDesc)(Some(new EnabledMethodDescription(Inherit, Nil, Some(onlyOwner), RegistrationState(false, SyncLevel.Mirror))))
-                case SyncLevel.Mirror       => foreachMethods(classDesc)(Some(new EnabledMethodDescription(Inherit, Nil, Some(onlyOwner), RegistrationState(false, SyncLevel.ChippedOnly))))
-            }
-            new UniqueStructureContractDescriptor[AnyRef] {
-                override val syncLevel  : SyncLevel                       = lvl
-                override val targetClass: Class[AnyRef]                   = clazz
-                override val methods    : Array[MethodContractDescriptor] = methods0
-                override val fields     : Array[FieldContract[Any]]       = Array()
-            }
-        }
-    }
-    
-    private def scd(levels: SyncLevel*)(implicit clazz0: Class[AnyRef], methods0: Array[MethodContractDescriptor], fields0: Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
+    private def scd(levels: SyncLevel*)(implicit clazz0: Class[AnyRef],
+                                        methods0: Array[MethodContractDescriptor],
+                                        fields0: Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
         if (levels.isEmpty) return new OverallStructureContractDescriptor[AnyRef] {
             override val targetClass: Class[AnyRef]                   = clazz0
             override val methods    : Array[MethodContractDescriptor] = methods0

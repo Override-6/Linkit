@@ -115,8 +115,8 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
         (insertionKind: @switch) match {
-            case NotRegistered                       => throw new IllegalArgumentException("insertionKind = NotRegistered.")
-            case ChippedOnly | Synchronized | Mirror =>
+            case NotRegistered                   => throw new IllegalArgumentException("insertionKind = NotRegistered.")
+            case Chipped | Synchronized | Mirror =>
                 val id = forest
                         .removeLinkedReference(obj)
                         .map(_.nodePath.last)
@@ -165,12 +165,12 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                     throw new IllegalObjectNodeException(s"requested $level object node but the source object '$source' is bound to a SynchronizedObject node")
                 value
             case Some(value: ChippedObjectNode[B]) =>
-                if (level != ChippedOnly && level != Mirror)
+                if (level != Chipped && level != Mirror)
                     throw new IllegalObjectNodeException(s"requested $level object node but the source object '$source' is bound to a ChippedObject node")
                 value
             case None                              =>
                 level match {
-                    case ChippedOnly           =>
+                    case Chipped               =>
                         newChippedObject(parent, id, source)
                     case Synchronized | Mirror =>
                         val syncObject = instantiator.newSynchronizedInstance[B](new ContentSwitcher[B](source))

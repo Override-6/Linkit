@@ -26,7 +26,7 @@ object ClassParser extends BehaviorLanguageParser {
     
     private val classParser = {
         val syncParser = {
-            val options = (Sync ^^^ Synchronized | Chip ^^^ ChippedOnly | BehaviorLanguageKeyword.Mirror ^^^ SyncLevel.Mirror | Regular ^^^ NotRegistered).?
+            val options = (Sync ^^^ Synchronized | Chip ^^^ Chipped | BehaviorLanguageKeyword.Mirror ^^^ SyncLevel.Mirror | Regular ^^^ NotRegistered).?
             (((Exclamation ^^^ true) ~ options) | (success(false) ~ options)) ^^ {
                 case false ~ s => RegistrationState(s.isDefined, s.getOrElse(NotRegistered))
                 case _         => RegistrationState(true, NotRegistered)

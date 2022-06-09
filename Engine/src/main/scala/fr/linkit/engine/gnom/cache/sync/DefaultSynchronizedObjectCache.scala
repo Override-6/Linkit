@@ -126,7 +126,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         req match {
             case req: NormalNodeDataRequest[B]        => newRegularNodeData[B](req)
             case req: SyncNodeDataRequest[B]          => newSyncObjectData[B](req)
-            case req: ChippedObjectNodeDataRequest[B] => newChippedObjectData[B](SyncLevel.ChippedOnly, req)
+            case req: ChippedObjectNodeDataRequest[B] => newChippedObjectData[B](SyncLevel.Chipped, req)
         }
     }
     

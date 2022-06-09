@@ -25,7 +25,7 @@ public enum SyncLevel {
      * Register the object and make the object become a chipped object.
      * see {@link fr.linkit.api.gnom.cache.sync.ChippedObject}
      */
-    ChippedOnly(true, true),
+    Chipped(true, true),
     /**
      * Register and start synchronized object registration / generation process for the targeted object.
      * The object is also chipped, see {@link fr.linkit.api.gnom.cache.sync.SynchronizedObject}
@@ -42,7 +42,7 @@ public enum SyncLevel {
      * Only registers the object, this way, the same instance of the object is sent <br>
      * to the remote engines instead of sending copy of it (see {@link fr.linkit.api.gnom.reference.NetworkObject})
      */
-    Register(false, false),
+    Register(false, false),//Note: Currently Not Used
 
     /**
      * Specific state for {@link fr.linkit.api.gnom.network.statics.StaticAccess} and Static accessors.

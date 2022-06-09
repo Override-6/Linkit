@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIRulesAgreement}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureContractDescriptor, UniqueStructureContractDescriptor}
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, ModifiableValueContract, StructureContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -92,15 +92,15 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             val paramCount         = javaMethod.getParameterCount
             val paramContractCount = paramsContracts.length
             if (!paramsContracts.isEmpty && paramCount != paramContractCount)
-                throw new BadContractException(s"Contract of method $javaMethod for $clazz contains a list of the method's arguments contracts with a different length as the method's parameter count (method parameter count: $paramCount vs method's params contracts count: $paramContractCount).")
+                throw new BadContractException(s"Contract of method $javaMethod for $clazz contains a list of the method's arguments contracts with a different length as the method's parameter count (method parameter count: $paramCount vs method's params contracts count: $paramContractCount). (${descriptor.syncLevel})")
             method.parameterContracts.filter(_.registrationKind.isConnectable)
                     .zip(javaMethod.getParameters)
                     .foreach { case (_, param) =>
-                        val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' for parameter '${param.getName}' of type ${param.getType.getName}: ${kind} cannot be synchronized."
+                        val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' for parameter '${param.getName}' of type ${param.getType.getName}: ${kind} cannot be synchronized. (${descriptor.syncLevel})"
                         ensureTypeCanBeSync(param.getType, msg)
                     }
             if (method.returnValueContract.exists(_.registrationKind.isConnectable)) {
-                val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' with return type ${javaMethod.getReturnType.getName}: ${kind} cannot be synchronized."
+                val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' with return type ${javaMethod.getReturnType.getName}: ${kind} cannot be synchronized. (${descriptor.syncLevel})"
                 ensureTypeCanBeSync(javaMethod.getReturnType, msg)
             }
         })
@@ -242,7 +242,8 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                 mainClass = mainClass.getSuperclass
         }
         
-        var interfaceClassStub = collectInterfaces(clazz).filterNot(cl => interfaces.exists(_._1.isAssignableFrom(cl))) flatMap (getSyncableInterface)
+        var interfaceClassStub = collectInterfaces(clazz)
+                .filterNot(cl => interfaces.exists(_._1.isAssignableFrom(cl))) flatMap getSyncableInterface
         if (mainClass == classOf[Object] && interfaceClassStub.nonEmpty) {
             mainClass = interfaceClassStub.head
             interfaceClassStub = interfaceClassStub.tail
@@ -322,15 +323,23 @@ object LeveledSBDN {
         val desc = SyncObjectDescription(clazzDef)
         for (id <- missingIds) {
             desc.findMethodDescription(id) match {
-                case Some(methodDesc) =>
+                case Some(md) =>
                     val builder           = new RMIRulesAgreementGenericBuilder()
                     val agreement         = (if (context.syncLevel == Mirror) ONLY_ORIGIN(builder) else ONLY_CURRENT(builder)).result(context)
+                    val rvContract        = {
+                        if (!context.syncLevel.mustBeMirrored())
+                            SimpleModifiableValueContract.deactivated[Any]
+                        else if (findReasonTypeCantBeSync(clazzDef.mainClass).isDefined)
+                            new SimpleModifiableValueContract[Any](Chipped)
+                        else
+                            new SimpleModifiableValueContract[Any](Mirror)
+                    }
                     val emergencyContract = new MethodContractImpl[Any](
                         InvocationHandlingMethod.Inherit, context.choreographer,
-                        agreement, Array(), SimpleModifiableValueContract.deactivated,
-                        methodDesc, None, null)
+                        agreement, Array(), rvContract,
+                        md, None, null)
                     methods.put(id, emergencyContract)
-                case None             =>
+                case None     =>
             }
         }
     }
