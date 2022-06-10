@@ -21,6 +21,7 @@ public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
     Method, Following, Enable, Disable, Hide, ReturnValue, Ensinv, Disinv,
     Sync, Chip, Regular,
     Modifier, In, Out, Foreach,
+    True, False,
     //Agreements
     Agreement,
     Discard, Accept, And, Appoint, If, Else, Is, Not;

@@ -16,47 +16,8 @@ agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_ow
 agreement only_owner = discard * -> accept owner -> appoint owner
 agreement broadcast = accept*
 
-describe statics FileSystems {
-    foreach method enable following only_cache_owner
-    getDefault() {
-        mirror returnvalue
-    }
-}
-/*
-describe WatchEvent {
-    context() following only_owner {
-        mirror returnvalue
-    }
-}
-describe WatchKey {
-    foreach method enable following only_owner {
-        mirror returnvalue
-    }
-}
+@autochip(true) //enables auto chipping for objects expected as being synchronized / mirrored but whose runtime class can't support generated 'Sync' class generation / overriding.
 
-describe ArrayList {
-    foreach method enable following only_owner
-    iterator() following only_owner {
-        mirror returnvalue
-    }
-}
-describe Iterator {
-    foreach method enable following only_owner {
-        mirror returnvalue
-    }
-}
-describe WatchService {
-    foreach method enable following only_owner {
-        mirror returnvalue
-    }
-}
-describe FileSystem {
-    foreach method enable following only_owner
-    newWatchService() {
-        mirror returnvalue
-    }
-}
-*/
 describe Path [mirror] {
     foreach method enable following only_owner
     register(WatchService, WatchEvent.Kind[]) {

@@ -100,6 +100,6 @@ object ClassParser extends BehaviorLanguageParser {
         }
     }
     
-    private[parser] def parser: Parser[ClassDescription] = classParser
+    private[parser] val parser: Parser[ClassDescription] = classParser
     
 }

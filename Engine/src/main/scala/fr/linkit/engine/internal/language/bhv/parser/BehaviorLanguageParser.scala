@@ -15,8 +15,8 @@ package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
-import fr.linkit.engine.internal.language.bhv.lexer.file.{BehaviorLanguageKeyword, BehaviorLanguageToken}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageValues._
+import fr.linkit.engine.internal.language.bhv.lexer.file.{BehaviorLanguageKeyword, BehaviorLanguageToken}
 
 import scala.util.parsing.combinator.Parsers
 import scala.util.parsing.input.CharSequenceReader
@@ -35,8 +35,9 @@ abstract class BehaviorLanguageParser extends Parsers {
         case str ~ postfix => if (postfix.isDefined) str + "[]" else str
     }
     protected val literal    = accept("literal", { case Literal(str) => str })
-    
-    protected val codeBlock = accept("scala code", { case CodeBlock(code) => toScalaCodeToken(code) })
+    protected val number     = accept("number", { case Number(n) => n.toDouble })
+    protected val bool       = accept("bool", { case Bool(b) => java.lang.Boolean.valueOf(b).booleanValue() })
+    protected val codeBlock  = accept("scala code", { case CodeBlock(code) => toScalaCodeToken(code) })
     
     private def scalaCodeIntegration(token: BehaviorLanguageToken, kind: LambdaKind): Parser[LambdaExpression] = {
         token ~ Colon ~> codeBlock ^^ (LambdaExpression(_, kind))

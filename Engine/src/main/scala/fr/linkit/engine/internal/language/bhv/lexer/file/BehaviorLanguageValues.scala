@@ -16,11 +16,15 @@ package fr.linkit.engine.internal.language.bhv.lexer.file
 import fr.linkit.engine.internal.language.bhv.lexer.Value
 
 object BehaviorLanguageValues {
-
+    
     case class CodeBlock(sourceCode: String) extends Value(s"$${${sourceCode.dropRight(1)}}") with BehaviorLanguageToken
-
+    
     case class Identifier(str: String) extends Value(str) with BehaviorLanguageToken
-
+    
     case class Literal(str: String) extends Value(str) with BehaviorLanguageToken
-
+    
+    case class Number(number: String) extends Value(number) with BehaviorLanguageToken
+    
+    case class Bool(bool: String) extends Value(bool) with BehaviorLanguageToken
+    
 }

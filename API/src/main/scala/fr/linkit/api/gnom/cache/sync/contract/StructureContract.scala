@@ -20,7 +20,7 @@ trait StructureContract[A <: AnyRef] {
     val clazz: Class[_]
 
     val mirroringInfo: Option[MirroringInfo]
-
+    
     def findMethodContract[R](id: Int): Option[MethodContract[R]]
 
     def applyFieldsContracts(obj: A with SynchronizedObject[A], manip: SyncObjectFieldManipulation): Unit

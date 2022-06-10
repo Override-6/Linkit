@@ -11,14 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.descriptor
+package fr.linkit.engine.internal.language.bhv.ast
 
-import fr.linkit.api.gnom.cache.sync.contract.FieldContract
+trait ContractOption extends Product
 
-class EmptyStructureContractDescriptor[A <: AnyRef](clazz: Class[A]) extends OverallStructureContractDescriptor[A] {
-    
-    override val autochip   : Boolean                         = false
-    override val targetClass: Class[A]                        = clazz
-    override val methods    : Array[MethodContractDescriptor] = Array()
-    override val fields     : Array[FieldContract[Any]]       = Array()
-}
+case class AutoChip(enable: Boolean) extends ContractOption

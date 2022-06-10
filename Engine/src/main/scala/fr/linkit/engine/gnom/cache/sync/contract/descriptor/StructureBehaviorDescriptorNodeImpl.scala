@@ -36,7 +36,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
     
     private lazy val leveledNodes = computeLeveledNodes()
-    
+    private val autoChip = descriptors.headOption.exists(_.autochip) //autoChip value of head must be the same for other descriptors.
     /*
         * performs verifications on the node to ensure that the resulted StructureContract would not
         * throw any exception while being used by synchronized / chipped / mirroring / static connected objects.
@@ -45,7 +45,13 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         //ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
         ensureAllLevelsAreConcerned()
         ensureAllDescriptorsAreAtSameLevel()
+        ensureAllDescriptorsHaveSameOptions() //options are not meant to vary according to the SyncLevel
         leveledNodes.values.foreach(_.verify())
+    }
+    
+    private def ensureAllDescriptorsHaveSameOptions(): Unit = {
+        if (descriptors.tail.exists(_.autochip != autoChip))
+            throw new BadContractException(s"contract descriptor for '$clazz' contains descriptors")
     }
     
     private[descriptor] def getSbdn(lvl: SyncLevel): Option[LeveledSBDN[A]] = leveledNodes.get(lvl)
@@ -101,6 +107,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         import SyncLevel._
         MandatoryLevels.filter(lvl => !descriptors.exists(_.syncLevel eq lvl)).map { lvl =>
             new UniqueStructureContractDescriptor[A] {
+                
                 override val syncLevel  : SyncLevel                       = lvl
                 override val targetClass: Class[A]                        = clazz
                 override val fields     : Array[FieldContract[Any]]       = Array()

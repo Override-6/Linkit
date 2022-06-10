@@ -46,7 +46,9 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
     
     private def uscd(lvl: SyncLevel, d: StructureContractDescriptor[A]): UniqueStructureContractDescriptor[A] = {
         new UniqueStructureContractDescriptor[A] {
+            
             override val syncLevel  : SyncLevel                       = lvl
+            override val autochip   : Boolean                         = d.autochip
             override val targetClass: Class[A]                        = d.targetClass
             override val methods    : Array[MethodContractDescriptor] = d.methods
             override val fields     : Array[FieldContract[Any]]       = d.fields
@@ -58,6 +60,7 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
         
         new MirroringStructureContractDescriptor[A] {
             override val targetClass   = t._1.targetClass
+            override val autochip      = fusion[D, Boolean](_.autochip, _ != _, (a, _) => a, "autochip")
             override val mirroringInfo = fusion[D, MirroringInfo](_.mirroringInfo, _ != _, (a, _) => a, "mirroringInfo")
             override val methods       = fusion[D, Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(b.contains), _ ++ _, "method contract.")
             override val fields        = fusion[D, Array[FieldContract[Any]]](_.fields, (a, b) => a.exists(b.contains), _ ++ _, "field contract.")
@@ -69,6 +72,7 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
         
         new UniqueStructureContractDescriptor[A] {
             override val targetClass = t._1.targetClass
+            override val autochip    = fusion[D, Boolean](_.autochip, _ != _, (a, _) => a, "autochip")
             override val syncLevel   = fusion[D, SyncLevel](_.syncLevel, _ != _, (a, _) => a, "contract at sync level")
             override val methods     = fusion[D, Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(b.contains), _ ++ _, "method contract.")
             override val fields      = fusion[D, Array[FieldContract[Any]]](_.fields, (a, b) => a.exists(b.contains), _ ++ _, "field contract.")

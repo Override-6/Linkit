@@ -16,7 +16,10 @@ package fr.linkit.api.gnom.cache.sync.contract.descriptor
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncLevel}
 
 sealed trait StructureContractDescriptor[A <: AnyRef] {
-
+    
+    //enable auto chipping for objects expected as being synchronized / mirrored
+    //but whose runtime class can't support generated 'Sync' class generation / overriding.
+    val autochip: Boolean
     val targetClass: Class[A]
 
     val methods: Array[MethodContractDescriptor]

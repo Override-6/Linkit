@@ -23,6 +23,7 @@ public enum BehaviorLanguageSymbol implements BehaviorLanguageToken, Symbol {
     Comma(","),
     Colon(":"),
     Star("*"),
+    At("@"),
     BracketLeft("{"),
     BracketRight("}"),
     SquareBracketLeft("["),

@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIRulesAgreement}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureContractDescriptor, UniqueStructureContractDescriptor}
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, ModifiableValueContract, StructureContract}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -327,9 +327,10 @@ object LeveledSBDN {
                     val builder           = new RMIRulesAgreementGenericBuilder()
                     val agreement         = (if (context.syncLevel == Mirror) ONLY_ORIGIN(builder) else ONLY_CURRENT(builder)).result(context)
                     val rvContract        = {
-                        if (!context.syncLevel.mustBeMirrored())
+                        val returnType = md.javaMethod.getReturnType
+                        if (!context.syncLevel.mustBeMirrored() || returnType.isPrimitive || returnType.isArray || (returnType eq classOf[String]))
                             SimpleModifiableValueContract.deactivated[Any]
-                        else if (findReasonTypeCantBeSync(clazzDef.mainClass).isDefined)
+                        else if (findReasonTypeCantBeSync(returnType).isDefined)
                             new SimpleModifiableValueContract[Any](Chipped)
                         else
                             new SimpleModifiableValueContract[Any](Mirror)
