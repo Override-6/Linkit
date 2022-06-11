@@ -15,14 +15,14 @@ package fr.linkit.engine.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
-import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef}
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, InvocationChoreographer, InvocationHandlingMethod, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.tree.ObjectConnector
-import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, ConnectedObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -52,12 +52,21 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         while (i < args.length) {
             val contract = parameterContracts(i)
             args(i) = args(i) match {
-                case sync: ConnectedObject[_]                                     => sync.connected
-                case anyRef: AnyRef if contract.registrationKind != NotRegistered => syncAction(anyRef, contract.registrationKind).connected
-                case other                                                        => other
+                case sync: ConnectedObject[_]                          => sync.connected
+                case obj if contract.registrationKind != NotRegistered => syncObj(obj, contract.registrationKind, syncAction)
+                case other                                             => other
             }
             i += 1
         }
+    }
+    
+    private def syncObj(obj: Any, level: SyncLevel, syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
+        if ((level == SyncLevel.Chipped) || SyncClassDef(obj.getClass).isOverrideable)
+            syncAction(obj.asInstanceOf[AnyRef], level).connected
+        else if (returnValueContract.autoChip)
+            syncAction(obj.asInstanceOf[AnyRef], Chipped).connected
+        else
+            throw new CannotConnectException(s"Attempted to connect object '$obj', but object's class (${obj.getClass}) is not overrideable.")
     }
     
     override def applyReturnValue(rv: Any, syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
@@ -65,7 +74,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         else rv
     }
     
-    override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any = {
+    override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
         if (initialResult == null) return null
         var result = initialResult
         val kind   = returnValueContract.registrationKind
@@ -73,7 +82,11 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             val modifier = returnValueContract.modifier.orNull
             if (modifier != null)
                 result = modifier.toRemote(result, remote)
-            return syncAction(result.asInstanceOf[AnyRef], kind).connected
+            return {
+                if (kind.isConnectable)
+                    syncObj(result, kind, syncAction)
+                else result
+            }
         }
         result
     }

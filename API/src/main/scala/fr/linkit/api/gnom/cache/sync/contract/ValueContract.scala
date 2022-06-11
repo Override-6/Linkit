@@ -16,6 +16,12 @@ package fr.linkit.api.gnom.cache.sync.contract
 trait ValueContract {
 
     val registrationKind: SyncLevel
+    
+    //if true, and if the registrationKind is for a connectable object,
+    // the contracted value of the contract will automatically get chipped if the runtime
+    // class of the value don't support manipulations performed by the sync class generation system.
+    //have no effects if the registrationKind.isConnectable is set to false.
+    val autoChip: Boolean
 
 }
 

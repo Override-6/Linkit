@@ -26,6 +26,14 @@ sealed trait SyncClassDef {
     def isAssignableFromThis(clazz: Class[_]): Boolean
     
     def ensureOverrideable(): Unit
+    
+    def isOverrideable: Boolean = try {
+        ensureOverrideable()
+        true
+    } catch {
+        case _: InvalidSyncClassDefinitionException =>
+            false
+    }
 }
 
 final class SyncClassDefUnique private[description](val mainClass: Class[_]) extends SyncClassDef {

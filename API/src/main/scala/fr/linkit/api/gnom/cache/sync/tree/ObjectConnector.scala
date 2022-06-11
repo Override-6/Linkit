@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, ConnectedObject, ConnectedObjectReference}
+import fr.linkit.api.gnom.cache.sync.{CannotConnectException, ConnectedObject, ConnectedObjectReference}
 
 import java.util.concurrent.ThreadLocalRandom
 
@@ -25,7 +25,7 @@ trait ObjectConnector {
      *
      * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
      *
-     * @throws CanNotSynchronizeException if the object is already synchronized.
+     * @throws CannotConnectException if the object is already synchronized.
      * @throws IllegalArgumentException   if the given parent does not belongs to this tree.
      * @throws NoSuchSyncNodeException    if the parent's path could not be found.
      * @param parent  the parent of the synchronized object that will be inserted.
@@ -42,7 +42,7 @@ trait ObjectConnector {
      *
      * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
      *
-     * @throws CanNotSynchronizeException if the object is already synchronized.
+     * @throws CannotConnectException if the object is already synchronized.
      * @throws IllegalArgumentException   if the given parent is does not belongs to this tree.
      * @throws NoSuchSyncNodeException    if the parent's path could not be found.
      * @param parentPath the parent's path of the synchronized object that will be inserted.

@@ -22,7 +22,12 @@ agreement only_owner = discard * -> accept owner -> appoint owner
 agreement broadcast = accept*
 
 @autochip(true) //enables auto chip for objects expected as being synchronized / mirrored but whose runtime class can't support generated 'Sync' class generation / overriding.
-
+describe statics FileSystems {
+    foreach method enable following only_cache_owner
+    getDefault() {
+        chip returnvalue
+    }
+}
 describe statics Path {
     of(path: String, String[]) following only_cache_owner {
         path -> in: ${(path, remote) => homes(remote).toString + s"/$path"}

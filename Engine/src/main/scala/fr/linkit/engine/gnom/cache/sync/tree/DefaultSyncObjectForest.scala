@@ -42,7 +42,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
     private[tree] val cacheOwnerID: String = center.ownerID
     
     /*
-    * used to store objects whose synchronized version of keys already have bound references.
+    * used to store objects whose synchronized version of keys already have bounded references.
     * */
     private val linkedOrigins = mutable.HashMap.empty[AnyRef, ConnectedObjectReference]
     

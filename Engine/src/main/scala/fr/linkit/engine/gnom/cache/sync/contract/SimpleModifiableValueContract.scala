@@ -17,10 +17,12 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{ModifiableValueContract, SyncLevel}
 
 class SimpleModifiableValueContract[A](override val registrationKind: SyncLevel,
-                                       override val modifier: Option[ValueModifier[A]] = None) extends ModifiableValueContract[A]
-
+                                       override val autoChip: Boolean,
+                                       override val modifier: Option[ValueModifier[A]] = None) extends ModifiableValueContract[A] {
+    ""
+}
 object SimpleModifiableValueContract {
-
-    def deactivated[A] = new SimpleModifiableValueContract[A](SyncLevel.NotRegistered)
-
+    
+    def deactivated[A] = new SimpleModifiableValueContract[A](SyncLevel.NotRegistered, false)
+    
 }

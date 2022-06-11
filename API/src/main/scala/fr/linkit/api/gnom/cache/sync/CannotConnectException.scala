@@ -13,6 +13,6 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-class CanNotSynchronizeException(msg: String) extends SyncObjectException(msg) {
+class CannotConnectException(msg: String) extends SyncObjectException(msg) {
 
 }

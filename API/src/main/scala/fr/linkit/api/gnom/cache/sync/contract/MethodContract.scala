@@ -36,7 +36,7 @@ trait MethodContract[R] {
 
     val choreographer: InvocationChoreographer
 
-    def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any
+    def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any
 
     def connectArgs(args: Array[Any], syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Unit
 

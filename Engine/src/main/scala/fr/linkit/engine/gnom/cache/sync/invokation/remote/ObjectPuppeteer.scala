@@ -60,7 +60,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                         .nextResponse
                         .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
-                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeReference, executed on engine '$desiredEngineReturn' failed :\n $exceptionString")
+                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeReference, executed on engine '$desiredEngineReturn' failed :\n$exceptionString")
                     case p: RefPacket[R]                     =>
                         requestResult = p.value
                         isResultSet = true
@@ -71,10 +71,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         if (!isResultSet)
             throw new IllegalStateException("RMI dispatch has been processed asynchronously.")
         requestResult match {
-            case r: R with AnyRef =>
-                /*if (cache.forest.asInstanceOf[DefaultSyncObjectForest[AnyRef]].isObjectLinked(r))
-                    ???///tree.insertObject(nodeReference.nodePath, r, agreement.getAppointedEngineReturn).obj.connected
-                else */r
+            case r: R with AnyRef => r
             case null => null.asInstanceOf[R]
         }
     }

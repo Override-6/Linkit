@@ -17,7 +17,12 @@ agreement only_owner = discard * -> accept owner -> appoint owner
 agreement broadcast = accept*
 
 @autochip(true) //enables auto chipping for objects expected as being synchronized / mirrored but whose runtime class can't support generated 'Sync' class generation / overriding.
-
+describe statics FileSystems {
+    foreach method enable following only_cache_owner
+    getDefault() {
+        chip returnvalue
+    }
+}
 describe Path [mirror] {
     foreach method enable following only_owner
     register(WatchService, WatchEvent.Kind[]) {

@@ -72,7 +72,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * posts an object in the cache.
      * The behavior of the object and sub objects will depends on the [[defaultContracts]]
      *
-     * @throws CanNotSynchronizeException If the given object is a synchronized object.
+     * @throws CannotConnectException If the given object is a synchronized object.
      *                                    (No matters if the object is handled by this cache or not)
      * @param id  the identifier of the root object
      * @param creator         the creator that will create the synchronized object.

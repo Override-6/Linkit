@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.{ConnectedObject, SynchronizedObject}
 import fr.linkit.engine.internal.utils.ScalaUtils
 
 class FieldContractImpl[A](val description: FieldDescription,
+                           val autoChip: Boolean,
                            val registrationKind: SyncLevel) extends FieldContract[A] {
 
     private val isRegistered = registrationKind != SyncLevel.NotRegistered

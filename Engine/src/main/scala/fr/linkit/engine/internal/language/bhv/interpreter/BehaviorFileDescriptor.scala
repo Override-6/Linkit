@@ -13,8 +13,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.StructureBehaviorDescriptorNodeImpl.MandatoryLevels
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, LeveledSBDN, MethodContractDescriptorImpl}
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, LeveledSBDN, MethodContractDescriptorImpl, StructureBehaviorDescriptorNodeImpl}
 import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
@@ -29,6 +28,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                              caller: MethodCaller) {
     
     private val ast                                                            = file.ast
+    private val autoChip                                                       = computeOptions()
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
     private val valueModifiers   : Map[String, (Class[_], ValueModifier[Any])] = computeValueModifiers()
     private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
@@ -39,6 +39,15 @@ class BehaviorFileDescriptor(file: BehaviorFile,
         override val fileName     : String             = ast.fileName
         override val propertyClass: PropertyClass      = BehaviorFileDescriptor.this.propertyClass
         override val app          : ApplicationContext = BehaviorFileDescriptor.this.app
+    }
+    
+    private def computeOptions(): Boolean = {
+        ast.options match {
+            case AutoChip(enable) :: Nil => enable
+            case Nil                     => false
+            case options                 =>
+                throw new BHVLanguageException(s"option set contains unknown option: '${options}'")
+        }
     }
     
     private def computeContracts(): Seq[ContractDescriptorGroup[AnyRef]] = {
@@ -66,6 +75,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                                     .fold(scd(levels.map(_.syncLevel).filter(_ != Mirror): _*))(
                                         mi => new MirroringStructureContractDescriptor[AnyRef] {
                                             override val mirroringInfo = mi
+                                            override val autochip      = BehaviorFileDescriptor.this.autoChip
                                             override val targetClass   = castedClass
                                             override val methods       = methods0
                                             override val fields        = fields0
@@ -77,7 +87,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                 override val clazz      : Class[AnyRef]                              = castedClass
                 override val modifier   : Option[ValueModifier[AnyRef]]              = typeModifiers.get(castedClass)
                 override val descriptors: Array[StructureContractDescriptor[AnyRef]] = {
-                    descriptors0.toArray
+                    (descriptors0 :+ defaultContracts(clazz, descriptors0)).toArray
                 }
             }
             group
@@ -85,16 +95,23 @@ class BehaviorFileDescriptor(file: BehaviorFile,
         }.toSeq
     }
     
+    private def defaultContracts(clazz: Class[AnyRef], usedDescs: List[StructureContractDescriptor[AnyRef]]): StructureContractDescriptor[AnyRef] = {
+        val missingLevels = StructureBehaviorDescriptorNodeImpl.MandatoryLevels.filterNot(usedDescs.contains)
+        scd(missingLevels: _*)(clazz, Array(), Array())
+    }
+    
     private def scd(levels: SyncLevel*)(implicit clazz0: Class[AnyRef],
                                         methods0: Array[MethodContractDescriptor],
                                         fields0: Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
         if (levels.isEmpty) return new OverallStructureContractDescriptor[AnyRef] {
-            override val targetClass: Class[AnyRef]                   = clazz0
-            override val methods    : Array[MethodContractDescriptor] = methods0
-            override val fields     : Array[FieldContract[Any]]       = fields0
+            override val autochip    = BehaviorFileDescriptor.this.autoChip
+            override val targetClass = clazz0
+            override val methods     = methods0
+            override val fields      = fields0
         }
         new MultiStructureContractDescriptor[AnyRef] {
             override val syncLevels  = levels.toSet
+            override val autochip    = BehaviorFileDescriptor.this.autoChip
             override val targetClass = clazz0
             override val methods     = methods0
             override val fields      = fields0
@@ -107,7 +124,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             return Array()
         val desc = descOpt.get
         classDesc.listFields()
-                .map(new FieldContractImpl[Any](_, desc.state.lvl))
+                .map(new FieldContractImpl[Any](_, autoChip, desc.state.lvl))
                 .toArray
     }
     
@@ -132,8 +149,8 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                         val rvLvl = desc.syncReturnValue.lvl
                         if (rvLvl != NotRegistered) {
                             if (rvLvl.isConnectable && LeveledSBDN.findReasonTypeCantBeSync(method.javaMethod.getReturnType).isDefined)
-                                Some(new SimpleModifiableValueContract[Any](NotRegistered, None))
-                            else Some(new SimpleModifiableValueContract[Any](rvLvl, None))
+                                Some(new SimpleModifiableValueContract[Any](NotRegistered, autoChip, None))
+                            else Some(new SimpleModifiableValueContract[Any](rvLvl, autoChip, None))
                         } else None
                     }
                     
@@ -194,10 +211,10 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                         val returnTypeName = methodDesc.javaMethod.getReturnType.getName
                         val rvModifier     = desc.modifiers.find(_.target == "returnvalue").map(extractModifier(_, returnTypeName))
                         desc.syncReturnValue match {
-                            case RegistrationState(true, state) => new SimpleModifiableValueContract[Any](state, rvModifier)
+                            case RegistrationState(true, state) => new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
                             case RegistrationState(false, _)    =>
                                 val state = referent.flatMap(_.returnValueContract).map(_.registrationKind).getOrElse(NotRegistered)
-                                new SimpleModifiableValueContract[Any](state, rvModifier)
+                                new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
                         }
                     }
                     val agreement          = desc.agreement
@@ -209,7 +226,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
                             case MethodParam(syncState, nameOpt, tpe) =>
                                 val modifier = nameOpt.flatMap(name => desc.modifiers.find(_.target == name).map(extractModifier(_, tpe)))
-                                new SimpleModifiableValueContract[Any](syncState.lvl, modifier)
+                                new SimpleModifiableValueContract[Any](syncState.lvl,autoChip, modifier)
                         }.toArray
                         if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
                     }
@@ -234,8 +251,8 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             if (referentPos != -1)
                 foreachResult(referentPos) = null //removing old version
             field.state match {
-                case RegistrationState(true, isSync) => new FieldContractImpl[Any](desc, isSync)
-                case RegistrationState(false, _)     => new FieldContractImpl[Any](desc, referent.map(_.registrationKind).getOrElse(NotRegistered))
+                case RegistrationState(true, isSync) => new FieldContractImpl[Any](desc, autoChip, isSync)
+                case RegistrationState(false, _)     => new FieldContractImpl[Any](desc, autoChip, referent.map(_.registrationKind).getOrElse(NotRegistered))
             }
         }
         foreachResult.filter(_ != null) ++ result

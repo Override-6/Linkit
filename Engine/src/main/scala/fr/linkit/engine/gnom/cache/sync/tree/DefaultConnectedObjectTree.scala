@@ -81,7 +81,10 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
             throw new InvalidNodePathException("Path is empty")
     }
     
-    override def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
+    override def insertObject[B <: AnyRef](parent: ConnectedObjectNode[_],
+                                           source: AnyRef,
+                                           ownerID: String,
+                                           insertionKind: SyncLevel): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not owned by this tree's cache.")
         insertObject[B](parent.nodePath, source, ownerID, insertionKind)
@@ -157,7 +160,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         if (source == null)
             throw new NullPointerException("source object is null.")
         if (source.isInstanceOf[ConnectedObject[_]])
-            throw new CanNotSynchronizeException("This object is already a connected object.")
+            throw new CannotConnectException("This object is already a connected object.")
         
         forest.findMatchingNode(source) match {
             case Some(value: ObjectSyncNode[B])    =>

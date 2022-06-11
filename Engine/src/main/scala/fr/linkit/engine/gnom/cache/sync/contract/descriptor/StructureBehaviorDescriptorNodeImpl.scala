@@ -13,20 +13,12 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel.Mirror
-import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.OwnerEngine
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, ObjectContractFactory}
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef}
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MethodContractDescriptor, StructureBehaviorDescriptorNode, UniqueStructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{StructureBehaviorDescriptorNode, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, ModifiableValueContract, StructureContract, SyncLevel}
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod.Inherit
+import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.findReasonTypeCantBeSync
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.StructureBehaviorDescriptorNodeImpl.MandatoryLevels
-import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, SimpleModifiableValueContract}
-import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
+import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 import org.jetbrains.annotations.Nullable
 
 class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[A],
@@ -36,7 +28,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
                                                        val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]]) extends StructureBehaviorDescriptorNode[A] {
     
     private lazy val leveledNodes = computeLeveledNodes()
-    private val autoChip = descriptors.headOption.exists(_.autochip) //autoChip value of head must be the same for other descriptors.
+    
     /*
         * performs verifications on the node to ensure that the resulted StructureContract would not
         * throw any exception while being used by synchronized / chipped / mirroring / static connected objects.
@@ -45,13 +37,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         //ensureTypeCanBeSync(descriptor.targetClass, kind => s"illegal behavior descriptor: sync objects of type '$clazz' cannot get synchronized: ${kind} cannot be synchronized.")
         ensureAllLevelsAreConcerned()
         ensureAllDescriptorsAreAtSameLevel()
-        ensureAllDescriptorsHaveSameOptions() //options are not meant to vary according to the SyncLevel
         leveledNodes.values.foreach(_.verify())
-    }
-    
-    private def ensureAllDescriptorsHaveSameOptions(): Unit = {
-        if (descriptors.tail.exists(_.autochip != autoChip))
-            throw new BadContractException(s"contract descriptor for '$clazz' contains descriptors")
     }
     
     private[descriptor] def getSbdn(lvl: SyncLevel): Option[LeveledSBDN[A]] = leveledNodes.get(lvl)
@@ -69,10 +55,10 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
     }
     
     private def ensureAllLevelsAreConcerned(): Unit = {
-        descriptors.find(!_.syncLevel.isConnectable) match {
+        descriptors.find(!_.syncLevel.isContractable) match {
             case None       =>
             case Some(desc) =>
-                throw new BadContractException(s"Contract for '$clazz' have a structure descriptor contract that describes a behavior contract at a non-connectable level (${desc.syncLevel})")
+                throw new BadContractException(s"Contract for '$clazz' have a structure descriptor contract that describes a behavior contract at a non-contractable level (${desc.syncLevel})")
         }
         /*MandatoryLevels.filter(lvl => !descriptors.exists(_.syncLevel eq lvl)).toList match {
             case Nil =>
@@ -87,7 +73,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
     }
     
     private def computeLeveledNodes(): Map[SyncLevel, LeveledSBDN[A]] = {
-        (defaultContracts() ++ descriptors).map(d => {
+        descriptors.map(d => {
             val level = d.syncLevel
             val itfs  = interfaces.map(_.getLeveledNode(level))
             val sucl  = if (superClass == null) null else superClass.getLeveledNode(level)
@@ -95,7 +81,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         }).toMap
         
     }
-    
+    /*
     private def defaultContracts(): Array[UniqueStructureContractDescriptor[A]] = {
         val classDesc = SyncObjectDescription(SyncClassDef(clazz))
         val onlyOwner = EmptyBuilder.accept(OwnerEngine).appointReturn(OwnerEngine)
@@ -108,10 +94,11 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
         MandatoryLevels.filter(lvl => !descriptors.exists(_.syncLevel eq lvl)).map { lvl =>
             new UniqueStructureContractDescriptor[A] {
                 
-                override val syncLevel  : SyncLevel                       = lvl
-                override val targetClass: Class[A]                        = clazz
-                override val fields     : Array[FieldContract[Any]]       = Array()
-                override val methods    : Array[MethodContractDescriptor] = lvl match {
+                override val syncLevel   = lvl
+                override val autochip    = _
+                override val targetClass = clazz
+                override val fields      = Array()
+                override val methods     = lvl match {
                     case Synchronized     => Array()
                     case Chipped | Mirror =>
                         classDesc.listMethods()
@@ -121,7 +108,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
                 }
             }
         }
-    }
+    }*/
     
     private def getLeveledNode(level: SyncLevel): LeveledSBDN[A] = {
         leveledNodes.getOrElse(level, {
