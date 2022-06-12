@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
+import fr.linkit.engine.gnom.cache.sync.contract.descriptor.StructureBehaviorDescriptorNodeImpl.MandatoryLevels
 import org.jetbrains.annotations.Nullable
 
 class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[A],
@@ -60,11 +61,11 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
             case Some(desc) =>
                 throw new BadContractException(s"Contract for '$clazz' have a structure descriptor contract that describes a behavior contract at a non-contractable level (${desc.syncLevel})")
         }
-        /*MandatoryLevels.filter(lvl => !descriptors.exists(_.syncLevel eq lvl)).toList match {
+        MandatoryLevels.filter(lvl => !descriptors.exists(_.syncLevel eq lvl)).toList match {
             case Nil =>
             case lst =>
                 throw new BadContractException(s"Contract for '$clazz' does not describes behavior to apply for synchronization levels: ${lst.mkString(", ")}.")
-        }*/
+        }
     }
     
     private def ensureAllDescriptorsAreAtSameLevel(): Unit = {

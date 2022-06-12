@@ -137,7 +137,6 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             case Enum    => foreach[Enum[_]](putEnum)
             case Array   => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
             case Object  => foreach[SimpleObject](writeObject)
-            case Lambda  => foreach[SimpleLambdaObject](writeLambdaObject)
             case RNO     => foreach[ReferencedPoolObject](obj => putRef(obj.referenceIdx))
         }
     }
@@ -171,13 +170,6 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         buff.putInt(str.length).put(str.getBytes())
     }
     
-    @inline
-    private def writeLambdaObject(poolObj: SimpleLambdaObject): Unit = {
-        val rep = poolObj.representation
-        writeObject(rep.getClass, poolObj.representationDecomposed)
-    }
-    
-    @inline
     private def writeObject(poolObj: SimpleObject): Unit = {
         poolObj.valueClassRef match {
             case Left(clazz)    => writeObject(clazz, poolObj.decomposed)

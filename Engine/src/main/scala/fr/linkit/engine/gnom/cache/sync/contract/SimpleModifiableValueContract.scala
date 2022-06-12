@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.contract.{ModifiableValueContract, SyncLeve
 class SimpleModifiableValueContract[A](override val registrationKind: SyncLevel,
                                        override val autoChip: Boolean,
                                        override val modifier: Option[ValueModifier[A]] = None) extends ModifiableValueContract[A] {
-    ""
+    
 }
 object SimpleModifiableValueContract {
     

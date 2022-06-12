@@ -22,9 +22,3 @@ trait ContractDescriptorGroup[A <: AnyRef] {
     val descriptors: Array[StructureContractDescriptor[A]]
 }
 
-object ObjectContractDescriptorGroup extends ContractDescriptorGroup[Object] {
-    
-    override val clazz      : Class[Object]                              = classOf[Object]
-    override val modifier   : Option[ValueModifier[Object]]              = None
-    override val descriptors: Array[StructureContractDescriptor[Object]] = Array(new EmptyStructureContractDescriptor(clazz))
-}

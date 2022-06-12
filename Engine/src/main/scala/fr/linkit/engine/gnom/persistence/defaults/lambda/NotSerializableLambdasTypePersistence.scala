@@ -13,16 +13,18 @@
 
 package fr.linkit.engine.gnom.persistence.defaults.lambda
 
-import fr.linkit.api.gnom.persistence.context.LambdaTypePersistence
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
+import fr.linkit.api.gnom.persistence.obj.ObjectStructure
+import fr.linkit.engine.gnom.persistence.EmptyObjectStructure
 
-import java.lang.invoke.MethodHandles
-
-object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPRepresentation] {
-
-    private       val lookup     = MethodHandles.lookup()
-    private final val LambdaMark = "$$Lambda$"
-
-    override def toRepresentation(lambdaObject: AnyRef): JLTPRepresentation = {
+object NotSerializableLambdasTypePersistence extends TypePersistence[AnyRef] {
+    
+    //private       val lookup     = MethodHandles.lookup()
+    //private final val LambdaMark = "$$Lambda$"
+    
+    override val structure: ObjectStructure = EmptyObjectStructure
+    
+    override def toArray(t: AnyRef): Array[Any] = {
         throw new UnsupportedOperationException("Can't serialize non serializable lambdas.")
         /*val clazz              = lambdaObject.getClass
         val fields             = clazz.getDeclaredFields
@@ -34,10 +36,10 @@ object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPR
         val implMethodId = name.slice(markIdx + LambdaMark.length, name.indexOf('/') - 1)
         val fieldValues  = ObjectCreator.getAllFields(lambdaObject, fields)
         val fieldTypes   = fields.map(_.getType)
-        JLTPRepresentation(enclosingClass, fieldTypes, fieldValues, clazz.getInterfaces.head, implMethodId)*/
+        Array(JLTPRepresentation(enclosingClass, fieldTypes, fieldValues, clazz.getInterfaces.head, implMethodId))*/
     }
-
-    override def toLambda(representation: JLTPRepresentation): AnyRef = {
+    
+    override def initInstance(allocatedObject: AnyRef, args: Array[Any], box: ControlBox): Unit = {
         throw new UnsupportedOperationException("Can't deserialize non serializable lambdas.")
         /*val enclosing       = representation.enclosingClass
         val interface       = representation.interface
@@ -50,8 +52,9 @@ object NotSerializableLambdasTypePersistence extends LambdaTypePersistence[JLTPR
         val factory         = site.getTarget
         val fieldsValues    = representation.lambdaFieldValues
         val lambda          = MethodHandleInvoker.invoke(factory, fieldsValues)
-        lambda*/
+        ScalaUtils.pasteAllFields(allocatedObject, lambda)*/
     }
+    
 }
 
 case class JLTPRepresentation(enclosingClass: Class[_], lambdaFieldTypes: Array[Class[_]],

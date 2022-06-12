@@ -24,6 +24,7 @@ import java.io.{BufferedInputStream, File}
 import java.lang.reflect.{AccessibleObject, Field, InaccessibleObjectException, Modifier}
 import java.nio.{Buffer, ByteBuffer}
 import scala.annotation.switch
+import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
@@ -193,16 +194,16 @@ object ScalaUtils {
     
     def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Array[Field] = {
         var superClass  = clazz
-        var superFields = Array.empty[Field]
+        val superFields = ListBuffer.empty[Field]
         while (superClass != null) {
             superFields ++= superClass.getDeclaredFields
             superClass = superClass.getSuperclass
         }
-        val v = superFields
+        val r = superFields
                 .filterNot(f => Modifier.isStatic(f.getModifiers))
         if (accessible)
-            v.filter(setAccessible)
-        v
+            r.filter(setAccessible)
+        r.toArray
     }
     
     def setAccessible(field: AccessibleObject): Boolean = {

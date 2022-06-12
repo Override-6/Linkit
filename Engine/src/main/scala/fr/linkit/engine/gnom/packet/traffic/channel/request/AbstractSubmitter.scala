@@ -41,9 +41,8 @@ sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends
 
     override def submit(): P = {
         ensureNotSubmit()
-        AppLoggers.GNOM.trace(s" Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
+        AppLoggers.GNOM.trace(s"Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
         val result = makeSubmit()
-        AppLoggers.GNOM.trace(s" ${getClass.getSimpleName} ($id) submitted !")
         isSubmit = true
         result
     }

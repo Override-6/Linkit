@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.config.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.config.profile.persistence._
+import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
 import fr.linkit.engine.gnom.persistence.defaults.special.EmptyObjectTypePersistence
 import fr.linkit.engine.internal.utils.ClassMap
 
@@ -33,7 +34,23 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     
     private val cachedProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
     
+    @inline
+    private def isLambdaClass(clazz: Class[_]): Boolean = {
+        clazz.getSimpleName.contains("$$Lambda$")
+    }
+    
+    private def getLambdaProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
+        if (classOf[Serializable].isAssignableFrom(clazz))
+            new DefaultTypeProfile[T](clazz, this, Array(SerializableLambdasTypePersistence))
+        else
+            new DefaultTypeProfile[T](clazz, this, Array(NotSerializableLambdasTypePersistence))
+    }
+    
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
+        if (isLambdaClass(clazz)) {
+            return getLambdaProfile(clazz)
+        }
+        
         var profile = cachedProfiles.get(clazz).orNull
         if (profile eq null) {
             val isSync = isSyncClass(clazz)

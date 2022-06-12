@@ -15,10 +15,10 @@ package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
 import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule._
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIRulesAgreement}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureContractDescriptor, UniqueStructureContractDescriptor}
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MethodContract, MirroringInfo, StructureContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -38,8 +38,8 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                                private val interfaces: Array[LeveledSBDN[_ >: A]],
                                val structNode: StructureBehaviorDescriptorNodeImpl[A]) {
     
-    private val autochip = descriptor.autochip
-    private lazy val clazz = descriptor.targetClass //only called if descriptor is non null
+    private      val autochip = descriptor.autochip
+    private lazy val clazz    = descriptor.targetClass //only called if descriptor is non null
     
     def verify(): Unit = {
         if (descriptor == null) return
@@ -174,7 +174,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             if (!map.contains(id)) {
                 val agreement = desc.agreementBuilder.result(context)
                 verifyAgreement(desc.description.javaMethod, agreement, context)
-                val rvContract = desc.returnValueContract.getOrElse(SimpleModifiableValueContract.deactivated[Any])
+                val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](NotRegistered, autochip))
                 val contract   = new MethodContractImpl[Any](
                     desc.invocationHandlingMethod, context.choreographer, agreement, desc.parameterContracts,
                     rvContract, desc.description, desc.hideMessage, desc.procrastinator.orNull)
@@ -270,11 +270,12 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         }
         None
     }
+    
     /**
-     * Applies a default contract for methods of mirroring objects.
-     * should only be applied on contexts with syncLevel set on 'Mirroring'
+     * Applies a default contract for methods The applied contract is determined using the context.
      * */
     def fixUndescribedMethods(methods: mutable.HashMap[Int, MethodContract[Any]], context: ConnectedObjectContext): Unit = {
+        if (context.syncLevel == Statics) return
         val clazzDef   = context.classDef
         val missingIds = listMethodIds(clazzDef)
         for (contract <- methods.values) {
@@ -285,23 +286,29 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         if (missingIds.isEmpty)
             return
         val desc = SyncObjectDescription(clazzDef)
+        
+        def determineContract(clazz: Class[_]): ModifiableValueContract[Any] = {
+            if (!context.syncLevel.mustBeMirrored() || clazz.isPrimitive || clazz.isArray || (clazz eq classOf[String]))
+                new SimpleModifiableValueContract[Any](NotRegistered, autochip)
+            else if (findReasonTypeCantBeSync(clazz).isDefined)
+                new SimpleModifiableValueContract[Any](Chipped, autochip)
+            else
+                new SimpleModifiableValueContract[Any](Mirror, autochip)
+        }
+        
         for (id <- missingIds) {
             desc.findMethodDescription(id) match {
                 case Some(md) =>
-                    val builder           = new RMIRulesAgreementGenericBuilder()
-                    val agreement         = (if (context.syncLevel == Mirror) ONLY_ORIGIN(builder) else ONLY_CURRENT(builder)).result(context)
-                    val rvContract        = {
-                        val returnType = md.javaMethod.getReturnType
-                        if (!context.syncLevel.mustBeMirrored() || returnType.isPrimitive || returnType.isArray || (returnType eq classOf[String]))
-                            SimpleModifiableValueContract.deactivated[Any]
-                        else if (findReasonTypeCantBeSync(returnType).isDefined)
-                            new SimpleModifiableValueContract[Any](Chipped, autochip)
-                        else
-                            new SimpleModifiableValueContract[Any](Mirror, autochip)
-                    }
+                    val jMethod        = md.javaMethod
+                    val builder        = new RMIRulesAgreementGenericBuilder()
+                    val agreement      = (if (context.syncLevel == Mirror) ONLY_ORIGIN(builder) else ONLY_CURRENT(builder)).result(context)
+                    val rvContract     = determineContract(jMethod.getReturnType)
+                    var paramsContract = md.javaMethod.getParameterTypes.map(determineContract)
+                    if (paramsContract.forall(c => c.registrationKind == NotRegistered && c.modifier.isEmpty))
+                        paramsContract = Array()
                     val emergencyContract = new MethodContractImpl[Any](
                         InvocationHandlingMethod.Inherit, context.choreographer,
-                        agreement, Array(), rvContract,
+                        agreement, paramsContract, rvContract,
                         md, None, null)
                     methods.put(id, emergencyContract)
                 case None     =>
@@ -312,7 +319,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
 
 object LeveledSBDN {
     
-    private final val syncClasses = Seq(classOf[ConnectedObject[_]], classOf[SynchronizedObject[_]], classOf[ChippedObject[_]], classOf[AbstractSynchronizedObject[_]])
+    private final val syncClasses = Seq[Class[_]](classOf[ConnectedObject[_]], classOf[SynchronizedObject[_]], classOf[ChippedObject[_]], classOf[AbstractSynchronizedObject[_]])
     
     def findReasonTypeCantBeSync(tpe: Class[_]): Option[String] = {
         val result = if (tpe.isPrimitive) "primitive"
@@ -350,19 +357,18 @@ object LeveledSBDN {
         else Array(interface)
     }
     
-   
-    
-    private def listMethodIds(syncClassDef: SyncClassDef): mutable.HashSet[Int] = {
-        val methods = mutable.HashSet.empty[Int]
+    private def listMethodIds(syncClassDef: SyncClassDef): mutable.Set[Int] = {
+        val methods        = mutable.ListBuffer.empty[Int]
+        val visitedClasses = mutable.HashSet.from(syncClasses) //consider syncClasses as already visited because we want to avoid them.
         
         def acc(clazz: Class[_]): Unit = {
-            if (syncClasses.contains(clazz))
-                return
-            clazz.getInterfaces.foreach(acc)
+            if (visitedClasses(clazz)) return
+            visitedClasses += clazz
             var cl = clazz
             while (cl != null) {
+                cl.getInterfaces.foreach(acc)
                 methods ++= cl.getDeclaredMethods
-                        .filter(m => !SyncObjectDescription.isNotOverrideable(m.getModifiers))
+                        .filterNot(m => SyncObjectDescription.isNotOverrideable(m.getModifiers))
                         .map(MethodDescription.computeID)
                 cl = cl.getSuperclass
             }
@@ -376,7 +382,7 @@ object LeveledSBDN {
         }
         methods.filterNot(id => {
             syncClasses.exists(_.getDeclaredMethods.exists(MethodDescription.computeID(_) == id))
-        })
+        }).to(mutable.HashSet)
     }
     
 }

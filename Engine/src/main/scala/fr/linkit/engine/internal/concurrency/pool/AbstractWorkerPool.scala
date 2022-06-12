@@ -130,7 +130,6 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
                 currentWorker
                         .getController
                         .runTask(childTask)
-                AppLoggers.Worker.trace(s"Task ${childTask.taskID} ended")
             } catch {
                 case e: Throwable =>
                     e.printStackTrace()

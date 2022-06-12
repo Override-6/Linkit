@@ -96,7 +96,6 @@ class ObjectReader(bundle: PersistenceBundle,
             case String  => collectAndUpdateChunk[String](readString())
             case Array   => collectAndUpdateChunk[PoolObject[_ <: AnyRef]](ArrayPersistence.readArray(this))
             case Object  => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
-            case Lambda  => collectAndUpdateChunk[NotInstantiatedLambdaObject](readLambdaObject())
             case RNO     => collectAndUpdateChunk[ReferencedPoolObject](readReferencedObject())
         }
     }
@@ -162,13 +161,6 @@ class ObjectReader(bundle: PersistenceBundle,
             i += 1
         }
         (packetRefSize, sizes, new DeserializerObjectPool(sizes))
-    }
-    
-    private def readLambdaObject(): NotInstantiatedLambdaObject = {
-        //val isSerializable                             = buff.get() == 1
-        //val persistence = if (isSerializable) SerializableLambdasTypePersistence else NotSerializableLambdasTypePersistence
-        val persistence = SerializableLambdasTypePersistence.asInstanceOf[LambdaTypePersistence[AnyRef]]
-        new NotInstantiatedLambdaObject(readObject(), persistence)
     }
     
     private def readObject(): NotInstantiatedObject[AnyRef] = {

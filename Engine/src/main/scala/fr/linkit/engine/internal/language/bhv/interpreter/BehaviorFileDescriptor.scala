@@ -92,7 +92,16 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             }
             group
         }
-        }.toSeq
+        }.toSeq :+ new ContractDescriptorGroup[AnyRef] {
+            override val clazz       = classOf[Object]
+            override val modifier    = None
+            override val descriptors = Array(new OverallStructureContractDescriptor[Object] {
+                override val autochip    = BehaviorFileDescriptor.this.autoChip
+                override val targetClass = classOf[Object]
+                override val methods     = Array()
+                override val fields      = Array()
+            })
+        }
     }
     
     private def defaultContracts(clazz: Class[AnyRef], usedDescs: List[StructureContractDescriptor[AnyRef]]): StructureContractDescriptor[AnyRef] = {
@@ -226,7 +235,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                         val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
                             case MethodParam(syncState, nameOpt, tpe) =>
                                 val modifier = nameOpt.flatMap(name => desc.modifiers.find(_.target == name).map(extractModifier(_, tpe)))
-                                new SimpleModifiableValueContract[Any](syncState.lvl,autoChip, modifier)
+                                new SimpleModifiableValueContract[Any](syncState.lvl, autoChip, modifier)
                         }.toArray
                         if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
                     }

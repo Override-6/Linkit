@@ -11,14 +11,13 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.descriptor
+package fr.linkit.engine.gnom.persistence
 
-import fr.linkit.api.gnom.cache.sync.contract.FieldContract
+import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 
-class EmptyStructureContractDescriptor[A <: AnyRef](clazz: Class[A]) extends OverallStructureContractDescriptor[A] {
+object EmptyObjectStructure extends ObjectStructure {
     
-    override val autochip   : Boolean                         = false
-    override val targetClass: Class[A]                        = clazz
-    override val methods    : Array[MethodContractDescriptor] = Array()
-    override val fields     : Array[FieldContract[Any]]       = Array()
+    override def isAssignable(args: Array[Class[_]], from: Int, to: Int): Boolean = from == to
+    
+    override def isAssignable(args: Array[Any], from: Int, to: Int): Boolean = from == to
 }

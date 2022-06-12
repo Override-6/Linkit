@@ -98,7 +98,7 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         val relations          = new ClassMap[ContractClassRelation[AnyRef]]()
         var objDescriptorGroup = groups.head
         if (objDescriptorGroup.clazz != classOf[Object]) {
-            objDescriptorGroup = ObjectContractDescriptorGroup
+            throw new BadContractException("No description for java.lang.Object found in given groups.")
         }
         
         val objectRelation = new ContractClassRelation[AnyRef](objDescriptorGroup.clazz, objDescriptorGroup.modifier, null)

@@ -13,6 +13,18 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.ObjectContractDescriptorGroup
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.{ContractDescriptorGroup, OverallStructureContractDescriptor}
 
 object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(ObjectContractDescriptorGroup), "<empty>")
+
+private object ObjectContractDescriptorGroup extends ContractDescriptorGroup[Object] {
+    
+    override val clazz       = classOf[Object]
+    override val modifier    = None
+    override val descriptors = Array(new OverallStructureContractDescriptor[Object] {
+        override val autochip    = false
+        override val targetClass = classOf[Object]
+        override val methods     = Array()
+        override val fields      = Array()
+    })
+}

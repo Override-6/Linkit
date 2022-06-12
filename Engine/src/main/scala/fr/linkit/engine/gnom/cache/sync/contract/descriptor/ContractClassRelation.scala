@@ -103,11 +103,8 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
             
             val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]] = interfaceRelation.map(_.asNode).toArray
             
-            node = try {
-                new StructureBehaviorDescriptorNodeImpl[A](targetClass, descs, modifier, nextSuperNode, interfaces)
-            } finally {
-                nodeInitialized = true
-            }
+            node = try new StructureBehaviorDescriptorNodeImpl[A](targetClass, descs, modifier, nextSuperNode, interfaces)
+            finally nodeInitialized = true
         }
         node
     }

@@ -15,11 +15,12 @@ package fr.linkit.engine.gnom.persistence.defaults.special
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
+import fr.linkit.engine.gnom.persistence.EmptyObjectStructure
+
 //a TP that does nothing (used to create Mirroring objects)
 object EmptyObjectTypePersistence extends TypePersistence[AnyRef] {
     
-    override val structure: ObjectStructure = ArrayObjectStructure()
+    override val structure: ObjectStructure = EmptyObjectStructure
     
     override def initInstance(allocatedObject: AnyRef, args: Array[Any], box: ControlBox): Unit = ()
     
