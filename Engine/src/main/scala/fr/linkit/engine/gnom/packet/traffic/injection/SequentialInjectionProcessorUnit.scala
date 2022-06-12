@@ -40,7 +40,8 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
             queue.enqueue(result)
         }
         val currentWorker = WorkerPools.currentWorker
-        this.synchronized {
+        val currentTask   = currentWorker.getCurrentTask
+        currentTask.synchronized {
             if (executor != null && (currentWorker ne executor)) {
                 //the current thread is not the thread in charge of deserializing
                 //and injecting packets for this InjectionProcessorUnit.
@@ -62,8 +63,8 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                         //This operation has been made up in order to avoid possible deadlocks in local, or through the network.
                         //If the initial executor is notified or unparked, it will simply give up this SIPU.
                         AppLoggers.Persistence.info(s"SIPU: Turns out that the executor is blocked. All injections of the executor ($executor) are transferred to this thread.")
-                        //don't return and let the thread enter in the deserialization process, when the initial executor will get unblocked, the
-                        
+                    //don't return and let the thread enter in the deserialization process, when the initial executor will get unblocked, the
+                    
                     case other =>
                         throw new IllegalThreadStateException(s"Could not inject packet into SIPU: unit's executor is ${other.name().toLowerCase()}.")
                 }
@@ -77,8 +78,8 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
     private def deserializeAll(duringSleep: Boolean, injectable: PacketInjectable): Unit = {
         // If any of the chained SIPU is processing,
         // the current unit will wait until the whole chain is complete.
-        val currentWorker   = WorkerPools.currentWorker
-        AppLoggers.Persistence.trace(s"deserializeAll (duringSleep = $duringSleep)")
+        val currentWorker = WorkerPools.currentWorker
+        val currentTask   = currentWorker.getCurrentTask
         for (unit <- chain) {
             unit.join()
             if (executor ne currentWorker) {
@@ -86,7 +87,6 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
                 return //abort
             }
         }
-        AppLoggers.Persistence.trace(s"deserializeAll - after join chain")
         // Only the executor thread can run here
         //deserializing all packets that are added in the queue
         while (queue.nonEmpty) {
@@ -97,10 +97,11 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
         if (executor ne currentWorker)
             return
         //everything deserialized, now realising this deserialization unit.
-        this.synchronized {
+        currentTask.synchronized {
+            AppLoggers.Persistence.trace("Releasing current unit...")
             if (!duringSleep) executor = null
             locker.wakeupAllTasks()
-            this.notifyAll()
+            this.synchronized(this.notifyAll())
         }
     }
     
@@ -108,15 +109,15 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
      * Will make the current thread wait until this unit have terminated all his deserialisation / injection work.
      * */
     def join(): Unit = {
-        val currentTask = this.synchronized {
-            if (executor == null) return //the current IPU is not processing any injection
-            WorkerPools.currentTask.orNull
-        }
+        if (executor == null) return //the current IPU is not processing any injection
         AppLoggers.GNOM.debug(s"SIPU: Waiting for chained unit to end injections before continuing")
+        val currentTask = WorkerPools.currentTask.orNull
         if (currentTask == null && executor != null)
             this.synchronized(wait())
-        else if (executor != null)
+        else if (executor != null) {
+            AppLoggers.Persistence.trace(s"Pausing task, waiting for '$executor' to finish.")
             locker.pauseTask()
+        }
     }
     
     def deserializeNextResult(injectable: PacketInjectable): Unit = {

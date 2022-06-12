@@ -205,8 +205,8 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         setContinue()
         if (isExecuting && worker.isSleeping) {
             worker.getController.wakeup(this)
-        } else {
-            AppLoggers.Worker.error(s"Could not wakeup task '$this' (worker.isSleeping = ${worker.isSleeping})")
+        } else if (worker.thread != Thread.currentThread()) {
+            AppLoggers.Worker.error(s"Could not wakeup task $this (worker.isSleeping = ${worker.isSleeping})")
         }
     }
     

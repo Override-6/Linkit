@@ -70,11 +70,12 @@ private[concurrency] trait AbstractWorker
         AppLoggers.Worker.trace("Exiting workflow loop...")
     }
     
-    private def executeForcedTasks(): Boolean = forcedTasks.synchronized {
+    private def executeForcedTasks(): Boolean = {
         if (forcedTasks.isEmpty) return true
         AppLoggers.Worker.trace(s"Executing ${forcedTasks.size} forced tasks.")
-        forcedTasks.foreach(runTask)
+        val clone = forcedTasks.clone()
         forcedTasks.clear()
+        clone.foreach(runTask)
         false
     }
     
@@ -125,7 +126,7 @@ private[concurrency] trait AbstractWorker
         if (!isSleeping)
             throw new IllegalThreadStateException("Thread isn't sleeping.")
         val id = if (currentTask == null) 0 else currentTask.taskID + 1
-        forcedTasks.synchronized {
+        currentLock.synchronized {
             forcedTasks += new SimpleAsyncTask(id, currentTask, () => Try(task))
         }
         if (currentTask != null)

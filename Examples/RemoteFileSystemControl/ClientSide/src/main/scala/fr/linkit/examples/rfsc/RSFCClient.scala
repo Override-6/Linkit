@@ -22,7 +22,7 @@ object RSFCClient {
         sendFile(serverStatics)
         
         //serverStatics[System].exit(0)
-        print("Done.")
+        println("Done.")
     }
     
     
@@ -33,7 +33,9 @@ object RSFCClient {
         new Thread(() => while (true) {
             val key = watcher.take()
             key.pollEvents().forEach {
-                event => println(s"${event.context()}: ${event.kind()}")
+                event => {
+                    println(s"${event.context()}: ${event.kind()}")
+                }
             }
             key.reset()
             

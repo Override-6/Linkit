@@ -96,7 +96,7 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
     private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
         val groups             = rearrangeGroups()
         val relations          = new ClassMap[ContractClassRelation[AnyRef]]()
-        var objDescriptorGroup = groups.head
+        val objDescriptorGroup = groups.head
         if (objDescriptorGroup.clazz != classOf[Object]) {
             throw new BadContractException("No description for java.lang.Object found in given groups.")
         }

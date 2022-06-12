@@ -13,11 +13,10 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTranslator}
 import fr.linkit.api.gnom.packet.traffic.{PacketReader, PacketTraffic}
+import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.api.internal.system.security.BytesHasher
 import fr.linkit.engine.internal.utils.NumberSerializer
 import org.jetbrains.annotations.Nullable
 
@@ -39,10 +38,13 @@ class DefaultPacketReader(socket: DynamicSocket,
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
     override def nextPacket(@workerExecution callback: ObjectDeserializationResult => Unit): Unit = {
-        nextPacketSync(result => procrastinator.runLater(callback(result)))
+        nextPacketSync(result => procrastinator.runLater {
+            AppLoggers.Traffic.trace(s"Thread is handling packet injection with ordinal number ${result.ordinal}")
+            callback(result)
+        })
     }
     
-    def nextPacketSync(callback: ObjectDeserializationResult => Unit): Unit = {
+    private def nextPacketSync(callback: ObjectDeserializationResult => Unit): Unit = {
         val nextLength = socket.readInt()
         if (nextLength == -1 || socket.isClosed) {
             AppLoggers.Traffic.error(s"PACKET READ ABORTED : packet length: $nextLength | socket.isOpen = ${socket.isOpen}")
@@ -53,7 +55,7 @@ class DefaultPacketReader(socket: DynamicSocket,
         val bytes   = socket.read(nextLength)
         //NETWORK-DEBUG-MARK
         
-        logDownload(socket.boundIdentifier, bytes)
+        logDownload(socket.boundIdentifier, ordinal, bytes)
         val buff = ByteBuffer.allocate(bytes.length + 4)
         buff.put(NumberSerializer.serializeInt(nextLength))
         buff.put(bytes)
@@ -62,10 +64,11 @@ class DefaultPacketReader(socket: DynamicSocket,
         callback(result)
     }
     
-    private def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
-        val preview     = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
+    private def logDownload(@Nullable target: String, ordinal: Int, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
+        var preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
+        if (bytes.length > 1000) preview += "..."
         val finalTarget = if (target == null) "" else target
-        AppLoggers.Traffic.trace(s"${Console.CYAN}Received: ↓ $finalTarget ↓ $preview (l: ${bytes.length + 4})")
+        AppLoggers.Traffic.trace(s"${Console.CYAN}Received: ↓ $finalTarget ↓ (ord: $ordinal, len: ${bytes.length + 4}) content: $preview")
     }
     
 }

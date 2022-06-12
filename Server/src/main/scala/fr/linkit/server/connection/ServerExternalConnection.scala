@@ -29,9 +29,9 @@ import java.net.Socket
 import java.nio.ByteBuffer
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
-
+    
     import session._
-
+    
     override val currentIdentifier: String           = server.currentIdentifier
     override val traffic          : PacketTraffic    = server.traffic
     override val translator       : ObjectTranslator = server.translator
@@ -41,7 +41,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override val boundIdentifier  : String           = session.boundIdentifier
     @volatile private var alive                      = false
     private  val tnol                                = network.gnol.trafficNOL
-
+    
     override def shutdown(): Unit = {
         WorkerPools.ensureCurrentIsWorker()
         alive = false
@@ -51,21 +51,21 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }*/
         readThread.close()
         session.close()
-
+        
         connectionManager.unregister(currentIdentifier)
         AppLoggers.Connection.info(s"Connection closed for $currentIdentifier")
     }
-
+    
     override def isAlive: Boolean = alive
-
+    
     override def getState: ExternalConnectionState = session.getSocketState
-
+    
     override def runLaterControl[A](@workerExecution task: => A): AsyncTask[A] = {
         server.runLaterControl(task)
     }
-
+    
     override def runLater(task: => Unit): Unit = server.runLater(task)
-
+    
     def start(): Unit = {
         if (alive) {
             throw ConnectionException(this, "This Connection was already used and is now definitely closed.")
@@ -78,13 +78,21 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
             }
             val rectifiedResult                         = new ObjectDeserializationResult {
                 override val ordinal: Int = result.ordinal
+                
                 override def buff: ByteBuffer = result.buff
+                
                 override def coords: PacketCoordinates = coordinates
+                
                 override def attributes: PacketAttributes = result.attributes
+                
                 override def packet: Packet = result.packet
+                
                 override def makeDeserialization(): Unit = result.makeDeserialization()
+                
                 override def isDeserialized: Boolean = result.isDeserialized
+                
                 override def isInjected: Boolean = result.isInjected
+                
                 override def informInjected: Unit = result.informInjected
             }
             handlePacket(rectifiedResult)
@@ -92,24 +100,22 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         readThread.start()
         //Method useless but kept because services could need to be started in the future?
     }
-
+    
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
-        runLater {
-            val coords       = DedicatedPacketCoordinates(path, boundIdentifier, currentIdentifier)
-            val config       = traffic.getPersistenceConfig(coords.path)
-            val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network)
-            val result       = translator.translate(transferInfo)
-            send(result)
-        }
+        val coords       = DedicatedPacketCoordinates(path, boundIdentifier, currentIdentifier)
+        val config       = traffic.getPersistenceConfig(coords.path)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network)
+        val result       = translator.translate(transferInfo)
+        send(result)
     }
-
+    
     override def isConnected: Boolean = getState == ExternalConnectionState.CONNECTED
-
+    
     private[connection] def updateSocket(socket: Socket): Unit = {
         WorkerPools.ensureCurrentIsWorker()
         session.updateSocket(socket)
     }
-
+    
     def canHandlePacketInjection(result: ObjectTransferResult): Boolean = {
         val channelPath = result.coords.path
         channelPath.length == 0 || {
@@ -118,7 +124,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
             present
         }
     }
-
+    
     def send(result: ObjectTransferResult): Unit = {
         if (!canHandlePacketInjection(result)) {
             val channelPath = result.coords.path
@@ -127,23 +133,23 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }
         session.send(result.buff)
     }
-
+    
     private[connection] def send(buff: ByteBuffer): Unit = {
         session.send(buff)
     }
-
+    
     @workerExecution
     private def handlePacket(result: ObjectDeserializationResult): Unit = {
         if (alive) {
             serverTraffic.processInjection(result)
         }
     }
-
+    
     override def getApp: ApplicationContext = server.getApp
 }
 
 object ServerExternalConnection {
-
+    
     /**
      * Constructs a ClientConnection without starting it.
      *
@@ -159,5 +165,5 @@ object ServerExternalConnection {
         connection.start()
         connection
     }
-
+    
 }

@@ -210,7 +210,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         val method               = description.javaMethod
         val name                 = method.getName
         val methodID             = description.methodId
-        val className            = method.getDeclaringClass.getName
+        val className            = invocation.objectNode.obj.getClassDef.mainClass.getName
         val params               = invocation.methodArguments.mkString(", ")
         val expectedEngineReturn = if (appointed == null) " - no remote return value is expected, the RMI is performed asynchronously." else " - expected return value from " + appointed + "."
         s"sending method invocation ($methodID) $className.$name($params)" + expectedEngineReturn
