@@ -29,7 +29,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
     override def serverIdentifier: String = traffic.currentIdentifier
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
-        val contracts = Contract("NetworkContract", connection.getApp, ObjectsProperty.defaults(this))
+        val contracts = Contract("NetworkContract", ObjectsProperty.defaults(this))
         globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this))
                 .syncObject(0, Constructor[NetworkDataTrunk](this), contracts)
     }

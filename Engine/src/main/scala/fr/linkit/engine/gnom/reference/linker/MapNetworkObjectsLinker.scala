@@ -29,8 +29,8 @@ private[gnom] class MapNetworkObjectsLinker(omc: ObjectManagementChannel) extend
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = {
         map.get(reference)
     }
-
-
+    
+    
     def save(no: NetworkObject[NetworkObjectReference]): Unit = {
         val reference = no.reference
         if (reference == null)

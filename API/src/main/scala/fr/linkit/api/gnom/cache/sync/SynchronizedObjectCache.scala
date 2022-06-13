@@ -108,6 +108,5 @@ trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttrib
      * */
     def isRegistered(id: Int): Boolean
     
-    def content: List[A with SynchronizedObject[A]]
     
 }

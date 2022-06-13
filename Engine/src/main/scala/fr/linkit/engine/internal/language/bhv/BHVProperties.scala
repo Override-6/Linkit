@@ -15,7 +15,13 @@ package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.internal.concurrency.Procrastinator
 
-trait PropertyClass {
+trait BHVProperties {
+    
+    /**
+     * a name tag for the properties.
+     * the name of the properties is not necessarily the contract's name.
+     * */
+    val name: String
 
     def get(refName: String): AnyRef
 

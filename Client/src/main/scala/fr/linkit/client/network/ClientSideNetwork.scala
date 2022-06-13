@@ -26,7 +26,7 @@ class ClientSideNetwork(traffic: SocketPacketTraffic) extends AbstractNetwork(tr
         val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this), CacheSearchMethod.GET_OR_CRASH)
                 .findObject(0)
                 .getOrElse {
-                    throw new NoSuchElementException("netork data trunk not found.")
+                    throw new NoSuchElementException("network data trunk not found.")
                 }
         trunk
     }

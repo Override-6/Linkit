@@ -14,10 +14,10 @@
 package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.engine.internal.language.bhv.PropertyClass
+import fr.linkit.engine.internal.language.bhv.BHVProperties
 
 trait ContractDescriptorDataFactory {
 
-    def apply(propertyClass: PropertyClass): ContractDescriptorData
+    def apply(propertyClass: BHVProperties): ContractDescriptorData
 
 }

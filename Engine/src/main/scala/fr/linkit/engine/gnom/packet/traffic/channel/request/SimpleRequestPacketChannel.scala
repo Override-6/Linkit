@@ -23,20 +23,16 @@ import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.engine.internal.utils.ConsumerContainer
 
-import java.lang.ref.WeakReference
 import java.util
 import java.util.NoSuchElementException
 import java.util.concurrent.LinkedBlockingQueue
 
 class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) with RequestPacketChannel {
-
+    
     private val requestHolders         = new util.LinkedHashMap[Int, SimpleResponseHolder]()
     private val requestConsumers       = ConsumerContainer[DefaultRequestBundle]()
     @volatile private var requestCount = 0
-
-
-
-
+    
     override def handleBundle(bundle: ChannelPacketBundle): Unit = {
         val packet = bundle.packet
         val attr   = bundle.attributes
@@ -46,16 +42,21 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                 //AppLogger.vDebug(this)
                 //AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
                 request.setAttributes(attr)
-
+                
                 val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
                 val submitter      = new ResponseSubmitter(request.id, submitterScope)
-
-                requestConsumers.applyAll(DefaultRequestBundle(this, request, coords, submitter))
-
+                val bundle         = DefaultRequestBundle(this, request, coords, submitter)
+                WorkerPools.currentWorkerOpt match {
+                    case Some(_) =>
+                        requestConsumers.applyAllLater(bundle)
+                    case None    =>
+                        requestConsumers.applyAll(bundle)
+                }
+            
             case response: ResponsePacket =>
                 //AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
                 response.setAttributes(attr)
-
+                
                 val responseID = response.id
                 Option(requestHolders.get(responseID)) match {
                     case Some(request)                     =>
@@ -66,15 +67,15 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                 }
         }
     }
-
+    
     override def addRequestListener(callback: RequestPacketBundle => Unit): Unit = {
         requestConsumers += callback
     }
-
+    
     override def makeRequest(scopeFactory: ScopeFactory[_ <: ChannelScope]): Submitter[ResponseHolder] = {
         makeRequest(scopeFactory(writer))
     }
-
+    
     override def makeRequest(scope: ChannelScope): Submitter[ResponseHolder] = {
         if (!(scope.writer.path sameElements trafficPath))
             throw new IllegalArgumentException("Scope is not set on the same injectable id of this packet channel.")
@@ -83,19 +84,19 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
         val queue     = WorkerPools.currentPool.map(_.newBusyQueue[AbstractSubmitterPacket]).getOrElse(new LinkedBlockingQueue[AbstractSubmitterPacket]())
         new RequestSubmitter(requestID, scope, queue, this)
     }
-
+    
     private def nextRequestID: Int = {
         requestCount += 1
         requestCount
     }
-
+    
     private[request] def addRequestHolder(holder: SimpleResponseHolder): Unit = {
         requestHolders.put(holder.id, holder)
     }
-
+    
 }
 
 object SimpleRequestPacketChannel extends PacketInjectableFactory[SimpleRequestPacketChannel] {
-
+    
     override def createNew(store: PacketInjectableStore, scope: ChannelScope): SimpleRequestPacketChannel = new SimpleRequestPacketChannel(store, scope)
 }

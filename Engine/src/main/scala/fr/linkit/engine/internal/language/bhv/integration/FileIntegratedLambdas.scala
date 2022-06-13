@@ -21,7 +21,7 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
-import fr.linkit.engine.internal.language.bhv.PropertyClass
+import fr.linkit.engine.internal.language.bhv.BHVProperties
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
 
 import scala.collection.mutable
@@ -45,7 +45,7 @@ class FileIntegratedLambdas(center: CompilerCenter,
         expressions.put(name, LambdaExpressionInfo(name, expression, lambdaParams.toArray))
     }
 
-    def compileLambdas(app: ApplicationContext): PropertyClass => MethodCaller = {
+    def compileLambdas(app: ApplicationContext): BHVProperties => MethodCaller = {
 
         val name    = fileName.reverse.takeWhile(_ != '/').reverse.takeWhile(_ != '.')
         val context = LambdaRepositoryContext(name,
@@ -62,7 +62,7 @@ class FileIntegratedLambdas(center: CompilerCenter,
         val clazz       = resource
             .findClass(context.classPackage + "." + context.className, context.parentLoader)
             .getOrElse(genClass(context))
-        val constructor = clazz.getConstructor(classOf[PropertyClass])
+        val constructor = clazz.getConstructor(classOf[BHVProperties])
         constructor.newInstance(_)
     }
 

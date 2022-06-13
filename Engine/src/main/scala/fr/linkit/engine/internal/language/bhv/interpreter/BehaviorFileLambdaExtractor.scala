@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
-import fr.linkit.engine.internal.language.bhv.PropertyClass
+import fr.linkit.engine.internal.language.bhv.BHVProperties
 import fr.linkit.engine.internal.language.bhv.ast._
 
 class BehaviorFileLambdaExtractor(file: BehaviorFile) {
@@ -35,7 +35,7 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
         }
     })
     
-    def compileLambdas(app: ApplicationContext): PropertyClass => MethodCaller = lambdas.compileLambdas(app)
+    def compileLambdas(app: ApplicationContext): BHVProperties => MethodCaller = lambdas.compileLambdas(app)
     
     private def extractMethodModifiers(desc: AttributedEnabledMethodDescription, classDesc: ClassDescription): Unit = {
         val signature = desc.signature

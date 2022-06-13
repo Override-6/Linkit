@@ -37,7 +37,8 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
                 traffic.findTrafficObject(reference)
         }
     }
-
+    
+    
     override def injectRequest(bundle: LinkerRequestBundle): Unit = {
         val reference = bundle.linkerReference
         reference match {

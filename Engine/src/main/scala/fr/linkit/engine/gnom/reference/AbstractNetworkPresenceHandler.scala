@@ -14,10 +14,10 @@
 package fr.linkit.engine.gnom.reference
 
 import fr.linkit.api.gnom.packet.Packet
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
 import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, NetworkPresenceHandler, ObjectPresenceType}
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket

@@ -66,18 +66,18 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val specs:
     protected def toMethodDesc(method: Method): MethodDescription = new MethodDescription(method, this)
     
     protected def getAllMethods: Seq[Method] = {
-        val buff           = mutable.ListBuffer.empty[Method]
+        val buff           = mutable.HashMap.empty[Int, Method]
         val visitedClasses = mutable.HashSet.empty[Class[_]]
         
         def addAllMethods(clazz: Class[_]): Unit = {
             if (clazz == null || visitedClasses(clazz)) return
             visitedClasses += clazz
-            buff ++= clazz.getMethods
             if (clazz.isInterface)
-                buff ++= classOf[Object].getDeclaredMethods
-            buff ++= clazz.getDeclaredMethods.filter(m => Modifier.isProtected(m.getModifiers))
+                buff ++= classOf[Object].getDeclaredMethods.map(m => (MethodDescription.computeID(m), m))
             clazz.getInterfaces.foreach(addAllMethods)
             addAllMethods(clazz.getSuperclass)
+            buff ++= clazz.getDeclaredMethods
+                    .map(m => (MethodDescription.computeID(m), m))
         }
         
         addAllMethods(specs.mainClass)
@@ -86,7 +86,7 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val specs:
                 multiple.interfaces.foreach(addAllMethods)
             case _                              =>
         }
-        buff.toSeq
+        buff.values.toSeq
     }
     
     protected def applyNotFilter(e: Executable): Boolean

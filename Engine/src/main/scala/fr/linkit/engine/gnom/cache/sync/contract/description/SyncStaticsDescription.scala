@@ -14,7 +14,7 @@ class SyncStaticsDescription[A <: AnyRef]@Persist()(clazz: Class[A]) extends Abs
 
     override protected def applyNotFilter(e: Executable): Boolean = {
         val mods = e.getModifiers
-        !Modifier.isStatic(mods) || e.isSynthetic
+        !Modifier.isStatic(mods) || e.isSynthetic || !Modifier.isPublic(mods)
     }
 
     override def deconstruct(): Array[Any] = Array(clazz)

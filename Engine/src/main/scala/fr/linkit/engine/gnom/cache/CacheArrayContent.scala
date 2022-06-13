@@ -21,7 +21,7 @@ case class CacheArrayContent[A <: Any](array: Array[A]) extends CacheContent {
         try {
             getClass.getSimpleName + s"(${array.mkString("Array(", ", ", ")")})"
         } catch {
-            case e: NoSuchElementException => super.toString
+            case _: NoSuchElementException => super.toString
         }
     }
 }

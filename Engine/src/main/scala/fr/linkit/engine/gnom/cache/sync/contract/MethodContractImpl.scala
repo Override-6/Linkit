@@ -263,4 +263,6 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         }
     }
     
+    override def toString: String = s"method contract ${description.javaMethod}"
+    
 }

@@ -29,7 +29,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDe
 
     private def isIllegal(e: Executable): Boolean = {
         val isNameJKeyword = JavaKeywords(e.getName)
-        if (isNameJKeyword) AppLoggers.SyncObj.warn(s"Could not handle method ${e} because its name is a java keyword.")
+        if (isNameJKeyword) AppLoggers.SyncObj.warn(s"Cannot handle method ${e} because its name is a java keyword.")
         isNameJKeyword
     }
 
@@ -41,7 +41,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDe
             import Modifier._
             val notAccessible = isPrivate(mods) || !(isProtected(mods) || isPublic(mods))
             if (notAccessible)
-                AppLoggers.SyncObj.warn(s"Could not handle method ${e} because $tpe '${clazz.getName}' is not accessible for the generated Sync implementation class of '${this.clazz}'")
+                AppLoggers.SyncObj.warn(s"Cannot handle method ${e} because $tpe '${clazz.getName}' is not accessible for the generated Sync implementation class of '${this.clazz}'")
             notAccessible
         }
 
@@ -70,6 +70,6 @@ object SyncObjectDescription {
 
     def isNotOverrideable(mods: Int): Boolean = {
         import Modifier._
-        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods) || mods == 0
+        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods) || !isPublic(mods)
     }
 }

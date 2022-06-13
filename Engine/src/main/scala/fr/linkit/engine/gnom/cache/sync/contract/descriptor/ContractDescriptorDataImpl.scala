@@ -30,7 +30,6 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
     
     private val nodeMap = computeDescriptors()
     
-    override val reference: ContractDescriptorReference = new ContractDescriptorReference(name)
     
     private var precompiled: Boolean = false
     

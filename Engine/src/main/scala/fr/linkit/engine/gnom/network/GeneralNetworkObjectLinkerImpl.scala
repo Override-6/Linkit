@@ -126,7 +126,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
     
     object SystemObjectPresenceHandler extends AbstractNetworkPresenceHandler[SystemObjectReference](null, omc) {
         
-        override def findObject(location: SystemObjectReference): Option[NetworkObject[_ <: SystemObjectReference]] = {
+        def findObject(location: SystemObjectReference): Option[NetworkObject[_ <: SystemObjectReference]] = {
             location match {
                 case NetworkConnectionReference => Some(connection)
                 case NetworkReference           => Some(network)
@@ -136,7 +136,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                 case _                          => None
             }
         }
-        
+    
     }
     
 }

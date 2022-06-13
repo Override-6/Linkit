@@ -5,6 +5,7 @@ import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
+import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 
 import java.io.OutputStream
 import java.net.InetSocketAddress
@@ -16,6 +17,7 @@ object RSFCClient {
     
     def main(args: Array[String]): Unit = {
         val network       = launchApp("x" + ThreadLocalRandom.current().nextInt(10_000, 100_000)).network
+        Contract.registerProperties(ObjectsProperty.empty("fs"))
         val serverStatics = network.getStaticAccess(1)
         
         listenDistantDir(serverStatics)

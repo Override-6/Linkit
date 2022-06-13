@@ -11,14 +11,14 @@
  */
 package $ClassPackage$
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-import fr.linkit.engine.internal.language.bhv.PropertyClass
+import fr.linkit.engine.internal.language.bhv.BHVProperties
 
 import scala.annotation.switch
 
 $Imports$
 
-                //weird and unconventional name in order to reduce clashes with the user's code.
-class $ClassName$(__pRoperTiEs_8: PropertyClass) extends MethodCaller {
+                //weird and unconventional name in order to avoid clashes with the user's code.
+class $ClassName$(__pRoperTiEs_8: BHVProperties) extends MethodCaller {
 
     $Blocks$
 

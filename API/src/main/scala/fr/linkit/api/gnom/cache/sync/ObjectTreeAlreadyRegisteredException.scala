@@ -13,6 +13,4 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-class ObjectAlreadyPostedException(msg: String) extends SyncObjectException(msg) {
-
-}
+class ObjectTreeAlreadyRegisteredException(msg: String) extends SyncObjectException(msg)

@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
-import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
@@ -48,8 +48,15 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
     
     override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ConnectedObjectReference]
     
-    override def findTree(id: Int): Option[ConnectedObjectTree[A]] = {
-        trees.get(id)
+    override def findTree(id: Int): Option[ConnectedObjectTree[A]] = findTreeInternal(id)
+    
+    def findTreeLocal(id: Int): Option[ConnectedObjectTree[A]] = trees.get(id)
+    
+    private[sync] def findTreeInternal(id: Int): Option[DefaultConnectedObjectTree[A]] = {
+        trees.get(id).orElse {
+            center.requestTree(id)
+            trees.get(id)
+        }
     }
     
     override def registerReference(ref: ConnectedObjectReference): Unit = {
@@ -72,15 +79,14 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         new CacheRepoContent[A](array)
     }
     
-    override def findObject(location: ConnectedObjectReference): Option[NetworkObject[ConnectedObjectReference]] = {
-        if (location.cacheID != center.cacheID || location.family != center.family)
+    override def findObject(reference: ConnectedObjectReference): Option[NetworkObject[ConnectedObjectReference]] = {
+        if (reference.cacheID != center.cacheID || reference.family != center.family)
             return None
-        val path = location.nodePath
+        val path = reference.nodePath
         trees.get(path.head)
                 .flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
     }
     
-
     override def initializeObject(obj: NetworkObject[_ <: ConnectedObjectReference]): Unit = {
         obj match {
             case syncObj: A with SynchronizedObject[A] => initializeSyncObject(syncObj)
@@ -99,7 +105,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
     def isRegisteredAsUnknown(id: Int): Boolean = unknownTrees.contains(id)
     
     def transferUnknownTree(id: Int): Unit = {
-        if (!trees.contains(id))
+        if (findTreeInternal(id).isEmpty)
             throw new IllegalStateException(s"Can not transfer unknown tree with id $id: a tree with the same id must be created before transfering all UnknownTree objects into its 'Known' tree ")
         val tree = unknownTrees.remove(id).get
         tree.foreach { obj =>
@@ -124,7 +130,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         AppLoggers.SyncObj.trace(s"Initialising synchronized object at $reference.")
         val path    = reference.nodePath
         val treeID  = path.head
-        val treeOpt = findTreeInternal(treeID)
+        val treeOpt = trees.get(treeID)
         if (treeOpt.isEmpty) {
             val tree = unknownTrees.getOrElseUpdate(treeID, new UnknownTree(treeID))
             tree.addUninitializedSyncObject(syncObj)
@@ -154,15 +160,11 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
     
     private[sync] def addTree(id: Int, tree: DefaultConnectedObjectTree[A]): Unit = {
         if (trees.contains(id))
-            throw new SynchronizedObjectException(s"A tree of id '$id' already exists.")
+            throw new SynchronizedObjectException(s"A tree with id '$id' already exists.")
         if (tree.dataFactory ne center)
             throw new SynchronizedObjectException("Attempted to attach a tree that comes from an unknown cache.")
         AppLoggers.SyncObj.debug(s"New tree added ($tree) in forest of cache ${center.reference}")
         registerReference(tree.rootNode.reference)
         trees.put(id, tree)
-    }
-    
-    private[sync] def findTreeInternal(id: Int): Option[DefaultConnectedObjectTree[A]] = {
-        trees.get(id)
     }
 }

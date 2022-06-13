@@ -14,12 +14,8 @@
 package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorReference
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.reference.NetworkObject
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
+import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
@@ -30,54 +26,79 @@ import scala.util.parsing.input.CharSequenceReader
 
 object Contract {
     
-    private final val contracts    = mutable.HashMap.empty[String, PartialContractDescriptorData]
-    private final val toPrecompute = mutable.HashSet.empty[(String, String)]
-    private final val center       = new DefaultCompilerCenter
+    private val properties   = mutable.HashMap.empty[String, BHVProperties]
+    private val contracts    = mutable.HashMap.empty[String, ContractHandler]
+    private val toPrecompute = mutable.HashSet.empty[(String, String)]
+    private val center       = new DefaultCompilerCenter
+    
+    private lazy val app = LinkitApplication.getApplication
     
     def precompute(application: ApplicationContext): Unit = {
-        toPrecompute.foreach { case (text, filePath) => partialize(text, filePath, application) }
+        toPrecompute.foreach { case (text, filePath) => precompute(text, filePath, application) }
         toPrecompute.clear()
+    }
+    
+    def registerProperties(properties: BHVProperties): Unit = {
+        if (this.properties.contains(properties.name))
+            throw new IllegalArgumentException("properties' name is already registered")
+        this.properties.put(properties.name, properties)
     }
     
     private[linkit] def addToPrecompute(text: String, filePath: String): Unit = toPrecompute += ((text, filePath))
     
-    def apply(name: String, app: ApplicationContext, propertyClass: PropertyClass): LangContractDescriptorData = contracts.get(name) match {
-        case Some(partial) =>
-            partial(propertyClass)
-        case None          =>
-            throw new NoSuchElementException(s"Could not find any behavior contract bound with the name '$name'")
+    def apply(name: String, properties: BHVProperties): LangContractDescriptorData = {
+        this.properties.get(properties.name) match {
+            case Some(value) =>
+                if (value != properties) throw new IllegalArgumentException("properties' name is already registered")
+            case None        =>
+                registerProperties(properties)
+        }
+        apply(name, properties.name)
     }
     
-    def apply(name: String)(implicit network: Network): LangContractDescriptorData = {
-        apply(name, network.connection.getApp, ObjectsProperty.defaults(network))
+    def apply(name: String, propertiesName: String): LangContractDescriptorData = {
+        contracts.get(name) match {
+            case Some(handler) =>
+                handler.get(propertiesName)
+            case None          =>
+                throw new NoSuchElementException(s"Could not find any behavior contract bound with the name '$name'")
+        }
     }
     
-    private def partialize(text: String, filePath: String, app: ApplicationContext): PartialContractDescriptorData = {
+    def apply(name: String): LangContractDescriptorData = {
+        apply(name, ObjectsProperty.empty)
+    }
+    
+    private def precompute(text: String, filePath: String, app: ApplicationContext): ContractHandler = {
         val tokens        = BehaviorLanguageLexer.tokenize(new CharSequenceReader(text), filePath)
         val ast           = BehaviorFileParser.parse(tokens)
         val file          = new BehaviorFile(ast, filePath, center)
         val extractor     = new BehaviorFileLambdaExtractor(file)
         val callerFactory = extractor.compileLambdas(app)
         val fileName      = ast.fileName
-        val partial       = new PartialContractDescriptorData(file, app, callerFactory)
+        val partial       = new ContractHandler(file, callerFactory)
         contracts.put(fileName, partial)
         partial
     }
     
-    private class PartialContractDescriptorData(file: BehaviorFile,
-                                                app: ApplicationContext,
-                                                callerFactory: PropertyClass => MethodCaller) {
+    private class ContractHandler(file: BehaviorFile, callerFactory: BHVProperties => MethodCaller) {
         
-        def apply(propertyClass: PropertyClass): LangContractDescriptorData = {
-            val caller = callerFactory(propertyClass)
-            try {
-                val interpreter = new BehaviorFileDescriptor(file, app, propertyClass, caller)
-                interpreter.data
-            } catch {
-                case e: BHVLanguageException => throw new BHVLanguageException(s"in: ${file.filePath}: ${e.getMessage}", e)
-            }
+        private val callers   = mutable.HashMap.empty[String, MethodCaller]
+        private val contracts = mutable.HashMap.empty[String, LangContractDescriptorData]
+        
+        def get(propertyName: String): LangContractDescriptorData = {
+            contracts.getOrElseUpdate(propertyName, {
+                val bhvProperties = properties.getOrElse(propertyName, throw new NoSuchElementException(s"unknown properties '$propertyName'."))
+                val caller        = callers.getOrElseUpdate(propertyName, callerFactory(bhvProperties))
+                try {
+                    val interpreter = new BehaviorFileDescriptor(file, app, bhvProperties, caller)
+                    interpreter.data
+                } catch {
+                    case e: BHVLanguageException =>
+                        throw new BHVLanguageException(s"in: ${file.filePath}: ${e.getMessage}", e)
+                }
+            })
         }
-        
     }
     
 }

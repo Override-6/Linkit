@@ -70,7 +70,8 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
             Option(new ContextObject(obj, reference))
         }
     }
-
+    
+    
     override def transferTo(linker: ContextObjectLinker): this.type = {
         linker ++= codeToRef
                 .entrySet()

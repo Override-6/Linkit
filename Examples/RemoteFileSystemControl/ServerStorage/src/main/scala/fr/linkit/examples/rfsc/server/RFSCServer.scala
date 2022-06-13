@@ -12,10 +12,10 @@ import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
 object RFSCServer {
-
-    private val clientsHomes = new mutable.HashMap[Engine, Path]()
+    
+    private val clientsHomes        = new mutable.HashMap[Engine, Path]()
     private val watchServiceWorkers = new ClosedWorkerPool(0, "WatchServicesWorkers")
-
+    
     def main(args: Array[String]): Unit = {
         val server = createConnection("RFSCServer")
         println("Server launched !")
@@ -29,11 +29,11 @@ object RFSCServer {
             watchServiceWorkers.setThreadCount(clientsHomes.size)
         }
         }
-        val prop = ObjectsProperty(Map("homes" -> clientsHomes, "watchServiceWorkers" -> watchServiceWorkers))
-        val contracts = Contract("FSControl", network.connection.getApp, prop)
+        val prop      = ObjectsProperty("fs")(Map("homes" -> clientsHomes, "watchServiceWorkers" -> watchServiceWorkers))
+        val contracts = Contract("FSControl", prop)
         network.newStaticAccess(1, contracts)
     }
-
+    
     private def createConnection(identifier0: String): CentralConnection = {
         val config = new ServerApplicationConfigBuilder {
             val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
@@ -46,8 +46,8 @@ object RFSCServer {
             }
         }.buildConfig()
         ServerApplication.launch(config, getClass)
-            .findConnection(identifier0)
-            .get
+                .findConnection(identifier0)
+                .get
     }
-
+    
 }

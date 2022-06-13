@@ -32,8 +32,17 @@ trait ContentHandler[C <: CacheContent] extends CacheHandler {
      * */
     def initializeContent(content: C): Unit
 
+    val lazyContentHandling: Boolean
+    
     /**
-     * @return C the local content of this cache.
+     * The initial content sent to engines that connects to the cache.
+     * */
+    def getInitialContent: C
+    
+    /**
+     * @return the content contained in the cache.
+     *         if lazyContentHandling is set to true, the returned content can be empty, or may not contain some elements
+     *         that are present in the cache.
      * */
     def getContent: C
 

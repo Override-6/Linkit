@@ -19,12 +19,12 @@ import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuild
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileDescriptor.{DefaultAgreements, DefaultBuilder}
-import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, PropertyClass}
+import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, BHVProperties}
 import fr.linkit.engine.internal.utils.ClassMap
 
 class BehaviorFileDescriptor(file: BehaviorFile,
                              app: ApplicationContext,
-                             propertyClass: PropertyClass,
+                             propertyClass: BHVProperties,
                              caller: MethodCaller) {
     
     private val ast                                                            = file.ast
@@ -35,10 +35,9 @@ class BehaviorFileDescriptor(file: BehaviorFile,
     private val contracts        : Seq[ContractDescriptorGroup[AnyRef]]        = computeContracts()
     
     lazy val data = new ContractDescriptorDataImpl(contracts.toArray, ast.fileName) with LangContractDescriptorData {
-        override val filePath     : String             = file.filePath
-        override val fileName     : String             = ast.fileName
-        override val propertyClass: PropertyClass      = BehaviorFileDescriptor.this.propertyClass
-        override val app          : ApplicationContext = BehaviorFileDescriptor.this.app
+        override val filePath       = file.filePath
+        override val fileName       = ast.fileName
+        override val propertiesName = propertyClass.name
     }
     
     private def computeOptions(): Boolean = {

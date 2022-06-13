@@ -54,7 +54,8 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
             case _                              => throwUnknownRef(reference)
         }
     }
-
+    
+    
     override def injectRequest(bundle: LinkerRequestBundle): Unit = {
         bundle.linkerReference match {
             case ref: SharedCacheReference      =>
