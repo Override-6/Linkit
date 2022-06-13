@@ -29,7 +29,7 @@ trait Worker {
 
     def getCurrentTaskID: Int = getCurrentTask.map(_.taskID).getOrElse(-1)
 
-    def getController: WorkerThreadController
+    def getController: InternalWorkerThread
 
     @throws[IllegalThreadStateException]("if isSleeping = false")
     def runWhileSleeping(task: => Unit): Unit

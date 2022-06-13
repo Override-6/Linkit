@@ -33,7 +33,7 @@ object ClassParser extends BehaviorLanguageParser {
             }
         }
         val properties = {
-            val property = SquareBracketLeft ~> (identifier <~ Equal) ~ identifier <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
+            val property = SquareBracketLeft ~> (identifier <~ Equal) ~ (At ~> identifier) <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
             repsep(property, Comma.?)
         }
         
@@ -60,7 +60,7 @@ object ClassParser extends BehaviorLanguageParser {
         val methodSignature            = {
             val param  = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case sync ~ name ~ id => MethodParam(sync, name, id) }
             val params = repsep(param, Comma)
-    
+            
             identifier ~ (ParenLeft ~> params <~ ParenRight).? ^^ { case name ~ params => MethodSignature(name, params.getOrElse(Seq())) }
         }
         val enabledMethodCore          = {

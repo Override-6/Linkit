@@ -125,8 +125,8 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         AppLoggers.SyncObj.debug {
             val name        = method.getName
             val methodID    = description.methodId
-            val methodClass = method.getDeclaringClass.getName
-            s"Calling method $methodID $methodClass.$name(${args.mkString(", ")})"
+            val methodClass = obj.getClassDef.mainClass.getName
+            s"Calling method $methodID $methodClass.$name(${args.mkString(", ")}) (on object: ${obj.reference})"
         }
         val target = obj.connected
         if (description.isMethodAccessible)
@@ -210,10 +210,11 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         val method               = description.javaMethod
         val name                 = method.getName
         val methodID             = description.methodId
-        val className            = invocation.objectNode.obj.getClassDef.mainClass.getName
+        val obj                  = invocation.objectNode.obj
+        val className            = obj.getClassDef.mainClass.getName
         val params               = invocation.methodArguments.mkString(", ")
         val expectedEngineReturn = if (appointed == null) " - no remote return value is expected, the RMI is performed asynchronously." else " - expected return value from " + appointed + "."
-        s"sending method invocation ($methodID) $className.$name($params)" + expectedEngineReturn
+        s"Sending method invocation ($methodID) $className.$name($params) (on object: ${obj.reference}) " + expectedEngineReturn
     }
     
     private def makeDispatch(network: Network,
@@ -261,6 +262,5 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             args(i) = finalRef
         }
     }
-    
     
 }

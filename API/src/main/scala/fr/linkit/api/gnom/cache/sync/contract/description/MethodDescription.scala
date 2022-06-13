@@ -31,7 +31,7 @@ case class MethodDescription(javaMethod: Method,
     } catch {
         case _: InaccessibleObjectException => false
     }
-
+    
     def getName: String = javaMethod.getName
 
     val params  : Array[Parameter] = javaMethod.getParameters

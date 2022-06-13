@@ -276,7 +276,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
     }
     
     private def findProcrastinator(properties: Seq[MethodProperty]): Option[Procrastinator] = {
-        properties.find(_.name == "procrastinator").map(x => propertyClass.getProcrastinator(x.value))
+        properties.find(_.name == "executor").map(x => propertyClass.getProcrastinator(x.value))
     }
     
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {

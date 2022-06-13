@@ -13,7 +13,7 @@
 
 package fr.linkit.api.internal.concurrency
 
-trait WorkerThreadController {
+trait InternalWorkerThread {
 
     protected type ThreadTask = AsyncTaskController with AsyncTask[_]
 

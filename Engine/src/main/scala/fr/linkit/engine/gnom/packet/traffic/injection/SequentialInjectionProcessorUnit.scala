@@ -98,7 +98,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
             return
         //everything deserialized, now realising this deserialization unit.
         currentTask.synchronized {
-            AppLoggers.Persistence.trace("Releasing current unit...")
+            AppLoggers.GNOM.trace(s"Releasing current unit...")
             if (!duringSleep) executor = null
             locker.wakeupAllTasks()
             this.synchronized(this.notifyAll())
@@ -115,7 +115,7 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
         if (currentTask == null && executor != null)
             this.synchronized(wait())
         else if (executor != null) {
-            AppLoggers.Persistence.trace(s"Pausing task, waiting for '$executor' to finish.")
+            AppLoggers.GNOM.trace(s"Pausing task, waiting for '$executor' to finish.")
             locker.pauseTask()
         }
     }

@@ -28,7 +28,7 @@ import scala.util.Try
  * This class contains information that need to be stored into a specific thread class.
  * */
 private[concurrency] trait AbstractWorker
-        extends Worker with WorkerThreadController {
+        extends Worker with InternalWorkerThread {
     
     private var isParkingForWorkflow   : Boolean    = false
     private var taskRecursionDepthCount: Int        = 0
@@ -44,10 +44,8 @@ private[concurrency] trait AbstractWorker
     override def getTaskStack: Array[Int] = workingTasks.keys.toArray
     
     override def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit = {
-        currentLock.synchronized {
-            ensureCurrentThreadEqualsWorker()
-            AppLoggers.Worker.trace("Entering workflow loop...")
-        }
+        ensureCurrentThreadEqualsWorker()
+        AppLoggers.Worker.trace("Entering workflow loop...")
         
         while (loopCondition) {
             currentLock.synchronized {
@@ -60,7 +58,10 @@ private[concurrency] trait AbstractWorker
             currentLock.synchronized {
                 isParkingForWorkflow = false
                 AppLoggers.Worker.trace("This thread has been unparked.")
-                if (executeForcedTasks() && !loopCondition) {
+            }
+            val noForcedTasks = executeForcedTasks()
+            currentLock.synchronized {
+                if (noForcedTasks && !loopCondition) {
                     return
                 }
                 AppLoggers.Worker.trace("Continuing workflow...")
@@ -95,7 +96,7 @@ private[concurrency] trait AbstractWorker
         taskRecursionDepthCount -= 1
     }
     
-    //use ThreadTask#continue instead of directly calling this method.
+    //use ThreadTask#continue instead of directly call this method.
     override def wakeup(task: ThreadTask): Unit = {
         val blocker = LockSupport.getBlocker(thread)
         AppLoggers.Worker.debug(s"waking up task ${task.taskID}")
@@ -135,7 +136,7 @@ private[concurrency] trait AbstractWorker
     
     override def taskRecursionDepth: Int = taskRecursionDepthCount
     
-    override def getController: WorkerThreadController = this
+    override def getController: InternalWorkerThread = this
     
     override def isSleeping: Boolean = isParkingForWorkflow
     
