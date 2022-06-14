@@ -22,6 +22,7 @@ import java.util
  * @param cacheFamily the cache family of the object cache's manager.
  * @param cacheID the object cache identifier
  * @param ownerID the owner of the object (the engine's identifier that created the object)
+ *                NOTE: The value of this field have no influence on the reference location linking, it's just informal.
  * @param nodePath the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectTree]]
  */
 class ConnectedObjectReference(family: String,
@@ -33,12 +34,12 @@ class ConnectedObjectReference(family: String,
 
     override def toString: String = super.toString + s"/~${nodePath.mkString("/")}"
 
-    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, ownerID, nodePath))
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, nodePath))
 
     override def equals(obj: Any): Boolean = obj match {
         case ref: ConnectedObjectReference => ref.family == family &&
                 ref.cacheID == cacheID &&
-                ref.ownerID == ownerID &&
+                //ref.ownerID == ownerID &&
                 (ref.nodePath sameElements nodePath)
         case _                             => false
     }

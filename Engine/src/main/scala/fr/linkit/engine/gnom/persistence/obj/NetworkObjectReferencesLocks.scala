@@ -11,14 +11,16 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference.presence
+package fr.linkit.engine.gnom.persistence.obj
 
-trait NetworkObjectPresence {
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-    def getPresenceFor(engineId: String): ObjectPresenceType
+import scala.collection.mutable
 
-    def isPresenceKnownFor(engineId: String): Boolean //true if any presence state is known for the targeted engine
+object NetworkObjectReferencesLocks {
     
-    def isPresentOn(engineId: String): Boolean = getPresenceFor(engineId) eq ObjectPresenceType.PRESENT
-
+    private final val map = new mutable.WeakHashMap[NetworkObjectReference, Object]
+    
+    def getLock(reference: NetworkObjectReference): Object = map.getOrElseUpdate(reference, new Object)
+    
 }

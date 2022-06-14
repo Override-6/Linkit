@@ -73,7 +73,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             val isCompStatic = Modifier.isStatic(member.getModifiers)
             if (isCompStatic != isStatic) {
                 throw new BadContractException(s"descriptor for $clazz contains $member that is ${if (isCompStatic) "static" else "non static"}" +
-                                                       s" but the descriptor's sync level '${descriptor.syncLevel}' can only accept '${if (isStatic) "statics" else "non statics"}' methods and fields")
+                                                       s" but the descriptor's sync level '${descriptor.syncLevel}' can only accept ${if (isStatic) "statics" else "non statics"} methods and fields")
             }
         }
         

@@ -27,7 +27,9 @@ class ExternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
     private val presences = mutable.HashMap.empty[String, ObjectPresenceType]
 
     handler.bindListener(reference, this)
-
+    
+    override def isPresenceKnownFor(engineId: String): Boolean = presences.contains(engineId)
+    
     override def getPresenceFor(engineId: String): ObjectPresenceType = {
         if (engineId == null)
             throw new NullPointerException("engineId is null.")

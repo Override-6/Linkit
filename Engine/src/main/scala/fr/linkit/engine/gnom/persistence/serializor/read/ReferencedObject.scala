@@ -19,13 +19,13 @@ import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObje
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
-import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
+import fr.linkit.engine.gnom.persistence.obj.{NetworkObjectReferencesLocks, ObjectSelector}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol.Object
 
 class ReferencedObject(override val referenceIdx: Int,
                        selector: ObjectSelector,
                        pool: DeserializerObjectPool) extends ReferencedPoolObject {
-
+    
     override lazy val reference: NetworkObjectReference = pool
             .getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
             .get(referenceIdx)
@@ -34,35 +34,36 @@ class ReferencedObject(override val referenceIdx: Int,
         case o                         =>
             throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
     }
-
+    
     override val identity: Int = referenceIdx
-
+    
     override lazy val value: AnyRef = {
-        val loc = reference
-        loc.getClass.synchronized {
-            (loc match {
-                case OriginReferencedConnectedObjectReference(syncRef, originRef) =>
-                    val cacheRef = new SharedCacheReference(syncRef.family, syncRef.cacheID)
-                    selector.findObject(cacheRef).map {
-                        case cache: DefaultSynchronizedObjectCache[AnyRef] =>
-                            val origin = selector.findObject(originRef).getOrElse {
-                                throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
-                            }
-                            cache.forest.linkWithReference(origin, syncRef)
-                            origin
-                        case cache                                         =>
-                            throw new UnsupportedOperationException(s"Could not deserialize referenced sync object: $cacheRef referer to a shared cache of type '${cache.getClass.getName}', expected: ${classOf[DefaultSynchronizedObjectCache[_]].getName}. ")
-                    }.getOrElse(throw new NoSuchElementException(s"Could not find any shared cache at $cacheRef"))
-
-                case loc =>
-                    selector.findObject(loc).getOrElse {
-                        throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
-                    }
-            }) match {
-                case c: ConnectedObject[AnyRef] =>
-                    c.connected
-                case o                          => o
-            }
+        NetworkObjectReferencesLocks.getLock(reference).synchronized {
+            retrieveObject()
         }
+    }
+    
+    private def retrieveObject(): AnyRef = (reference match {
+        case OriginReferencedConnectedObjectReference(syncRef, originRef) =>
+            val cacheRef = new SharedCacheReference(syncRef.family, syncRef.cacheID)
+            selector.findObject(cacheRef).map {
+                case cache: DefaultSynchronizedObjectCache[AnyRef] =>
+                    val origin = selector.findObject(originRef).getOrElse {
+                        throw new NoSuchElementException(s"Could not find network object referenced at $reference.")
+                    }
+                    cache.forest.linkWithReference(origin, syncRef)
+                    origin
+                case cache                                         =>
+                    throw new UnsupportedOperationException(s"Could not deserialize referenced sync object: $cacheRef referer to a shared cache of type '${cache.getClass.getName}', expected: ${classOf[DefaultSynchronizedObjectCache[_]].getName}. ")
+            }.getOrElse(throw new NoSuchElementException(s"Could not find any shared cache at $cacheRef"))
+        
+        case loc =>
+            selector.findObject(loc).getOrElse {
+                throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
+            }
+    }) match {
+        case c: ConnectedObject[AnyRef] =>
+            c.connected
+        case o                          => o
     }
 }

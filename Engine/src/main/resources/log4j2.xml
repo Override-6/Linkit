@@ -10,7 +10,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="GNOM" level="TRACE" additivity="false" includeLocation="false">
+        <Logger name="GNOM" level="DEBUG" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
@@ -18,19 +18,19 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Mappings" level="ALL" additivity="false" includeLocation="false">
+        <Logger name="Mappings" level="DEBUG" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Persistence" level="ALL" additivity="false" includeLocation="false">
+        <Logger name="Persistence" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Traffic" level="ALL" additivity="false" includeLocation="false">
+        <Logger name="Traffic" level="DEBUG" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Resource" level="ALL" additivity="false" includeLocation="false">
+        <Logger name="Resource" level="DEBUG" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
@@ -38,11 +38,11 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Worker" level="ALL" additivity="false" includeLocation="false">
+        <Logger name="Worker" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Connection" level="ALL" additivity="false" includeLocation="false">
+        <Logger name="Connection" level="DEBUG" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

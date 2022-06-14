@@ -213,8 +213,8 @@ abstract class AbstractSharedCacheManager(override val family: String,
             else
                 cacheOpt.flatMap(_.objectLinker.flatMap(_.findObject(silentCast(reference))))
         }
-        
-        
+    
+    
         private def silentCast[X](t: AnyRef): X = t.asInstanceOf[X]
         
         override def injectRequest(bundle: LinkerRequestBundle): Unit = {

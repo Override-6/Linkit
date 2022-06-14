@@ -27,7 +27,9 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
     private var present: Boolean = false
 
     def isPresent: Boolean = present
-
+    
+    override def isPresenceKnownFor(engineId: String): Boolean = presences.contains(engineId)
+    
     def setPresenceFor(engineId: String, kind: ObjectPresenceType): Unit = presences.put(engineId, kind)
 
     override def getPresenceFor(engineId: String): ObjectPresenceType = {

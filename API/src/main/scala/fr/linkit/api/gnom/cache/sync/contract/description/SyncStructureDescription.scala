@@ -34,6 +34,7 @@ trait SyncStructureDescription[A <: AnyRef] extends CompilationContext {
      * @see [[MethodDescription]]
      */
     def listMethods(): Iterable[MethodDescription]
+    
 
     /**
      * @return A list of [[FieldDescription]]

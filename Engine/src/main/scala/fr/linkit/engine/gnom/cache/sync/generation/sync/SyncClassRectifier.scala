@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.gnom.cache.sync.invocation.local.AbstractMethodInvocationException
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassBlueprint.unsupportedMethodFilter
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{JavaKeywords, SuperMethodModifiers, getMethodDescriptor}
 import javassist._
@@ -29,7 +30,7 @@ import scala.annotation.switch
 import scala.collection.immutable.HashSet
 import scala.collection.mutable.ListBuffer
 
-class SyncClassRectifier(desc: SyncStructureDescription[_],
+class SyncClassRectifier(desc: SyncObjectDescription[_],
                          syncClassName: String,
                          classLoader: GeneratedClassLoader,
                          syncClassDef: SyncClassDef) {
@@ -152,7 +153,7 @@ class SyncClassRectifier(desc: SyncStructureDescription[_],
     private def fixAllMethods(): Unit = {
         implicit def extractModifiers(m: Method): Int = m.getModifiers
 
-        val methodDescs      = desc.listMethods()
+        val methodDescs      = desc.listOverrideableMethods()
                 .toSeq
                 .filterNot(unsupportedMethodFilter)
                 .distinctBy(x => (x.javaMethod.getParameterTypes.toList, x.getName))
@@ -285,20 +286,7 @@ object SyncClassRectifier {
     val SuperMethodModifiers: Int = Modifier.PRIVATE + Access_Synthetic
 
     import java.{lang => l}
-
-    private final val StringToPrimitiveClass =
-        Map(
-            "int" -> Integer.TYPE,
-            "double" -> l.Double.TYPE,
-            "float" -> l.Float.TYPE,
-            "char" -> l.Character.TYPE,
-            "boolean" -> l.Boolean.TYPE,
-            "long" -> l.Boolean.TYPE,
-            "void" -> l.Void.TYPE,
-            "short" -> l.Short.TYPE,
-            "byte" -> l.Byte.TYPE
-        )
-
+    
     private final val StringToPrimitiveID =
         Map(
             "int" -> "I",

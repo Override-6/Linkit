@@ -20,8 +20,7 @@ import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.reference.NetworkObject
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsCallerDescription}
-import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN
+import fr.linkit.engine.gnom.cache.sync.contract.description.{AbstractSyncStructureDescription, SyncObjectDescription, SyncStaticsCallerDescription}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import scala.util.Try
@@ -39,10 +38,16 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     }
     
     override def getSyncClassFromDesc[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
-        getOrGenClass[S](desc)
+        desc match {
+            case desc: SyncObjectDescription[S] =>
+                getOrGenClass[S](desc)
+            case _ =>
+                throw new IllegalArgumentException("desc is not an object structure description.")
+            
+        }
     }
     
-    private def getOrGenClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = desc.specs.synchronized {
+    private def getOrGenClass[S <: AnyRef](desc: SyncObjectDescription[S]): Class[S with SynchronizedObject[S]] = desc.specs.synchronized {
         val classDef = desc.specs
         classDef.ensureOverrideable()
         val opt = resources.findClass[S](classDef)
@@ -57,7 +62,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         }
     }
     
-    private def genClass[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
+    private def genClass[S <: AnyRef](desc: SyncObjectDescription[S]): Class[S with SynchronizedObject[S]] = {
         val classDef = desc.specs
         checkClassDefValidity(classDef)
         val result = center.processRequest {

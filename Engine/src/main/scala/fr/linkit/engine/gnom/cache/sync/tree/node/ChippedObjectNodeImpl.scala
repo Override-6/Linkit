@@ -84,13 +84,14 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
     }
     
     override def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
-        if (!(packet.path sameElements nodePath)) {
-            val packetPath = packet.path
-            if (!packetPath.startsWith(nodePath))
-                throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ${packetPath.mkString("/")}.")
+        val ref = packet.objRef
+        val path = ref.nodePath
+        if (!(path sameElements nodePath)) {
+            if (!path.startsWith(nodePath))
+                throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ($ref).")
             
-            tree.findNode[AnyRef](packetPath.drop(nodePath.length))
-                    .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
+            tree.findNode[AnyRef](path.drop(nodePath.length))
+                    .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node ($ref)")) {
                         case node: TrafficInterestedNode[_] => node.handlePacket(packet, senderID, response)
                         case _                              =>
                     }

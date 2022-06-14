@@ -44,8 +44,13 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
     
     override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
         AppLoggers.GNOM.debug(s"Wondering if '$ref' present on engine '$engineId'")
-        val isPresent = (parent == null || ref.asSuper.exists(r => parent.isPresentOnEngine(engineId, casted(r)))) &&
-                (getPresence(ref).getPresenceFor(engineId) eq PRESENT)
+        val presence = getPresence(ref)
+        val isPresent = if (presence.isPresenceKnownFor(engineId)) {
+            presence.getPresenceFor(engineId) eq PRESENT
+        } else {
+            (parent == null || ref.asSuper.exists(r => parent.isPresentOnEngine(engineId, casted(r)))) &&
+                    (presence.getPresenceFor(engineId) eq PRESENT)
+        }
         AppLoggers.GNOM.debug(s"is '$ref' present on engine '$engineId' ? $isPresent")
         isPresent
     }

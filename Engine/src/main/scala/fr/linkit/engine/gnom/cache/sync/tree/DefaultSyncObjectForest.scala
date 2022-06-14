@@ -83,10 +83,11 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         if (reference.cacheID != center.cacheID || reference.family != center.family)
             return None
         val path = reference.nodePath
-        trees.get(path.head)
-                .flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
+        val node = findTreeInternal(path.head)
+        node.flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
     }
     
+
     override def initializeObject(obj: NetworkObject[_ <: ConnectedObjectReference]): Unit = {
         obj match {
             case syncObj: A with SynchronizedObject[A] => initializeSyncObject(syncObj)
@@ -163,7 +164,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
             throw new SynchronizedObjectException(s"A tree with id '$id' already exists.")
         if (tree.dataFactory ne center)
             throw new SynchronizedObjectException("Attempted to attach a tree that comes from an unknown cache.")
-        AppLoggers.SyncObj.debug(s"New tree added ($tree) in forest of cache ${center.reference}")
+        AppLoggers.SyncObj.debug(s"New tree added ${tree.rootNode.reference}.")
         registerReference(tree.rootNode.reference)
         trees.put(id, tree)
     }

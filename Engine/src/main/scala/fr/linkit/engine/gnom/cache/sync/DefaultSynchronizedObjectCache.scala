@@ -47,6 +47,7 @@ import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
 
 import java.lang.ref.WeakReference
 import scala.reflect.ClassTag
@@ -152,36 +153,44 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
             throw new ObjectTreeAlreadyRegisteredException(s"Tree '$id' already registered.")
         
         val nodeReference = ConnectedObjectReference(family, cacheID, rootObjectOwner, Array(id))
-        val choreographer = new InvocationChoreographer()
-        val syncLevel     = if (mirror) Mirror else Synchronized //root objects can either be mirrored or fully sync objects.
-        val context       = UsageConnectedObjectContext(
-            rootObjectOwner, rootObjectOwner,
-            currentIdentifier, this.ownerID,
-            creator.syncClassDef, syncLevel,
-            choreographer)
-        val factory       = SyncObjectContractFactory(contracts)
-        
-        val rootContract = getRootContract(factory)(creator, context)
-        val root         = DefaultInstantiator.newSynchronizedInstance[A](creator)
-        
-        val chip      = ObjectChip[A](rootContract, network, root)
-        val puppeteer = ObjectPuppeteer[A](channel, this, nodeReference)
-        val presence  = forest.getPresence(nodeReference)
-        val origin    = creator.getOrigin.map(new WeakReference(_))
-        val rootNode  = (tree: DefaultConnectedObjectTree[A]) => {
-            val baseData = new NodeData[A](nodeReference, presence, tree, currentIdentifier, rootObjectOwner, None)
-            val chipData = new ChippedObjectNodeData[A](network, chip, rootContract, choreographer, root)(baseData)
-            val syncData = new SyncObjectNodeData[A](puppeteer, root, syncLevel, origin)(chipData)
-            new RootObjectNodeImpl[A](syncData)
+        NetworkObjectReferencesLocks.getLock(nodeReference).synchronized {
+            val choreographer = new InvocationChoreographer()
+            val syncLevel     = if (mirror) Mirror else Synchronized //root objects can either be mirrored or fully sync objects.
+            val context       = UsageConnectedObjectContext(
+                rootObjectOwner, rootObjectOwner,
+                currentIdentifier, this.ownerID,
+                creator.syncClassDef, syncLevel,
+                choreographer)
+            val factory       = SyncObjectContractFactory(contracts)
+    
+            val rootContract = getRootContract(factory)(creator, context)
+            val root         = DefaultInstantiator.newSynchronizedInstance[A](creator)
+    
+            val chip      = ObjectChip[A](rootContract, network, root)
+            val puppeteer = ObjectPuppeteer[A](channel, this, nodeReference)
+            val presence  = forest.getPresence(nodeReference)
+            val origin    = creator.getOrigin.map(new WeakReference(_))
+            val rootNode  = (tree: DefaultConnectedObjectTree[A]) => {
+                val baseData = new NodeData[A](nodeReference, presence, tree, currentIdentifier, rootObjectOwner, None)
+                val chipData = new ChippedObjectNodeData[A](network, chip, rootContract, choreographer, root)(baseData)
+                val syncData = new SyncObjectNodeData[A](puppeteer, root, syncLevel, origin)(chipData)
+                new RootObjectNodeImpl[A](syncData)
+            }
+    
+            val tree = new DefaultConnectedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
+            forest.addTree(id, tree)
+            tree
         }
-        val tree      = new DefaultConnectedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
-        forest.addTree(id, tree)
-        tree
     }
     
     private def handleInvocationPacket(ip: InvocationPacket, bundle: RequestPacketBundle): Unit = {
-        val path     = ip.path
-        val node     = findNode(path)
+        val ref = ip.objRef
+        if (ref.family != family || ref.cacheID != cacheID)
+            throw new IllegalArgumentException(s"Invocation Packet's targeted object reference is not contained in this cache. (targeted: $ref, current cache location is $reference)")
+        val path     = ref.nodePath
+        val node     = NetworkObjectReferencesLocks.getLock(ref).synchronized {
+            findNode(path)
+        }
         val senderID = bundle.coords.senderID
         node.fold(AppLoggers.SyncObj.error(s"Could not find sync object node for synchronised object located at $reference/~${path.mkString("/")}")) {
             case node: TrafficInterestedNode[_] => node.handlePacket(ip, senderID, bundle.responseSubmitter)
@@ -213,8 +222,10 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     }
     
     override def requestTree(id: Int): Unit = {
-        if (!forest.isPresentOnEngine(ownerID, ConnectedObjectReference(family, cacheID, ownerID, Array(id))))
+        val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
+        if (!forest.isPresentOnEngine(ownerID, treeRef))
             return
+        AppLoggers.Persistence.trace(s"Requesting root object $treeRef.")
         channel.makeRequest(ChannelScopes.include(ownerID))
                 .addPacket(IntPacket(id))
                 .submit()

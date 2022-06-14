@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescripti
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilerCenter}
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassCompilationRequestFactory.ClassBlueprint
 import fr.linkit.engine.internal.generation.compilation.RuntimeClassOperations
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
@@ -27,10 +28,10 @@ import java.io.File
 import java.nio.file.{Files, NoSuchFileException}
 
 class SyncClassCompilationRequestFactory()
-        extends ClassCompilationRequestFactory[SyncStructureDescription[_], SynchronizedObject[_]](ClassBlueprint) {
+        extends ClassCompilationRequestFactory[SyncObjectDescription[_], SynchronizedObject[_]](ClassBlueprint) {
 
     override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]],
-                           context: SyncStructureDescription[_],
+                           context: SyncObjectDescription[_],
                            className: String,
                            loader: GeneratedClassLoader): Class[_] = {
         val syncClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")

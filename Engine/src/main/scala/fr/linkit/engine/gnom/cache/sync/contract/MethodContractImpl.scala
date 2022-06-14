@@ -159,7 +159,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             params(i) = result
         }
     }
-    
+
     private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {
         
         val currentIdentifier = puppeteer.currentIdentifier
@@ -175,9 +175,9 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         }
         
         def syncValue(v: Any) = {
-            val kind = returnValueContract.registrationKind
-            if (v != null && kind != NotRegistered && !v.isInstanceOf[ConnectedObject[AnyRef]]) {
-                connector.createConnectedObj(obj.reference)(v.asInstanceOf[AnyRef], kind).connected
+            val level = returnValueContract.registrationKind
+            if (v != null && level != NotRegistered && !v.isInstanceOf[ConnectedObject[AnyRef]]) {
+                syncObj(v, level, connector.createConnectedObj(obj.reference)(_, _))
             } else v
         }
         

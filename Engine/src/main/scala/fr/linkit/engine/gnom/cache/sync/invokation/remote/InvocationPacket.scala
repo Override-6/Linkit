@@ -13,8 +13,11 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
+import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
 import fr.linkit.api.gnom.packet.Packet
 
-case class InvocationPacket(path: Array[Int], methodID: Int, params: Array[Any], expectedEngineIDReturn: String) extends Packet {
-
+case class InvocationPacket(objRef: ConnectedObjectReference, methodID: Int,
+                            params: Array[Any], expectedEngineIDReturn: String)
+        extends Packet {
+    
 }

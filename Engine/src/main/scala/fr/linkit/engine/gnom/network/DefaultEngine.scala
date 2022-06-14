@@ -39,22 +39,24 @@ class DefaultEngine(override val identifier: String,
     def isCurrentEngine = identifier == network.connection.currentIdentifier
     
     def classMappings: Option[RemoteClassMappings] = {
-        if (mappings.isEmpty && !isMappingsInitializing) network0.mappingsCache match {
-            case None        =>
-            case Some(cache) =>
-                isMappingsInitializing = true
-                mappings = {
-                    if (isCurrentEngine) {
-                        AppLoggers.Persistence.info(s"Class mappings of this engine has been sent over the network.")
-                        Some(cache.syncObject(identifier.hashCode, Constructor[RemoteClassMappings](identifier)))
-                    } else {
-                        val r = cache.findObject(identifier.hashCode)
-                        if (r.isDefined)
-                            AppLoggers.Persistence.info(s"Established connection with class mappings of '$identifier'.")
-                        r
+        if (mappings.isEmpty && !isMappingsInitializing) {
+            network0.mappingsCache match {
+                case None        =>
+                case Some(cache) =>
+                    isMappingsInitializing = true
+                    mappings = {
+                        if (isCurrentEngine) {
+                            AppLoggers.Persistence.info(s"Class mappings of this engine has been sent over the network.")
+                            Some(cache.syncObject(identifier.hashCode, Constructor[RemoteClassMappings](identifier)))
+                        } else {
+                            val r = cache.findObject(identifier.hashCode)
+                            if (r.isDefined)
+                                AppLoggers.Persistence.info(s"Established connection with class mappings of '$identifier'.")
+                            r
+                        }
                     }
-                }
-                isMappingsInitializing = false
+                    isMappingsInitializing = false
+            }
         }
         mappings
     }

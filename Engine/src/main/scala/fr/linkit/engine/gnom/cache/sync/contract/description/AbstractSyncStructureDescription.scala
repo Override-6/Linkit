@@ -32,13 +32,9 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val specs:
     
     override def parentLoader: ClassLoader = specs.mainClass.getClassLoader
     
-    override def listMethods(): Iterable[MethodDescription] = {
-        methodDescriptions.values
-    }
+    override def listMethods(): Iterable[MethodDescription] = methodDescriptions.values
     
-    override def listFields(): Iterable[FieldDescription] = {
-        fieldDescriptions.values
-    }
+    override def listFields(): Iterable[FieldDescription] = fieldDescriptions.values
     
     override def findMethodDescription(methodID: Int): Option[MethodDescription] = {
         methodDescriptions.get(methodID)

@@ -98,7 +98,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)
-                    .addPacket(InvocationPacket(nodeReference.nodePath, methodID, args, returnEngine))
+                    .addPacket(InvocationPacket(nodeReference, methodID, args, returnEngine))
                     .submit()
         }
 

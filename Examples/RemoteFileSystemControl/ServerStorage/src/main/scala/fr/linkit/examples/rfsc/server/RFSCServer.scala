@@ -25,7 +25,6 @@ object RFSCServer {
             if (Files.notExists(path))
                 Files.createDirectories(path)
             clientsHomes.put(client, path)
-            print(clientsHomes, System.identityHashCode(clientsHomes))
             watchServiceWorkers.setThreadCount(clientsHomes.size)
         }
         }

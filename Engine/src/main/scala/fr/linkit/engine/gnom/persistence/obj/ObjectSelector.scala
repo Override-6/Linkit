@@ -126,10 +126,12 @@ class ObjectSelector(bundle: PersistenceBundle) {
 
     def handleObject(obj: NetworkObject[NetworkObjectReference]): Unit = {
         val reference = obj.reference
-        if (reference.isInstanceOf[SharedCacheManagerReference])
-            cnol.initializeObject(obj.asInstanceOf[NetworkObject[SharedCacheManagerReference]])
-        else if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
-            rnol.get.save(obj)
+        NetworkObjectReferencesLocks.getLock(reference).synchronized {
+            if (reference.isInstanceOf[SharedCacheManagerReference])
+                cnol.initializeObject(obj.asInstanceOf[NetworkObject[SharedCacheManagerReference]])
+            else if (rnol.isDefined && !gnol.touchesAnyLinker(reference))
+                rnol.get.save(obj)
+        }
     }
 
 }
