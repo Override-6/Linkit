@@ -122,10 +122,8 @@ class SequentialInjectionProcessorUnit() extends InjectionProcessorUnit {
     
     def deserializeNextResult(injectable: PacketInjectable): Unit = {
         val result = queue.synchronized {
+            if (queue.isEmpty) return
             var result = queue.dequeue()
-            if (result == null)
-                return
-            
             if (queue.nonEmpty && queue.head.ordinal < result.ordinal) {
                 val lastResult = result
                 result = queue.dequeue()

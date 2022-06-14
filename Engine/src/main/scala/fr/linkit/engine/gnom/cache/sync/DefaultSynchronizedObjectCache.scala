@@ -179,6 +179,9 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     
             val tree = new DefaultConnectedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
             forest.addTree(id, tree)
+            if (forest.isRegisteredAsUnknown(id)) {
+                forest.transferUnknownTree(id)
+            }
             tree
         }
     }
@@ -225,6 +228,8 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
         if (!forest.isPresentOnEngine(ownerID, treeRef))
             return
+            
+        forest.putUnknownTree(id)
         AppLoggers.Persistence.trace(s"Requesting root object $treeRef.")
         channel.makeRequest(ChannelScopes.include(ownerID))
                 .addPacket(IntPacket(id))
@@ -292,9 +297,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                 }
                 //it's an object that must be remotely controlled because it is chipped by another objects cache.
                 createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), mirror, contracts)
-                if (forest.isRegisteredAsUnknown(treeID)) {
-                    forest.transferUnknownTree(treeID)
-                }
+                
                 
             })
         }

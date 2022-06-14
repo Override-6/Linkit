@@ -59,6 +59,14 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         }
     }
     
+    def putUnknownTree(id: Int): Unit = {
+        if (unknownTrees.contains(id))
+            return
+        if (trees.contains(id))
+            throw new IllegalStateException(s"Tree $id is known !")
+        unknownTrees.put(id, new UnknownTree(id))
+    }
+    
     override def registerReference(ref: ConnectedObjectReference): Unit = {
         super.registerReference(ref)
     }
@@ -83,11 +91,12 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
         if (reference.cacheID != center.cacheID || reference.family != center.family)
             return None
         val path = reference.nodePath
+        if (unknownTrees.contains(path.head))
+            return None
         val node = findTreeInternal(path.head)
         node.flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
     }
     
-
     override def initializeObject(obj: NetworkObject[_ <: ConnectedObjectReference]): Unit = {
         obj match {
             case syncObj: A with SynchronizedObject[A] => initializeSyncObject(syncObj)

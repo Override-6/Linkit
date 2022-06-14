@@ -14,7 +14,7 @@ import java.lang.System
 
 agreement only_cache_owner = discard * -> accept cache_owner -> appoint cache_owner
 agreement only_owner = discard * -> accept owner -> appoint owner
-agreement broadcast = accept*
+agreement broadcast = accept *
 
 @autochip(true) //enables auto chipping for objects expected as being synchronized / mirrored but whose runtime class can't support generated 'Sync' class generation / overriding.
 describe statics FileSystems {
