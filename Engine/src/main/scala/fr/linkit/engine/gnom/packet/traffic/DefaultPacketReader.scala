@@ -68,7 +68,7 @@ class DefaultPacketReader(socket: DynamicSocket,
         var preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
         if (bytes.length > 1000) preview += "..."
         val finalTarget = if (target == null) "" else target
-        AppLoggers.Traffic.trace(s"${Console.CYAN}Received: ↓ $finalTarget ↓ (ord: $ordinal, len: ${bytes.length + 4}) content: $preview")
+        AppLoggers.Traffic.trace(s"${Console.CYAN}Received: ↓ $finalTarget ↓ (len: ${bytes.length + 4}, ord: $ordinal) $preview")
     }
     
 }

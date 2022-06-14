@@ -204,6 +204,9 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     
     @inline
     def putPoolRef(obj: Any): Unit = {
+        val idx0 = pool.globalPosition(obj)
+        if (idx0 == -1)
+            ""
         val idx = pool.globalPosition(obj)
         putRef(idx)
     }

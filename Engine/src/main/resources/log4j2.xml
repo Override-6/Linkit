@@ -22,7 +22,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Persistence" level="INFO" additivity="false" includeLocation="false">
+        <Logger name="Persistence" level="TRACE" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

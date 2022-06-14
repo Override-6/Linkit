@@ -44,7 +44,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
     
     override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
         AppLoggers.GNOM.debug(s"Wondering if '$ref' present on engine '$engineId'")
-        val presence = getPresence(ref)
+        val presence  = getPresence(ref)
         val isPresent = if (presence.isPresenceKnownFor(engineId)) {
             presence.getPresenceFor(engineId) eq PRESENT
         } else {
@@ -110,8 +110,10 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
         }
         presence.setPresent()
         val opt = externalPresences.get(ref)
-        if (opt.isDefined)
+        if (opt.isDefined) {
             opt.get.setToPresent(currentIdentifier)
+            AppLoggers.GNOM.debug(s"Presence set to present for engine $currentIdentifier, for reference $ref")
+        }
     }
     
     protected def unregisterReference(ref: R): Unit = {
@@ -143,11 +145,13 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
                 presence.setPresenceFor(senderId, if (isPresent) PRESENT else NOT_PRESENT)
                 AppLoggers.GNOM.trace(s"presence information sent and modified for '$senderId' to ${if (isPresent) PRESENT else NOT_PRESENT}")
             
-            case AnyRefPacket(presence: ObjectPresenceType) =>
-                val listener = externalPresences(reference)
-                presence match {
-                    case NOT_PRESENT => listener.setToNotPresent(senderId)
-                    case PRESENT     => listener.setToPresent(senderId)
+            case AnyRefPacket(presenceType: ObjectPresenceType) =>
+                val presence = externalPresences(reference)
+                presenceType match {
+                    case NOT_PRESENT => presence.setToNotPresent(senderId)
+                    case PRESENT     =>
+                        presence.setToPresent(senderId)
+                        AppLoggers.GNOM.debug(s"Presence set to present for engine $senderId, for reference $reference")
                     case NEVER_ASKED => throw new IllegalArgumentException("Received invalid 'NEVER_ASKED' Presence Type event")
                 }
         }

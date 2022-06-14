@@ -17,12 +17,15 @@ import fr.linkit.api.gnom.cache.sync.ChippedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
+
+import scala.math.Equiv.reference
 
 class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Array[Int](ChunkCount).mapInPlace(_ => -1)) {
     
@@ -51,10 +54,10 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
             case _: Boolean => getChunkFromFlag(Boolean)
             case _: Char    => getChunkFromFlag(Char)
             
-            case _: String                             => getChunkFromFlag(String)
-            case _ if ref.getClass.isArray             => getChunkFromFlag(Array)
-            case _: Enum[_]                            => getChunkFromFlag(Enum)
-            case _                                     => getChunkFromFlag(Object)
+            case _: String                 => getChunkFromFlag(String)
+            case _ if ref.getClass.isArray => getChunkFromFlag(Array)
+            case _: Enum[_]                => getChunkFromFlag(Enum)
+            case _                         => getChunkFromFlag(Object)
         }
     }
     
@@ -137,14 +140,20 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
                 getChunkFromFlag(Class).add(ref)
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
-            case _ =>
+            case _                                      =>
                 addObj0(ref)
         }
     }
-
+    
     private def addObj0(ref: AnyRef): Unit = {
         val nrlOpt = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
+            ref match {
+                case no: NetworkObject[_] =>
+                    AppLoggers.Persistence.trace(s"Sending Network Object (reference: ${no.reference}) to ${bundle.boundId}.")
+                case _ =>
+            }
+            
             addObjectDecomposed(ref)
         } else {
             addReferencedObject(ref, nrlOpt.get)
@@ -165,8 +174,14 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         
         decomposed
     }
-
+    
     private def addReferencedObject(ref: AnyRef, nrl: NetworkObjectReference): Unit = {
+        ref match {
+            case no: NetworkObject[_] =>
+                AppLoggers.Persistence.trace(s"Sending Network object (reference: ${no.reference}) to ${bundle.boundId}. The object is replaced by its reference.")
+            case _ =>
+        }
+    
         val chunk = getChunkFromFlag[ReferencedPoolObject](RNO)
         if (chunk.indexOf(ref) >= 0)
             return

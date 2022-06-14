@@ -43,7 +43,6 @@ class ExternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
     def setToPresent(engineId: String): Unit = {
         if (engineId == null)
             throw new NullPointerException()
-        AppLoggers.GNOM.debug(s"Presence set to present for engine $engineId, for location $reference")
         presences(engineId) = PRESENT
     }
 

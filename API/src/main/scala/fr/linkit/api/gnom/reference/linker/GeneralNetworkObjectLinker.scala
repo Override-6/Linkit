@@ -22,7 +22,7 @@ trait GeneralNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectRefere
 
     val cacheNOL  : InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH
     val trafficNOL  : NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH
-    val remainingNOL: Option[RemainingNetworkObjectsLinker]
+    val remainingNOL: RemainingNetworkObjectsLinker
 
     def addRootLinker(linker: NetworkObjectLinker[NetworkObjectReference]): Unit
 
@@ -33,4 +33,6 @@ trait GeneralNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectRefere
      */
     def touchesAnyLinker(reference: NetworkObjectReference): Boolean
 
+    def findRootLinker(reference: NetworkObjectReference): Option[NetworkObjectLinker[_ <: NetworkObjectReference]]
+    
 }

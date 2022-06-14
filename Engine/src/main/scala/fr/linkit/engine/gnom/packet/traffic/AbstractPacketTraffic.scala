@@ -58,9 +58,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     protected val rootStore                          = new SimplePacketInjectableStore(this, linker, defaultPersistenceConfig, Array.empty)
     @volatile private var closed                     = false
     
-    override def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH = {
-        linker
-    }
+    override def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH = linker
     
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): TrafficNode[C] = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)

@@ -45,7 +45,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     private            val tnol                                                = traffic.getTrafficObjectLinker
     private            val rnol                                                = new MapNetworkObjectsLinker(objectManagementChannel) with RemainingNetworkObjectsLinker
     private            val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
-    override lazy      val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, Some(rnol))
+    override lazy      val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, rnol)
     override lazy      val globalCache            : SharedCacheManager         = createGlobalCache
     protected lazy     val trunk                  : NetworkDataTrunk           = initDataTrunk()
     private var engine0                           : Engine                     = _
