@@ -11,12 +11,15 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence
+package fr.linkit.client.connection.traffic
 
-import java.nio.ByteBuffer
-
-trait PacketUpload extends PacketTransfer {
+class OrdinalCounter {
     
-    def buff(ordinal: () => Int): ByteBuffer
+    private var ordinal: Int = 0
+    
+    def next(): Int = this.synchronized {
+        ordinal += 1
+        ordinal
+    }
     
 }

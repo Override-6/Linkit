@@ -19,10 +19,10 @@ import scala.collection.mutable
 
 class ConnectionOrdinalsHandler {
     
-    private final val ordinal = mutable.HashMap.empty[Array[Int], OrdinalCounter]
+    private final val ordinal = mutable.HashMap.empty[Int, OrdinalCounter]
     
     def forChannel(path: Array[Int]): OrdinalCounter = {
-        ordinal.getOrElseUpdate(path, new OrdinalCounter)
+        ordinal.getOrElseUpdate(java.util.Arrays.hashCode(path), new OrdinalCounter)
     }
     
 }

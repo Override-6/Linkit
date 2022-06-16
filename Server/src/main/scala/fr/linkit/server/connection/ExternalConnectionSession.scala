@@ -50,8 +50,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     def getSocketState: ExternalConnectionState = socket.getState
     
     def send(result: PacketUpload): Unit = {
-        val ordinal = ordinals.forChannel(result.coords.path).next()
-        socket.write(result.buff(ordinal))
+        socket.write(result.buff(() => ordinals.forChannel(result.coords.path).next()))
     }
     
     def updateSocket(socket: Socket): Unit = this.socket.set(socket)

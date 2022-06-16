@@ -49,8 +49,8 @@ abstract class PacketUploadImpl(info: TransferInfo,
         buff.flip()
     }
     
-    override def buff(ordinal: Int): ByteBuffer = {
-        buffer.putInt(TrafficProtocol.OrdinalIndex + 2, ordinal)
+    override def buff(ordinal: () => Int): ByteBuffer = {
+        buffer.putInt(TrafficProtocol.OrdinalIndex + 2, ordinal())
     }
 }
 

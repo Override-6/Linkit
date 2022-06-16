@@ -24,7 +24,7 @@ class DeflectedPacket(override val buff: ByteBuffer,
     
     override val ordinal: Int = -1 //is not used
     
-    override def buff(ordinal: Int): ByteBuffer = buff.putInt(TrafficProtocol.OrdinalIndex, ordinal)
+    override def buff(ordinal: () => Int): ByteBuffer = buff.putInt(TrafficProtocol.OrdinalIndex, ordinal())
     
     override def makeDeserialization(): Unit = throw new UnsupportedOperationException
     

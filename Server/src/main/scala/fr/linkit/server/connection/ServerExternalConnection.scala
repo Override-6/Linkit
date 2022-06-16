@@ -16,17 +16,22 @@ package fr.linkit.server.connection
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
-import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.packet.traffic.{InjectableTrafficNode, PacketTraffic}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload, PacketTransfer, PacketUpload}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.packet.traffic.PacketInjectableTrafficNode
+import fr.linkit.engine.gnom.packet.traffic.unit.{PerformantInjectionProcessorUnit, SequentialInjectionProcessorUnit}
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
+import fr.linkit.server.connection.ServerExternalConnection.OrdinalShifts
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
 import java.nio.ByteBuffer
+import java.util
+import scala.collection.mutable
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
     
@@ -35,10 +40,10 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override val currentIdentifier: String           = server.currentIdentifier
     override val traffic          : PacketTraffic    = server.traffic
     override val translator       : ObjectTranslator = server.translator
-    //override val eventNotifier    : EventNotifier    = server.eventNotifier
     override val network          : Network          = session.network
     override val port             : Int              = server.port
     override val boundIdentifier  : String           = session.boundIdentifier
+    private  val ordinalShifts                       = new OrdinalShifts(traffic)
     @volatile private var alive                      = false
     private  val tnol                                = network.gnol.trafficNOL
     
@@ -76,15 +81,24 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
                 case d: DedicatedPacketCoordinates => d
                 case b: BroadcastPacketCoordinates => b.getDedicated(currentIdentifier)
             }
-            val rectifiedResult                         = new PacketDownload {
-                override val ordinal: Int = result.ordinal
-                override val buff: ByteBuffer = result.buff
+            val ordinalShift                            = ordinalShifts.getOrdinalShift(coordinates.path)
+            
+            val rectifiedResult = new PacketDownload {
+                override val ordinal: Int        = result.ordinal + ordinalShift
+                override val buff   : ByteBuffer = result.buff
+                
                 override def coords: PacketCoordinates = coordinates
+                
                 override def attributes: PacketAttributes = result.attributes
+                
                 override def packet: Packet = result.packet
+                
                 override def makeDeserialization(): Unit = result.makeDeserialization()
+                
                 override def isDeserialized: Boolean = result.isDeserialized
+                
                 override def isInjected: Boolean = result.isInjected
+                
                 override def informInjected: Unit = result.informInjected
             }
             handlePacket(rectifiedResult)
@@ -128,11 +142,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
     
     @workerExecution
-    private def handlePacket(result: PacketDownload): Unit = {
-        if (alive) {
+    private def handlePacket(result: PacketDownload): Unit = if (alive) {
             serverTraffic.processInjection(result)
         }
-    }
     
     override def getApp: ApplicationContext = server.getApp
 }
@@ -153,6 +165,23 @@ object ServerExternalConnection {
         val connection = new ServerExternalConnection(session)
         connection.start()
         connection
+    }
+    
+    class OrdinalShifts(traffic: PacketTraffic) {
+        
+        private val shifts = mutable.HashMap.empty[Int, Int]
+        
+        def getOrdinalShift(path: Array[Int]): Int = shifts.getOrElseUpdate(util.Arrays.hashCode(path), {
+            traffic.findNode(path) match {
+                case Some(node: InjectableTrafficNode[_]) => node.unit() match {
+                    case unit: SequentialInjectionProcessorUnit =>
+                        println(path.mkString("/"), hashCode())
+                        unit.getCurrentOrdinal
+                    case _                                      => 0
+                }
+                case _                                    => 0
+            }
+        })
     }
     
 }

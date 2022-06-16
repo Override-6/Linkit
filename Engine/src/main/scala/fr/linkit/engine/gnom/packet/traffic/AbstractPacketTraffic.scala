@@ -99,18 +99,18 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             }
             result.informInjected
             processInjection(bundle)
-        } else {
-            val path = result.coords.path
-            val node = findNode(path).getOrElse {
-                throw new NoSuchTrafficPresenceException(s"Could not process injection: Could not find packet injectable located at ${path.mkString("/")}")
-            } match {
-                case node: InjectableTrafficNode[_] => node
-                case _                              =>
-                    val reference = TrafficReference / path
-                    throw new ConflictException(s"Could not inject packet: Attempted to inject packet into a traffic object located at $reference, but the object's node is not an InjectableTrafficNode.")
-            }
-            node.unit().post(result)
+            return
         }
+        val path = result.coords.path
+        val node = findNode(path).getOrElse {
+            throw new NoSuchTrafficPresenceException(s"Could not process injection: Could not find packet injectable located at ${path.mkString("/")}")
+        } match {
+            case node: InjectableTrafficNode[_] => node
+            case _                              =>
+                val reference = TrafficReference / path
+                throw new ConflictException(s"Could not inject packet: Attempted to inject packet into a traffic object located at $reference, but the object's node is not an InjectableTrafficNode.")
+        }
+        node.unit().post(result)
     }
     
     override def newWriter(path: Array[Int]): PacketWriter = {
@@ -153,14 +153,14 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         }
         new InjectableTrafficNode[ObjectManagementChannel] {
             override val injectable       : ObjectManagementChannel = objectChannel
-            override val persistenceConfig: PersistenceConfig      = objectChannelConfig
-            override val unit             : InjectionProcessorUnit = new SequentialInjectionProcessorUnit(objectChannel)
+            override val persistenceConfig: PersistenceConfig       = objectChannelConfig
+            override val unit             : InjectionProcessorUnit  = new SequentialInjectionProcessorUnit(objectChannel)
             
             override def setPerformantInjection(): this.type = throw new UnsupportedOperationException
             
             override def setSequentialInjection(): this.type = throw new UnsupportedOperationException
             
-            override def preferPerformances(): Boolean = throw new UnsupportedOperationException
+            override def preferPerformances(): Boolean = false
             
             override def chainTo(path: Array[Int]): this.type = throw new UnsupportedOperationException
         }

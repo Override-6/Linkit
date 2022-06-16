@@ -48,34 +48,33 @@ class DefaultPacketReader(socket: DynamicSocket,
         val protocol = socket.readShort()
         if (protocol != TrafficProtocol.ProtocolVersion) {
             AppLoggers.Traffic.error(s"Received packet packet with unknown protocol '$protocol', closing connection with ${socket.boundIdentifier}...")
-            socket.close() //TODO close the connection instead of the socket.
+            socket.close() //TODO close the connection instead of its socket.
             throw new UnsupportedPacketStreamException(s"Received packet packet with unknown protocol '$protocol'")
         }
         
         val ordinal = socket.readInt()
-    
-        val nextLength = socket.readInt()
-        if (nextLength == -1 || socket.isClosed) {
-            AppLoggers.Traffic.error(s"PACKET READ ABORTED : packet length: $nextLength | socket.isOpen = ${socket.isOpen}")
+        val length = socket.readInt()
+        if (length == -1 || socket.isClosed) {
+            AppLoggers.Traffic.error(s"PACKET READ ABORTED : packet length: $length | socket.isOpen = ${socket.isOpen}")
             return
         }
-        val bytes   = socket.read(nextLength)
+        val bytes = socket.read(length)
         //NETWORK-DEBUG-MARK
         
-        logDownload(socket.boundIdentifier, ordinal, bytes)
+        logDownload(socket.boundIdentifier, ordinal, length, bytes)
         val buff = ByteBuffer.allocate(bytes.length + 4)
-        buff.put(NumberSerializer.serializeInt(nextLength))
+        buff.putInt(length)
         buff.put(bytes)
         buff.position(4)
         val result = translator.translate(traffic, buff, ordinal)
         callback(result)
     }
     
-    private def logDownload(@Nullable target: String, ordinal: Int, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
+    private def logDownload(@Nullable target: String, ordinal: Int, length: Int, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
         var preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
         if (bytes.length > 1000) preview += "..."
         val finalTarget = if (target == null) "" else target
-        AppLoggers.Traffic.trace(s"${Console.CYAN}Received: ↓ $finalTarget ↓ (len: ${bytes.length + 4}, ord: $ordinal) $preview")
+        AppLoggers.Traffic.trace(s"${Console.CYAN}Received: ↓ $finalTarget ↓ (len: $length, ord: $ordinal) $preview")
     }
     
 }

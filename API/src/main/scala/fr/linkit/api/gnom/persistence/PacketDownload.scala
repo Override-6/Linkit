@@ -19,7 +19,7 @@ trait PacketDownload extends PacketTransfer {
 
     val buff: ByteBuffer
     
-    val ordinal: Int
+    def ordinal: Int
 
     def makeDeserialization(): Unit
 

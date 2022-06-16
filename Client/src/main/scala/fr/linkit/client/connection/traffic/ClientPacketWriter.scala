@@ -15,13 +15,15 @@ package fr.linkit.client.connection.traffic
 
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, PacketWriter}
+import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.traffic.{DynamicSocket, WriterInfo}
-import fr.linkit.engine.gnom.persistence.{PacketSerializationChoreographer, SimpleTransferInfo}
+import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 
 class ClientPacketWriter(socket: DynamicSocket,
-                         choreographer: PacketSerializationChoreographer,
+                         ordinal: OrdinalCounter,
+                         translator: ObjectTranslator,
                          writerInfo: WriterInfo) extends PacketWriter {
     
     override     val traffic          : PacketTraffic     = writerInfo.traffic
@@ -30,6 +32,7 @@ class ClientPacketWriter(socket: DynamicSocket,
     override     val path             : Array[Int]        = writerInfo.path
     private      val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
     private lazy val network                              = writerInfo.network
+    
     
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = writePacket(packet, SimplePacketAttributes.empty, targetIDs)
     
@@ -41,7 +44,7 @@ class ClientPacketWriter(socket: DynamicSocket,
                 traffic.processInjection(packet, attributes, dedicated)
                 return
             }
-            addToChoreographer(dedicated)(attributes, packet)
+            send(dedicated)(attributes, packet)
         } else {
             if (targetIDs.contains(currentIdentifier)) {
                 val coords = DedicatedPacketCoordinates(path, serverIdentifier, currentIdentifier)
@@ -50,7 +53,7 @@ class ClientPacketWriter(socket: DynamicSocket,
             
             for (target <- targetIDs) if (target != currentIdentifier) {
                 val coords = DedicatedPacketCoordinates(path, target, currentIdentifier)
-                addToChoreographer(coords)(attributes, packet)
+                send(coords)(attributes, packet)
             }
         }
     }
@@ -62,19 +65,15 @@ class ClientPacketWriter(socket: DynamicSocket,
                 .filterNot(e => discardedIDs.contains(e.identifier))
                 .foreach(engine => {
                     val coords = DedicatedPacketCoordinates(path, engine.identifier, currentIdentifier)
-                    addToChoreographer(coords)(attributes, packet)
+                    send(coords)(attributes, packet)
                 })
     }
     
-    private final var currentOrdinal = 0
     
-    private def addToChoreographer(coords: DedicatedPacketCoordinates)(attributes: PacketAttributes, packet: Packet): Unit = {
+    private def send(coords: DedicatedPacketCoordinates)(attributes: PacketAttributes, packet: Packet): Unit = {
         val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, network)
-        choreographer.add(transferInfo)(result => {
-            currentOrdinal += 1
-            println(s"${Thread.currentThread()}: For path ${path.mkString("/")}: $currentOrdinal")
-            socket.write(result.buff(currentOrdinal))
-        })
+        val result = translator.translate(transferInfo)
+        socket.write(result.buff(() => this.ordinal.next()))
     }
     
     override def writeBroadcastPacket(packet: Packet, discardedIDs: Array[String]): Unit = {

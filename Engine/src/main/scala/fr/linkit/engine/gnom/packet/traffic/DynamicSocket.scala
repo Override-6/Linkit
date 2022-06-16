@@ -24,7 +24,7 @@ import java.net.{ConnectException, InetSocketAddress, Socket}
 import java.nio.ByteBuffer
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
-    
+
     @volatile protected var currentSocket      : Socket               = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream : InputStream          = _
@@ -263,7 +263,8 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     private def logUpload(target: String, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
         val preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
         val packetOrdinal = if (bytes.length > 10) NumberSerializer.deserializeInt(bytes, 2) else -1
-        AppLoggers.Traffic.trace(s"${Console.MAGENTA}Written : ↑ $target ↑ (len: ${bytes.length}, num: $packetOrdinal) $preview")
+        val length = if (bytes.length > 10) NumberSerializer.deserializeInt(bytes, 6) else bytes.length
+        AppLoggers.Traffic.trace(s"${Console.MAGENTA}Written : ↑ $target ↑ (len: $length, ord: $packetOrdinal) $preview")
     }
     
 }

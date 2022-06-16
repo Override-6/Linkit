@@ -20,9 +20,9 @@ import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, DynamicSocket, WriterInfo}
-import fr.linkit.engine.gnom.persistence.PacketSerializationChoreographer
 
 import java.net.URL
+import scala.collection.mutable
 
 class ClientPacketTraffic(socket: DynamicSocket,
                           translator: ObjectTranslator,
@@ -30,29 +30,32 @@ class ClientPacketTraffic(socket: DynamicSocket,
                           override val application: ApplicationContext,
                           override val currentIdentifier: String,
                           override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, defaultPersistenceConfigScript) {
-
-    private lazy val choreographer             = new PacketSerializationChoreographer(translator)
+    
     private var connection0: ConnectionContext = _
     private var network    : Network           = _
-
+    
+    private final lazy val ordinals = mutable.HashMap.empty[Int, OrdinalCounter]
+    
     override def connection: ConnectionContext = connection0
-
+    
     def setConnection(connection: ConnectionContext): Unit = {
         if (connection0 != null)
             throw new IllegalStateException("Connection already set !")
         this.connection0 = connection
     }
-
+    
     def setNetwork(network: Network): Unit = {
         if (this.network != null)
             throw new IllegalStateException("network object already set !")
         this.network = network
     }
-
+    
     override def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter = {
         if (persistenceConfig == null)
             throw new NullPointerException("persistenceConfig is null.")
-        new ClientPacketWriter(socket, choreographer, WriterInfo(this, persistenceConfig, path, () => network))
+        val ordinal = ordinals.getOrElseUpdate(java.util.Arrays.hashCode(path), new OrdinalCounter)
+        val info = WriterInfo(this, persistenceConfig, path, () => network)
+        new ClientPacketWriter(socket, ordinal, translator, info)
     }
-
+    
 }
