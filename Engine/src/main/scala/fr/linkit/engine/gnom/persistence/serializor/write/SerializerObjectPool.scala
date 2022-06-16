@@ -168,8 +168,8 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         val objPool         = getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
         
         val obj = new SimpleObject(ref, selectedRefType, decomposed, profile)
-        //do not swap those two lines
         objPool.add(obj)
+        //v^ do not swap those two lines
         addAll(decomposed)
         
         decomposed

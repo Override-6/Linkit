@@ -26,17 +26,17 @@ trait PacketInjectableStore extends TrafficObject[TrafficReference] {
     
     override def reference: TrafficReference
     
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): TrafficNode[C] = {
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): InjectableTrafficNode[C] = {
         getInjectable[C](injectableID, defaultPersistenceConfig, factory, scopeFactory)
     }
     
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): TrafficNode[C] = {
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): InjectableTrafficNode[C] = {
         getInjectable[C](injectableID, defaultPersistenceConfig, factory, scopeFactory)
     }
     
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): TrafficNode[C]
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): InjectableTrafficNode[C]
     
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): TrafficNode[C] = {
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): InjectableTrafficNode[C] = {
         getInjectable[C](injectableID, config, factory, scopeFactory)
     }
     

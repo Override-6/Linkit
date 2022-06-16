@@ -99,7 +99,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                 }
                 handlePacket(result, coordinates)
             } catch {
-                case NonFatal(e) => throw new PacketException(s"Could not deserialize '${ScalaUtils.toPresentableString(result.buff)}'", e)
+                case NonFatal(e) =>
+                    AppLoggers.Persistence.error(s"Could not deserialize packet ${result.ordinal}: ${e.getMessage}")
             }
         }
         readThread.start()

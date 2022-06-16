@@ -24,6 +24,7 @@ import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoo
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.nio.ByteBuffer
+import java.util.ConcurrentModificationException
 import scala.annotation.switch
 
 class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
@@ -56,7 +57,11 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         pool.freeze() //Ensure that the pool is no more susceptible to be updated.
         
         val poolSize = pool.size
-        packetRefSize = if (poolSize > (java.lang.Short.MAX_VALUE * 2 + 1)) IntSize else if (poolSize > java.lang.Byte.MAX_VALUE * 2 + 1) UShortSize else UByteSize
+        packetRefSize = {
+            if (poolSize > (java.lang.Short.MAX_VALUE * 2 + 1)) IntSize
+            else if (poolSize > java.lang.Byte.MAX_VALUE * 2 + 1) UShortSize
+            else UByteSize
+        }
         
         //Informs the deserializer if we send a wide packet or not.
         //This means that for wide packets, pool references index are ints, and
@@ -194,7 +199,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     @inline
     def putRef(ref: Int): Unit = {
         if (ref < 0)
-            throw new IndexOutOfBoundsException(s"Could not write negative reference index into buffer.")
+            throw new IndexOutOfBoundsException(s"Received negative reference index.")
         (packetRefSize: @switch) match {
             case UByteSize  => buff.put(ref.toByte)
             case UShortSize => buff.putChar(ref.toChar)
@@ -204,10 +209,12 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     
     @inline
     def putPoolRef(obj: Any): Unit = {
-        val idx0 = pool.globalPosition(obj)
+        /*val idx0 = pool.globalPosition(obj)
         if (idx0 == -1)
-            ""
+            ""*/
         val idx = pool.globalPosition(obj)
+        if (idx < 0)
+            throw new ConcurrentModificationException(s"Unknown object $obj, Maybe the object has been added or it has replaced an old object during the serialisation.")
         putRef(idx)
     }
     

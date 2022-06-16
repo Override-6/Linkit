@@ -16,7 +16,6 @@ package fr.linkit.server.connection
 import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.persistence.ObjectTransferResult
-import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
@@ -31,12 +30,12 @@ import scala.util.control.NonFatal
  * @see [[ServerExternalConnection]]
  * */
 class ExternalConnectionsManager(server: ServerConnection) extends JustifiedCloseable {
-
+    
     private val connections: mutable.Map[String, ServerExternalConnection] = mutable.Map.empty
     private val maxConnection                                              = server.configuration.maxConnection
-
+    
     @volatile private var closed = false
-
+    
     override def close(reason: Reason): Unit = {
         for ((_, connection) <- connections) try {
             AppLoggers.App.info(s"Shutting down connection '${connection.boundIdentifier}'...")
@@ -46,7 +45,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         }
         closed = true
     }
-
+    
     /**
      * creates and register a connection.
      *
@@ -63,34 +62,34 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         //Ensure that the connection's identifier that is about to be created isn't registered yet.
         if (connections.contains(identifier))
             throw ConnectionException(connections(identifier), s"This connection identifier is taken ! ('$identifier')")
-
+        
         //Ensure that fixed connection limit is not reached.
         if (connections.size > maxConnection)
             throw ServerException(server, "Maximum connection limit exceeded")
-
+        
         //Opening ClientConnectionSession and finalizing registration...
         val packetReader = new SelectivePacketReader(socket, server, this, identifier)
         val readerThread = new PacketReaderThread(packetReader, identifier)
         val info         = ExternalConnectionSessionInfo(server, this, server.getSideNetwork, readerThread)
-
+        
         val connectionSession = ExternalConnectionSession(identifier, socket, info)
         val connection        = ServerExternalConnection.open(connectionSession)
         AppLoggers.Connection.info(s"Stage 2 completed : Connection '$identifier' created.")
         connections.put(identifier, connection)
         server.sendAuthorisedConnection(socket)
-
+        
         val canConnect = true //server.configuration.checkConnection(connection)
         if (canConnect) {
             AppLoggers.Connection.info(s"Stage 3 completed : Connection of '$identifier' was registered into connection manager")
             return
         }
-    
+        
         AppLoggers.Connection.error(s"Security Manager discarded connection $identifier from the server.")
-
+        
         connections.remove(identifier)
         connection.shutdown()
     }
-
+    
     /**
      * Broadcast bytes sequence to every connected clients
      * */
@@ -98,14 +97,14 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         PacketReaderThread.checkNotCurrent()
         val candidates = connections.values
                 .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
-        val buff = result.buff
+        val buff       = result.buff
         candidates.foreach(connection => {
             if (connection.canHandlePacketInjection(result))
                 connection.send(buff)
             //else throw new NoSuchElementException(s"Unable to send packet to ${connection.boundIdentifier}: Could not find any traffic presence at ${new TrafficObjectReference(result.coords.path)} in the receiver engine that could inject this packet.")
         })
     }
-
+    
     /**
      * unregisters a [[ServerExternalConnection]]
      *
@@ -114,7 +113,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     def unregister(identifier: String): Option[ServerExternalConnection] = {
         connections.remove(identifier)
     }
-
+    
     /**
      * retrieves a [[ServerExternalConnection]] based on the address
      *
@@ -123,11 +122,11 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      * */
     @Nullable
     def getConnection(identifier: String): ServerExternalConnection = connections.get(identifier).orNull
-
+    
     def countConnections: Int = connections.size
-
+    
     def listIdentifiers: Seq[String] = connections.keys.toSeq
-
+    
     /**
      * determines if the address is not registered
      *
@@ -137,7 +136,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     def isNotRegistered(identifier: String): Boolean = {
         !connections.contains(identifier)
     }
-
+    
     /**
      * @param identifier the identifier to test
      * @return true if any connected Engine have the specified identifier
@@ -145,16 +144,17 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     def isRegistered(identifier: String): Boolean = {
         identifier == server.currentIdentifier || connections.contains(identifier) //reserved server identifier
     }
-
+    
     override def isClosed: Boolean = closed
-
+    
     /**
      * Deflects a packet to its associated [[ServerExternalConnection]]
      *
      * @throws NoSuchConnectionException if no connection where found for this packet.
      * */
     private[connection] def deflect(result: ObjectTransferResult): Unit = {
-        val target = result.coords match {
+        val coords = result.coords
+        val target = coords match {
             case e: DedicatedPacketCoordinates => e.targetID
             case _                             => throw new IllegalArgumentException("Direct packet must be provided with DedicatedPacketCoordinates")
         }

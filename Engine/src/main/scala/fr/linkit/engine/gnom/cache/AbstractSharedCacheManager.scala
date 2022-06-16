@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectableStore, TrafficNode, TrafficObject}
+import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.reference.linker.{InitialisableNetworkObjectLinker, NetworkObjectLinker}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
@@ -181,7 +181,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
         sharedCache
     }
     
-    private def chainWithTrunkIPU(trafficNode: TrafficNode[TrafficObject[TrafficReference]]): Unit = {
+    private def chainWithTrunkIPU(trafficNode: InjectableTrafficNode[PacketInjectable]): Unit = {
         val global = network.globalCache
         if ((global ne this) && !(trafficNode.injectable.trafficPath sameElements Array(0))) {
             val cacheTrunkNode = network.globalCache.getCacheTrafficNode(0)
@@ -213,8 +213,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
             else
                 cacheOpt.flatMap(_.objectLinker.flatMap(_.findObject(silentCast(reference))))
         }
-    
-    
+        
         private def silentCast[X](t: AnyRef): X = t.asInstanceOf[X]
         
         override def injectRequest(bundle: LinkerRequestBundle): Unit = {

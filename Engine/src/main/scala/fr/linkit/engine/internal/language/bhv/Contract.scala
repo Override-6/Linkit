@@ -39,9 +39,13 @@ object Contract {
     }
     
     def registerProperties(properties: BHVProperties): Unit = {
-        if (this.properties.contains(properties.name))
-            throw new IllegalArgumentException("properties' name is already registered")
-        this.properties.put(properties.name, properties)
+        this.properties.get(properties.name) match {
+            case Some(value) =>
+                if (value == properties) return
+                throw new IllegalArgumentException(s"properties' name is already registered ($properties)")
+            case None        =>
+                this.properties.put(properties.name, properties)
+        }
     }
     
     private[linkit] def addToPrecompute(text: String, filePath: String): Unit = toPrecompute += ((text, filePath))

@@ -11,10 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.packet.traffic.injection
+package fr.linkit.api.gnom.packet.traffic.unit
 
-import fr.linkit.api.gnom.packet.PacketException
+import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 
-class EndOfInjectionChainException(msg: String) extends PacketException(msg) {
-
+trait InjectionProcessorUnit {
+    
+    def post(result: ObjectDeserializationResult): Unit
+    
 }

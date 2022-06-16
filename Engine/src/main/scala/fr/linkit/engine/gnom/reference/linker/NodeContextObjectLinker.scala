@@ -15,12 +15,9 @@ package fr.linkit.engine.gnom.reference.linker
 
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
-import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.engine.gnom.packet.traffic.injection.EndOfInjectionChainException
 import fr.linkit.engine.gnom.reference.{AbstractNetworkPresenceHandler, ContextObject, ObjectAlreadyReferencedException}
 import fr.linkit.engine.internal.utils.Identity
 import org.jetbrains.annotations.Nullable

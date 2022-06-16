@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.packet.traffic.injection.InjectionProcessorUnit
+import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
@@ -29,7 +29,7 @@ import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
-import fr.linkit.engine.gnom.packet.traffic.injection.SequentialInjectionProcessorUnit
+import fr.linkit.engine.gnom.packet.traffic.unit.SequentialInjectionProcessorUnit
 import fr.linkit.engine.gnom.persistence.config.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.reference.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.internal.utils.ClassMap
@@ -60,7 +60,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     
     override def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH = linker
     
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): TrafficNode[C] = {
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): InjectableTrafficNode[C] = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)
     }
     
@@ -103,8 +103,13 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             val path = result.coords.path
             val node = findNode(path).getOrElse {
                 throw new NoSuchTrafficPresenceException(s"Could not process injection: Could not find packet injectable located at ${path.mkString("/")}")
+            } match {
+                case node: InjectableTrafficNode[_] => node
+                case _                              =>
+                    val reference = TrafficReference / path
+                    throw new ConflictException(s"Could not inject packet: Attempted to inject packet into a traffic object located at $reference, but the object's node is not an InjectableTrafficNode.")
             }
-            node.ipu().post(result, node.injectable)
+            node.unit().post(result)
         }
     }
     
@@ -146,10 +151,10 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
             new DefaultObjectManagementChannel(null, scope)
         }
-        new TrafficNode[ObjectManagementChannel] {
+        new InjectableTrafficNode[ObjectManagementChannel] {
             override val injectable       : ObjectManagementChannel = objectChannel
-            override val persistenceConfig: PersistenceConfig       = objectChannelConfig
-            override val ipu              : InjectionProcessorUnit  = new SequentialInjectionProcessorUnit()
+            override val persistenceConfig: PersistenceConfig      = objectChannelConfig
+            override val unit             : InjectionProcessorUnit = new SequentialInjectionProcessorUnit(objectChannel)
             
             override def setPerformantInjection(): this.type = throw new UnsupportedOperationException
             
@@ -157,7 +162,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
             
             override def preferPerformances(): Boolean = throw new UnsupportedOperationException
             
-            override def chainIPU(path: Array[Int]): this.type = throw new UnsupportedOperationException
+            override def chainTo(path: Array[Int]): this.type = throw new UnsupportedOperationException
         }
     }
     

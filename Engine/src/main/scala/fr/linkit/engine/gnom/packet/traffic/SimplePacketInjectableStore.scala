@@ -13,15 +13,15 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import java.io.Closeable
-
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
+import fr.linkit.engine.gnom.packet.traffic.SimplePacketInjectableStore.StoreTrafficNode
 
+import java.io.Closeable
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -29,16 +29,16 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   tnol: TrafficNetworkObjectLinker,
                                   override val defaultPersistenceConfig: PersistenceConfig,
                                   override val trafficPath: Array[Int])
-    extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable {
-
+        extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable {
+    
     override val reference: TrafficObjectReference = new TrafficObjectReference(trafficPath)
     override val presence : NetworkObjectPresence  = tnol.getPresence(reference)
     private  val children                          = mutable.HashMap.empty[Int, TrafficNode[_]]
     private var closed    : Boolean                = false
-
-    override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): TrafficNode[C] = {
+    
+    override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): InjectableTrafficNode[C] = {
         val childPath = trafficPath :+ id
-
+        
         val nodeOpt = children.get(id)
         if (nodeOpt.isDefined) {
             val clazz                = classTag[C].runtimeClass
@@ -46,26 +46,26 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
             val injectable           = node.injectable
             val presenceClass        = injectable.getClass
             return node match {
-                case node: TrafficNode[C] if clazz.isAssignableFrom(presenceClass) =>
+                case node: InjectableTrafficNode[C] if clazz.isAssignableFrom(presenceClass) =>
                     node
-                case o                                                             =>
+                case o                                                                       =>
                     throw new ConflictException(s"Could not return current packet injectable: A PacketInjectable of type '${o.getClass.getSimpleName} exists at @traffic/$id, which is not assignable to request type '${clazz.getSimpleName}'")
             }
         }
-
+        
         val scope = scopeFactory(traffic.newWriter(childPath, config))
         completeCreation(id, config, scope, factory)
     }
-
+    
     @inline
-    private def completeCreation[C <: PacketInjectable](id: Int, config: PersistenceConfig, scope: ChannelScope, factory: PacketInjectableFactory[C]): TrafficNode[C] = {
+    private def completeCreation[C <: PacketInjectable](id: Int, config: PersistenceConfig, scope: ChannelScope, factory: PacketInjectableFactory[C]): InjectableTrafficNode[C] = {
         val injectable = factory.createNew(this, scope)
         tnol.registerReference(injectable.reference)
-        val node = SimpleTrafficNode(injectable, config, traffic)
+        val node = PacketInjectableTrafficNode(injectable, config, traffic)
         children.put(id, node)
         node
     }
-
+    
     override def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig = {
         val len = path.length
         if (pos >= len) {
@@ -81,61 +81,68 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
             }
         }
     }
-
+    
     override def findNode(path: Array[Int], pos: Int): Option[TrafficNode[PacketInjectable]] = {
         val len = path.length
         if (pos >= len) {
-            return None//failPresence(classOf[TrafficObject[TrafficReference]], path)
+            return None //failPresence(classOf[TrafficObject[TrafficReference]], path)
         }
         children.get(path(pos)).flatMap {
-            case node@SimpleTrafficNode(_: PacketInjectable, _, _)                  =>
+            case node@PacketInjectableTrafficNode(_: PacketInjectable, _, _)                  =>
                 if (pos == len - 1)
                     Some(node.asInstanceOf[TrafficNode[PacketInjectable]])
                 else None
-            case node@SimpleTrafficNode(store: InternalPacketInjectableStore, _, _) =>
+            case node@StoreTrafficNode(store: InternalPacketInjectableStore, _) =>
                 if (pos - len == 1)
                     Some(node.asInstanceOf[TrafficNode[PacketInjectable]]) //no more sub item in path: the targeted presence is this store.
                 else store.findNode(path, pos + 1) //else, path iteration is not complete, continue.
         }
     }
-
+    
     private def failPresence(kind: Class[_], path: Array[Int]): Nothing = {
         throw new NoSuchTrafficPresenceException(s"Could not find ${kind.getSimpleName} at '${TrafficReference / path}'.")
     }
-
+    
     override def close(cause: Reason): Unit = {
         children.values.foreach {
-            case SimpleTrafficNode(closeable: Closeable, _, _) => closeable.close()
-            case _                                             => //not closeable ? don't close.
+            case PacketInjectableTrafficNode(closeable: Closeable, _, _) => closeable.close()
+            case StoreTrafficNode(closeable: Closeable, _) => closeable.close()
+            case _                                                       => //not closeable ? don't close.
         }
         closed = true
     }
-
+    
     override def findStore(id: Int): Option[PacketInjectableStore] = children.get(id).flatMap {
-        case SimpleTrafficNode(store: PacketInjectableStore, _, _) => Some(store)
-        case _                                                     => None
+        case StoreTrafficNode(store: PacketInjectableStore, _) => Some(store)
+        case _                                                               => None
     }
-
+    
     override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = {
         if (children.contains(id)) {
             val msg = s"already present at @traffic/${(trafficPath :+ id).mkString("/")}"
             children(id) match {
-                case SimpleTrafficNode(_: PacketInjectableStore, _, _) =>
+                case PacketInjectableTrafficNode(_: PacketInjectableStore, _, _) =>
                     throw new ConflictException(s"PacketInjectableStore $msg")
-                case SimpleTrafficNode(i: PacketInjectable, _, _)      =>
+                case StoreTrafficNode(i: PacketInjectable,  _)      =>
                     throw new ConflictException(s"PacketInjectable (of type ${i.getClass.getName}) $msg")
             }
         }
         val store = new SimplePacketInjectableStore(traffic, tnol, persistenceConfig, trafficPath :+ id)
-        children.put(id, SimpleTrafficNode(store, persistenceConfig, traffic))
+        children.put(id, StoreTrafficNode(store, persistenceConfig))
         store
     }
-
+    
     override def findInjectable[C <: PacketInjectable : ClassTag](id: Int): Option[C] = children.get(id).flatMap {
-        case SimpleTrafficNode(value: C, _, _) if value.getClass.isAssignableFrom(classTag[C].runtimeClass) => Some(value)
-        case _                                                                                              => None
+        case PacketInjectableTrafficNode(value: C, _, _) if value.getClass.isAssignableFrom(classTag[C].runtimeClass) => Some(value)
+        case _                                                                                                        => None
     }
-
+    
     override def isClosed: Boolean = closed
+    
 }
 
+object SimplePacketInjectableStore {
+    
+    private case class StoreTrafficNode(injectable: PacketInjectableStore,
+                                        persistenceConfig: PersistenceConfig) extends TrafficNode[PacketInjectableStore]
+}

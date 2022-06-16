@@ -16,23 +16,21 @@ package fr.linkit.engine.gnom.persistence
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, ObjectSerializationResult, TransferInfo}
 import fr.linkit.engine.gnom.persistence.LazyObjectSerializationResult.{BufferLength, buffers}
-import fr.linkit.engine.internal.utils.NumberSerializer
 
 import java.nio.ByteBuffer
 import java.util
-import scala.collection.mutable
 
 abstract class LazyObjectSerializationResult(info: TransferInfo,
                                              private val serializer: ObjectPersistence) extends ObjectSerializationResult {
-
+    
     override val coords: PacketCoordinates = info.coords
-
+    
     override val attributes: PacketAttributes = info.attributes
-
+    
     override val packet: Packet = info.packet
-
+    
     protected def writeCoords(buff: ByteBuffer): Unit
-
+    
     override lazy val buff: ByteBuffer = {
         val buffStack = buffers.get()
         if (buffStack.isEmpty)
@@ -46,14 +44,13 @@ abstract class LazyObjectSerializationResult(info: TransferInfo,
         buffStack.push(buff)
         buff.flip()
     }
-
+    
 }
 
 object LazyObjectSerializationResult {
-
+    
     private final val BufferLength = 10_000_000 //10 Mb max per packets
-
+    
     val buffers = ThreadLocal.withInitial(() => new util.Stack[ByteBuffer]())
-
-
+    
 }

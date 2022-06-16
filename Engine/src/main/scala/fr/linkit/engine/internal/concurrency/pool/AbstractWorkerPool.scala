@@ -351,6 +351,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
             task
         } catch {
             case NonFatal(e)  =>
+                AppLoggers.Worker.error(s"Error in thread ${Thread.currentThread()}")
                 e.printStackTrace()
             case e: Throwable =>
                 e.printStackTrace()
