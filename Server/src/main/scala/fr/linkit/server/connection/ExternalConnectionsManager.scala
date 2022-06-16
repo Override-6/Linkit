@@ -15,11 +15,12 @@ package fr.linkit.server.connection
 
 import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
-import fr.linkit.api.gnom.persistence.ObjectTransferResult
+import fr.linkit.api.gnom.persistence.{PacketDownload, PacketTransfer, PacketUpload}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
+import fr.linkit.server.connection.traffic.DeflectedPacket
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -68,7 +69,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
             throw ServerException(server, "Maximum connection limit exceeded")
         
         //Opening ClientConnectionSession and finalizing registration...
-        val packetReader = new SelectivePacketReader(socket, server, this, identifier)
+        val packetReader = new ServerPacketReader(socket, server, this, identifier)
         val readerThread = new PacketReaderThread(packetReader, identifier)
         val info         = ExternalConnectionSessionInfo(server, this, server.getSideNetwork, readerThread)
         
@@ -93,14 +94,13 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     /**
      * Broadcast bytes sequence to every connected clients
      * */
-    def broadcastPacket(result: ObjectTransferResult, discardedIDs: String*): Unit = {
+    def broadcastPacket(result: PacketUpload, discardedIDs: String*): Unit = {
         PacketReaderThread.checkNotCurrent()
         val candidates = connections.values
                 .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
-        val buff       = result.buff
         candidates.foreach(connection => {
             if (connection.canHandlePacketInjection(result))
-                connection.send(buff)
+                connection.send(result)
             //else throw new NoSuchElementException(s"Unable to send packet to ${connection.boundIdentifier}: Could not find any traffic presence at ${new TrafficObjectReference(result.coords.path)} in the receiver engine that could inject this packet.")
         })
     }
@@ -148,21 +148,22 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     override def isClosed: Boolean = closed
     
     /**
-     * Deflects a packet to its associated [[ServerExternalConnection]]
+     * Deflects a downloaded packet to its targeting [[ServerExternalConnection]]
      *
-     * @throws NoSuchConnectionException if no connection where found for this packet.
      * */
-    private[connection] def deflect(result: ObjectTransferResult): Unit = {
+    private[connection] def deflect(result: PacketDownload): Unit = {
         val coords = result.coords
         val target = coords match {
             case e: DedicatedPacketCoordinates => e.targetID
-            case _                             => throw new IllegalArgumentException("Direct packet must be provided with DedicatedPacketCoordinates")
+            case _                             =>
+                throw new IllegalArgumentException("Deflected packet must be provided with DedicatedPacketCoordinates")
         }
-
+        
         val connection = getConnection(target)
         if (connection == null)
             throw NoSuchConnectionException(s"unknown ID '$target' to deflect packet")
-        if (connection.canHandlePacketInjection(result))
-            connection.send(result.buff)
+        if (connection.canHandlePacketInjection(result)) {
+            connection.send(new DeflectedPacket(result.buff, coords))
+        }
     }
 }

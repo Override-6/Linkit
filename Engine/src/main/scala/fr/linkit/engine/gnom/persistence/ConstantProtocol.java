@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor;
+package fr.linkit.engine.gnom.persistence;
 
 public class ConstantProtocol {
 

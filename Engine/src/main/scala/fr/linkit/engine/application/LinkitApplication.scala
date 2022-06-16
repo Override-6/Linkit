@@ -23,7 +23,7 @@ import fr.linkit.api.internal.system.{ApiConstants, AppException, Version}
 import fr.linkit.engine.application.LinkitApplication.setInstance
 import fr.linkit.engine.application.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol
+import fr.linkit.engine.gnom.persistence.ConstantProtocol
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.Contract

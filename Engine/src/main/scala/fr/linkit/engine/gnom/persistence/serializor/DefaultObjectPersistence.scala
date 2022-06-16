@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.persistence.ConstantProtocol
 import fr.linkit.engine.gnom.persistence.serializor.read.ObjectReader
 import fr.linkit.engine.gnom.persistence.serializor.write.{ObjectWriter, SerializerObjectPool}
 

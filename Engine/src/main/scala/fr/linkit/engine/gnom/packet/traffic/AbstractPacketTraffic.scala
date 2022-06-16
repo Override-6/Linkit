@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
 import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
@@ -90,7 +90,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         node.injectable.inject(bundle)
     }
     
-    override def processInjection(result: ObjectDeserializationResult): Unit = {
+    override def processInjection(result: PacketDownload): Unit = {
         if (result.isDeserialized) {
             val bundle = new PacketBundle {
                 override val packet    : Packet            = result.packet

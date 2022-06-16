@@ -13,7 +13,7 @@
 
 package fr.linkit.server.test
 
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol
+import fr.linkit.engine.gnom.persistence.ConstantProtocol
 import fr.linkit.engine.internal.utils.ScalaUtils
 import org.junit.jupiter.api.Test
 

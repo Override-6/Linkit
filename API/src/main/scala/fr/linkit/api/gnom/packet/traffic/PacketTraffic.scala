@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.packet.traffic
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
@@ -42,7 +42,7 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
     @workerExecution
     def processInjection(bundle: PacketBundle): Unit
     
-    def processInjection(result: ObjectDeserializationResult): Unit
+    def processInjection(result: PacketDownload): Unit
     
     def newWriter(path: Array[Int]): PacketWriter
     

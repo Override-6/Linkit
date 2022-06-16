@@ -13,15 +13,10 @@
 
 package fr.linkit.api.gnom.persistence
 
-trait ObjectDeserializationResult extends ObjectTransferResult {
+import java.nio.ByteBuffer
 
-    val ordinal: Int
-
-    def makeDeserialization(): Unit
-
-    def isDeserialized: Boolean
-
-    def isInjected: Boolean
-
-    def informInjected: Unit
+trait PacketUpload extends PacketTransfer {
+    
+    def buff(ordinal: Int): ByteBuffer
+    
 }

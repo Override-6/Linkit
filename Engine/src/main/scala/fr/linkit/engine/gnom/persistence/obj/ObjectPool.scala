@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.obj
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.persistence.Freezable
 import fr.linkit.api.gnom.persistence.obj.{LambdaObject, SyncPoolObject, ProfilePoolObject, ReferencedPoolObject}
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.gnom.persistence.ConstantProtocol._
 
 import java.lang
 

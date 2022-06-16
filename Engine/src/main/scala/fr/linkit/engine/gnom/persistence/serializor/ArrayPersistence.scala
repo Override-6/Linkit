@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.persistence.obj.PoolObject
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.gnom.persistence.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.read.{NotInstantiatedArray, ObjectReader}
 import fr.linkit.engine.gnom.persistence.serializor.write.ObjectWriter
 import java.lang

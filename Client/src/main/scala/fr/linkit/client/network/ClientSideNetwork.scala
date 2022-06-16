@@ -14,13 +14,13 @@
 package fr.linkit.client.network
 
 import fr.linkit.api.gnom.cache.{CacheSearchMethod, SharedCacheManager}
+import fr.linkit.client.connection.traffic.ClientPacketTraffic
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
-import fr.linkit.engine.gnom.packet.traffic.SocketPacketTraffic
 
-class ClientSideNetwork(traffic: SocketPacketTraffic) extends AbstractNetwork(traffic) {
+class ClientSideNetwork(traffic: ClientPacketTraffic) extends AbstractNetwork(traffic) {
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
         val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this), CacheSearchMethod.GET_OR_CRASH)

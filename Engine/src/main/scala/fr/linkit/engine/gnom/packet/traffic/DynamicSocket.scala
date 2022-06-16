@@ -43,7 +43,6 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         write(array)
     }
     
-    private var packetCount = 0
     
     def write(buff: Array[Byte]): Unit = {
         //val t0 = System.currentTimeMillis()
@@ -114,6 +113,11 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     def readInt(): Int = {
         val int = read(4)
         NumberSerializer.deserializeInt(int, 0)
+    }
+    
+    def readShort(): Short = {
+        val short = read(2)
+        NumberSerializer.deserializeShort(short, 0)
     }
     
     def read(buff: Array[Byte], pos: Int): Int = {
@@ -230,10 +234,9 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
         
         def awaitConnected(): Unit = disconnectLock.synchronized {
+            if (state == CLOSED)
+                throw new IllegalCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
             if (state != CONNECTED) try {
-                if (state == CLOSED)
-                    throw new IllegalCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
-                
                 AppLoggers.Traffic.warn(s"The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier isn't ready or is disconnected.")
                 disconnectLock.wait()
                 AppLoggers.Traffic.trace(s"The connection with $boundIdentifier is now ready.")
@@ -259,8 +262,8 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     
     private def logUpload(target: String, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
         val preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
-        packetCount += 1
-        AppLoggers.Traffic.trace(s"${Console.MAGENTA}Written : ↑ $target ↑ (len: ${bytes.length}, num: $packetCount) $preview")
+        val packetOrdinal = if (bytes.length > 10) NumberSerializer.deserializeInt(bytes, 2) else -1
+        AppLoggers.Traffic.trace(s"${Console.MAGENTA}Written : ↑ $target ↑ (len: ${bytes.length}, num: $packetOrdinal) $preview")
     }
     
 }

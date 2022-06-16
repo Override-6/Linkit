@@ -11,20 +11,12 @@
  * questions.
  */
 
-package fr.linkit.api.internal.concurrency
+package fr.linkit.engine.gnom.packet.traffic;
 
-trait Procrastinator {
+public class TrafficProtocol {
 
-    def runLater(@workerExecution task: => Unit): Unit
+    public static final short ProtocolVersion = 1;
+    public static final byte PacketLengthIndex = 4;
+    public static final byte OrdinalIndex = 0;
 
-}
-
-object Procrastinator {
-    def wrapSubmitter(submitter: (=> Unit) => Unit): Procrastinator = submitter(_)
-
-    def wrapSubmitterRunnable(submitter: Runnable => Unit): Procrastinator = {
-        new Procrastinator {
-            override def runLater(task: => Unit): Unit = submitter(() => task)
-        }
-    }
 }

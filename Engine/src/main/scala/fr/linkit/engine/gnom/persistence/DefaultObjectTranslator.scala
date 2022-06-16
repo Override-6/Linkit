@@ -38,8 +38,8 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         new DefaultObjectPersistence(center)
     }
 
-    override def translate(packetInfo: TransferInfo): ObjectSerializationResult = {
-        new LazyObjectSerializationResult(packetInfo, serializer) {
+    override def translate(packetInfo: TransferInfo): PacketUpload = {
+        new PacketUploadImpl(packetInfo, serializer) {
             override def writeCoords(buff: ByteBuffer): Unit = coords match {
                 //TODO Better broadcast persistence handling
                 // <------------------------ MAINTAINED ------------------------>
@@ -94,7 +94,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         new String(array)
     }
 
-    override def translate(traffic: PacketTraffic, buffer: ByteBuffer, ordinal: Int): ObjectDeserializationResult = {
+    override def translate(traffic: PacketTraffic, buffer: ByteBuffer, ordinal: Int): PacketDownload = {
         val coords = readCoordinates(buffer)
         val conf   = traffic.getPersistenceConfig(coords.path)
         val bundle = new PersistenceBundle {
@@ -104,7 +104,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
             override val packetPath: Array[Int]        = coords.path
             override val config    : PersistenceConfig = conf
         }
-        new LazyObjectDeserializationResult(buffer, coords, ordinal)(serializer.deserializeObjects(bundle))
+        new PacketDownloadImpl(buffer, coords, ordinal)(serializer.deserializeObjects(bundle))
     }
 
 }

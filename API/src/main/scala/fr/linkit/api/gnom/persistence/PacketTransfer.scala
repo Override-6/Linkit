@@ -13,11 +13,17 @@
 
 package fr.linkit.api.gnom.persistence
 
+import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
+
 import java.nio.ByteBuffer
 
-trait ObjectSerializationResult extends ObjectTransferResult {
+trait PacketTransfer {
 
-    def buff: ByteBuffer
 
+    def coords: PacketCoordinates
+
+    def attributes: PacketAttributes
+
+    def packet: Packet
 
 }

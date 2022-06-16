@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
 import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.gnom.persistence.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 

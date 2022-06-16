@@ -13,18 +13,19 @@
 
 package fr.linkit.api.gnom.persistence
 
-import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
-
 import java.nio.ByteBuffer
 
-trait ObjectTransferResult {
+trait PacketDownload extends PacketTransfer {
 
-    def buff: ByteBuffer
+    val buff: ByteBuffer
+    
+    val ordinal: Int
 
-    def coords: PacketCoordinates
+    def makeDeserialization(): Unit
 
-    def attributes: PacketAttributes
+    def isDeserialized: Boolean
 
-    def packet: Packet
+    def isInjected: Boolean
 
+    def informInjected: Unit
 }

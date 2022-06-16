@@ -14,17 +14,17 @@
 package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 
 import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 
-class LazyObjectDeserializationResult(override val buff: ByteBuffer,
-                                      override val coords: PacketCoordinates,
-                                      override val ordinal: Int)
-                                     (forEachObjects: (AnyRef => Unit) => Unit) extends ObjectDeserializationResult {
+class PacketDownloadImpl(override val buff: ByteBuffer,
+                         override val coords: PacketCoordinates,
+                         override val ordinal: Int)
+                        (forEachObjects: (AnyRef => Unit) => Unit) extends PacketDownload {
 
     private lazy val cache : Array[AnyRef]    = createCache()
     private var attributes0: PacketAttributes = _

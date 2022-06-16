@@ -14,14 +14,15 @@
 package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
-import fr.linkit.api.gnom.persistence.{ObjectPersistence, ObjectSerializationResult, TransferInfo}
-import fr.linkit.engine.gnom.persistence.LazyObjectSerializationResult.{BufferLength, buffers}
+import fr.linkit.api.gnom.persistence.{ObjectPersistence, PacketUpload, TransferInfo}
+import fr.linkit.engine.gnom.packet.traffic.TrafficProtocol
+import fr.linkit.engine.gnom.persistence.PacketUploadImpl.{BufferLength, HoleLength, buffers}
 
 import java.nio.ByteBuffer
 import java.util
 
-abstract class LazyObjectSerializationResult(info: TransferInfo,
-                                             private val serializer: ObjectPersistence) extends ObjectSerializationResult {
+abstract class PacketUploadImpl(info: TransferInfo,
+                                private val serializer: ObjectPersistence) extends PacketUpload {
     
     override val coords: PacketCoordinates = info.coords
     
@@ -31,26 +32,35 @@ abstract class LazyObjectSerializationResult(info: TransferInfo,
     
     protected def writeCoords(buff: ByteBuffer): Unit
     
-    override lazy val buff: ByteBuffer = {
+    private lazy val buffer: ByteBuffer = {
         val buffStack = buffers.get()
         if (buffStack.isEmpty)
             buffStack.push(ByteBuffer.allocate(BufferLength))
         val buff = buffStack.pop()
-        buff.clear().position(4)
+        buff.clear()
+        buff.putShort(TrafficProtocol.ProtocolVersion)
+        buff.position(buff.position() + HoleLength)
+        
         //buff.limit(buff.capacity())
         writeCoords(buff)
         info.makeSerial(serializer, buff)
-        buff.putInt(0, buff.position() - 4) //write the packet's length
+        buff.putInt(TrafficProtocol.PacketLengthIndex + 2, buff.position() - HoleLength - 2) //write the packet's length
         buffStack.push(buff)
         buff.flip()
     }
     
+    override def buff(ordinal: Int): ByteBuffer = {
+        buffer.putInt(TrafficProtocol.OrdinalIndex + 2, ordinal)
+    }
 }
 
-object LazyObjectSerializationResult {
+object PacketUploadImpl {
     
     private final val BufferLength = 10_000_000 //10 Mb max per packets
     
     val buffers = ThreadLocal.withInitial(() => new util.Stack[ByteBuffer]())
+    
+    //let a hole for 2 ints: packet length and packet ordinal.
+    private final val HoleLength = 8
     
 }

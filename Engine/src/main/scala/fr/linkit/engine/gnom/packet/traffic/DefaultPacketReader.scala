@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.packet.traffic.{PacketReader, PacketTraffic}
-import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTranslator}
+import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload}
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.utils.NumberSerializer
@@ -37,21 +37,28 @@ class DefaultPacketReader(socket: DynamicSocket,
     /**
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
-    override def nextPacket(@workerExecution callback: ObjectDeserializationResult => Unit): Unit = {
+    override def nextPacket(@workerExecution callback: PacketDownload => Unit): Unit = {
         nextPacketSync(result => procrastinator.runLater {
             AppLoggers.Traffic.trace(s"Thread is handling packet injection with ordinal number ${result.ordinal}")
             callback(result)
         })
     }
     
-    private def nextPacketSync(callback: ObjectDeserializationResult => Unit): Unit = {
+    private def nextPacketSync(callback: PacketDownload => Unit): Unit = {
+        val protocol = socket.readShort()
+        if (protocol != TrafficProtocol.ProtocolVersion) {
+            AppLoggers.Traffic.error(s"Received packet packet with unknown protocol '$protocol', closing connection with ${socket.boundIdentifier}...")
+            socket.close() //TODO close the connection instead of the socket.
+            throw new UnsupportedPacketStreamException(s"Received packet packet with unknown protocol '$protocol'")
+        }
+        
+        val ordinal = socket.readInt()
+    
         val nextLength = socket.readInt()
         if (nextLength == -1 || socket.isClosed) {
             AppLoggers.Traffic.error(s"PACKET READ ABORTED : packet length: $nextLength | socket.isOpen = ${socket.isOpen}")
             return
         }
-        
-        val ordinal = nextOrdinal
         val bytes   = socket.read(nextLength)
         //NETWORK-DEBUG-MARK
         

@@ -11,29 +11,28 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.packet.traffic
+package fr.linkit.client.connection.traffic
 
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
+import fr.linkit.engine.gnom.packet.traffic.{DynamicSocket, WriterInfo}
 import fr.linkit.engine.gnom.persistence.{PacketSerializationChoreographer, SimpleTransferInfo}
 
-class SocketPacketWriter(socket: DynamicSocket,
+class ClientPacketWriter(socket: DynamicSocket,
                          choreographer: PacketSerializationChoreographer,
                          writerInfo: WriterInfo) extends PacketWriter {
-
+    
     override     val traffic          : PacketTraffic     = writerInfo.traffic
     override     val serverIdentifier : String            = traffic.serverIdentifier
     override     val currentIdentifier: String            = traffic.currentIdentifier
     override     val path             : Array[Int]        = writerInfo.path
     private      val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
     private lazy val network                              = writerInfo.network
-
-    override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
-        writePacket(packet, SimplePacketAttributes.empty, targetIDs)
-    }
-
+    
+    override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = writePacket(packet, SimplePacketAttributes.empty, targetIDs)
+    
     override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
         if (targetIDs.length == 1) {
             val target    = targetIDs.head
@@ -48,32 +47,38 @@ class SocketPacketWriter(socket: DynamicSocket,
                 val coords = DedicatedPacketCoordinates(path, serverIdentifier, currentIdentifier)
                 traffic.processInjection(packet, attributes, coords)
             }
-
+            
             for (target <- targetIDs) if (target != currentIdentifier) {
                 val coords = DedicatedPacketCoordinates(path, target, currentIdentifier)
                 addToChoreographer(coords)(attributes, packet)
             }
         }
     }
-
+    
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
         if (!discardedIDs.contains(currentIdentifier))
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, currentIdentifier))
         network.listEngines
-            .filterNot(e => discardedIDs.contains(e.identifier))
-            .foreach(engine => {
-                val coords = DedicatedPacketCoordinates(path, engine.identifier, currentIdentifier)
-                addToChoreographer(coords)(attributes, packet)
-            })
+                .filterNot(e => discardedIDs.contains(e.identifier))
+                .foreach(engine => {
+                    val coords = DedicatedPacketCoordinates(path, engine.identifier, currentIdentifier)
+                    addToChoreographer(coords)(attributes, packet)
+                })
     }
-
+    
+    private final var currentOrdinal = 0
+    
     private def addToChoreographer(coords: DedicatedPacketCoordinates)(attributes: PacketAttributes, packet: Packet): Unit = {
         val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, network)
-        choreographer.add(transferInfo)(result => socket.write(result.buff))
+        choreographer.add(transferInfo)(result => {
+            currentOrdinal += 1
+            println(s"${Thread.currentThread()}: For path ${path.mkString("/")}: $currentOrdinal")
+            socket.write(result.buff(currentOrdinal))
+        })
     }
-
+    
     override def writeBroadcastPacket(packet: Packet, discardedIDs: Array[String]): Unit = {
         writeBroadcastPacket(packet, SimplePacketAttributes.empty, discardedIDs)
     }
-
+    
 }

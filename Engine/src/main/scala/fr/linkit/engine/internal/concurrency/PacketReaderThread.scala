@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.concurrency
 
 import fr.linkit.api.gnom.packet.traffic.PacketReader
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.{IllegalThreadException, packetWorkerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
@@ -30,8 +30,8 @@ class PacketReaderThread(reader: PacketReader,
                          bound: String) extends Thread(packetReaderThreadGroup, s"$bound's Read Worker") with JustifiedCloseable {
 
     private var open = true
-    var onPacketRead   : ObjectDeserializationResult => Unit = _ => ()
-    var onReadException: () => Unit                   = () => ()
+    var onPacketRead   : PacketDownload => Unit = _ => ()
+    var onReadException: () => Unit             = () => ()
 
     override def isClosed: Boolean = open
 
@@ -73,8 +73,8 @@ class PacketReaderThread(reader: PacketReader,
                 onException("Asynchronous close.")
 
             case NonFatal(e) =>
-                e.printStackTrace()
                 onException(s"Suddenly disconnected from the server.")
+                throw e
         }
 
         def onException(msg: String): Unit = {

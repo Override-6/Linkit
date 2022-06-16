@@ -18,7 +18,7 @@ import fr.linkit.api.application.connection.{ConnectionInitialisationException, 
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTranslator}
+import fr.linkit.api.gnom.persistence.{PacketDownload, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
@@ -103,6 +103,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                     AppLoggers.Persistence.error(s"Could not deserialize packet ${result.ordinal}: ${e.getMessage}")
             }
         }
+        readThread.onReadException = () => this.shutdown()
         readThread.start()
     }
 
@@ -119,13 +120,13 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         }
     }
 
-    private def handlePacket(result: ObjectDeserializationResult, coordinates: DedicatedPacketCoordinates): Unit = {
+    private def handlePacket(result: PacketDownload, coordinates: DedicatedPacketCoordinates): Unit = {
         //FIXME Ugly
-        val rectifiedResult = new ObjectDeserializationResult {
+        val rectifiedResult = new PacketDownload {
             override val ordinal: Int = result.ordinal
+            override val buff: ByteBuffer = result.buff
             override def makeDeserialization(): Unit = result.makeDeserialization()
             override def isDeserialized: Boolean = result.isDeserialized
-            override def buff: ByteBuffer = result.buff
             override def coords: PacketCoordinates = coordinates
             override def attributes: PacketAttributes = result.attributes
             override def packet: Packet = result.packet

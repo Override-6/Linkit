@@ -20,8 +20,8 @@ import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 
 trait ObjectTranslator {
 
-    def translate(packetInfo: TransferInfo): ObjectSerializationResult
+    def translate(packetInfo: TransferInfo): PacketUpload
 
-    def translate(traffic: PacketTraffic, buff: ByteBuffer, ordinal: Int): ObjectDeserializationResult
+    def translate(traffic: PacketTraffic, buff: ByteBuffer, ordinal: Int): PacketDownload
 
 }

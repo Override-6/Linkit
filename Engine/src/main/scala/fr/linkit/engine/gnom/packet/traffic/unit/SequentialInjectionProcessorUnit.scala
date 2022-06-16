@@ -16,9 +16,10 @@ package fr.linkit.engine.gnom.packet.traffic.unit
 import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.{Worker, WorkerPools}
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
 
 import java.lang.Thread.State._
@@ -28,23 +29,23 @@ import scala.collection.mutable.ListBuffer
 
 class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends InjectionProcessorUnit {
     
-    private final val queue            = mutable.PriorityQueue.empty[ObjectDeserializationResult] { case (a, b) => a.ordinal - b.ordinal }
+    private final val queue            = mutable.PriorityQueue.empty[PacketDownload] { case (a, b) => a.ordinal - b.ordinal }
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
     private final var executor: Worker = _
     
     private final val joinLocker                 = new SimpleWorkerController()
     private final val refocusingLocker           = new SimpleWorkerController()
-    //private final var waitingForRefocus: Boolean = false
+    private final var waitingForRefocus: Boolean = false
     
-    //private final var currentOrdinal: Int = 0
+    private final var currentOrdinal: Int = 0
     
-    override def post(result: ObjectDeserializationResult): Unit = {
+    override def post(result: PacketDownload): Unit = {
         AppLoggers.Persistence.trace(s"SIPU: adding packet injection for channel '${injectable.reference}'. ord: ${result.ordinal} Current unit executor: $executor. packet queue length = ${queue.size}")
         
         queue.synchronized {
             queue.enqueue(result)
-            //if (waitingForRefocus && result.ordinal == currentOrdinal + 1)
-            //    refocusingLocker.wakeupAnyTask()
+            if (waitingForRefocus && result.ordinal == currentOrdinal + 1)
+                refocusingLocker.wakeupAnyTask()
         }
         val currentWorker = WorkerPools.currentWorker
         val currentTask   = currentWorker.getCurrentTask
@@ -127,25 +128,25 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
         }
     }
     
-    private def nextResult(): ObjectDeserializationResult = {
-        var result = queue.dequeue()
-        if (queue.nonEmpty && queue.head.ordinal < result.ordinal) {
-            val lastResult = result
-            result = queue.dequeue()
-            queue.enqueue(lastResult)
-        }
-        /*val resultOrd       = result.ordinal
-        val expectedOrdinal = currentOrdinal + 1
+    private def nextResult(): PacketDownload = {
+        val (result, queueLength) = queue.synchronized(queue.dequeue(), queue.size)
+        val resultOrd             = result.ordinal
+        val expectedOrdinal       = currentOrdinal + 1
+        println(Thread.currentThread() + ": received packet in " + injectable.reference + s" (ordinal: $resultOrd, expected: $expectedOrdinal)")
         if (resultOrd != expectedOrdinal) {
             val diff = resultOrd - expectedOrdinal
             if (diff <= 0)
-                throw UnexpectedPacketException(s"Received packet with ordinal '$resultOrd', while expected ordinal is $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
+                throw UnexpectedPacketException(s"for channel ${injectable.reference}: Received packet with ordinal '$resultOrd', while expected ordinal is $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
             AppLoggers.Persistence.debug(s"SIPU: Head of queue ordinal is $diff above expected ordinal of $expectedOrdinal. This unit will wait for the $diff packets remaining before handling other packets.")
-            waitingForRefocus = true
+            queue.synchronized {
+                waitingForRefocus = true
+                if (queueLength != queue.size) //the queue was updated, maybe the remaining packets has been added
+                    return nextResult()
+            }
             refocusingLocker.pauseTask()
-            result = nextResult()
+            return nextResult()
         }
-        currentOrdinal = expectedOrdinal*/
+        currentOrdinal = expectedOrdinal
         result
     }
     

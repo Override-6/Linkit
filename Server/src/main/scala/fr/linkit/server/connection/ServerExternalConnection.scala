@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
-import fr.linkit.api.gnom.persistence.{ObjectDeserializationResult, ObjectTransferResult, ObjectTranslator}
+import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload, PacketTransfer, PacketUpload}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
@@ -76,27 +76,20 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
                 case d: DedicatedPacketCoordinates => d
                 case b: BroadcastPacketCoordinates => b.getDedicated(currentIdentifier)
             }
-            val rectifiedResult                         = new ObjectDeserializationResult {
+            val rectifiedResult                         = new PacketDownload {
                 override val ordinal: Int = result.ordinal
-                
-                override def buff: ByteBuffer = result.buff
-                
+                override val buff: ByteBuffer = result.buff
                 override def coords: PacketCoordinates = coordinates
-                
                 override def attributes: PacketAttributes = result.attributes
-                
                 override def packet: Packet = result.packet
-                
                 override def makeDeserialization(): Unit = result.makeDeserialization()
-                
                 override def isDeserialized: Boolean = result.isDeserialized
-                
                 override def isInjected: Boolean = result.isInjected
-                
                 override def informInjected: Unit = result.informInjected
             }
             handlePacket(rectifiedResult)
         }
+        readThread.onReadException = () => runLater(this.shutdown())
         readThread.start()
         //Method useless but kept because services could need to be started in the future?
     }
@@ -116,7 +109,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         session.updateSocket(socket)
     }
     
-    def canHandlePacketInjection(result: ObjectTransferResult): Boolean = {
+    def canHandlePacketInjection(result: PacketTransfer): Boolean = {
         val channelPath = result.coords.path
         channelPath.length == 0 || {
             val reference = new TrafficObjectReference(channelPath)
@@ -125,21 +118,17 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }
     }
     
-    def send(result: ObjectTransferResult): Unit = {
+    def send(result: PacketUpload): Unit = {
         if (!canHandlePacketInjection(result)) {
             val channelPath = result.coords.path
             val reference   = new TrafficObjectReference(channelPath)
             throw new PacketNotInjectableException(this, s"Engine '$boundIdentifier' does not contains any traffic packet injectable presence at $reference.")
         }
-        session.send(result.buff)
-    }
-    
-    private[connection] def send(buff: ByteBuffer): Unit = {
-        session.send(buff)
+        session.send(result)
     }
     
     @workerExecution
-    private def handlePacket(result: ObjectDeserializationResult): Unit = {
+    private def handlePacket(result: PacketDownload): Unit = {
         if (alive) {
             serverTraffic.processInjection(result)
         }

@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.{NetworkObjectReferencesLocks, ObjectSelector}
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol.Object
+import fr.linkit.engine.gnom.persistence.ConstantProtocol.Object
 
 class ReferencedObject(override val referenceIdx: Int,
                        selector: ObjectSelector,

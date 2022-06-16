@@ -13,10 +13,10 @@
 
 package fr.linkit.api.gnom.packet.traffic.unit
 
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.gnom.persistence.PacketDownload
 
 trait InjectionProcessorUnit {
     
-    def post(result: ObjectDeserializationResult): Unit
+    def post(result: PacketDownload): Unit
     
 }

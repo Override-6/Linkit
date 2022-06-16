@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.persistence.obj.{SyncPoolObject, ProfilePoolObject}
 import fr.linkit.engine.gnom.cache.sync.tree.{DefaultConnectedObjectTree, NoSuchConnectedObjectTreeException}
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol.Object
+import fr.linkit.engine.gnom.persistence.ConstantProtocol.Object
 
 class MirroringObject(override val referenceIdx: Int,
                       override val stubClassDef: SyncClassDef,

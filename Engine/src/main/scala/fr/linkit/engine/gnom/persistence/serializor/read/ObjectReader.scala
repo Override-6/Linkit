@@ -22,7 +22,7 @@ import fr.linkit.engine.gnom.persistence.MalFormedPacketException
 import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.gnom.persistence.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException, ObjectDeserializationException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 

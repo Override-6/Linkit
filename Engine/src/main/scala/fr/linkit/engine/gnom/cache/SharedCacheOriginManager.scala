@@ -146,7 +146,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
                         case None                                        => sendContent(content) //There is no handler, the engine is by default accepted.
                         case Some(handler: ContentHandler[CacheContent]) =>
                             val engine = network.findEngine(senderID).getOrElse {
-                                failRequest(s"Engine not found: $senderID. (manager engine: $currentIdentifier)")
+                                failRequest(s"Engine not found: $senderID. (shared cache manager engine: $currentIdentifier)")
                             }
                             if (handler.canAccessToContent(engine)) {
                                 sendContent(content)

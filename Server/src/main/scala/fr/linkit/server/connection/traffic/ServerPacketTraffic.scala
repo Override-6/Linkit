@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.server.connection.packet
+package fr.linkit.server.connection.traffic
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.packet.traffic.PacketWriter

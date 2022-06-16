@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.engine.gnom.persistence.obj.ObjectPool
-import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.gnom.persistence.ConstantProtocol._
 
 import scala.collection.mutable
 

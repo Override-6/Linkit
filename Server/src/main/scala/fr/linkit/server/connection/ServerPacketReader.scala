@@ -13,26 +13,26 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.gnom.packet.traffic.PacketReader
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
+import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.{DefaultPacketReader, DynamicSocket, SocketClosedException}
+import fr.linkit.server.connection.traffic.DeflectedPacket
 
 import java.net.SocketException
 import scala.util.control.NonFatal
 
-class SelectivePacketReader(socket: DynamicSocket,
-                            server: ServerConnection,
-                            manager: ExternalConnectionsManager,
-                            boundIdentifier: String) extends PacketReader {
-
-    private val configuration    = server.configuration
+class ServerPacketReader(socket: DynamicSocket,
+                         server: ServerConnection,
+                         manager: ExternalConnectionsManager,
+                         boundIdentifier: String) extends PacketReader {
+    
     private val simpleReader     = new DefaultPacketReader(socket, server, server.traffic, server.translator)
     private val serverIdentifier = server.currentIdentifier
-
-    override def nextPacket(@workerExecution callback: ObjectDeserializationResult => Unit): Unit = {
+    
+    override def nextPacket(@workerExecution callback: PacketDownload => Unit): Unit = {
         try {
             nextConcernedPacket(callback)
         } catch {
@@ -40,18 +40,17 @@ class SelectivePacketReader(socket: DynamicSocket,
                 AppLoggers.Connection.error(s"client '$boundIdentifier' disconnected.")
         }
     }
-
-    private def nextConcernedPacket(callback: ObjectDeserializationResult => Unit): Unit = try {
+    
+    private def nextConcernedPacket(callback: PacketDownload => Unit): Unit = try {
         simpleReader.nextPacket(result => {
             handleDeserialResult(result, callback)
         })
     } catch {
         case e: SocketClosedException => Console.err.println(e)
-        case NonFatal(e)              => e.printStackTrace()
     }
-
-    private def handleDeserialResult(result: ObjectDeserializationResult, callback: ObjectDeserializationResult => Unit): Unit = {
-
+    
+    private def handleDeserialResult(result: PacketDownload, callback: PacketDownload => Unit): Unit = {
+        
         result.coords match {
             case dedicated: DedicatedPacketCoordinates =>
                 if (dedicated.targetID == server.currentIdentifier) {
@@ -59,16 +58,16 @@ class SelectivePacketReader(socket: DynamicSocket,
                 } else {
                     manager.deflect(result)
                 }
-
+            
             case broadcast: BroadcastPacketCoordinates =>
                 val identifiers = broadcast.listDiscarded(manager.listIdentifiers) ++ Array(boundIdentifier)
-                manager.broadcastPacket(result, identifiers: _*)
-
-                //would inject into the server too
+                manager.broadcastPacket(new DeflectedPacket(result.buff, broadcast), identifiers: _*)
+                
+                //should inject into the server too if targeted
                 if (broadcast.targetIDs.contains(serverIdentifier) != broadcast.discardTargets) {
                     callback(result)
                 }
         }
     }
-
+    
 }

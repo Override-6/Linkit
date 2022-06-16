@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.server.connection.packet
+package fr.linkit.server.connection.traffic
 
 import fr.linkit.api.application.connection.NoSuchConnectionException
 import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, PacketWriter}
@@ -21,16 +21,16 @@ import fr.linkit.engine.gnom.packet.traffic.WriterInfo
 import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {
-
+    
     override val path             : Array[Int]    = info.path
     override val traffic          : PacketTraffic = info.traffic
     override val serverIdentifier : String        = serverConnection.currentIdentifier
     override val currentIdentifier: String        = traffic.currentIdentifier
-
+    
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)
     }
-
+    
     override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
         targetIDs.foreach(targetID => {
             /*
@@ -51,12 +51,14 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
             }
         })
     }
-
+    
     override def writeBroadcastPacket(packet: Packet, discardedIDs: Array[String]): Unit = {
         writeBroadcastPacket(packet, SimplePacketAttributes.empty, discardedIDs)
     }
-
+    
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discarded: Array[String]): Unit = {
         serverConnection.broadcastPacket(packet, attributes, currentIdentifier, path, info.persistenceConfig, discarded)
     }
+    
 }
+

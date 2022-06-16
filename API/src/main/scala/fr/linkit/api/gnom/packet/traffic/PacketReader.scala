@@ -13,10 +13,10 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.workerExecution
 
 trait PacketReader {
 
-    def nextPacket(@workerExecution callback: (ObjectDeserializationResult) => Unit): Unit
+    def nextPacket(@workerExecution callback: (PacketDownload) => Unit): Unit
 }

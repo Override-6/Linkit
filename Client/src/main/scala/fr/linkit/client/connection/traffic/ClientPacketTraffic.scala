@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.packet.traffic
+package fr.linkit.client.connection.traffic
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.ConnectionContext
@@ -19,11 +19,12 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, DynamicSocket, WriterInfo}
 import fr.linkit.engine.gnom.persistence.PacketSerializationChoreographer
 
 import java.net.URL
 
-class SocketPacketTraffic(socket: DynamicSocket,
+class ClientPacketTraffic(socket: DynamicSocket,
                           translator: ObjectTranslator,
                           defaultPersistenceConfigScript: Option[URL],
                           override val application: ApplicationContext,
@@ -51,7 +52,7 @@ class SocketPacketTraffic(socket: DynamicSocket,
     override def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter = {
         if (persistenceConfig == null)
             throw new NullPointerException("persistenceConfig is null.")
-        new SocketPacketWriter(socket, choreographer, WriterInfo(this, persistenceConfig, path, () => network))
+        new ClientPacketWriter(socket, choreographer, WriterInfo(this, persistenceConfig, path, () => network))
     }
 
 }

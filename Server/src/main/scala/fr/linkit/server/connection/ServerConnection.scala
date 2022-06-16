@@ -24,11 +24,11 @@ import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecuti
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
-import fr.linkit.engine.internal.concurrency.pool.{AbstractWorkerPool, ClosedWorkerPool}
+import fr.linkit.engine.internal.concurrency.pool.ClosedWorkerPool
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.utils.NumberSerializer.serializeInt
 import fr.linkit.server.config.ServerConnectionConfiguration
-import fr.linkit.server.connection.packet.ServerPacketTraffic
+import fr.linkit.server.connection.traffic.ServerPacketTraffic
 import fr.linkit.server.network.ServerSideNetwork
 import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
@@ -111,7 +111,7 @@ class ServerConnection(applicationContext: ServerApplication,
             .foreach(candidate => {
                 val coords = DedicatedPacketCoordinates(path, candidate, sender)
                 val result = translator.translate(SimpleTransferInfo(coords, attributes, packet, config, network))
-                connectionsManager.broadcastPacket(result)
+                connectionsManager.getConnection(candidate).send(result)
             })
 
         if (!discarded.contains(currentIdentifier)) {
