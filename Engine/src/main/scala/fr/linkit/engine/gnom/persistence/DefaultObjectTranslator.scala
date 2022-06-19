@@ -60,7 +60,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
 
     private def readCoordinates(buff: ByteBuffer): DedicatedPacketCoordinates = {
         (buff.get(): @switch) match {
-            //TODO Better broadcast persistence handling
+            //TODO Better broadcasted packet persistence handling
             // <------------------------ MAINTAINED ------------------------>
             case BroadcastedFlag =>
                 throw new UnsupportedOperationException("Can't read broadcast packet.")

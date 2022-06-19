@@ -22,9 +22,16 @@ import java.nio.ByteBuffer
 class DeflectedPacket(override val buff: ByteBuffer,
                       override val coords: PacketCoordinates) extends PacketDownload with PacketUpload {
     
+    private val trafficBuff = ByteBuffer.allocate(buff.capacity() + 10).put(10, buff.array())
+    
+    
     override val ordinal: Int = -1 //is not used
     
-    override def buff(ordinal: () => Int): ByteBuffer = buff.putInt(TrafficProtocol.OrdinalIndex, ordinal())
+    override def buff(ordinal: () => Int): ByteBuffer = {
+        trafficBuff.putShort(0, TrafficProtocol.ProtocolVersion)
+        trafficBuff.putInt(TrafficProtocol.OrdinalIndex, ordinal())
+        trafficBuff.putInt(TrafficProtocol.PacketLengthIndex, buff.capacity()) //write the packet content length
+    }
     
     override def makeDeserialization(): Unit = throw new UnsupportedOperationException
     

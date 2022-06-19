@@ -100,10 +100,10 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                 handlePacket(result, coordinates)
             } catch {
                 case NonFatal(e) =>
-                    AppLoggers.Persistence.error(s"Could not deserialize packet ${result.ordinal}: ${e.getMessage}")
+                    AppLoggers.Persistence.error(s"Could not deserialize packet ${result.ordinal}: ${e.getMessage} (${e.getStackTrace.head})")
             }
         }
-        readThread.onReadException = () => this.shutdown()
+        readThread.onReadException = () => this.runLater(this.shutdown())
         readThread.start()
     }
 

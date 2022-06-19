@@ -37,5 +37,7 @@ object ConnectionOrdinalsHandler {
             count += 1
             count
         }
+    
+        override def toString: String = s"OrdinalCounter($count)"
     }
 }

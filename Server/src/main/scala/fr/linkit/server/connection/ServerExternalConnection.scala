@@ -143,8 +143,8 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     
     @workerExecution
     private def handlePacket(result: PacketDownload): Unit = if (alive) {
-            serverTraffic.processInjection(result)
-        }
+        serverTraffic.processInjection(result)
+    }
     
     override def getApp: ApplicationContext = server.getApp
 }

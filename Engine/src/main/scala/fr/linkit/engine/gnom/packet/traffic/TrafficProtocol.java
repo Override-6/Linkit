@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.packet.traffic;
 public class TrafficProtocol {
 
     public static final short ProtocolVersion = 1;
-    public static final byte PacketLengthIndex = 4;
-    public static final byte OrdinalIndex = 0;
+    public static final byte PacketLengthIndex = 6;
+    public static final byte OrdinalIndex = 2;
 
 }

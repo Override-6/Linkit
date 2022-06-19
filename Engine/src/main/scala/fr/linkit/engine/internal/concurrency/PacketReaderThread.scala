@@ -47,7 +47,8 @@ class PacketReaderThread(reader: PacketReader,
             }
         } catch {
             case NonFatal(e) =>
-                AppLoggers.Traffic.error("Packet reading threw an error", e)
+                AppLoggers.Traffic.error("Packet reading threw an error")
+                e.printStackTrace()
                 open = false
         } finally {
             //println("STOPPED PACKET WORKER")

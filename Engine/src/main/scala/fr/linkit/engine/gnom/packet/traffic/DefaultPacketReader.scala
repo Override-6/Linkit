@@ -62,10 +62,8 @@ class DefaultPacketReader(socket: DynamicSocket,
         //NETWORK-DEBUG-MARK
         
         logDownload(socket.boundIdentifier, ordinal, length, bytes)
-        val buff = ByteBuffer.allocate(bytes.length + 4)
-        buff.putInt(length)
-        buff.put(bytes)
-        buff.position(4)
+        val buff = ByteBuffer.wrap(bytes)
+        //buff.position(0)
         val result = translator.translate(traffic, buff, ordinal)
         callback(result)
     }

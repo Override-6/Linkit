@@ -44,13 +44,13 @@ abstract class PacketUploadImpl(info: TransferInfo,
         //buff.limit(buff.capacity())
         writeCoords(buff)
         info.makeSerial(serializer, buff)
-        buff.putInt(TrafficProtocol.PacketLengthIndex + 2, buff.position() - HoleLength - 2) //write the packet's length
+        buff.putInt(TrafficProtocol.PacketLengthIndex, buff.position() - HoleLength - 2) //write the packet's length
         buffStack.push(buff)
         buff.flip()
     }
     
     override def buff(ordinal: () => Int): ByteBuffer = {
-        buffer.putInt(TrafficProtocol.OrdinalIndex + 2, ordinal())
+        buffer.putInt(TrafficProtocol.OrdinalIndex, ordinal())
     }
 }
 
