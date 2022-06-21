@@ -14,7 +14,6 @@
 package fr.linkit.engine.gnom.packet.fundamental
 
 import fr.linkit.api.gnom.packet.Packet
-import fr.linkit.engine.internal.utils.NumberSerializer
 
 import java.io.Serializable
 
@@ -50,7 +49,7 @@ object RefPacket {
     /**
      * Represents a packet that contains a serializable value of a specified type
      * */
-    case class AnyRefPacket[A] private(override val value: A) extends RefPacket[A]
+    case class AnyRefPacket[A] (override val value: A) extends RefPacket[A]
 
     /**
      * Represents a packet that contains a serializable value
@@ -101,9 +100,7 @@ object RefPacket {
         def contains(a: A): Boolean = value.contains(a)
 
         def length: Int = value.length
-
-        Thread.currentThread().getContextClassLoader
-
+        
         override def toString: String = s"ArrayValPacket(${value.mkString(",")})"
     }
 

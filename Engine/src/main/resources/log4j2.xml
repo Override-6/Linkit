@@ -2,7 +2,8 @@
 <Configuration status="WARN" packages="fr.linkit.api.internal.system.log">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout disableAnsi="false"  pattern="%style{[%d{HH:mm:ss,SSS}]}{magenta} [%-28.28t] [%highlight{%-5p}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank} _ %-12logger] %stack{>,?} %style{-}{blank} %highlight{%m%n}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank}"/>
+            <PatternLayout disableAnsi="false"
+                           pattern="%style{[%d{HH:mm:ss,SSS}]}{magenta} [%-28.28t] [%highlight{%-5p}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank} _ %-12logger] %stack{>,?} %style{-}{blank} %highlight{%m%n}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank}"/>
         </Console>
     </Appenders>
     <Loggers>
@@ -14,7 +15,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="GNOM.SyncObj" level="DEBUG" additivity="false" includeLocation="false">
+        <Logger name="GNOM.SyncObj" level="TRACE" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
@@ -43,6 +44,11 @@
         </Logger>
 
         <Logger name="Connection" level="DEBUG" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-->Debug logger used to print stuff that are not pertinent for the user and that must be removed once the bug is fixed</!-->
+        <Logger name="Debug" level="ALL" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

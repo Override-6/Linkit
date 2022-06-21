@@ -20,7 +20,8 @@ import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.traffic.WriterInfo
 import fr.linkit.server.connection.ServerConnection
 
-class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {
+class ServerPacketWriter(serverConnection: ServerConnection,
+                         info: WriterInfo) extends PacketWriter {
     
     override val path             : Array[Int]    = info.path
     override val traffic          : PacketTraffic = info.traffic

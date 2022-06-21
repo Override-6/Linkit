@@ -23,9 +23,12 @@ class SimpleWorkerController extends WorkerController {
     
     private val pausedTasks = new mutable.HashMap[Int, ControlTicket]()
     
-    private def tickets: mutable.HashMap[Int, ControlTicket] = {
-        pausedTasks.filterInPlace((_, tick) => tick.task.isExecuting)
-        pausedTasks.filter(_._2.task.isPaused)
+    protected def tickets: mutable.HashMap[Int, ControlTicket] = {
+        if (pausedTasks.nonEmpty) {
+            pausedTasks.filterInPlace((_, tick) => tick.task.isExecuting)
+            return pausedTasks.filter(_._2.task.isPaused)
+        }
+        pausedTasks
     }
     
     @workerExecution
@@ -99,7 +102,7 @@ class SimpleWorkerController extends WorkerController {
     
     private def pauseCurrentTask(millis: Long): Unit = WorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
     
-    private def createControlTicket(pauseCondition: => Boolean): Unit = {
+    protected def createControlTicket(pauseCondition: => Boolean): Unit = {
         this.synchronized {
             val currentTask = WorkerPools.currentTask.get
             pausedTasks.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
@@ -111,7 +114,7 @@ class SimpleWorkerController extends WorkerController {
 
 object SimpleWorkerController {
     
-    private class ControlTicket(val task: AsyncTask[_], condition: => Boolean) {
+    protected class ControlTicket(val task: AsyncTask[_], condition: => Boolean) {
         
         def shouldWakeup: Boolean = !condition
         

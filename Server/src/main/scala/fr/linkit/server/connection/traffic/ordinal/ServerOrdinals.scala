@@ -11,9 +11,21 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.packet.fundamental
+package fr.linkit.server.connection.traffic.ordinal
 
-import fr.linkit.api.gnom.packet.Packet
+import scala.collection.mutable
 
-case class WrappedPacket(tag: String, subPacket: Packet) extends Packet
+class ServerOrdinals {
+    
+    private final val ordinal = mutable.HashMap.empty[Int, Counter]
+    
+    def forChannel(path: Array[Int]): Counter = {
+        ordinal.getOrElseUpdate(java.util.Arrays.hashCode(path), new Counter)
+    }
+    
+}
 
+object ServerOrdinals {
+    
+
+}

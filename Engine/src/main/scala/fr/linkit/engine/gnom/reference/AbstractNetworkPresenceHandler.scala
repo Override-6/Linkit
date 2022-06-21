@@ -43,7 +43,9 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
     }
     
     override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
-        AppLoggers.GNOM.debug(s"Wondering if '$ref' present on engine '$engineId'")
+        if (ref.toString.startsWith("@network/caches/Global Cache/2/~"))
+            Thread.dumpStack()
+        
         val presence  = getPresence(ref)
         val isPresent = if (presence.isPresenceKnownFor(engineId)) {
             presence.getPresenceFor(engineId) eq PRESENT
@@ -78,7 +80,6 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
                     .nextResponse
                     .nextPacket[BooleanPacket]
                     .value
-            AppLoggers.GNOM.debug(s"is any network object registered at $location on engine $engineId ? $isPresent")
             isPresent
         }
     }

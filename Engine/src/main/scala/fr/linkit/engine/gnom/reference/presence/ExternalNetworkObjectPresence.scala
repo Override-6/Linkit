@@ -33,11 +33,13 @@ class ExternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
     override def getPresenceFor(engineId: String): ObjectPresenceType = {
         if (engineId == null)
             throw new NullPointerException("engineId is null.")
-        presences.getOrElseUpdate(engineId, {
-            val present = handler.askIfPresent(engineId, reference)
-            if (present) PRESENT
-            else NOT_PRESENT
-        })
+        this.synchronized {
+            presences.getOrElseUpdate(engineId, {
+                val present = handler.askIfPresent(engineId, reference)
+                if (present) PRESENT
+                else NOT_PRESENT
+            })
+        }
     }
 
     def setToPresent(engineId: String): Unit = {

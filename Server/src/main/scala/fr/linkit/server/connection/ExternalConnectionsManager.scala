@@ -24,6 +24,7 @@ import fr.linkit.server.connection.traffic.DeflectedPacket
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 /**
@@ -32,8 +33,9 @@ import scala.util.control.NonFatal
  * */
 class ExternalConnectionsManager(server: ServerConnection) extends JustifiedCloseable {
     
-    private val connections: mutable.Map[String, ServerExternalConnection] = mutable.Map.empty
-    private val maxConnection                                              = server.configuration.maxConnection
+    private val connections   = mutable.HashMap.empty[String, ServerExternalConnection]
+    private val sessions      = ListBuffer.empty[ExternalConnectionSession]
+    private val maxConnection = server.configuration.maxConnection
     
     @volatile private var closed = false
     
@@ -71,12 +73,14 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         //Opening ClientConnectionSession and finalizing registration...
         val packetReader = new ServerPacketReader(socket, server, this, identifier)
         val readerThread = new PacketReaderThread(packetReader, identifier)
-        val info         = ExternalConnectionSessionInfo(server, this, server.getSideNetwork, readerThread)
         
+        val info              = ExternalConnectionSessionInfo(server, this, server.getSideNetwork, readerThread)
         val connectionSession = ExternalConnectionSession(identifier, socket, info)
         val connection        = ServerExternalConnection.open(connectionSession)
         AppLoggers.Connection.info(s"Stage 2 completed : Connection '$identifier' created.")
         connections.put(identifier, connection)
+        sessions += connectionSession
+        
         server.sendAuthorisedConnection(socket)
         
         val canConnect = true //server.configuration.checkConnection(connection)
@@ -126,6 +130,8 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     def countConnections: Int = connections.size
     
     def listIdentifiers: Seq[String] = connections.keys.toSeq
+    
+    def listConnectionSessions: List[ExternalConnectionSession] = sessions.toList
     
     /**
      * determines if the address is not registered

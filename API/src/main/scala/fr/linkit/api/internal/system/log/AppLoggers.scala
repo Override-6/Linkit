@@ -29,5 +29,8 @@ object AppLoggers {
     final val Worker      = logger("Worker")
     final val Connection  = logger("Connection")
     
+    //Debug logger used to print stuff that are not pertinent for the user and that must be removed once the bug is fixed
+    final val Debug = logger("Debug")
+    
     private def logger(name: String): Logger = LogManager.getLogger(name)
 }

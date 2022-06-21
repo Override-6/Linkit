@@ -162,10 +162,10 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                 creator.syncClassDef, syncLevel,
                 choreographer)
             val factory       = SyncObjectContractFactory(contracts)
-    
+            
             val rootContract = getRootContract(factory)(creator, context)
             val root         = DefaultInstantiator.newSynchronizedInstance[A](creator)
-    
+            
             val chip      = ObjectChip[A](rootContract, network, root)
             val puppeteer = ObjectPuppeteer[A](channel, this, nodeReference)
             val presence  = forest.getPresence(nodeReference)
@@ -176,7 +176,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                 val syncData = new SyncObjectNodeData[A](puppeteer, root, syncLevel, origin)(chipData)
                 new RootObjectNodeImpl[A](syncData)
             }
-    
+            
             val tree = new DefaultConnectedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
             forest.addTree(id, tree)
             if (forest.isRegisteredAsUnknown(id)) {
@@ -228,9 +228,9 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
         if (!forest.isPresentOnEngine(ownerID, treeRef))
             return
-            
+        
         forest.putUnknownTree(id)
-        AppLoggers.Persistence.trace(s"Requesting root object $treeRef.")
+        AppLoggers.SyncObj.trace(s"Requesting root object $treeRef.")
         channel.makeRequest(ChannelScopes.include(ownerID))
                 .addPacket(IntPacket(id))
                 .submit()
@@ -297,7 +297,6 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
                 }
                 //it's an object that must be remotely controlled because it is chipped by another objects cache.
                 createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), mirror, contracts)
-                
                 
             })
         }

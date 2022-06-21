@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic.unit
 
+import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule
 import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
@@ -20,14 +21,12 @@ import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.{Worker, WorkerPools}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
-import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
+import fr.linkit.engine.internal.concurrency.pool.{EquilibratedWorkerController, SimpleWorkerController}
 
 import java.lang.Thread.State._
 import java.util.{Comparator, PriorityQueue}
 import scala.annotation.switch
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.Try
 
 class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends InjectionProcessorUnit {
     
@@ -35,17 +34,17 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
     private final var executor: Worker = _
     
-    private final val joinLocker                 = new SimpleWorkerController()
-    private final val refocusingLocker           = new SimpleWorkerController()
-    private final var waitingForRefocus: Boolean = false
+    private final val joinLocker                           = new SimpleWorkerController()
+    private final val refocusingLocker                     = new EquilibratedWorkerController()
+    @volatile private final var waitingForRefocus: Boolean = false
     
     private final var currentOrdinal: Int = 0
     
     override def post(result: PacketDownload): Unit = {
         AppLoggers.Persistence.trace(s"SIPU: adding packet injection for channel '${injectable.reference}'. ord: ${result.ordinal} Current unit executor: $executor. packet queue length = ${queue.size}")
         
-        queue.offer(result)
         queue.synchronized {
+            queue.offer(result)
             if (waitingForRefocus && result.ordinal == currentOrdinal + 1) {
                 refocusingLocker.wakeupAnyTask()
                 waitingForRefocus = false
@@ -60,9 +59,14 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                 if (executor.isSleeping) {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
+                    val e = new Exception()
+                    e.setStackTrace(executor.thread.getStackTrace)
+                    e.printStackTrace()
                     AppLoggers.Persistence.info(s"SIPU: Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
                     try executor.runWhileSleeping(deserializeAll(true))
-                    catch {case _: IllegalThreadStateException => }
+                    catch {
+                        case _: IllegalThreadStateException =>
+                    }
                     return
                 }
                 val threadState = executor.thread.getState
@@ -91,7 +95,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
     def getCurrentOrdinal: Int = currentOrdinal
     
     private def nextResult(): PacketDownload = {
-        val result          = queue.poll()
+        val result = queue.poll()
         if (result == null)
             return null
         val queueLength     = queue.size
@@ -102,20 +106,21 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
             if (diff <= 0) {
                 throw UnexpectedPacketException(s"for channel ${injectable.reference}: Received packet with ordinal '$resultOrd', while current ordinal is $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
             }
-            queue.synchronized {
-                waitingForRefocus = true
-            }
+            waitingForRefocus = true
             if (queueLength != queue.size) { //the queue was updated, maybe the remaining packets has been added
                 waitingForRefocus = false
                 queue.offer(result)
                 return nextResult()
             }
-            refocusingLocker.pauseTask()
-            waitingForRefocus = false
+            if (waitingForRefocus) {
+                refocusingLocker.pauseTask()
+                waitingForRefocus = false
+            }
             queue.offer(result)
             return nextResult()
         }
         currentOrdinal = expectedOrdinal
+        AppLoggers.Debug.trace(s"SIPU: for ${injectable.reference}, current ordinal is now $currentOrdinal.")
         result
     }
     

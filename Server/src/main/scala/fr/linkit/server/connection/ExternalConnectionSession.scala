@@ -22,7 +22,7 @@ import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.engine.internal.system.SystemPacketChannel
-import fr.linkit.server.connection.traffic.ConnectionOrdinalsHandler
+import fr.linkit.server.connection.traffic.ordinal.{ConnectionsOrdinalsRectifier, ServerOrdinals}
 import fr.linkit.server.network.ServerSideNetwork
 
 import java.net.Socket
@@ -31,29 +31,27 @@ case class ExternalConnectionSession private(boundIdentifier: String,
                                              private val socket: SocketContainer,
                                              info: ExternalConnectionSessionInfo) extends JustifiedCloseable {
     
-    val server           : ServerConnection           = info.server
-    val network          : ServerSideNetwork          = info.network
-    val connectionManager: ExternalConnectionsManager = info.manager
-    val readThread       : PacketReaderThread         = info.readThread
-    val serverTraffic    : PacketTraffic              = server.traffic
-    val ordinals         : ConnectionOrdinalsHandler  = new ConnectionOrdinalsHandler()
-    val channel          : SystemPacketChannel        = serverTraffic.getInjectable(SystemChannelID, SystemPacketChannel, ChannelScopes.include(boundIdentifier))
+    private[connection] val server           : ServerConnection             = info.server
+    private[connection] val network          : ServerSideNetwork            = info.network
+    private[connection] val connectionManager: ExternalConnectionsManager   = info.manager
+    private[connection] val readThread       : PacketReaderThread           = info.readThread
+    private[connection] val traffic          : PacketTraffic                = server.traffic
+    private[connection] val serverOrdinals   : ServerOrdinals               = new ServerOrdinals()
+    private[server]     val ordinalsRectifier: ConnectionsOrdinalsRectifier = new ConnectionsOrdinalsRectifier(traffic)
     
     @workerExecution
     override def close(reason: Reason): Unit = {
         socket.close(reason)
-        //tasksHandler.close()
         network.removeEngine(boundIdentifier)
-        serverTraffic.close(reason)
     }
     
     def getSocketState: ExternalConnectionState = socket.getState
     
-    def send(result: PacketUpload): Unit = {
-        socket.write(result.buff(() => ordinals.forChannel(result.coords.path).next()))
+    private[connection] def send(result: PacketUpload): Unit = {
+        socket.write(result.buff(() => serverOrdinals.forChannel(result.coords.path).increment()))
     }
     
-    def updateSocket(socket: Socket): Unit = this.socket.set(socket)
+    private[connection] def updateSocket(socket: Socket): Unit = this.socket.set(socket)
     
     def getEntity: Engine = network.findEngine(boundIdentifier).get
     
