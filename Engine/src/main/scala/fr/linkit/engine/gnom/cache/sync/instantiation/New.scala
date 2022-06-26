@@ -16,14 +16,14 @@ package fr.linkit.engine.gnom.cache.sync.instantiation
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
-import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor.getAssignableConstructor
+import fr.linkit.engine.gnom.cache.sync.instantiation.New.getAssignableConstructor
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 
 import java.lang.reflect.{Modifier, Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}
 
-class Constructor[A <: AnyRef](clazz: Class[A],
-                               arguments: Array[Any]) extends SyncInstanceCreator[A] {
+class New[A <: AnyRef](clazz: Class[A],
+                       arguments: Array[Any]) extends SyncInstanceCreator[A] {
     
     override val syncClassDef: SyncClassDef = SyncClassDef(clazz)
     
@@ -35,12 +35,12 @@ class Constructor[A <: AnyRef](clazz: Class[A],
     override def getOrigin: Option[A] = None
 }
 
-object Constructor {
+object New {
     
-    def apply[T <: AnyRef : ClassTag](params: Any*): Constructor[T] = {
+    def apply[T <: AnyRef : ClassTag](params: Any*): New[T] = {
         val clazz        = classTag[T].runtimeClass.asInstanceOf[Class[T]]
         val objectsArray = params.toArray
-        new Constructor[T](clazz, objectsArray)
+        new New[T](clazz, objectsArray)
     }
     
     def getAssignableConstructor[T](clazz: Class[T], objectsArray: Array[Any]): JConstructor[T] = {

@@ -6,7 +6,7 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
-import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
+import fr.linkit.engine.gnom.cache.sync.instantiation.New
 
 class StaticAccesses(network: Network) {
 
@@ -27,7 +27,7 @@ class StaticAccesses(network: Network) {
             case Some(_) =>
                 throw new CacheAlreadyDeclaredException(s"Static access already exists for id '$id'")
             case None    =>
-                staCache.syncObject(id, Constructor[StaticAccessImpl](id, cacheManager, contract), contract)
+                staCache.syncObject(id, New[StaticAccessImpl](id, cacheManager, contract), contract)
         }
     }
 }

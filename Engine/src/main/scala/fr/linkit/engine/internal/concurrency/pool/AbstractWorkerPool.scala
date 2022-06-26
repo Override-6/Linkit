@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.gnom.network.ExecutorEngine
+import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
 import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
@@ -86,8 +86,8 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
     
     import fr.linkit.api.internal.concurrency.WorkerPools._
     
-    protected val workers: ListBuffer[Worker] = ListBuffer.empty
-    protected var closed                      = false
+    protected val workers      : ListBuffer[Worker] = ListBuffer.empty
+    protected var closed                            = false
     
     //additional values for debugging
     @volatile private var activeThreads = 0
@@ -101,6 +101,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
     override def close(): Unit = {
         closed = true
     }
+
     
     /**
      * Submits a task to the executor thread pool.
@@ -233,8 +234,8 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Auto
     
     //TODO much better to return a ThreadTask instead of having a runnable that will declare a ThreadTask in it.
     protected def pollTask: Runnable
-    protected def takeTask: Runnable
     
+    protected def takeTask: Runnable
     
     /**
      * Keep the current thread busy with task execution for at least

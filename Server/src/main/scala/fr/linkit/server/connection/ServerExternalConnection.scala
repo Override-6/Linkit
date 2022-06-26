@@ -81,19 +81,12 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
             val rectifiedResult = new PacketDownload {
                 override val ordinal: Int        = result.ordinal + ordinalShift
                 override val buff   : ByteBuffer = result.buff
-                
                 override def coords: PacketCoordinates = coordinates
-                
                 override def attributes: PacketAttributes = result.attributes
-                
                 override def packet: Packet = result.packet
-                
                 override def makeDeserialization(): Unit = result.makeDeserialization()
-                
                 override def isDeserialized: Boolean = result.isDeserialized
-                
                 override def isInjected: Boolean = result.isInjected
-                
                 override def informInjected: Unit = result.informInjected
             }
             handlePacket(rectifiedResult)

@@ -14,7 +14,7 @@
 package fr.linkit.examples.ssc.server
 
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
-import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor
+import fr.linkit.engine.gnom.cache.sync.instantiation.New
 import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 import fr.linkit.examples.ssc.api.UserAccountContainer
 import fr.linkit.server.ServerApplication
@@ -46,7 +46,7 @@ object ServerBankLauncher {
         val app        = connection.getApp
         val contract   = Contract("BankControl", app, ObjectsProperty.defaults(network))
         val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer](contract))
-        cache.mirrorObject(0, Constructor[UserAccountContainerImpl]())
+        cache.mirrorObject(0, New[UserAccountContainerImpl]())
     }
 
     private def launchApp(): ServerConnection = {

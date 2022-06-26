@@ -4,7 +4,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.network.statics.StaticsCaller
-import fr.linkit.engine.gnom.cache.sync.instantiation.Constructor.getAssignableConstructor
+import fr.linkit.engine.gnom.cache.sync.instantiation.New.getAssignableConstructor
 
 class SyncStaticAccessInstanceCreator(tpeClass: Class[StaticsCaller],
                                       arguments: Array[Any],

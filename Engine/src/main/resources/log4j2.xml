@@ -11,7 +11,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="GNOM" level="DEBUG" additivity="false" includeLocation="false">
+        <Logger name="GNOM" level="TRACE" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
@@ -31,11 +31,11 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Resource" level="DEBUG" additivity="false" includeLocation="false">
+        <Logger name="Resource" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Compilation" level="DEBUG" additivity="false" includeLocation="false">
+        <Logger name="Compilation" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

@@ -59,9 +59,6 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                 if (executor.isSleeping) {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
-                    val e = new Exception()
-                    e.setStackTrace(executor.thread.getStackTrace)
-                    e.printStackTrace()
                     AppLoggers.Persistence.info(s"SIPU: Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
                     try executor.runWhileSleeping(deserializeAll(true))
                     catch {
@@ -113,6 +110,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                 return nextResult()
             }
             if (waitingForRefocus) {
+                AppLoggers.Persistence.debug(s"SIPU: Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
                 refocusingLocker.pauseTask()
                 waitingForRefocus = false
             }
@@ -125,6 +123,10 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
     }
     
     private def deserializeAll(duringSleep: Boolean): Unit = {
+        if (duringSleep) {
+            println(queue.size())
+            ""
+        }
         val currentWorker = WorkerPools.currentWorker
         val currentTask   = currentWorker.getCurrentTask
         for (unit <- chain) {
@@ -145,7 +147,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
             return
         //everything deserialized, now realising this deserialization unit.
         currentTask.synchronized {
-            AppLoggers.GNOM.trace(s"Releasing current unit...")
+            AppLoggers.Persistence.trace(s"Releasing current unit...")
             if (!duringSleep) executor = null
             joinLocker.wakeupAllTasks()
             this.synchronized(this.notifyAll())
@@ -157,12 +159,12 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
      * */
     def join(): Unit = {
         if (executor == null) return //the current IPU is not processing any injection
-        AppLoggers.GNOM.debug(s"SIPU: Waiting for chained unit (${injectable.reference}) to end injections before continuing")
+        AppLoggers.Persistence.debug(s"SIPU: Waiting for chained unit (${injectable.reference}) to end injections before continuing")
         val currentTask = WorkerPools.currentTask.orNull
         if (currentTask == null && executor != null)
             this.synchronized(wait())
         else if (executor != null) {
-            AppLoggers.GNOM.trace(s"Pausing task, waiting for '$executor' to finish.")
+            AppLoggers.Persistence.trace(s"Pausing task, waiting for '$executor' to finish.")
             joinLocker.pauseTask()
         }
     }

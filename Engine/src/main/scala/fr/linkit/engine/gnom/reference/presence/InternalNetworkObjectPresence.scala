@@ -28,15 +28,19 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
 
     def isPresent: Boolean = present
     
-    override def isPresenceKnownFor(engineId: String): Boolean = presences.contains(engineId)
+    override def isPresenceKnownFor(engineId: String): Boolean = presences.synchronized {
+        presences.contains(engineId)
+    }
     
-    def setPresenceFor(engineId: String, kind: ObjectPresenceType): Unit = presences.put(engineId, kind)
+    def setPresenceFor(engineId: String, kind: ObjectPresenceType): Unit = presences.synchronized {
+        presences.put(engineId, kind)
+    }
 
-    override def getPresenceFor(engineId: String): ObjectPresenceType = {
+    override def getPresenceFor(engineId: String): ObjectPresenceType = presences.synchronized {
         presences.getOrElse(engineId, NEVER_ASKED)
     }
 
-    def setPresent(): Unit = {
+    def setPresent(): Unit = presences.synchronized {
         //set to all engines who thinks that the reference is not present on this engine
         //that it's no has been referenced
         //on this current engine.
@@ -50,13 +54,14 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
             return
         handler.informPresence(enginesID, location, PRESENT)
         presences.clear()
-        enginesID.foreach(presences.put(_, PRESENT)) //everyone now thinks
+        enginesID.foreach(presences.put(_, PRESENT))
     }
 
-    def setNotPresent(): Unit = {
+    def setNotPresent(): Unit = presences.synchronized {
         //set to all engines who thinks that the reference is present on this engine
         //that it's no longer referenced
         //on this current engine.
+        present = false
         val enginesID = presences
             .filter(_._2 eq PRESENT)
             .keys
@@ -64,8 +69,7 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
         if (enginesID.isEmpty)
             return
         handler.informPresence(enginesID, location, NOT_PRESENT)
-        enginesID.foreach(presences.put(_, NOT_PRESENT)) //everyone now thinks
-        present = false
+        enginesID.foreach(presences.put(_, NOT_PRESENT))
     }
 
 }

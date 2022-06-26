@@ -13,11 +13,11 @@
 
 package fr.linkit.api.gnom.network
 
-//FIXME would cause a problem if the application uses multiple connections
 object ExecutorEngine {
 
     private val local = new ThreadLocal[Engine]()
-
+    
+    //FIXME would cause a problem if the application uses multiple connections
     private var defaultEngine: Engine = _
 
     def currentEngine: Engine = {

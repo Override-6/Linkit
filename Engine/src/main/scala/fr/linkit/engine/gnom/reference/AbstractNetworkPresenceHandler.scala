@@ -39,12 +39,14 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
     
     @inline
     def getPresence(ref: R): NetworkObjectPresence = {
-        externalPresences.getOrElseUpdate(ref, new ExternalNetworkObjectPresence[R](this, ref))
+        externalPresences.getOrElseUpdate(ref, {
+            new ExternalNetworkObjectPresence[R](this, ref)
+        })
     }
     
     override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
-        if (ref.toString.startsWith("@network/caches/Global Cache/2/~"))
-            Thread.dumpStack()
+        //if (ref.toString.startsWith("@network/caches/Global Cache/2/~"))
+        //    Thread.dumpStack()
         
         val presence  = getPresence(ref)
         val isPresent = if (presence.isPresenceKnownFor(engineId)) {
@@ -92,12 +94,6 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
                 .submit()
     }
     
-    def bindListener(location: R, listener: ExternalNetworkObjectPresence[R]): Unit = {
-        if (externalPresences.contains(location))
-            throw new IllegalArgumentException(s"A listener is already bound for location '$location'.")
-        externalPresences.put(location, listener)
-    }
-    
     override def toString: String = "presence handler " + getClass.getSimpleName
     
     protected def registerReference(ref: R): Unit = ref.getClass.synchronized {
@@ -113,7 +109,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
         val opt = externalPresences.get(ref)
         if (opt.isDefined) {
             opt.get.setToPresent(currentIdentifier)
-            AppLoggers.GNOM.debug(s"Presence set to present for engine $currentIdentifier, for reference $ref")
+            AppLoggers.GNOM.debug(s"Presence set to present for current engine ($currentIdentifier), at reference $ref")
         }
     }
     
@@ -134,7 +130,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
         val reference: R      = bundle.linkerReference.asInstanceOf[R]
         val pct               = request.nextPacket[Packet]
         val senderId          = bundle.coords.senderID
-        AppLoggers.GNOM.debug(s"handling bundle, request from $senderId. packet : $pct")
+        AppLoggers.GNOM.trace(s"handling bundle, request from $senderId. packet : $pct")
         pct match {
             case EmptyPacket =>
                 val isPresent = isLocationReferenced(reference)

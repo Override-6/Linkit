@@ -53,6 +53,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCac
     def findTreeLocal(id: Int): Option[ConnectedObjectTree[A]] = trees.get(id)
     
     private[sync] def findTreeInternal(id: Int): Option[DefaultConnectedObjectTree[A]] = {
+        AppLoggers.Debug.trace(s"findTreeInternal($id): (${trees.get(id)})")
         trees.get(id).orElse {
             center.requestTree(id)
             trees.get(id)
