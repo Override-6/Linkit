@@ -7,4 +7,5 @@
 The Linkit framework is a framework that handles the network side of an application,  
 allowing it to share objects between the server and its clients. 
 Shared objects can receive a special handling which gives the possibility to replicate method calls onto the distant versions of the object, 
-following an object contract. This special handling is available on instances of any public / non-final classes.
+following a defined contract. 
+This special handling is available for instances of any public / non-final classes.
