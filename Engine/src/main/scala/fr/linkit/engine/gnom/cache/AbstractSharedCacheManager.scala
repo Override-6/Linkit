@@ -32,6 +32,7 @@ import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketC
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
 
+import java.util.concurrent.{Executors, ThreadPoolExecutor}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -188,6 +189,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
             trafficNode.chainIPU(cacheTrunkNode) // chain current with the Network trunk's cache synchronization channel
         }
     }
+    
     
     protected object ManagerCachesLinker
             extends AbstractNetworkPresenceHandler[SharedCacheReference](network.gnol.cacheNOL, network.objectManagementChannel)
