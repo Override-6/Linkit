@@ -1,9 +1,3 @@
-<style>
-    img[alt=ChatUML] { width: 12px; }
-</style>
-
-
-
 [![wakatime](https://wakatime.com/badge/github/Override-6/Linkit.svg)](https://wakatime.com/badge/github/Override-6/Linkit) (counter since 3 march 2021)
 <center> <h1>The Linkit Framework</h1> </center>  
 
@@ -25,4 +19,5 @@ We will assume that it is a graphical application, with servers, containing memb
 
 Here is our class architecture: 
 
-![ChatUML](Diagrams-Readme/ChattingUML.png)
+![ChatUML](Diagrams-Readme/ChattingUML.png width=250)
+<img src="https://github.com/Override-6/Linkit/blob/redesign/syncobjects_contract/Diagrams-Readme/ChattingUML.png?raw=true" width="300" height="300" />
