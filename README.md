@@ -19,5 +19,4 @@ We will assume that it is a graphical application, with servers, containing memb
 
 Here is our class architecture: 
 
-![ChatUML](Diagrams-Readme/ChattingUML.png width=250)
-<img src="https://github.com/Override-6/Linkit/blob/redesign/syncobjects_contract/Diagrams-Readme/ChattingUML.png?raw=true" width="300" height="300" />
+<img src="https://github.com/Override-6/Linkit/blob/redesign/syncobjects_contract/Diagrams-Readme/ChattingUML.png?raw=true" width="350" height="350" />
