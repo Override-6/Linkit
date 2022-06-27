@@ -44,11 +44,10 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz: Class[
     private[descriptor] def getSbdn(lvl: SyncLevel): Option[LeveledSBDN[A]] = leveledNodes.get(lvl)
     
     override def getContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A] = {
-        leveledNodes(context.syncLevel).getContract(clazz, context)
-        /*val mirroringInfo = if (context.syncLevel.mustBeMirrored) Some(autoDefineMirroringInfo(clazz)) else None
-        val methodMap     = mutable.HashMap.empty[Int, MethodContract[Any]]
-        fixUndescribedMethods(methodMap, context)
-        new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, Array())*/
+        val contextLevel = context.syncLevel
+        if (contextLevel == SyncLevel.Statics && !leveledNodes.contains(contextLevel))
+            throw new IllegalAccessException(s"Statics Accesses for '$clazz' not authorized.")
+        leveledNodes(contextLevel).getContract(clazz, context)
     }
     
     override def getInstanceModifier[L >: A](factory: ObjectContractFactory, limit: Class[L]): ValueModifier[A] = {

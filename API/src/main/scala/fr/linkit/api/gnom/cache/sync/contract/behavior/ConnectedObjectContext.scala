@@ -24,6 +24,7 @@ trait ConnectedObjectContext {
     val currentID    : String
     val cacheOwnerID : String
     val classDef     : SyncClassDef
+    val staticsTarget: Option[Class[_]]
     val choreographer: InvocationChoreographer
     val syncLevel    : SyncLevel
 

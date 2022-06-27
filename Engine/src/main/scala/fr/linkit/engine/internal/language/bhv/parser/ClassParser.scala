@@ -95,9 +95,12 @@ object ClassParser extends BehaviorLanguageParser {
             val methods = x.filter(_.isInstanceOf[AttributedMethodDescription]).map { case d: AttributedMethodDescription => d }
             fields ~~ methods
         }
-        (classHead <~ BracketLeft) ~ foreachFields.? ~ foreachMethod.? ~ attributedFieldsAndMethods <~ BracketRight ^^ {
-            case head ~ foreachFields ~ foreachMethods ~ (fields ~ methods) => ClassDescription(head, foreachMethods, foreachFields, fields, methods)
+        classHead ~ (BracketLeft ~> foreachFields.? ~ foreachMethod.? ~ attributedFieldsAndMethods <~ BracketRight).? ^^ {
+            case head ~ Some(foreachFields ~ foreachMethods ~ (fields ~ methods)) =>
+                ClassDescription(head, foreachMethods, foreachFields, fields, methods)
+            case head ~ None => ClassDescription(head, None, None, Nil, Nil)
         }
+        
     }
     
     private[parser] val parser: Parser[ClassDescription] = classParser

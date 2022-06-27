@@ -29,7 +29,7 @@ import scala.annotation.switch
 @SerialVersionUID($CompileTime$L)
 class $ClassName$ extends StaticsCaller {
 
-    override final val staticsTarget: Class[_] = classOf[$OriginClassSimpleName$]
+    override final val staticsTarget: Class[_] = $ClassName$.staticsTarget
 
     override final def call(nameId: String, args: Array[Any]): Any = {
         (nameId: @switch) match {
@@ -40,6 +40,7 @@ class $ClassName$ extends StaticsCaller {
         }
     }
 
+    
 !!CASTS!! {
     @inline
     private implicit def cast_$Count$[$Params$, X[$ParamsWildcards$]](y: X[$ParamsWildcards$]): X[$Params$] = y.asInstanceOf[X[$Params$]]
@@ -49,6 +50,6 @@ class $ClassName$ extends StaticsCaller {
 }
 }
 
-final object $ClassName$ {
-    final val staticsTarget: Class[_] = classOf[$OriginClassSimpleName$]
+object $ClassName$ {
+    val staticsTarget: Class[_] = classOf[$OriginClassSimpleName$]
 }

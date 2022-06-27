@@ -23,13 +23,14 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
+import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{collectInterfaces, findReasonTypeCantBeSync, getSyncableInterface, listMethodIds}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.{Member, Method, Modifier}
+import scala.annotation.switch
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -129,7 +130,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
     }
     
     def getContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A] = {
-        val level = descriptor.syncLevel
+        val level = this.descriptor.syncLevel
         if (context.syncLevel != level)
             throw new IllegalArgumentException(s"context.syncLevel != descriptor.syncLevel (${context.syncLevel} / ${level})")
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
@@ -275,9 +276,10 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
      * Applies a default contract for methods The applied contract is determined using the context.
      * */
     def fixUndescribedMethods(methods: mutable.HashMap[Int, MethodContract[Any]], context: ConnectedObjectContext): Unit = {
-        if (context.syncLevel == Statics) return
-        val clazzDef   = context.classDef
-        val missingIds = listMethodIds(clazzDef)
+        val clazzDef     = context.classDef
+        val contextLevel = context.syncLevel
+        val isStatics    = contextLevel == Statics
+        val missingIds   = listMethodIds(isStatics, clazzDef)
         for (contract <- methods.values) {
             val contractMethodId = contract.description.methodId
             if (missingIds.contains(contractMethodId))
@@ -285,10 +287,10 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         }
         if (missingIds.isEmpty)
             return
-        val desc = SyncObjectDescription(clazzDef)
+        val desc = if (isStatics) SyncStaticsDescription(clazzDef.mainClass) else SyncObjectDescription(clazzDef)
         
         def determineContract(clazz: Class[_]): ModifiableValueContract[Any] = {
-            if (!context.syncLevel.mustBeMirrored() || clazz.isPrimitive || clazz.isArray || (clazz eq classOf[String]))
+            if (!contextLevel.mustBeMirrored() || clazz.isPrimitive || clazz.isArray || (clazz eq classOf[String]))
                 new SimpleModifiableValueContract[Any](NotRegistered, autochip)
             else if (findReasonTypeCantBeSync(clazz).isDefined)
                 new SimpleModifiableValueContract[Any](Chipped, autochip)
@@ -301,7 +303,11 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                 case Some(md) =>
                     val jMethod        = md.javaMethod
                     val builder        = new RMIRulesAgreementGenericBuilder()
-                    val agreement      = (if (context.syncLevel == Mirror) ONLY_ORIGIN(builder) else ONLY_CURRENT(builder)).result(context)
+                    val agreement      = ((contextLevel: @switch) match {
+                        case Synchronized | Chipped => ONLY_CURRENT(builder)
+                        case Mirror                 => ONLY_ORIGIN(builder)
+                        case Statics                => ONLY_CACHE_OWNER(builder)
+                    }).result(context)
                     val rvContract     = determineContract(jMethod.getReturnType)
                     var paramsContract = md.javaMethod.getParameterTypes.map(determineContract)
                     if (paramsContract.forall(c => c.registrationKind == NotRegistered && c.modifier.isEmpty))
@@ -312,6 +318,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                         md, None, null)
                     methods.put(id, emergencyContract)
                 case None     =>
+                //throw new NoSuchElementException(s"Could not find method with id '$id'")
             }
         }
     }
@@ -357,7 +364,7 @@ object LeveledSBDN {
         else Array(interface)
     }
     
-    private def listMethodIds(syncClassDef: SyncClassDef): mutable.Set[Int] = {
+    private def listMethodIds(statics: Boolean, syncClassDef: SyncClassDef): mutable.Set[Int] = {
         val methods        = mutable.ListBuffer.empty[Int]
         val visitedClasses = mutable.HashSet.from(syncClasses) //consider syncClasses as already visited because we want to avoid them.
         
@@ -368,7 +375,8 @@ object LeveledSBDN {
             while (cl != null) {
                 cl.getInterfaces.foreach(acc)
                 methods ++= cl.getDeclaredMethods
-                        .filterNot(m => SyncObjectDescription.isNotOverrideable(m.getModifiers))
+                        .filter(m => (statics && Modifier.isStatic(m.getModifiers)) || (!statics && !SyncObjectDescription.isNotOverrideable(m.getModifiers)))
+                        .tapEach(println)
                         .map(MethodDescription.computeID)
                 cl = cl.getSuperclass
             }
@@ -384,5 +392,6 @@ object LeveledSBDN {
             syncClasses.exists(_.getDeclaredMethods.exists(MethodDescription.computeID(_) == id))
         }).to(mutable.HashSet)
     }
+
     
 }
