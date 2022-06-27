@@ -22,15 +22,15 @@ import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
+import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, SyncNodeDataRequest, UnknownObjectSyncNode}
-import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalSynchronizedObjectCache}
+import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalConnectedObjectCache}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
 
 import scala.collection.mutable
 
-class DefaultSyncObjectForest[A <: AnyRef](center: InternalSynchronizedObjectCache[A],
+class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[A],
                                            cachePresenceHandler: NetworkPresenceHandler[SharedCacheReference],
                                            omc: ObjectManagementChannel)
         extends AbstractNetworkPresenceHandler[ConnectedObjectReference](cachePresenceHandler, omc)

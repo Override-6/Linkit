@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 
-trait SyncNodeDataFactory {
+trait NodeDataFactory {
 
     def newNodeData[A <: AnyRef, N <: NodeData[A]](req: NodeDataRequest[A, N]): N
 }

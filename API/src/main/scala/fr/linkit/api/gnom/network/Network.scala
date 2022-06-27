@@ -34,7 +34,7 @@ trait Network extends StaticNetworkObject[NetworkReference.type] {
 
     def currentEngine: Engine
 
-    def globalCache: SharedCacheManager
+    def globalCaches: SharedCacheManager
 
     def serverIdentifier: String
 

@@ -24,7 +24,7 @@ import fr.linkit.engine.internal.system.StaticVersions
 import java.sql.Timestamp
 
 class DefaultEngine(override val identifier: String,
-                    override val cache: SharedCacheManager,
+                    override val caches: SharedCacheManager,
                     network0: AbstractNetwork) extends Engine {
     
     override val reference: EngineReference = new EngineReference(identifier)

@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.SharedCacheReference
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, OriginReferencedConnectedObjectReference}
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
+import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.{NetworkObjectReferencesLocks, ObjectSelector}
 import fr.linkit.engine.gnom.persistence.ConstantProtocol.Object
@@ -47,14 +47,14 @@ class ReferencedObject(override val referenceIdx: Int,
         case OriginReferencedConnectedObjectReference(syncRef, originRef) =>
             val cacheRef = new SharedCacheReference(syncRef.family, syncRef.cacheID)
             selector.findObject(cacheRef).map {
-                case cache: DefaultSynchronizedObjectCache[AnyRef] =>
+                case cache: DefaultConnectedObjectCache[AnyRef] =>
                     val origin = selector.findObject(originRef).getOrElse {
                         throw new NoSuchElementException(s"Could not find network object referenced at $reference.")
                     }
                     cache.forest.linkWithReference(origin, syncRef)
                     origin
-                case cache                                         =>
-                    throw new UnsupportedOperationException(s"Could not deserialize referenced sync object: $cacheRef referer to a shared cache of type '${cache.getClass.getName}', expected: ${classOf[DefaultSynchronizedObjectCache[_]].getName}. ")
+                case cache                                      =>
+                    throw new UnsupportedOperationException(s"Could not deserialize referenced sync object: $cacheRef referer to a shared cache of type '${cache.getClass.getName}', expected: ${classOf[DefaultConnectedObjectCache[_]].getName}. ")
             }.getOrElse(throw new NoSuchElementException(s"Could not find any shared cache at $cacheRef"))
         
         case loc =>

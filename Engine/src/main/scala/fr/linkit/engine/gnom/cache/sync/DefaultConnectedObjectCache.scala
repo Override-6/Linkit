@@ -33,7 +33,7 @@ import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache.ObjectTreeProfile
+import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, EmptyContractDescriptorData}
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
@@ -53,11 +53,11 @@ import java.lang.ref.WeakReference
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacketChannel,
-                                                            classCenter: SyncClassCenter,
-                                                            override val defaultContracts: ContractDescriptorData,
-                                                            override val network: Network)
-        extends AbstractSharedCache(channel) with InternalSynchronizedObjectCache[A] {
+class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketChannel,
+                                                         classCenter: SyncClassCenter,
+                                                         override val defaultContracts: ContractDescriptorData,
+                                                         override val network: Network)
+        extends AbstractSharedCache(channel) with InternalConnectedObjectCache[A] {
     
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val forest           : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, channel.manager.getCachesLinker, network.objectManagementChannel)
@@ -319,7 +319,7 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
         }
         
         override def inspectEngine(engine: Engine, requestedCacheType: Class[_]): Option[String] = {
-            val clazz = classOf[DefaultSynchronizedObjectCache[A]]
+            val clazz = classOf[DefaultConnectedObjectCache[A]]
             if (requestedCacheType eq clazz)
                 None
             else Some(s"Requested cache class is not ${clazz.getName} (received: ${requestedCacheType.getName}).")
@@ -334,39 +334,39 @@ class DefaultSynchronizedObjectCache[A <: AnyRef] protected(channel: CachePacket
     
 }
 
-object DefaultSynchronizedObjectCache {
+object DefaultConnectedObjectCache {
     
     private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
     
-    implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A]] = apply
+    implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = apply
     
-    implicit def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[SynchronizedObjectCache[A]] = {
+    implicit def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = {
         apply[A](EmptyContractDescriptorData)
     }
     
-    def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[SynchronizedObjectCache[A]] = {
+    def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
         apply[A](null, network)
     }
     
-    implicit def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData): SharedCacheFactory[SynchronizedObjectCache[A]] = {
+    implicit def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData): SharedCacheFactory[ConnectedObjectCache[A]] = {
         channel => {
             apply[A](channel, contracts, channel.traffic.connection.network)
         }
     }
     
-    private[linkit] def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData, network: Network): SharedCacheFactory[SynchronizedObjectCache[A]] = {
+    private[linkit] def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData, network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
         channel => {
             apply[A](channel, contracts, network)
         }
     }
     
-    private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): SynchronizedObjectCache[A] = {
+    private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): ConnectedObjectCache[A] = {
         import fr.linkit.engine.application.resource.external.LocalResourceFolder._
         val context   = channel.manager.network.connection.getApp
         val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
         val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
         
-        new DefaultSynchronizedObjectCache[A](channel, generator, contracts, network)
+        new DefaultConnectedObjectCache[A](channel, generator, contracts, network)
     }
     
     case class ObjectTreeProfile[A <: AnyRef](treeID: Int,

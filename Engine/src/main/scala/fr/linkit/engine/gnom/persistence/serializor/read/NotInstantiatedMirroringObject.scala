@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 import fr.linkit.api.gnom.cache.NoSuchCacheException
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObjectCache}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, ConnectedObjectCache}
 import fr.linkit.api.gnom.persistence.obj.{SyncPoolObject, ProfilePoolObject}
 import fr.linkit.engine.gnom.cache.sync.tree.{DefaultConnectedObjectTree, NoSuchConnectedObjectTreeException}
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
@@ -46,7 +46,7 @@ class MirroringObject(override val referenceIdx: Int,
         selector.findObject(cacheRef).getOrElse {
             throw new NoSuchCacheException(s"$errPrefix cache '$cacheRef' not found.")
         } match {
-            case cache: SynchronizedObjectCache[_] =>
+            case cache: ConnectedObjectCache[_] =>
                 val nodePath  = ref.nodePath
                 val treeId    = nodePath.head
                 val tree      = cache.forest.findTree(treeId).getOrElse {

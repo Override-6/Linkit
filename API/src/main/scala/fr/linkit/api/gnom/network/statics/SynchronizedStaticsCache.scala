@@ -1,5 +1,5 @@
 package fr.linkit.api.gnom.network.statics
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
+import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
 
-trait SynchronizedStaticsCache extends SynchronizedObjectCache[StaticsCaller]
+trait SynchronizedStaticsCache extends ConnectedObjectCache[StaticsCaller]

@@ -12,7 +12,7 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.{StaticsCaller, SynchronizedStaticsCache}
 import fr.linkit.api.gnom.persistence.context.Persist
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
+import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
 import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
 class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
                                                  classCenter: SyncClassCenter,
                                                  override val defaultContracts: ContractDescriptorData,
-                                                 override val network: Network) extends DefaultSynchronizedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
+                                                 override val network: Network) extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
 
     //ensuring that the creator is of the right type
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {

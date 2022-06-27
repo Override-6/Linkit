@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.invocation.remote
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
-import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference, SynchronizedObjectCache}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference, ConnectedObjectCache}
 import fr.linkit.api.gnom.network.Network
 
 /**
@@ -34,7 +34,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The object center that stores the synchronized object.
      */
-    val cache: SynchronizedObjectCache[_]
+    val cache: ConnectedObjectCache[_]
 
     /**
      * The identifier of the current engine.

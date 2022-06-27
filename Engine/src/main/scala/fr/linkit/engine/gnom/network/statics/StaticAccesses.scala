@@ -4,7 +4,7 @@ import fr.linkit.api.gnom.cache.CacheAlreadyDeclaredException
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.StaticAccess
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
+import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
 import fr.linkit.engine.gnom.cache.sync.instantiation.New
 
@@ -12,7 +12,7 @@ class StaticAccesses(network: Network) {
 
     private val cacheManager   = network.attachToCacheManager("StaticAccesses")
     //static accesses cache
-    private val staCache = cacheManager.attachToCache(-1, DefaultSynchronizedObjectCache[StaticAccess])
+    private val staCache = cacheManager.attachToCache(-1, DefaultConnectedObjectCache[StaticAccess])
 
     def getStaticAccess(id: Int): StaticAccess = staCache.findObject(id).get
 

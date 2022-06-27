@@ -29,7 +29,7 @@ import fr.linkit.engine.internal.utils.JavaUtils
 import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
-                                   override val cache: SynchronizedObjectCache[_],
+                                   override val cache: ConnectedObjectCache[_],
                                    override val nodeReference: ConnectedObjectReference) extends Puppeteer[S] {
     
     override val network          : Network = cache.network
@@ -130,5 +130,5 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
 object ObjectPuppeteer {
     
-    def apply[S <: AnyRef](channel: RequestPacketChannel, cache: SynchronizedObjectCache[_], nodeLocation: ConnectedObjectReference): ObjectPuppeteer[S] = new ObjectPuppeteer(channel, cache, nodeLocation)
+    def apply[S <: AnyRef](channel: RequestPacketChannel, cache: ConnectedObjectCache[_], nodeLocation: ConnectedObjectReference): ObjectPuppeteer[S] = new ObjectPuppeteer(channel, cache, nodeLocation)
 }

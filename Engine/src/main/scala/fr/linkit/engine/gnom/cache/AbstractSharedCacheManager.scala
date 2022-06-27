@@ -183,9 +183,9 @@ abstract class AbstractSharedCacheManager(override val family: String,
     }
     
     private def chainWithTrunkIPU(trafficNode: InjectableTrafficNode[PacketInjectable]): Unit = {
-        val global = network.globalCache
+        val global = network.globalCaches
         if ((global ne this) && !(trafficNode.injectable.trafficPath sameElements Array(0))) {
-            val cacheTrunkNode = network.globalCache.getCacheTrafficNode(0)
+            val cacheTrunkNode = network.globalCaches.getCacheTrafficNode(0)
             trafficNode.chainIPU(cacheTrunkNode) // chain current with the Network trunk's cache synchronization channel
         }
     }

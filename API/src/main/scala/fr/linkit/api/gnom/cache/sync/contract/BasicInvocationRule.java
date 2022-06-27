@@ -14,8 +14,6 @@
 
 package fr.linkit.api.gnom.cache.sync.contract;
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext;
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement;
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder;
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RemoteInvocationRule;
 
@@ -47,7 +45,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
     ),
     /**
      * Invocation will only be performed on the engine that hosts the cache manager in which the object's
-     * {@link fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache} is open.
+     * {@link fr.linkit.api.gnom.cache.sync.ConnectedObjectCache} is open.
      */
     ONLY_CACHE_OWNER((agreement) ->
         agreement.discardAll()

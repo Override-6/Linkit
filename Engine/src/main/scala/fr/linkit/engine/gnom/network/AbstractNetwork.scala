@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
-import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
+import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.statics.StaticAccess
@@ -23,7 +23,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectsLinker}
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
+import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
@@ -46,7 +46,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     private            val rnol                                                = new MapNetworkObjectsLinker(objectManagementChannel) with RemainingNetworkObjectsLinker
     private            val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
     override lazy      val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, rnol)
-    override lazy      val globalCache            : SharedCacheManager         = createGlobalCache
+    override lazy      val globalCaches           : SharedCacheManager         = createGlobalCache
     protected lazy     val trunk                  : NetworkDataTrunk           = initDataTrunk()
     private var engine0                           : Engine                     = _
     private var staticAccesses                    : StaticAccesses             = _
@@ -75,7 +75,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     
     override def findCacheManager(family: String): Option[SharedCacheManager] = {
         if (family == GlobalCacheID)
-            return Some(globalCache)
+            return Some(globalCaches)
         if (trunkInitializing)
             return None
         trunk.findCache(family)
@@ -137,7 +137,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         AppLoggers.GNOM.info("Initialising GNOL and Global Cache.")
         Contract.registerProperties(ObjectsProperty.defaults(this))
         gnol
-        globalCache
+        globalCaches
         
         AppLoggers.GNOM.info("Finalizing Network Initialisation.")
         engine0 = trunk.newEngine(currentIdentifier)
@@ -156,14 +156,14 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         new SharedCacheDistantManager(family, cache.ownerID, this, store)
     }
     
-    private var isMappingCacheInitialising                                             = false
-    private var mappingsCacheOpt: Option[SynchronizedObjectCache[RemoteClassMappings]] = None
+    private var isMappingCacheInitialising                                          = false
+    private var mappingsCacheOpt: Option[ConnectedObjectCache[RemoteClassMappings]] = None
     
     private[network] def mappingsCache = {
         if (mappingsCacheOpt.isEmpty && !isMappingCacheInitialising) {
             isMappingCacheInitialising = true
             val contract = Contract("NetworkContract", ObjectsProperty.defaults(this))
-            mappingsCacheOpt = Some(globalCache.attachToCache(2, DefaultSynchronizedObjectCache[RemoteClassMappings](contract)))
+            mappingsCacheOpt = Some(globalCaches.attachToCache(2, DefaultConnectedObjectCache[RemoteClassMappings](contract)))
             isMappingCacheInitialising = false
         }
         mappingsCacheOpt

@@ -29,7 +29,7 @@ class ChippedObjectNodeData[A <: AnyRef](val network: Network, //Remote invocati
     def this(other: ChippedObjectNodeData[A]) = {
         this(other.network, other.chip, other.contract, other.choreographer, other.obj)(other.data)
     }
-
+    
     def obj: ChippedObject[A] = chippedObject
 
 }

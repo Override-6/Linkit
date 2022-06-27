@@ -23,7 +23,7 @@ trait Engine extends NetworkObject[EngineReference] {
 
     val identifier: String
 
-    val cache: SharedCacheManager
+    val caches: SharedCacheManager
 
     val versions: Versions
 

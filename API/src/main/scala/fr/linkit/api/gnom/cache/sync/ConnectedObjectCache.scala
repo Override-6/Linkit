@@ -35,7 +35,7 @@ import fr.linkit.api.gnom.packet.PacketAttributesPresence
  *
  * @tparam A the type of root objects.
  * */
-trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttributesPresence {
+trait ConnectedObjectCache[A <: AnyRef] extends SharedCache with PacketAttributesPresence {
     
     val network: Network
     

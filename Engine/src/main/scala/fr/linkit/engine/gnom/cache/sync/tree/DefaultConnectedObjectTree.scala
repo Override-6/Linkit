@@ -33,7 +33,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                                                             network: Network,
                                                             private[sync] val forest: DefaultSyncObjectForest[A],
                                                             val instantiator: SyncInstanceInstantiator,
-                                                            val dataFactory: SyncNodeDataFactory,
+                                                            val dataFactory: NodeDataFactory,
                                                             override val id: Int,
                                                             override val contractFactory: ObjectContractFactory) extends ConnectedObjectTree[A] with ObjectConnector {
     
@@ -44,7 +44,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
              center: DefaultSyncObjectForest[A],
              id: Int,
              instantiator: SyncInstanceInstantiator,
-             dataFactory: SyncNodeDataFactory,
+             dataFactory: NodeDataFactory,
              behaviorTree: ObjectContractFactory)(rootSupplier: DefaultConnectedObjectTree[A] => RootObjectNodeImpl[A]) = {
         this(currentIdentifier, network, center, instantiator, dataFactory, id, behaviorTree)
         val root = rootSupplier(this)

@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.CacheContent
 
 /**
- * Used by [[fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache]] to store its trees
+ * Used by [[fr.linkit.api.gnom.cache.sync.ConnectedObjectCache]] to store its trees
  * @tparam A the type of the tree's root object (it's the same type for SynchronizedObjectCenter[A])
  */
 trait SynchronizedObjectForest[A <: AnyRef] {

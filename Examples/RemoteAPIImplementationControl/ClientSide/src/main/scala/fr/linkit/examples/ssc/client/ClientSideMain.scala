@@ -5,7 +5,7 @@ import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
-import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCache
+import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.internal.concurrency.pool.HiringBusyWorkerPool
 import fr.linkit.examples.ssc.api.UserAccountContainer
 
@@ -39,8 +39,8 @@ object ClientSideMain {
 
     private def connectToAccounts(connection: ConnectionContext): UserAccountContainer = {
         Thread.sleep(250)
-        val global     = connection.network.globalCache
-        val cache      = global.attachToCache(51, DefaultSynchronizedObjectCache[UserAccountContainer])
+        val global     = connection.network.globalCaches
+        val cache      = global.attachToCache(51, DefaultConnectedObjectCache[UserAccountContainer])
         cache.findObject(0).getOrElse(throw new NoSuchElementException("could not find accounts container"))
     }
 
