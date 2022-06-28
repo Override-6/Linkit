@@ -2,6 +2,7 @@ package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
+import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 
 import java.lang.reflect.{Executable, Modifier}
@@ -26,11 +27,15 @@ object SyncStaticsDescription {
 
     implicit def fromTag[A <: AnyRef : ClassTag]: SyncStaticsDescription[A] = apply[A](classTag[A].runtimeClass)
 
-    def apply[A <: AnyRef](clazz: Class[_]): SyncStaticsDescription[A] = cache.getOrElseUpdate(clazz, {
-        if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
-            throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
-        val AClass = clazz.asInstanceOf[Class[A]]
-        new SyncStaticsDescription[A](AClass)
-    }).asInstanceOf[SyncStaticsDescription[A]]
+    def apply[A <: AnyRef](clazz: Class[_]): SyncStaticsDescription[A] = {
+        if (classOf[StaticsCaller].isAssignableFrom(clazz))
+            return apply(StaticsCaller.getStaticsTarget(clazz.asSubclass(classOf[StaticsCaller])))
+        cache.getOrElseUpdate(clazz, {
+            if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
+                throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
+            val AClass = clazz.asInstanceOf[Class[A]]
+            new SyncStaticsDescription[A](AClass)
+        }).asInstanceOf[SyncStaticsDescription[A]]
+    }
 
 }

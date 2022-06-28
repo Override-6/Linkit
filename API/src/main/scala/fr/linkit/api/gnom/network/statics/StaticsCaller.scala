@@ -20,3 +20,16 @@ trait StaticsCaller extends MethodCaller {
     val staticsTarget: Class[_]
 
 }
+
+object StaticsCaller {
+    def getStaticsTarget(clazz: Class[_ <: StaticsCaller]): Class[_] = {
+        val companionClass = clazz.getClassLoader.loadClass(clazz.getName + "$")
+        val companionField = companionClass.getDeclaredField("MODULE$")
+        companionField.setAccessible(true)
+        val companion = companionField.get(null)
+        val staticsTargetMethod = companionClass.getDeclaredMethod("staticsTarget")
+        staticsTargetMethod.setAccessible(true)
+        val staticsTarget = staticsTargetMethod.invoke(companion)
+        staticsTarget.asInstanceOf[Class[_]]
+    }
+}

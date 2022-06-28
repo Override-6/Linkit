@@ -21,12 +21,14 @@ import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, Sy
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureContractDescriptor, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
+import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{collectInterfaces, findReasonTypeCantBeSync, getSyncableInterface, listMethodIds}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
+import fr.linkit.engine.internal.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.{Member, Method, Modifier}
@@ -383,7 +385,10 @@ object LeveledSBDN {
         }
         
         acc(classOf[Object])
-        acc(syncClassDef.mainClass)
+        val mainClass = if (statics) {
+            StaticsCaller.getStaticsTarget(syncClassDef.mainClass.asSubclass(classOf[StaticsCaller]))
+        } else syncClassDef.mainClass
+        acc(mainClass)
         syncClassDef match {
             case multiple: SyncClassDefMultiple => multiple.interfaces.foreach(acc)
             case _: SyncClassDefUnique          =>
@@ -392,6 +397,5 @@ object LeveledSBDN {
             syncClasses.exists(_.getDeclaredMethods.exists(MethodDescription.computeID(_) == id))
         }).to(mutable.HashSet)
     }
-
     
 }

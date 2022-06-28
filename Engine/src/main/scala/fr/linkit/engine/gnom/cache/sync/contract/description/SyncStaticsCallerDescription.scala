@@ -24,12 +24,7 @@ class SyncStaticsCallerDescription[A <: StaticsCaller](override val specs: SyncC
     private lazy val callerTargetDesc = {
         if (specs.isInstanceOf[SyncClassDefMultiple])
             throw new IllegalArgumentException("class def can't be multiple")
-        val clazz             = specs.mainClass
-        val companionClass    = clazz.getClassLoader.loadClass(clazz.getName + "$")
-        val callerTargetField = companionClass.getDeclaredField("staticsTarget")
-        callerTargetField.setAccessible(true)
-        val callerTarget = callerTargetField.get(null).asInstanceOf[Class[_]]
-        SyncStaticsDescription(callerTarget)
+        SyncStaticsDescription(specs.mainClass)
     }
 
     override protected def toMethodDesc(method: Method): MethodDescription = {

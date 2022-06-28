@@ -12,7 +12,7 @@ import java.util.function.*
 
 import java.lang.System
 
-@autochip(true) //enables auto chipping for objects expected as being synchronized / mirrored but whose runtime class can't support generated 'Sync' class generation / overriding.
+@autochip(true) //enables auto chipping for objects expected as being synchronized / mirrored but whose runtime class cannot support generated 'Sync' class generation / overriding.
 
 describe statics Path {
     //of(path: String, String[]) following only_cache_owner
