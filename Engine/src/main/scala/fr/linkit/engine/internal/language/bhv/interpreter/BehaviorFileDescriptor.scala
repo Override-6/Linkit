@@ -22,6 +22,8 @@ import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileDescriptor
 import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, BHVProperties}
 import fr.linkit.engine.internal.utils.ClassMap
 
+import scala.collection.mutable
+
 class BehaviorFileDescriptor(file: BehaviorFile,
                              app: ApplicationContext,
                              propertyClass: BHVProperties,
@@ -50,46 +52,18 @@ class BehaviorFileDescriptor(file: BehaviorFile,
     }
     
     private def computeContracts(): Seq[ContractDescriptorGroup[AnyRef]] = {
-        ast.classDescriptions.groupBy(x => file.findClass(x.head.className)).map { case (clazz, descs) => {
-            implicit val castedClass = clazz.asInstanceOf[Class[AnyRef]]
-            val descriptors0 = descs.map {
-                case ClassDescription(ClassDescriptionHead(kind, _), foreachMethod, foreachField, fieldDescs, methodDescs) => {
-                    val classDesc = kind match {
-                        case StaticsDescription => SyncStaticsDescription(clazz)
-                        case _                  => SyncObjectDescription(SyncClassDef(clazz))
-                    }
-                    implicit val methods0 = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs)
-                    implicit val fields0  = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs)
-                    
-                    def cast[X](y: Any): X = y.asInstanceOf[X]
-                    
-                    kind match {
-                        case StaticsDescription         => scd(Statics)
-                        case RegularDescription         => scd()
-                        case LeveledDescription(levels) =>
-                            levels.find(_.isInstanceOf[MirroringLevel])
-                                    .map { case MirroringLevel(stub) =>
-                                        MirroringInfo(SyncClassDef(stub.fold(clazz)(cast(file.findClass(_)))))
-                                    }
-                                    .fold(scd(levels.map(_.syncLevel).filter(_ != Mirror): _*))(
-                                        mi => new MirroringStructureContractDescriptor[AnyRef] {
-                                            override val mirroringInfo = mi
-                                            override val autochip      = BehaviorFileDescriptor.this.autoChip
-                                            override val targetClass   = castedClass
-                                            override val methods       = methods0
-                                            override val fields        = fields0
-                                        })
-                    }
-                }
+        ast.classDescriptions.groupBy(_.head.classNames.map(file.findClass)).flatMap { case (classes, descs) => {
+            val unhandledMethods = mutable.HashMap.empty[AttributedMethodDescription, Boolean]
+            val unhandledFields  = mutable.HashMap.empty[AttributedFieldDescription, Boolean]
+            val result           = classes.map(computeContract(_, descs)(unhandledMethods, unhandledFields))
+            unhandledMethods.filterInPlace((_, b) => !b)
+            unhandledFields.filterInPlace((_, b) => !b)
+            if (unhandledMethods.nonEmpty || unhandledFields.nonEmpty) {
+                val methods = "methods:\n\t" + unhandledMethods.keys.map(_.signature).mkString("\n\t")
+                val fields  = "fields:\n\t" + unhandledFields.keys.map(f => f.targetClass.map(_ + ".").getOrElse("") + f.fieldName).mkString("\n\t")
+                throw new BHVLanguageException(s"Could not find methods / fields below among classes ${classes.map(_.getSimpleName).mkString(",")}:\n$methods\n$fields")
             }
-            val group        = new ContractDescriptorGroup[AnyRef] {
-                override val clazz      : Class[AnyRef]                              = castedClass
-                override val modifier   : Option[ValueModifier[AnyRef]]              = typeModifiers.get(castedClass)
-                override val descriptors: Array[StructureContractDescriptor[AnyRef]] = {
-                    (descriptors0 :+ defaultContracts(clazz, descriptors0)).toArray
-                }
-            }
-            group
+            result
         }
         }.toSeq :+ new ContractDescriptorGroup[AnyRef] {
             override val clazz       = classOf[Object]
@@ -101,6 +75,51 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                 override val fields      = Array()
             })
         }
+    }
+    
+    private def computeContract(clazz: Class[_], descs: List[ClassDescription])
+                               (unhandledMethods: mutable.HashMap[AttributedMethodDescription, Boolean],
+                                unhandledFields: mutable.HashMap[AttributedFieldDescription, Boolean]): ContractDescriptorGroup[AnyRef] = {
+        implicit val castedClass = clazz.asInstanceOf[Class[AnyRef]]
+        val descriptors0 = descs.map {
+            case ClassDescription(ClassDescriptionHead(kind, _), foreachMethod, foreachField, fieldDescs, methodDescs) => {
+                val classDesc = kind match {
+                    case StaticsDescription => SyncStaticsDescription(clazz)
+                    case _                  => SyncObjectDescription(SyncClassDef(clazz))
+                }
+                implicit val methods0 = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs, unhandledMethods)
+                implicit val fields0  = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs, unhandledFields)
+                
+                def cast[X](y: Any): X = y.asInstanceOf[X]
+                
+                kind match {
+                    case StaticsDescription         => scd(Statics)
+                    case RegularDescription         => scd()
+                    case LeveledDescription(levels) =>
+                        levels.find(_.isInstanceOf[MirroringLevel])
+                                .map { case MirroringLevel(stub) =>
+                                    MirroringInfo(SyncClassDef(stub.fold(clazz)(cast(file.findClass(_)))))
+                                }
+                                .fold(scd(levels.map(_.syncLevel).filter(_ != Mirror): _*))(
+                                    mi => new MirroringStructureContractDescriptor[AnyRef] {
+                                        override val mirroringInfo = mi
+                                        override val autochip      = BehaviorFileDescriptor.this.autoChip
+                                        override val targetClass   = castedClass
+                                        override val methods       = methods0
+                                        override val fields        = fields0
+                                    })
+                }
+                
+            }
+        }
+        val group        = new ContractDescriptorGroup[AnyRef] {
+            override val clazz      : Class[AnyRef]                              = castedClass
+            override val modifier   : Option[ValueModifier[AnyRef]]              = typeModifiers.get(castedClass)
+            override val descriptors: Array[StructureContractDescriptor[AnyRef]] = {
+                (descriptors0 :+ defaultContracts(clazz, descriptors0)).toArray
+            }
+        }
+        group
     }
     
     private def defaultContracts(clazz: Class[AnyRef], usedDescs: List[StructureContractDescriptor[AnyRef]]): StructureContractDescriptor[AnyRef] = {
@@ -179,91 +198,115 @@ class BehaviorFileDescriptor(file: BehaviorFile,
     
     private def describeAttributedMethods(classDesc: SyncStructureDescription[_], kind: DescriptionKind,
                                           foreachResult: Array[MethodContractDescriptor])
-                                         (descriptions: Seq[AttributedMethodDescription]): Array[MethodContractDescriptor] = {
+                                         (descriptions: Seq[AttributedMethodDescription],
+                                          unhandledMethods: mutable.HashMap[AttributedMethodDescription, Boolean]): Array[MethodContractDescriptor] = {
         
         val result = descriptions.map { method =>
-            val signature  = method.signature
-            val methodDesc = file.getMethodDescFromSignature(kind, signature, classDesc)
-            
-            val referentPos = foreachResult.indexWhere(x => x != null && x.description == methodDesc)
-            val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
-            if (referentPos >= 0) {
-                //removing description in foreach statement result
-                foreachResult(referentPos) = null
+            val signature     = method.signature
+            val targetedClass = signature.target
+            if (targetedClass.forall(file.findClass(_).isAssignableFrom(classDesc.specs.mainClass))) {
+                unhandledMethods put(method, true)
+                describeAttributedMethod(method, classDesc, kind, foreachResult)
+            } else {
+                if (!unhandledMethods.getOrElse(method, false))
+                    unhandledMethods put(method, false)
+                null
             }
-            
-            def checkParams(): Unit = {
-                if (signature.params.exists(_.syncState.lvl != NotRegistered))
-                    throw new BHVLanguageException("disabled methods can't define connected arguments")
-            }
-            
-            def extractModifier(mod: CompModifier, valType: String): ValueModifier[Any] = {
-                mod match {
-                    case ValueModifierReference(_, ref) => getValueModifier(ref, valType)
-                    case ModifierExpression(_, in, out) => makeModifier(
-                        s"method_${encodedIntMethodString(methodDesc.methodId)}", valType, in, out)
-                }
-            }
-            
-            val result = (method: MethodDescription) match {
-                case _: DisabledMethodDescription  =>
-                    checkParams()
-                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array.empty, None, Inherit, DefaultBuilder)
-                case desc: HiddenMethodDescription =>
-                    checkParams()
-                    val msg = Some(desc.hideMessage.getOrElse(s"${methodDesc.javaMethod} is hidden"))
-                    MethodContractDescriptorImpl(methodDesc, true, None, None, Array(), msg, Inherit, DefaultBuilder)
-                
-                case desc: EnabledMethodDescription with AttributedEnabledMethodDescription =>
-                    val rvContract         = {
-                        val returnTypeName = methodDesc.javaMethod.getReturnType.getName
-                        val rvModifier     = desc.modifiers.find(_.target == "returnvalue").map(extractModifier(_, returnTypeName))
-                        desc.syncReturnValue match {
-                            case RegistrationState(true, state) => new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
-                            case RegistrationState(false, _)    =>
-                                val state = referent.flatMap(_.returnValueContract).map(_.registrationKind).getOrElse(NotRegistered)
-                                new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
-                        }
-                    }
-                    val agreement          = desc.agreement
-                            .map(ag => getAgreement(ag.name))
-                            .orElse(referent.map(_.agreementBuilder))
-                            .getOrElse(DefaultBuilder)
-                    val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
-                    val parameterContracts = {
-                        val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
-                            case MethodParam(syncState, nameOpt, tpe) =>
-                                val modifier = nameOpt.flatMap(name => desc.modifiers.find(_.target == name).map(extractModifier(_, tpe)))
-                                new SimpleModifiableValueContract[Any](syncState.lvl, autoChip, modifier)
-                        }.toArray
-                        if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
-                    }
-                    var invocationMethod   = desc.invocationHandlingMethod
-                    if (invocationMethod == Inherit)
-                        invocationMethod = referent.map(_.invocationHandlingMethod).getOrElse(Inherit)
-                    MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, invocationMethod, agreement)
-            }
-            result
         }
-        foreachResult.filter(_ != null) ++ result
+        foreachResult.filter(_ != null) ++ result.filter(_ != null)
+    }
+    
+    private def describeAttributedMethod(method: AttributedMethodDescription,
+                                         classDesc: SyncStructureDescription[_], kind: DescriptionKind,
+                                         foreachResult: Array[MethodContractDescriptor]): MethodContractDescriptor = {
+        val signature  = method.signature
+        val methodDesc = file.getMethodDescFromSignature(kind, signature, classDesc)
+        
+        val referentPos = foreachResult.indexWhere(x => x != null && x.description == methodDesc)
+        val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
+        if (referentPos >= 0) {
+            //removing description in foreach statement result
+            foreachResult(referentPos) = null
+        }
+        
+        def checkParams(): Unit = {
+            if (signature.params.exists(_.syncState.lvl != NotRegistered))
+                throw new BHVLanguageException("disabled methods can't define connected arguments")
+        }
+        
+        def extractModifier(mod: CompModifier, valType: String): ValueModifier[Any] = {
+            mod match {
+                case ValueModifierReference(_, ref) => getValueModifier(ref, valType)
+                case ModifierExpression(_, in, out) => makeModifier(
+                    s"method_${encodedIntMethodString(methodDesc.methodId)}", valType, in, out)
+            }
+        }
+        
+        val result = (method: MethodDescription) match {
+            case _: DisabledMethodDescription  =>
+                checkParams()
+                MethodContractDescriptorImpl(methodDesc, true, None, None, Array.empty, None, Inherit, DefaultBuilder)
+            case desc: HiddenMethodDescription =>
+                checkParams()
+                val msg = Some(desc.hideMessage.getOrElse(s"${methodDesc.javaMethod} is hidden"))
+                MethodContractDescriptorImpl(methodDesc, true, None, None, Array(), msg, Inherit, DefaultBuilder)
+            
+            case desc: EnabledMethodDescription with AttributedEnabledMethodDescription =>
+                val rvContract         = {
+                    val returnTypeName = methodDesc.javaMethod.getReturnType.getName
+                    val rvModifier     = desc.modifiers.find(_.target == "returnvalue").map(extractModifier(_, returnTypeName))
+                    desc.syncReturnValue match {
+                        case RegistrationState(true, state) => new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
+                        case RegistrationState(false, _)    =>
+                            val state = referent.flatMap(_.returnValueContract).map(_.registrationKind).getOrElse(NotRegistered)
+                            new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
+                    }
+                }
+                val agreement          = desc.agreement
+                        .map(ag => getAgreement(ag.name))
+                        .orElse(referent.map(_.agreementBuilder))
+                        .getOrElse(DefaultBuilder)
+                val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
+                val parameterContracts = {
+                    val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
+                        case MethodParam(syncState, nameOpt, tpe) =>
+                            val modifier = nameOpt.flatMap(name => desc.modifiers.find(_.target == name).map(extractModifier(_, tpe)))
+                            new SimpleModifiableValueContract[Any](syncState.lvl, autoChip, modifier)
+                    }.toArray
+                    if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
+                }
+                var invocationMethod   = desc.invocationHandlingMethod
+                if (invocationMethod == Inherit)
+                    invocationMethod = referent.map(_.invocationHandlingMethod).getOrElse(Inherit)
+                MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, invocationMethod, agreement)
+        }
+        result
     }
     
     private def describeAttributedFields(classDesc: SyncStructureDescription[_],
                                          kind: DescriptionKind,
                                          foreachResult: Array[FieldContract[Any]])
-                                        (descriptions: Seq[AttributedFieldDescription]): Array[FieldContract[Any]] = {
+                                        (descriptions: Seq[AttributedFieldDescription],
+                                         unhandledFields: mutable.HashMap[AttributedFieldDescription, Boolean]): Array[FieldContract[Any]] = {
         val result = descriptions.map { field =>
-            val desc        = file.getFieldDescFromName(kind, field.fieldName, classDesc)
-            val referentPos = foreachResult.indexWhere(_.description.javaField.getName == field.fieldName)
-            val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
-            if (referentPos != -1)
-                foreachResult(referentPos) = null //removing old version
-            field.state match {
-                case RegistrationState(true, isSync) => new FieldContractImpl[Any](desc, autoChip, isSync)
-                case RegistrationState(false, _)     => new FieldContractImpl[Any](desc, autoChip, referent.map(_.registrationKind).getOrElse(NotRegistered))
+            if (field.targetClass.forall(file.findClass(_).isAssignableFrom(classDesc.specs.mainClass))) {
+                unhandledFields put(field, true)
+                val desc        = file.getFieldDescFromName(kind, field.fieldName, classDesc)
+                val referentPos = foreachResult.indexWhere(_.description.javaField.getName == field.fieldName)
+                val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
+                if (referentPos != -1)
+                    foreachResult(referentPos) = null //removing old version
+                field.state match {
+                    case RegistrationState(true, isSync) => new FieldContractImpl[Any](desc, autoChip, isSync)
+                    case RegistrationState(false, _)     => new FieldContractImpl[Any](desc, autoChip, referent.map(_.registrationKind).getOrElse(NotRegistered))
+                }
+            } else {
+                if (!unhandledFields.getOrElse(field, false))
+                    unhandledFields put(field, false)
+                null
             }
         }
-        foreachResult.filter(_ != null) ++ result
+        foreachResult.filter(_ != null) ++ result.filter(_ != null)
     }
     
     private def getValueModifier(name: String, expectedType: String): ValueModifier[Any] = {
@@ -381,4 +424,5 @@ object BehaviorFileDescriptor {
                 .accept(OwnerEngine)
                 .appointReturn(CurrentEngine)
         )
+    
 }

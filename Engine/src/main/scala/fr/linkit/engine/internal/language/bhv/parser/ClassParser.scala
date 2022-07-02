@@ -61,7 +61,7 @@ object ClassParser extends BehaviorLanguageParser {
             val param  = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case sync ~ name ~ id => MethodParam(sync, name, id) }
             val params = repsep(param, Comma)
             
-            identifier ~ (ParenLeft ~> params <~ ParenRight).? ^^ { case name ~ params => MethodSignature(name, params.getOrElse(Seq())) }
+            (identifier <~ Dot).? ~ identifier ~ (ParenLeft ~> params <~ ParenRight).? ^^ { case targetClass ~ name ~ params => MethodSignature(targetClass, name, params.getOrElse(Seq())) }
         }
         val enabledMethodCore          = {
             (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ RegistrationState(false, NotRegistered))
@@ -79,16 +79,17 @@ object ClassParser extends BehaviorLanguageParser {
             Hide ~> Method ~> methodSignature ~ literal.? ^^ { case sig ~ msg => HiddenMethodDescription(msg)(sig) }
         }
         val methodsParser              = enabledMethodParser | disabledMethodParser | hiddenMethodParser
-        val fieldsParser               = syncParser ~ identifier ^^ { case state ~ name => AttributedFieldDescription(name, state) }
+        val fieldsParser               = (identifier <~ Dot).? ~ syncParser ~ identifier ^^ { case clazz ~ state ~ name => AttributedFieldDescription(clazz, name, state) }
         val targetLevels               = {
             val stubParser = ParenLeft ~> identifier <~ ParenRight
-            val mirroring  = BehaviorLanguageKeyword.Mirror ~> stubParser.? ^^ (MirroringLevel)
+            val mirroring  = BehaviorLanguageKeyword.Mirror ~> stubParser.? ^^ MirroringLevel
             mirroring | (Sync ^^^ SynchronizeLevel) | (Chip ^^^ ChipLevel)
         }
         val targetedLevels             = SquareBracketLeft ~> rep1sep(targetLevels, Comma) <~ SquareBracketRight
-        val staticsHead                = Describe ~> BehaviorLanguageKeyword.Statics ~> identifier ^^ (ClassDescriptionHead(StaticsDescription, _))
-        val instanceHead               = Describe ~> identifier ~ targetedLevels ^^ { case name ~ levels => ClassDescriptionHead(LeveledDescription(levels), name) }
-        val regularHead                = Describe ~> identifier ^^ (ClassDescriptionHead(RegularDescription, _))
+        val targetedClasses            = rep1sep(identifier, Comma)
+        val staticsHead                = Describe ~> BehaviorLanguageKeyword.Statics ~> targetedClasses ^^ (ClassDescriptionHead(StaticsDescription, _))
+        val instanceHead               = Describe ~> targetedClasses ~ targetedLevels ^^ { case names ~ levels => ClassDescriptionHead(LeveledDescription(levels), names) }
+        val regularHead                = Describe ~> targetedClasses ^^ (ClassDescriptionHead(RegularDescription, _))
         val classHead                  = staticsHead | instanceHead | regularHead
         val attributedFieldsAndMethods = rep(methodsParser | fieldsParser) ^^ { x =>
             val fields  = x.filter(_.isInstanceOf[AttributedFieldDescription]).map { case d: AttributedFieldDescription => d }
@@ -98,9 +99,8 @@ object ClassParser extends BehaviorLanguageParser {
         classHead ~ (BracketLeft ~> foreachFields.? ~ foreachMethod.? ~ attributedFieldsAndMethods <~ BracketRight).? ^^ {
             case head ~ Some(foreachFields ~ foreachMethods ~ (fields ~ methods)) =>
                 ClassDescription(head, foreachMethods, foreachFields, fields, methods)
-            case head ~ None => ClassDescription(head, None, None, Nil, Nil)
+            case head ~ None                                                      => ClassDescription(head, None, None, Nil, Nil)
         }
-        
     }
     
     private[parser] val parser: Parser[ClassDescription] = classParser

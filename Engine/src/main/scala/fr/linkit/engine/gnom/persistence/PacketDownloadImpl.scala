@@ -73,13 +73,11 @@ class PacketDownloadImpl(override val buff: ByteBuffer,
     }
 
     private def createCache(): Array[AnyRef] = {
-        //AppLogger.debug("Deserializing Packet and Attributes...")
         val cache = new Array[AnyRef](2)
         forEachObjects {
             case attributes: PacketAttributes => cache(0) = attributes
             case packet: Packet               => cache(1) = packet
         }
-        //AppLogger.debug("Deserialization done.")
         cache
     }
 

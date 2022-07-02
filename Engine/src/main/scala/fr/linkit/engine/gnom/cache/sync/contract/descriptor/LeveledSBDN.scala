@@ -378,7 +378,6 @@ object LeveledSBDN {
                 cl.getInterfaces.foreach(acc)
                 methods ++= cl.getDeclaredMethods
                         .filter(m => (statics && Modifier.isStatic(m.getModifiers)) || (!statics && !SyncObjectDescription.isNotOverrideable(m.getModifiers)))
-                        .tapEach(println)
                         .map(MethodDescription.computeID)
                 cl = cl.getSuperclass
             }

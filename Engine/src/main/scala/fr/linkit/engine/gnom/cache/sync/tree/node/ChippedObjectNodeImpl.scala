@@ -108,10 +108,10 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
             handleInvocationResult(result.asInstanceOf[AnyRef], executor, packet, response)
         } catch {
             case NonFatal(e) =>
+                e.printStackTrace()
                 val ex = if (e.isInstanceOf[InvocationTargetException]) e.getCause else e
                 if (packet.expectedEngineIDReturn == currentIdentifier)
                     handleRemoteInvocationException(response, ex)
-                e.printStackTrace()
         }
     }
     

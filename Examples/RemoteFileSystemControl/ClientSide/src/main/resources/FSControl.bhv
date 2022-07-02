@@ -18,6 +18,4 @@ describe statics Path {
     //of(path: String, String[]) following only_cache_owner
     hide method of(URI) "Please use method of(String, String[]) instead."
 }
-describe statics Files
-describe statics System
-describe statics FileSystems
+describe statics Files, System, FileSystems

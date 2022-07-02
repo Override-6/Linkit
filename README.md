@@ -7,7 +7,7 @@ Linkit is a framework that handles the network side of an application,
 allowing it to share objects between the server and its clients. 
 Shared objects can be converted into "Connected Objects" 
 in which method calls can be triggered according to a defined contract amongst actual and distant versions of the connected object.
-This special handling is available for instances of any public / non-final classes, .
+This special handling is available for instances of any public / non-final classes.
 
 ## Some Examples
 this readme will introduce the functionality of "connected objects",
@@ -30,6 +30,17 @@ Our app has the following features:
 Now that we have our architecture, and our features defined, we'll take a look 
 at how to make all of those channels, messages and chat servers synchronized for every client
 using our app.
+
+First, we will define our contract to specify what we want to synchronize, and how:
+```bhv
+name "DiscordLikeAppContract"
+
+import org.discordlikeapp.**
+
+describe ChatServer, Channel, Message {
+    broadcast *
+}
+```
 
 We start our java FX application, and we will suppose that all of our logic is contained in 
 the `DiscordLikeWindow` class in order to simplify the next steps, as we don't really want to explain
@@ -59,18 +70,7 @@ def initChatServers(userPseudonym: String): ConnectedObjectCache[ChatServer] = {
 }
 ```
 The `Network` object represents the Linkit Framework's network.  
-You can collect information about the server and the client (the `Engine` class is used to represent a server or a client connection in the network.).  
-You can also attach to a `SharedCache`, in this case, we want to attach to the associated `ConnectedObjectCache[ChatServer]` of the user's pseudonym   
-(Note: as SharedCaches are identified using integers, we can use `userPseudonym.##` to use the user's pseudonym hashcode as an identifier for the cache.)
+the Network object allows you to attach to a `SharedCache`, in this case, we attach to the associated `ConnectedObjectCache[ChatServer]` of the user's pseudonym   
+(Note: as SharedCaches are identified using integers, we use `userPseudonym.##` to use the user's pseudonym hashcode as an identifier for the cache.)
 
-Now that we have initiated our ChatServer list, we 
-
-```bhv
-name "DiscordLikeAppContract"
-
-import org.discordlikeapp.**
-
-describe ChatServer, Channel, Message {
-    broadcast *
-}
-```
+Now that we have initiated our ChatServer cache, we 

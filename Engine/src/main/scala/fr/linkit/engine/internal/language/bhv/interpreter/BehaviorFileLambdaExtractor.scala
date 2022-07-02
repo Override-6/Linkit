@@ -42,19 +42,20 @@ class BehaviorFileLambdaExtractor(file: BehaviorFile) {
         val kind      = classDesc.head.kind
         desc.modifiers.foreach {
             case exp: ModifierExpression =>
-                val clazz = file.findClass(classDesc.head.className)
-                val classSystemDesc = kind match {
-                    case _@(RegularDescription | _: LeveledDescription) => SyncObjectDescription(SyncClassDef(clazz))
-                    case StaticsDescription                             => SyncStaticsDescription(clazz)
-                }
-                val className       = exp.target match {
-                    case "returnvalue" =>
-                        file.getMethodDescFromSignature(kind, signature, classSystemDesc).javaMethod.getReturnType.getName
-                    case paramName     =>
-                        file.findClass(signature.params.find(_.name.contains(paramName)).get.tpe).getName
-                }
-                val mDesc           = file.getMethodDescFromSignature(classDesc.head.kind, desc.signature, classSystemDesc)
-                submitAll(s"method_${encodedIntMethodString(mDesc.methodId)}", className, exp)
+                classDesc.head.classNames.map(file.findClass).foreach(clazz => {
+                    val classSystemDesc = kind match {
+                        case _@(RegularDescription | _: LeveledDescription) => SyncObjectDescription(SyncClassDef(clazz))
+                        case StaticsDescription                             => SyncStaticsDescription(clazz)
+                    }
+                    val className       = exp.target match {
+                        case "returnvalue" =>
+                            file.getMethodDescFromSignature(kind, signature, classSystemDesc).javaMethod.getReturnType.getName
+                        case paramName     =>
+                            file.findClass(signature.params.find(_.name.contains(paramName)).get.tpe).getName
+                    }
+                    val mDesc           = file.getMethodDescFromSignature(classDesc.head.kind, desc.signature, classSystemDesc)
+                    submitAll(s"method_${encodedIntMethodString(mDesc.methodId)}", className, exp)
+                })
             case _                       =>
             //fallback will be for modifier references, they don't hold any lambda expression so let's skip them
         }

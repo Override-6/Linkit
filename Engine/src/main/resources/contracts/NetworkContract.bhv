@@ -12,6 +12,7 @@ code ${
 agreement current_and_origin = discard * -> accept current and owner -> appoint current
 agreement broadcast = accept * -> appoint current
 agreement only_owner = discard * -> accept owner -> appoint owner
+
 describe DefaultEngine {
     updateState(ExternalConnectionState) following current_and_origin
 }

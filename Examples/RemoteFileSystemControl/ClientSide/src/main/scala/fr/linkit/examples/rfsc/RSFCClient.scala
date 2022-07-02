@@ -30,7 +30,8 @@ object RSFCClient {
     
     private def listenDistantDir(serverStatics: StaticAccess): Unit = {
         val dir: Path = serverStatics[Path].of("/")
-        val watcher   = (serverStatics[FileSystems].getDefault(): FileSystem).newWatchService()
+        val serverfs = serverStatics[FileSystems].getDefault(): FileSystem
+        val watcher   = serverfs.newWatchService()
         dir.register(watcher, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE)
         new Thread(() => while (true) {
             val key = watcher.take()

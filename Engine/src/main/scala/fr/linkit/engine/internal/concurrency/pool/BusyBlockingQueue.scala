@@ -36,7 +36,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
         if (e == null)
             throw new NullPointerException("attempted to add a null item.")
         content.synchronized {
-            AppLoggers.Worker.trace(s"Adding $e in content $this (${System.identityHashCode(this)})")
+            AppLoggers.Worker.trace(s"Adding content in $this (${System.identityHashCode(this)})")
             content.add(e)
         }
         controller.wakeupAnyTask()

@@ -18,9 +18,14 @@ code ${
 }
 @autochip(true) //enables auto chip for objects expected as being synchronized / mirrored but whose runtime class can't support generated 'Sync' class generation / overriding.
 
-describe statics Files
-describe statics System
-describe statics FileSystems
+describe statics Files, System, FileSystems {
+    FileSystems.getDefault() {
+        chip returnvalue
+    }
+    Files.newOutputStream(Path, OpenOption[]) {
+        chip returnvalue
+    }
+}
 
 describe WatchService {
     [executor = @watchServiceWorkers]

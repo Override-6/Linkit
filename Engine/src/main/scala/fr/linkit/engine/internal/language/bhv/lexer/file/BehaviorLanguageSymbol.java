@@ -21,6 +21,7 @@ public enum BehaviorLanguageSymbol implements BehaviorLanguageToken, Symbol {
     Equal("="),
     Arrow("->"),
     Comma(","),
+    Dot("."),
     Colon(":"),
     Star("*"),
     At("@"),

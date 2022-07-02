@@ -99,7 +99,7 @@ object Contract {
                     interpreter.data
                 } catch {
                     case e: BHVLanguageException =>
-                        throw new BHVLanguageException(s"in: ${file.filePath}: ${e.getMessage}", e)
+                        throw new BHVLanguageException(s"in: ${file.filePath}", e)
                 }
             })
         }

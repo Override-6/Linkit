@@ -26,7 +26,7 @@ case class MirroringLevel(stub: Option[String]) extends DescriptionLevel {
     override val syncLevel: SyncLevel = SyncLevel.Mirror
 }
 
-case class ClassDescriptionHead(kind: DescriptionKind, className: String)
+case class ClassDescriptionHead(kind: DescriptionKind, classNames: List[String])
 
 case class ClassDescription(head: ClassDescriptionHead,
                             foreachMethod: Option[MethodDescription],

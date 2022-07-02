@@ -36,7 +36,7 @@ class $ClassName$ extends StaticsCaller {
         !!INHERITED_METHODS!! {
             case "$MethodNameID$" => _$MethodNameID$($ParamsOutMatch$)
         }
-            case _ => throw new NoSuchLambdaExpressionException("Could not find method with id '" + nameId + "' in this static method caller.")
+            case _ => throw new NoSuchMethodException("Could not find method with id '" + nameId + "' in this static method caller.")
         }
     }
 

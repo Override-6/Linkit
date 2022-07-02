@@ -126,7 +126,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             val name        = method.getName
             val methodID    = description.methodId
             val methodClass = obj.getClassDef.mainClass.getName
-            s"Calling method $methodID $methodClass.$name(${args.mkString(", ")}) (on object: ${obj.reference})"
+            s"Calling method $methodID $methodClass.$name(${args.map(_.getClass.getSimpleName).mkString(", ")}) (on object: ${obj.reference})"
         }
         val target = obj.connected
         if (description.isMethodAccessible)
