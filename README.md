@@ -9,8 +9,6 @@ and its clients. Shared objects can be converted into "Connected Objects"
 in which method calls can be triggered according to a defined contract amongst actual and distant versions of the
 connected object. This special handling is available for instances of any public / non-final classes.
 
-## Some Examples
-
 this readme will introduce the functionality of "connected objects", but the other features available are treated in the
 WIKI.
 
