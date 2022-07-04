@@ -63,7 +63,7 @@ class DiscordLikeWindow(user: User) {
     
     private val userServers = initChatServers()
     
-    def initChatServers(): Map[Int, ChatServer] = {
+    private def initChatServers(): Map[Int, ChatServer] = {
         val userPseudonym              = user.getPseudonym
         val network: Network           = connectToNetwork(pseudonym) //we init our network connection
         val contract                   = Contract("DiscordLikeAppContract") //we use the defined contract
