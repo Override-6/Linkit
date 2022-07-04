@@ -83,7 +83,11 @@ associated `ConnectedObjectCache[ChatServer]` of the user's pseudonym
 an identifier for the cache.)
 
 Now that we have initiated our ChatServer cache, we now just have to use the ChatServers contained in the map, and use
-the objects as normal objects:
+the objects as normal objects
+
+As we defined in our contract that each method call on a connected object must be triggered on the server and on all connected clients, 
+the synchronisation is now ensured by the contract. So once an object is modified (ex: a message is edited), it's gonna be modified all over
+the network:
 
 to post a message in a channel:
 
@@ -104,5 +108,4 @@ chatServer.kick(user)
 chatServer.ban(user)
 chatServer.accept(user)
 ```
-
 etc
