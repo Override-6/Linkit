@@ -31,6 +31,7 @@ describe StaticAccesses {
 describe RemoteClassMappings {
     ensinv addClassToMap(String) following only_owner
     onClassMapped(int) following broadcast
+    requestClassName(int) following only_owner
 }
 
 modifier SharedCacheOriginManager {

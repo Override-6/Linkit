@@ -17,7 +17,7 @@ class Counter(private var count: Int = 0) {
     
     def get(): Int = count
     
-    def increment(): Int = {
+    def increment(): Int = this.synchronized {
         count += 1
         count
     }

@@ -18,11 +18,11 @@ import fr.linkit.api.internal.system.log.AppLoggers
 import scala.collection.mutable
 
 class RemoteClassMappings(val ownerId: String) extends ClassMappingsListener {
-
+    
     //a set of all class codes present on the ClassMappings of the owner engine.
     private final val mappedClasses = mutable.HashSet.empty[Int] ++ ClassMappings.classCodes
     ClassMappings.addListener(this)
-
+    
     //called on the owner engine
     def addClassToMap(className: String): Unit = {
         try {
@@ -33,10 +33,17 @@ class RemoteClassMappings(val ownerId: String) extends ClassMappingsListener {
                 AppLoggers.Mappings.warn(s"class mappings for engine '$ownerId' now contains class '$className' (id: ${className.hashCode}) that is not present on this engine.")
         }
     }
-
+    
+    //called on owner engine
+    def requestClassName(code: Int): String = {
+        val opt = ClassMappings.findClass(code)
+        if (opt.isEmpty) null
+        else opt.get.getName
+    }
+    
     //called on current engine to check if this owner mappings contains the class code
     def isClassCodeMapped(classCode: Int): Boolean = mappedClasses.contains(classCode)
-
+    
     //called by the owner engine to update other RemoteClassMappings objects.
     def onClassMapped(classCode: Int): Unit = mappedClasses += classCode
 }

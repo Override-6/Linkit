@@ -15,9 +15,11 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, ReferencedPoolObject}
+import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.engine.gnom.persistence.MalFormedPacketException
 import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
@@ -36,6 +38,7 @@ class ObjectReader(bundle: PersistenceBundle,
     
     final         val buff: ByteBuffer             = bundle.buff
     private final val selector                     = new ObjectSelector(bundle)
+    private lazy val boundMappings                = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[DefaultEngine].classMappings).orNull
     private final val config                       = bundle.config
     private       val (packetRefSize, sizes, pool) = readPoolStructure()
     private var isInit                             = false
@@ -130,7 +133,11 @@ class ObjectReader(bundle: PersistenceBundle,
     private def readClass(): Class[_] = {
         val code  = buff.getInt
         val clazz = ClassMappings.getClass(code)
-        if (clazz == null) {
+        if (clazz == null) InvocationChoreographer.ensinv {
+            val name = boundMappings.requestClassName(code)
+            if (name != null)
+                return ClassMappings.putClass(name)
+            
             throw new ClassNotMappedException(s"No class is bound to code $code")
         }
         clazz

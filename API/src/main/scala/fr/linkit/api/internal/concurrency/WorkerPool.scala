@@ -27,7 +27,7 @@ trait WorkerPool extends ProcrastinatorControl with ExecutionContext {
     def isCurrentThreadOwned: Boolean
 
     def pauseCurrentTask(): Unit
-
+    
     def pauseCurrentTaskForAtLeast(millis: Long): Unit
 
     def newBusyQueue[A]: BlockingQueue[A]

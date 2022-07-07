@@ -35,19 +35,19 @@ object ClassMappings {
     
     def classCount: Int = classes.size
 
-    def putClass(className: String, loader: ClassLoader): Unit = {
+    def putClass(className: String, loader: ClassLoader): Class[_] = {
         //println(s"Class put ! ($className) of hash code ${className.hashCode}")
         val clazz     = Class.forName(className, false, loader)
         val classCode = className.hashCode
         classes.put(classCode, createMapValue(clazz))
         notifyListeners(classCode)
         MappedClassesTree.addClass(clazz)
+        clazz
     }
 
-    def putClass(className: String): Unit = {
+    def putClass(className: String): Class[_] = {
         for (loader <- classLoaders) try {
-            putClass(className, loader)
-            return
+            return putClass(className, loader)
         } catch {
             case _: ClassNotFoundException =>
         }

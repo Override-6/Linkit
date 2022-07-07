@@ -96,10 +96,7 @@ class SimpleWorkerController extends WorkerController {
             task.continue()
     }
     
-    private def pauseCurrentTask(): Unit = {
-        WorkerPools.ensureCurrentIsWorker().pauseCurrentTask()
-    }
-    
+
     private def pauseCurrentTask(millis: Long): Unit = WorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
     
     protected def createControlTicket(pauseCondition: => Boolean): Unit = {
@@ -107,7 +104,7 @@ class SimpleWorkerController extends WorkerController {
             val currentTask = WorkerPools.currentTask.get
             pausedTasks.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
         }
-        pauseCurrentTask()
+        WorkerPools.ensureCurrentIsWorker().pauseCurrentTask()
     }
     
 }
