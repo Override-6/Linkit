@@ -9,8 +9,6 @@ and its clients. Shared objects can be converted into "Connected Objects"
 in which method calls can be triggered according to a defined contract amongst actual and distant versions of the
 connected object. This special handling is available for instances of any public / non-final classes.
 
-## Some Examples
-
 this readme will introduce the functionality of "connected objects", but the other features available are treated in the
 WIKI.
 
@@ -65,7 +63,7 @@ class DiscordLikeWindow(user: User) {
     
     private val userServers = initChatServers()
     
-    def initChatServers(): Map[Int, ChatServer] = {
+    private def initChatServers(): Map[Int, ChatServer] = {
         val userPseudonym              = user.getPseudonym
         val network: Network           = connectToNetwork(pseudonym) //we init our network connection
         val contract                   = Contract("DiscordLikeAppContract") //we use the defined contract
@@ -85,7 +83,11 @@ associated `ConnectedObjectCache[ChatServer]` of the user's pseudonym
 an identifier for the cache.)
 
 Now that we have initiated our ChatServer cache, we now just have to use the ChatServers contained in the map, and use
-the objects as normal objects:
+the objects as normal objects
+
+As we defined in our contract that each method call on a connected object must be triggered on the server and on all connected clients, 
+the synchronisation is now ensured by the contract. So once an object is modified (ex: a message is edited), it's gonna be modified all over
+the network:
 
 to post a message in a channel:
 
@@ -106,5 +108,4 @@ chatServer.kick(user)
 chatServer.ban(user)
 chatServer.accept(user)
 ```
-
 etc
