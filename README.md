@@ -1,6 +1,6 @@
-[![wakatime](https://wakatime.com/badge/github/Override-6/Linkit.svg)](https://wakatime.com/badge/github/Override-6/Linkit) (
+[<img alt="wakatime" src="https://wakatime.com/badge/github/Override-6/Linkit.svg"/>](https://wakatime.com/badge/github/Override-6/Linkit) (
 counter since 3 march 2021)
-<center> <h1>The Linkit Framework</h1> </center>  
+<div style="text-align: center;"> <h1>The Linkit Framework</h1> </div>  
 
 ![Cover](RCover.png)
 
@@ -19,7 +19,7 @@ We will assume that it is a discord-like application, with chat servers, contain
 members can send text messages.
 
 Here is our project architecture:  
-<img src="https://github.com/Override-6/Linkit/blob/redesign/syncobjects_contract/Diagrams-Readme/ChattingUML.png?raw=true" width="350" height="350" />
+<img height="350" src="https://github.com/Override-6/Linkit/blob/redesign/syncobjects_contract/Diagrams-Readme/ChattingUML.png?raw=true" width="350"/>
 
 Our app has the following features:
 
