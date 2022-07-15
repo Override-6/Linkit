@@ -36,10 +36,7 @@ jobs:
       - name: generate scaladocs
         run: |
            chmod +x ./gradlew
-           ./gradlew Engine:scaladoc
-           ./gradlew API:scaladoc
-           ./gradlew Server:scaladoc
-           ./gradlew Client:scaladoc
+           ./gradlew allscaladoc
 
       - name: move generated docs in Temp dirs
         run: |
