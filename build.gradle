@@ -27,6 +27,19 @@ repositories {
     mavenCentral()
 }
 
+def docprojects = [
+        ":Engine",
+        ":API",
+        ":Server",
+        ":Client"
+]
+
+task allscaladoc(type: Scaladoc) {
+    source exportedProjects.collect { project(it).sourceSets.main.allJava }
+    classpath = files(exportedProjects.collect { project(it).sourceSets.main.compileClasspath })
+    destinationDir = file("${buildDir}/docs/javadoc")
+}
+
 subprojects {
     apply plugin: 'org.javamodularity.moduleplugin'
     apply plugin: 'java'
