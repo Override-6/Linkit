@@ -51,6 +51,7 @@ jobs:
       - name: checkout to gh-pages and commit
         run: |
            cd /home/runner/work/Linkit/Linkit/
+           git fetch
            git checkout gh-pages
            cp -R /home/runner/work/Temp/Engine/* /home/runner/work/Linkit/Linkit/static/scaladoc 
            cp -R /home/runner/work/Temp/API/* /home/runner/work/Linkit/Linkit/static/scaladoc  
