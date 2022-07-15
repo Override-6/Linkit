@@ -32,10 +32,10 @@ jobs:
       - name: generate scaladocs
         run: |
            ls
-           gradlew Engine:scaladoc
-           gradlew API:scaladoc
-           gradlew Server:scaladoc
-           gradlew Client:scaladoc
+           ./gradlew Engine:scaladoc
+           ./gradlew API:scaladoc
+           ./gradlew Server:scaladoc
+           ./gradlew Client:scaladoc
 
       - name: move generated docs in Temp dirs
         run: |
