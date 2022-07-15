@@ -18,6 +18,8 @@ plugins {
     id 'org.javamodularity.moduleplugin' version '1.5.0'
 }
 
+println("Java JDK: " + System.getProperty("java.version"))
+
 group 'fr.override.linkit'
 version '1.0-SNAPSHOT'
 
@@ -40,8 +42,10 @@ subprojects {
         archiveFileName = "${project.name}-Alpha-1.0.jar"
     }
 
-    sourceCompatibility = 16
-    targetCompatibility = 16
+    tasks.withType(JavaCompile) {
+        sourceCompatibility = '16'
+        targetCompatibility = '16'
+    }
 
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'

@@ -44,7 +44,7 @@ object ServerBankLauncher {
         val network    = connection.network
         val global     = network.globalCaches
         val app        = connection.getApp
-        val contract   = Contract("BankControl", app, ObjectsProperty.defaults(network))
+        val contract   = Contract("BankControl", ObjectsProperty.defaults(network))
         val cache      = global.attachToCache(51, DefaultConnectedObjectCache[UserAccountContainer](contract))
         cache.mirrorObject(0, New[UserAccountContainerImpl]())
     }
