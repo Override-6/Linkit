@@ -1,0 +1,42 @@
+/*
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
+ *  questions.
+ */
+package $ClassPackage$
+import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
+import fr.linkit.engine.internal.language.bhv.BHVProperties
+
+import scala.annotation.switch
+
+$Imports$
+
+                //weird and unconventional name in order to avoid clashes with the user's code.
+class $ClassName$(__pRoperTiEs_8: BHVProperties) extends MethodCaller {
+
+    $Blocks$
+
+    override def call(id: String, args: Array[Any]): Any = {
+        (id: @switch) match {
+        !!LAMBDA_METHODS!! {
+            case "$MethodName$" => _$MethodName$($ParamsOut$)
+        }
+            case _ => throw new NoSuchMethodException("Could not find lambda method with id '" + id + "' into this lambda repository.")
+        }
+    }
+
+    private def getProperty[P](name: String): P = __pRoperTiEs_8.get(name).asInstanceOf[P]
+
+    !!LAMBDA_METHODS!! {
+        private final val _$MethodName$: ($ParamTypes$) => Any = {
+            $LambdaExpression$
+        }
+    }
+
+}
