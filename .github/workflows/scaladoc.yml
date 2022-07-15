@@ -57,6 +57,8 @@ jobs:
            cp -R /home/runner/work/Temp/API/* /home/runner/work/Linkit/Linkit/scaladoc  
            cp -R /home/runner/work/Temp/Server/* /home/runner/work/Linkit/Linkit/scaladoc 
            cp -R  /home/runner/work/Temp/Client/* /home/runner/work/Linkit/Linkit/scaladoc
+           git config user.name Override-6
+           git config user.email maximebatista18@gmail.col
            git add .
            git commit --allow-empty -m "auto generated scaladoc"
            git push
