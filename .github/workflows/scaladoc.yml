@@ -27,7 +27,7 @@ jobs:
       - name: setup java jdk
         uses: actions/setup-java@v3.4.1
         with:
-           distribution: 'temurin' # See 'Supported distributions' for available options
+           distribution: 'adopt' # See 'Supported distributions' for available options
            java-version: '17'
       - name: prepare Temp dirs result
         run: |
