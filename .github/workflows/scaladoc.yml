@@ -31,7 +31,7 @@ jobs:
            mkdir Temp
       - name: generate scaladocs
         run: |
-           ls
+           chmod +x ./gradlew
            ./gradlew Engine:scaladoc
            ./gradlew API:scaladoc
            ./gradlew Server:scaladoc
