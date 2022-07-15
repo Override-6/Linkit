@@ -50,10 +50,14 @@ jobs:
         
       - name: checkout to gh-pages and commit
         run: |
+           cd /home/runner/work/Linkit/Linkit/
            git checkout gh-pages
            cp -R /home/runner/work/Temp/Engine/* /home/runner/work/Linkit/Linkit/static/scaladoc 
            cp -R /home/runner/work/Temp/API/* /home/runner/work/Linkit/Linkit/static/scaladoc  
            cp -R /home/runner/work/Temp/Server/* /home/runner/work/Linkit/Linkit/static/scaladoc 
-           cp -R  /home/runner/work/Temp/Client/* /home/runner/work/Linkit/Linkit/Client/build/docs/scaladoc/*
+           cp -R  /home/runner/work/Temp/Client/* /home/runner/work/Linkit/Linkit/Client/build/docs/scaladoc
+           git add .
+           git commit --allow-empty -m "auto generated scaladoc"
+           git push
           
  
