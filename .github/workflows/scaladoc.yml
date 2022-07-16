@@ -50,8 +50,8 @@ jobs:
            git checkout -f gh-pages
            cp -R  /home/runner/work/Temp/* /home/runner/work/Linkit/Linkit/scaladoc
            git config user.name Override-6
-           git config user.email maximebatista18@gmail.col
-           git add .
+           git config user.email maximebatista18@gmail.com
+           git add scaladoc/\*
            git commit --allow-empty -m "auto generated scaladoc"
            git push
           
