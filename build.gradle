@@ -27,18 +27,7 @@ repositories {
     mavenCentral()
 }
 
-def docprojects = [
-        ":Engine",
-        ":API",
-        ":Server",
-        ":Client"
-]
-
-task allscaladoc(type: ScalaDoc) {
-    source exportedProjects.collect { project(it).sourceSets.main.allJava }
-    classpath = files(exportedProjects.collect { project(it).sourceSets.main.compileClasspath })
-    destinationDir = file("${buildDir}/docs/javadoc")
-}
+def docModules = [":Engine", ":API", ":Server", ":Client"]
 
 subprojects {
     apply plugin: 'org.javamodularity.moduleplugin'
@@ -46,10 +35,10 @@ subprojects {
     apply plugin: 'scala'
     apply plugin: 'maven-publish'
 
-    task dist(type: Jar, dependsOn: configurations.runtimeClasspath){
+    task dist(type: Jar, dependsOn: configurations.runtimeClasspath) {
         from files(sourceSets.main.output.classesDirs)
         from files(sourceSets.main.output.resourcesDir)
-        from {configurations.runtimeClasspath.collect{ it.isDirectory() ? it : zipTree(it) }}
+        from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
         archiveFileName = "${project.name}-Alpha-1.0.jar"
@@ -80,7 +69,6 @@ subprojects {
     }
 
 
-
     tasks.withType(ScalaCompile) {
         scalaCompileOptions.additionalParameters = [
                 "-feature",
@@ -90,7 +78,24 @@ subprojects {
     }
 }
 
+task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from all child projects as if it were a single project', group: 'Documentation') {
+    destinationDir = file("$buildDir/docs/scaladoc")
+    title = "$project.name $version API"
+    classpath = project.files([])
+    scalaClasspath = project.files([])
+
+    docModules.collect{project(it)}.each { proj ->
+        proj.tasks.withType(ScalaDoc).each {
+            source proj.sourceSets.main.allJava
+            source proj.sourceSets.main.allScala
+            classpath += proj.scaladoc.classpath
+            scalaClasspath += proj.scaladoc.scalaClasspath
+            exclude proj.scaladoc.excludes
+            include proj.scaladoc.includes
+        }
+    }
+}
 wrapper {
-    gradleVersion = "6.6"
+    gradleVersion = "7.2"
     distributionType = Wrapper.DistributionType.ALL
 }

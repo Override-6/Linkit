@@ -36,24 +36,18 @@ jobs:
       - name: generate scaladocs
         run: |
            chmod +x ./gradlew
-           ./gradlew allscaladoc
+           ./gradlew generateScaladocs
 
       - name: move generated docs in Temp dirs
         run: |
-           mkdir -p /home/runner/work/Temp/Engine/ && cp -R /home/runner/work/Linkit/Linkit/Engine/build/docs/scaladoc/* $_
-           mkdir -p /home/runner/work/Temp/API/ && cp -R /home/runner/work/Linkit/Linkit/API/build/docs/scaladoc/* $_
-           mkdir -p /home/runner/work/Temp/Server/ && cp -R /home/runner/work/Linkit/Linkit/Server/build/docs/scaladoc/* $_
-           mkdir -p /home/runner/work/Temp/Client/ && cp -R /home/runner/work/Linkit/Linkit/Client/build/docs/scaladoc/* $_
-        
+           mkdir -p /home/runner/work/Temp/ && cp -R /home/runner/work/Linkit/Linkit/build/docs/scaladoc/* $_
+
       - name: checkout to gh-pages and commit
         run: |
            cd /home/runner/work/Linkit/Linkit/
            git fetch
            git checkout -f gh-pages
-           cp -R /home/runner/work/Temp/Engine/* /home/runner/work/Linkit/Linkit/scaladoc 
-           cp -R /home/runner/work/Temp/API/* /home/runner/work/Linkit/Linkit/scaladoc  
-           cp -R /home/runner/work/Temp/Server/* /home/runner/work/Linkit/Linkit/scaladoc 
-           cp -R  /home/runner/work/Temp/Client/* /home/runner/work/Linkit/Linkit/scaladoc
+           cp -R  /home/runner/work/Temp/* /home/runner/work/Linkit/Linkit/scaladoc
            git config user.name Override-6
            git config user.email maximebatista18@gmail.col
            git add .
