@@ -1,0 +1,40 @@
+/*
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
+ *  questions.
+ */
+
+package $ClassPackage$
+
+import $OriginClassName$
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
+import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
+import fr.linkit.engine.internal.utils.JavaUtils.nl
+
+/*
+* this class defines the main fields
+* and methods required for a SynchronizedObject
+* */
+@SerialVersionUID($CompileTime$L)
+class $ClassName$$TParamsIn$ extends AbstractSynchronizedObject[$OriginClassSimpleName$$TParamsOut$] {
+
+    override def originClass: Class[_] = classOf[$OriginClassSimpleName$$TParamsInBusted$]
+
+!!CASTS!! {
+    private implicit def cast_$Count$[$Params$, X[$ParamsWildcards$]](y: X[$ParamsWildcards$]): X[$Params$] = y.asInstanceOf[X[$Params$]]
+}
+
+!!INHERITED_METHODS!! {
+    $Override$ def $MethodName$($ParamsIn$): $ReturnType$ = {
+        handleCall[$ReturnType$]($MethodID$)(Array($ParamsOutArray$))(args => Array(this: Any $ParamsOutLambda$): Any).asInstanceOf[$ReturnType$]
+    }
+}
+
+}
