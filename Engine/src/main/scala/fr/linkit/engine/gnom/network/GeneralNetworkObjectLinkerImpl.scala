@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.network.{EngineReference, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.reference._
-import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, InitialisableNetworkObjectLinker, NetworkObjectLinker, RemainingNetworkObjectsLinker}
+import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, InitialisableNetworkObjectLinker, NetworkObjectLinker, DefaultNetworkObjectLinker}
 import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
@@ -34,7 +34,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                                      network: Network,
                                      override val cacheNOL: InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH,
                                      override val trafficNOL: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH,
-                                     override val remainingNOL: RemainingNetworkObjectsLinker with TrafficInterestedNPH)
+                                     override val defaultNOL: DefaultNetworkObjectLinker with TrafficInterestedNPH)
         extends GeneralNetworkObjectLinker {
     
     private val connection   = network.connection
@@ -75,7 +75,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
         case _                                =>
             otherLinkers.find(_.isAssignable(reference)) match {
                 case Some(linker) => linker.isPresentOnEngine(engineID, reference)
-                case None         => remainingNOL.isPresentOnEngine(engineID, reference)
+                case None         => defaultNOL.isPresentOnEngine(engineID, reference)
             }
     }
     
@@ -91,7 +91,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
         case _                                =>
             otherLinkers.find(_.isAssignable(reference)) match {
                 case Some(linker) => linker.findPresence(reference)
-                case None         => remainingNOL.findPresence(reference)
+                case None         => defaultNOL.findPresence(reference)
             }
     }
     
@@ -102,7 +102,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
         case _                                =>
             otherLinkers.find(_.isAssignable(reference)) match {
                 case Some(linker) => linker.findObject(reference)
-                case None         => remainingNOL.findObject(reference)
+                case None         => defaultNOL.findObject(reference)
             }
     }
     
@@ -120,7 +120,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
             case _                              =>
                 otherLinkers.find(_.isAssignable(reference)) match {
                     case Some(linker: TrafficInterestedNPH) => linker.findPresence(reference)
-                    case None                               => remainingNOL.injectRequest(linkerBundle)
+                    case None                               => defaultNOL.injectRequest(linkerBundle)
                 }
         }
     }
