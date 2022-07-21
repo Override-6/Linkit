@@ -13,12 +13,10 @@
 
 package fr.linkit.api.gnom.reference
 
-import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
-
 /**
- *  Extend this trait to create a network object.
- *  The object's reference is sent instead of the object.
- *  learn more on the wiki: <a href="https://override-6.github.io/Linkit/docs/GNOM/Naming/What%20Is%20A%20Network%20Object">click here</a>
+ *  Extend this trait to create a network object.<br>
+ *  The object's reference is sent instead of the object.<br>
+ *  <h2>learn more on the wiki: <a href="https://override-6.github.io/Linkit/docs/GNOM/Naming/What%20Is%20A%20Network%20Object">click here</a></h2>
  *  @tparam R the type of reference of the network object
  * */
 trait NetworkObject[+R <: NetworkObjectReference] {
