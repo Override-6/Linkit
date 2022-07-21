@@ -21,13 +21,12 @@ plugins {
 println("Java JDK: " + System.getProperty("java.version"))
 
 group 'fr.override.linkit'
-version '1.0-SNAPSHOT'
+version 'Alpha-0.1'
 
 repositories {
     mavenCentral()
 }
 
-def docModules = [":Engine", ":API", ":Server", ":Client"]
 
 subprojects {
     apply plugin: 'org.javamodularity.moduleplugin'
@@ -78,9 +77,11 @@ subprojects {
     }
 }
 
+def docModules = [":Engine", ":API", ":Server", ":Client"]
+
 task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from all child projects as if it were a single project', group: 'Documentation') {
     destinationDir = file("$buildDir/docs/scaladoc")
-    title = "$project.name $version API"
+    title = "$project.name $version"
     classpath = project.files([])
     scalaClasspath = project.files([])
 
