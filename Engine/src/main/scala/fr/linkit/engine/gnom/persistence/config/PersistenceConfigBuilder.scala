@@ -16,13 +16,13 @@ package fr.linkit.engine.gnom.persistence.config
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.persistence.config.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.config.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
-import fr.linkit.engine.gnom.reference.linker.NodeContextObjectLinker
+import fr.linkit.engine.gnom.referencing.linker.NodeContextObjectLinker
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, Identity, ScalaUtils}

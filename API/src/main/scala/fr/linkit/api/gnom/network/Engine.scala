@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.api.internal.system.Versions
 
 import java.sql.Timestamp

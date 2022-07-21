@@ -21,17 +21,17 @@ import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
-import fr.linkit.api.gnom.reference.SystemNetworkObjectPresence
-import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
-import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
-import fr.linkit.api.gnom.reference.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
+import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.referencing.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.unit.SequentialInjectionProcessorUnit
 import fr.linkit.engine.gnom.persistence.config.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
-import fr.linkit.engine.gnom.reference.linker.ObjectChannelContextObjectLinker
+import fr.linkit.engine.gnom.referencing.linker.ObjectChannelContextObjectLinker
+import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 import fr.linkit.engine.internal.utils.ClassMap
 
 import java.net.URL

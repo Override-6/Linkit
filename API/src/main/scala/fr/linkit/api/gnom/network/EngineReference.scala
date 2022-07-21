@@ -12,7 +12,7 @@
  */
 
 package fr.linkit.api.gnom.network
-import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
+import fr.linkit.api.gnom.referencing.{NetworkObjectReference, SystemObjectReference}
 
 class EngineReference(val identifier: String) extends NetworkReference with SystemObjectReference {
 

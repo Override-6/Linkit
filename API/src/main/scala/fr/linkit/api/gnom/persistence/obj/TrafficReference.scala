@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.persistence.obj
 
-import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
+import fr.linkit.api.gnom.referencing.{NetworkObjectReference, SystemObjectReference}
 
 class TrafficReference extends NetworkObjectReference {
 

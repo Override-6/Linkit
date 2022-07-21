@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectNode
-import fr.linkit.api.gnom.reference.DynamicNetworkObject
+import fr.linkit.api.gnom.referencing.DynamicNetworkObject
 
 trait ConnectedObject[A <: AnyRef] extends DynamicNetworkObject[ConnectedObjectReference] {
 

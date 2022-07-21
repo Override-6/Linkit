@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectConnector, ObjectSyncNode}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectAlreadyInitialisedException, ConnectedObjectReference, SynchronizedObject}
-import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {

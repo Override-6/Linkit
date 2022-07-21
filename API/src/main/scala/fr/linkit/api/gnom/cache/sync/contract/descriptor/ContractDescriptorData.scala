@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.referencing.NetworkObject
 
 trait ContractDescriptorData {
     

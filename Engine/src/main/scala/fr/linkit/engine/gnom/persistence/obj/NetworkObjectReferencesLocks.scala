@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.obj
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.referencing.NetworkObjectReference
 
 import scala.collection.mutable
 

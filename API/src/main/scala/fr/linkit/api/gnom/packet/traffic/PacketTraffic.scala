@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttr
 import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
-import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
+import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.JustifiedCloseable
 

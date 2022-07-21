@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable.ListBuffer

@@ -1,7 +1,7 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
-import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.DefaultConnectedObjectTree
 
 class NodeData[+A <: AnyRef](val reference: ConnectedObjectReference, //The sync object reference

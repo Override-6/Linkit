@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache
 
-import fr.linkit.api.gnom.reference.DynamicNetworkObject
+import fr.linkit.api.gnom.referencing.DynamicNetworkObject
 
 /**
  * The shared cache trait that depicts the information a cache must contain

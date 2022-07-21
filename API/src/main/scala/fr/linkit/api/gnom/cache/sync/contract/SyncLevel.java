@@ -13,8 +13,6 @@
 
 package fr.linkit.api.gnom.cache.sync.contract;
 
-import java.util.Arrays;
-
 public enum SyncLevel {
 
     /**
@@ -40,7 +38,7 @@ public enum SyncLevel {
 
     /**
      * Only registers the object, this way, the same instance of the object is sent <br>
-     * to the remote engines instead of sending copy of it (see {@link fr.linkit.api.gnom.reference.NetworkObject})
+     * to the remote engines instead of sending copy of it (see {@link fr.linkit.api.gnom.referencing.NetworkObject})
      */
     Register(false, false,false),//Note: Currently Not Used
 

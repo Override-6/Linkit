@@ -18,9 +18,9 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network.statics.StaticAccess
-import fr.linkit.api.gnom.reference.StaticNetworkObject
-import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.referencing.StaticNetworkObject
+import fr.linkit.api.gnom.referencing.linker.GeneralNetworkObjectLinker
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 
 import scala.reflect.ClassTag
 

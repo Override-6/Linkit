@@ -17,7 +17,7 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.ObjectTranslator
-import fr.linkit.api.gnom.reference.StaticNetworkObject
+import fr.linkit.api.gnom.referencing.StaticNetworkObject
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
 
 trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference.type] with ProcrastinatorControl {

@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
 import fr.linkit.api.gnom.persistence.context._
-import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
-import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
+import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
+import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.config.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.config.profile.persistence._

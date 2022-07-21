@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.referencing.NetworkObjectReference
 
 case class OriginReferencedConnectedObjectReference(syncReference: ConnectedObjectReference, originReference: NetworkObjectReference)
         extends ConnectedObjectReference(syncReference.ownerID, syncReference.cacheID, syncReference.ownerID, syncReference.nodePath) {

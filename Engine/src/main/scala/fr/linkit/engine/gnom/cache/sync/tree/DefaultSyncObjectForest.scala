@@ -17,16 +17,16 @@ import fr.linkit.api.gnom.cache.SharedCacheReference
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
-import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
-import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.referencing.linker.InitialisableNetworkObjectLinker
+import fr.linkit.api.gnom.referencing.presence.NetworkPresenceHandler
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, SyncNodeDataRequest, UnknownObjectSyncNode}
 import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalConnectedObjectCache}
-import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
-import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownObject
+import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
+import fr.linkit.engine.gnom.referencing.NOLUtils.throwUnknownObject
 
 import scala.collection.mutable
 

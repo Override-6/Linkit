@@ -13,8 +13,8 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.gnom.reference.linker.ContextObjectLinker
-import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
+import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
+import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
 
 trait PersistenceConfig extends TypeProfileStore {
 

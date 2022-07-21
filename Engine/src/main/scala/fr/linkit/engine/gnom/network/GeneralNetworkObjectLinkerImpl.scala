@@ -19,14 +19,15 @@ import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.network.{EngineReference, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
-import fr.linkit.api.gnom.reference._
-import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, InitialisableNetworkObjectLinker, NetworkObjectLinker, DefaultNetworkObjectLinker}
-import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
-import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
+import fr.linkit.api.gnom.referencing._
+import fr.linkit.api.gnom.referencing.linker.{DefaultNetworkObjectLinker, GeneralNetworkObjectLinker, InitialisableNetworkObjectLinker, NetworkObjectLinker}
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.traffic.channel.request.DefaultRequestBundle
-import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
+import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
+import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 
 import scala.collection.mutable.ListBuffer
 

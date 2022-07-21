@@ -16,9 +16,9 @@ package fr.linkit.api.gnom.cache
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.{TrafficNode, TrafficObject}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
-import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
+import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.referencing.linker.InitialisableNetworkObjectLinker
+import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
 
 import scala.reflect.ClassTag
 

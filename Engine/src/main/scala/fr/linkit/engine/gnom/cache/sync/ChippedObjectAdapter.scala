@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncCla
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.tree.ChippedObjectNode
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter.addChippedObject
 import fr.linkit.engine.internal.utils.Identity
 

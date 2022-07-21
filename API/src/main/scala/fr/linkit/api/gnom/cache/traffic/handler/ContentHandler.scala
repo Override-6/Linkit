@@ -15,8 +15,8 @@ package fr.linkit.api.gnom.cache.traffic.handler
 
 import fr.linkit.api.gnom.cache.{CacheContent, SharedCacheReference}
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
-import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
+import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
+import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
 
 /**
  * Handles the local content of the cache instance. <br>

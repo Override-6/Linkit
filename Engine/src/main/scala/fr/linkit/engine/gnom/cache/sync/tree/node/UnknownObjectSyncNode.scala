@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, ConnectedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.SynchronizedObjectException
 
 import scala.collection.mutable

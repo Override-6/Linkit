@@ -16,7 +16,7 @@ package fr.linkit.server.connection.traffic
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, ChannelScopes, WriterInfo}
 import fr.linkit.server.connection.ServerConnection

@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypeProfile}
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, ProfilePoolObject, RegistrablePoolObject}
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 

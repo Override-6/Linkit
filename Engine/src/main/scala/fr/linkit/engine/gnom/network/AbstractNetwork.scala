@@ -20,8 +20,8 @@ import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCac
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
-import fr.linkit.api.gnom.reference.linker.{GeneralNetworkObjectLinker, DefaultNetworkObjectLinker}
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.referencing.linker.{GeneralNetworkObjectLinker, DefaultNetworkObjectLinker}
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
@@ -29,7 +29,7 @@ import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManage
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
-import fr.linkit.engine.gnom.reference.linker.MapNetworkObjectsLinker
+import fr.linkit.engine.gnom.referencing.linker.MapNetworkObjectsLinker
 import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 import fr.linkit.engine.internal.mapping.RemoteClassMappings
 

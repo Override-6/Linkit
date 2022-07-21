@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.persistence
 
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.reference.linker.GeneralNetworkObjectLinker
+import fr.linkit.api.gnom.referencing.linker.GeneralNetworkObjectLinker
 import org.jetbrains.annotations.Nullable
 
 import java.nio.ByteBuffer

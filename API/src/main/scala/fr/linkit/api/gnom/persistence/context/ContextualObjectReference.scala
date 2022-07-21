@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.persistence.context
 
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.referencing.NetworkObjectReference
 
 import java.util
 

@@ -16,12 +16,12 @@ package fr.linkit.engine.gnom.persistence.obj
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, OriginReferencedConnectedObjectReference}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
-import fr.linkit.api.gnom.reference.linker.InitialisableNetworkObjectLinker
-import fr.linkit.api.gnom.reference.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject}
+import fr.linkit.api.gnom.referencing.linker.InitialisableNetworkObjectLinker
+import fr.linkit.api.gnom.referencing.{DynamicNetworkObject, NetworkObject, NetworkObjectReference, StaticNetworkObject}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
-import fr.linkit.engine.gnom.reference.ContextObject
-import fr.linkit.engine.gnom.reference.presence.ExternalNetworkObjectPresence
+import fr.linkit.engine.gnom.referencing.ContextObject
+import fr.linkit.engine.gnom.referencing.presence.ExternalNetworkObjectPresence
 
 class ObjectSelector(bundle: PersistenceBundle) {
     

@@ -14,7 +14,7 @@
 package fr.linkit.api.application.connection
 
 import fr.linkit.api.gnom.network.NetworkReference
-import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
+import fr.linkit.api.gnom.referencing.{NetworkObjectReference, SystemObjectReference}
 
 class NetworkConnectionReference extends NetworkReference {
 

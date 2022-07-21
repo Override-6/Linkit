@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 import fr.linkit.api.gnom.cache.sync.ChippedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.persistence.obj.{SyncPoolObject, PoolObject}
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.referencing.NetworkObjectReference
 
 class MirroredObjectWrite(override val stubClassDef: SyncClassDef,
                           override val referenceIdx: Int,

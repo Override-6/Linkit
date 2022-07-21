@@ -28,8 +28,8 @@ import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
-import fr.linkit.api.gnom.reference.linker.NetworkObjectLinker
-import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
+import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
+import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache

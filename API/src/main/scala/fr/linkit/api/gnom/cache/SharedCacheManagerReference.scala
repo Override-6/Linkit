@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
+import fr.linkit.api.gnom.referencing.NetworkObjectReference
 
 class SharedCacheManagerReference(val family: String) extends NetworkObjectReference {
 

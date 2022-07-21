@@ -13,7 +13,7 @@
 
 package fr.linkit.api.application
 
-import fr.linkit.api.gnom.reference.{NetworkObjectReference, SystemObjectReference}
+import fr.linkit.api.gnom.referencing.{NetworkObjectReference, SystemObjectReference}
 
 case class ApplicationReference() extends NetworkObjectReference {
     override def asSuper: Option[NetworkObjectReference] = None
