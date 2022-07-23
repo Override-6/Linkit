@@ -29,7 +29,7 @@ import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManage
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
-import fr.linkit.engine.gnom.referencing.linker.MapNetworkObjectsLinker
+import fr.linkit.engine.gnom.referencing.linker.MapNetworkObjectLinker
 import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
 import fr.linkit.engine.internal.mapping.RemoteClassMappings
 
@@ -43,7 +43,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     protected[network] val networkStore           : PacketInjectableStore      = traffic.createStore(0)
     private            val currentIdentifier      : String                     = connection.currentIdentifier
     private            val tnol                                                = traffic.getTrafficObjectLinker
-    private            val rnol                                                = new MapNetworkObjectsLinker(objectManagementChannel) with DefaultNetworkObjectLinker
+    private            val rnol                                                = new MapNetworkObjectLinker(objectManagementChannel) with DefaultNetworkObjectLinker
     private            val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, objectManagementChannel)
     override lazy      val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, rnol)
     override lazy      val globalCaches           : SharedCacheManager         = createGlobalCache
