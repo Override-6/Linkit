@@ -11,7 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: |
+          cd
           cd Natives/
-          gcc --version
-          cmake --version
+          cmake .
+          mkdir Build
+          move LinkitNativesLibraries.dll Build/LinkitNativesLibraries.dll
+          
           

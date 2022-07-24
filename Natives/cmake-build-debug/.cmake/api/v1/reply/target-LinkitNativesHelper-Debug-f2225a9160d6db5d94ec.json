@@ -2,13 +2,13 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "libLinkitNativesHelper.dll"
+			"path" : "LinkitNativesHelper.dll"
 		},
 		{
 			"path" : "libLinkitNativesHelper.dll.a"
 		},
 		{
-			"path" : "libLinkitNativesHelper.pdb"
+			"path" : "LinkitNativesHelper.pdb"
 		}
 	],
 	"backtrace" : 1,
@@ -98,7 +98,7 @@
 		"language" : "CXX"
 	},
 	"name" : "LinkitNativesHelper",
-	"nameOnDisk" : "libLinkitNativesHelper.dll",
+	"nameOnDisk" : "LinkitNativesHelper.dll",
 	"paths" : 
 	{
 		"build" : ".",
