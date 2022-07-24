@@ -19,8 +19,8 @@ import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
  * The main class that handles the network operations of a cache.
  * His behavior may have some differences depending on what cache instance this handler handles.
  * (May have more privileges if the cache handler handles a cache where its manager is owned by the current engine id)
- * @see [[AttachHandler]]
- * @see [[ContentHandler[_]]
+ * @see [[CacheAttachHandler]]
+ * @see [[CacheContentHandler[_]]
  * */
 trait CacheHandler {
 

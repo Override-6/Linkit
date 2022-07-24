@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache
 
-import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, ContentHandler}
+import fr.linkit.api.gnom.cache.traffic.handler.{CacheAttachHandler, CacheContentHandler}
 import fr.linkit.api.gnom.cache.{CacheContent, CacheOpenException, CacheSearchMethod}
 import CacheSearchMethod._
 import fr.linkit.api.gnom.network.Network
@@ -89,13 +89,13 @@ final class SharedCacheOriginManager @Persist()(family: String,
 
                 val isSystemCache = SystemCacheRange contains cacheID
                 registeredCache.channel.getHandler match {
-                    case _                          => acceptRequest //There is no attach handler set, the cache is free to accept any thing
-                    case Some(_) if isSystemCache   => acceptRequest //System Caches have free to access caches content.
-                    case Some(value: AttachHandler) =>
+                    case None                            => acceptRequest //There is no attach handler set, the cache is free to accept any thing
+                    case Some(_) if isSystemCache        => acceptRequest //System Caches are free to access caches content.
+                    case Some(value: CacheAttachHandler) =>
                         val engine = network.findEngine(senderID).getOrElse {
                             failRequest(s"Unknown engine '$senderID'.")
                         }
-                        value.inspectEngine(engine, cacheType).fold(acceptRequest)(failRequest)
+                        value.inspect(engine, cacheType).fold(acceptRequest)(failRequest)
                 }
         }
     }
@@ -123,28 +123,28 @@ final class SharedCacheOriginManager @Persist()(family: String,
         }
 
         def handleContentNotAvailable(): Unit = behavior match {
-                case GET_OR_CRASH =>
-                    failRequest(s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
-                case GET_OR_WAIT  =>
-                    //If the requester is not the owner, wait the owner to open the cache.
-                    if (senderID != ownerID) {
-                        channel.storeBundle(requestBundle)
-                        return
-                    }
-                    //The sender is the owner : this class must create the cache content.
-                    sendContent(None)
-                case GET_OR_OPEN  =>
-                    sendContent(None)
-            }
+            case GET_OR_CRASH =>
+                failRequest(s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
+            case GET_OR_WAIT  =>
+                //If the requester is not the owner, wait the owner to open the cache.
+                if (senderID != ownerID) {
+                    channel.storeBundle(requestBundle)
+                    return
+                }
+                //The sender is the owner : this class must create the cache content.
+                sendContent(None)
+            case GET_OR_OPEN  =>
+                sendContent(None)
+        }
 
         LocalCachesStore.findCache(cacheID)
                 .fold(handleContentNotAvailable()) { storedCache =>
                     val content       = storedCache.getContent
                     val isSystemCache = SystemCacheRange contains cacheID
                     storedCache.channel.getHandler match {
-                        case Some(_) if isSystemCache                    => sendContent(content)
-                        case None                                        => sendContent(content) //There is no handler, the engine is by default accepted.
-                        case Some(handler: ContentHandler[CacheContent]) =>
+                        case Some(_) if isSystemCache                         => sendContent(content)
+                        case None                                             => sendContent(content) //There is no handler, the engine is by default accepted.
+                        case Some(handler: CacheContentHandler[CacheContent]) =>
                             val engine = network.findEngine(senderID).getOrElse {
                                 failRequest(s"Engine not found: $senderID. (shared cache manager engine: $currentIdentifier)")
                             }

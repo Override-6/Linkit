@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache
 
 import fr.linkit.api.gnom.cache._
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
-import fr.linkit.api.gnom.cache.traffic.handler.ContentHandler
+import fr.linkit.api.gnom.cache.traffic.handler.CacheContentHandler
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
@@ -107,15 +107,15 @@ abstract class AbstractSharedCacheManager(override val family: String,
             
             val objectLinker: Option[NetworkObjectLinker[_ <: SharedCacheReference] with TrafficInterestedNPH] = {
                 channel.getHandler.flatMap {
-                    case handler: ContentHandler[_] => handler.objectLinker
-                    case _                          => None
+                    case handler: CacheContentHandler[_] => handler.objectLinker
+                    case _                               => None
                 }
             }
             
             def getContent: Option[CacheContent] = channel.getHandler.map {
                 //TODO don't let the content be retrievable by any engine.
-                case handler: ContentHandler[_] => handler.getInitialContent
-                case _                          => null
+                case handler: CacheContentHandler[_] => handler.getInitialContent
+                case _                               => null
             }
         }
         
@@ -174,8 +174,8 @@ abstract class AbstractSharedCacheManager(override val family: String,
         
         if (baseContent != null) {
             channel.getHandler.foreach {
-                case e: ContentHandler[CacheContent] => e.initializeContent(baseContent)
-                case _                               => //Simply don't set the content
+                case e: CacheContentHandler[CacheContent] => e.initializeContent(baseContent)
+                case _                                    => //Simply don't set the content
             }
         }
         channel.injectStoredBundles()

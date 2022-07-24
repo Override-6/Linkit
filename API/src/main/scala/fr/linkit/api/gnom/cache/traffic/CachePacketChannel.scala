@@ -22,12 +22,12 @@ import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
  * (according to [[fr.linkit.api.gnom.cache.SharedCacheFactory]])
  * and performs all the request sending and reception.<br>
  * a [[CacheHandler]] can be set in order to complete requests or to perform
- * content handling ([[fr.linkit.api.gnom.cache.traffic.handler.ContentHandler]]), or
- * choose and get any information about the engines that are attaching to the cache ([[fr.linkit.api.gnom.cache.traffic.handler.AttachHandler]]).
+ * content handling ([[fr.linkit.api.gnom.cache.traffic.handler.CacheContentHandler]]), or
+ * choose and get any information about the engines that are attaching to the cache ([[fr.linkit.api.gnom.cache.traffic.handler.CacheAttachHandler]]).
  *
  * @see [[CacheHandler]]
- * @see [[fr.linkit.api.gnom.cache.traffic.handler.AttachHandler]]
- * @see [[fr.linkit.api.gnom.cache.traffic.handler.ContentHandler]]
+ * @see [[fr.linkit.api.gnom.cache.traffic.handler.CacheAttachHandler]]
+ * @see [[fr.linkit.api.gnom.cache.traffic.handler.CacheContentHandler]]
  */
 trait CachePacketChannel extends RequestPacketChannel {
 

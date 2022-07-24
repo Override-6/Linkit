@@ -25,7 +25,6 @@ import scala.reflect.{ClassTag, classTag}
 /**
  * SyncInstance Creator to simulate a "new A(args)" instruction.<br>
  * The creator will generate a synchronized `A` object using a constructor.
- * s
  * */
 class New[A <: AnyRef] private(clazz: Class[A],
                                arguments: Array[Any]) extends SyncInstanceCreator[A] {

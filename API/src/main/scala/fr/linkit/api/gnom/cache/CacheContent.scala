@@ -16,6 +16,6 @@ package fr.linkit.api.gnom.cache
 /**
  * A Marker trait for data classes that represents the content of a
  * cache.
- * @see [[fr.linkit.api.gnom.cache.traffic.handler.ContentHandler]]
+ * @see [[fr.linkit.api.gnom.cache.traffic.handler.CacheContentHandler]]
  */
 trait CacheContent extends Serializable

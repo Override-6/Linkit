@@ -24,7 +24,7 @@ import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
  * it only affects the local content of the cache it handles.</u>
  * @tparam C the type of content that must be set or get.
  * */
-trait ContentHandler[C <: CacheContent] extends CacheHandler {
+trait CacheContentHandler[C <: CacheContent] extends CacheHandler {
 
     /**
      * Sets the local content
