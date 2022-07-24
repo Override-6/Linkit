@@ -7,8 +7,10 @@ counter since 3 march 2021)
 
 ![Cover](RCover.png)
 
-Linkit is a framework that handles the network side of an application, allowing it to share objects between the server
-and its clients. Shared objects can be converted into "Connected Objects"
-in which method calls can be triggered according to a defined contract amongst actual and distant versions of the
-connected object. This special handling is available for instances of any public / non-final classes.
+Linkit is a high level networking framework in which exchanges between peers are fully object oriented.  
 
+The framework provides a naming system, the ability to implement caches synchronized with other remote engines,
+and a whole system of object connection to create "inter-engine" objects in which methods calls are replicated to the engines that uses the objects (RMI).
+This object connection is the biggest part of the framework, and this system is fully customizable as you can impose a contract to your objects in order to enhance your control on them
+
+Learn more on the [Website](https://override-6.github.io/Linkit/) !
