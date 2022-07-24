@@ -14,7 +14,7 @@ enum class JValueType {
 	DOUBLE_FLAG
 };
 
-jvalue NumberToJValue(JNIEnv*, JValueType, double);
+jvalue NumberToJValue(JValueType type, double n);
 
 jvalue JObjectToJValue(JNIEnv*, JValueType, jobject);
 

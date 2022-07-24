@@ -24,18 +24,18 @@ std::vector<jvalue> GetJObjects(JNIEnv* env, jbyte* types, jobjectArray array) {
 JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_invokation_ObjectInvocator_invokeMethod0
 (JNIEnv* env, jclass clazz, jobject target, jstring name, jstring signature, jbyteArray paramTypes, jbyte returnType, jobjectArray arguments) {
 	jclass targetClass = env->GetObjectClass(target);
-	const char* signatureUTF = env->GetStringUTFChars(signature, false);
-	const char* nameChars = env->GetStringUTFChars(name, false);
+	const char* signatureUTF = env->GetStringUTFChars(signature, JNI_FALSE);
+	const char* nameChars = env->GetStringUTFChars(name, JNI_FALSE);
 	jmethodID methodID = env->GetMethodID(targetClass, nameChars, signatureUTF);
 
-	std::vector<jvalue> values = GetJObjects(env, env->GetByteArrayElements(paramTypes, false), arguments);
+	std::vector<jvalue> values = GetJObjects(env, env->GetByteArrayElements(paramTypes, JNI_FALSE), arguments);
 	const jvalue* valuesArray = values.data();
-	if (valuesArray == NULL)
+	if (valuesArray == nullptr)
 		valuesArray = {};
 	switch (static_cast<JValueType>(returnType)) {
 	case JValueType::VOID_FLAG:
 		env->CallVoidMethodA(target, methodID, valuesArray);
-		return NULL;
+		return nullptr;
 	case JValueType::OBJECT_FLAG:
 		return env->CallObjectMethodA(target, methodID, valuesArray);
 	};

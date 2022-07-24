@@ -6,7 +6,7 @@
 #include <algorithm>
 using namespace std;
 
-jvalue NumberToJValue(JNIEnv* env, JValueType type, double n) {
+jvalue NumberToJValue(JValueType type, double n) {
 	jvalue val;
 	switch (type) {
 	case JValueType::BYTE_FLAG:
@@ -71,7 +71,8 @@ JValueType ClassNameToType(std::string name) {
 }
 
 jobject WrapPrimitive(JNIEnv* env, string className, string paramSignature, double value) {
-	const jvalue* val = &NumberToJValue(env, ClassNameToType(paramSignature), value);
+	const jvalue val0 = NumberToJValue(ClassNameToType(paramSignature), value);
+    const jvalue* val = &val0;
 	replace(className.begin(), className.end(), '.', '/');
 	jclass clazz = env->FindClass(className.data());
 	string signature = "(" + paramSignature + ")L" + className + ";";
@@ -109,15 +110,15 @@ double UnwrapPrimitive(JNIEnv* env, JValueType objectType, jobject object) {
 	case JValueType::DOUBLE_FLAG:
 		valueID = env->GetFieldID(clazz, "value", "D");
 		return env->GetDoubleField(object, valueID);
-	default: return NULL;
+	default: return 0.0;
 	}
 }
 
 const char* GetJClassName(JNIEnv* env, jclass clazz) {
 	jclass classClass = env->FindClass("java/lang/Class");
 	jmethodID mid_getName = env->GetMethodID(classClass, "getName", "()Ljava/lang/String;");
-	jstring str = static_cast<jstring> (env->CallObjectMethod(clazz, mid_getName));
-	return env->GetStringUTFChars(str, false);
+	auto str = static_cast<jstring>(env->CallObjectMethod(clazz, mid_getName));
+	return env->GetStringUTFChars(str, JNI_FALSE);
 }
 
 
@@ -131,7 +132,7 @@ jvalue JObjectToJValue(JNIEnv* env, JValueType fieldType, jobject object) {
 		return val;
 	}
 	double number = UnwrapPrimitive(env, objectType, object);
-	return NumberToJValue(env, fieldType, number);
+	return NumberToJValue(fieldType, number);
 }
 
 

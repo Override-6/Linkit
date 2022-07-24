@@ -101,7 +101,7 @@ JNIEXPORT void JNICALL Java_fr_linkit_engine_internal_manipulation_creation_Obje
 
 	for (int i = 0; i < len; i++) {
 		jobject field = env->GetObjectArrayElement(fields, i);
-		string returnType(env->GetStringUTFChars(static_cast<jstring>(env->GetObjectArrayElement(fieldReturnTypes, i)), false));
+		string returnType(env->GetStringUTFChars(static_cast<jstring>(env->GetObjectArrayElement(fieldReturnTypes, i)), JNI_FALSE));
 		jobject value = env->GetObjectArrayElement(fieldValues, i);
 		PutField(env, target, field, returnType, value);
 	}
@@ -113,7 +113,7 @@ JNIEXPORT jobjectArray JNICALL Java_fr_linkit_engine_internal_manipulation_creat
 	jclass objectClass = env->FindClass("java/lang/Object");
 	jobjectArray jobjectValues = env->NewObjectArray(len, objectClass, target);
 	for (int i = 0; i < len; i++) {
-		string returnType = env->GetStringUTFChars(static_cast<jstring>(env->GetObjectArrayElement(fieldsReturnTypes, i)), false);
+		string returnType = env->GetStringUTFChars(static_cast<jstring>(env->GetObjectArrayElement(fieldsReturnTypes, i)), JNI_FALSE);
 		jobject field = env->GetObjectArrayElement(fields, i);
 		jobject value = GetField(env, target, field, returnType);
 		env->SetObjectArrayElement(jobjectValues, i, value);

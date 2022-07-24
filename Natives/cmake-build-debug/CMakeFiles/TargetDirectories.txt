@@ -1,0 +1,3 @@
+C:/Users/maxim/IdeaProjects/Linkit/Natives/cmake-build-debug/CMakeFiles/LinkitNativesHelper.dir
+C:/Users/maxim/IdeaProjects/Linkit/Natives/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/maxim/IdeaProjects/Linkit/Natives/cmake-build-debug/CMakeFiles/rebuild_cache.dir
