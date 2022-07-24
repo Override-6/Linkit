@@ -15,7 +15,5 @@ target_include_directories(LinkitNativesHelper PRIVATE
 	$ENV{JAVA_HOME}/include/win32/bridge
     ${SRC})
 
-#target_compile_options(LinkitNativesHelper PUBLIC APP_OPTIM=release)
-
 target_sources(LinkitNativesHelper PRIVATE ${SRC})
 set_target_properties(LinkitNativesHelper PROPERTIES PREFIX "")
