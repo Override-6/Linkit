@@ -1,24 +1,22 @@
 /*
- *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
  *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
- *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
- *  questions.
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
  */
 
 package fr.linkit.server.test
 
-import fr.linkit.api.local.plugin.Plugin
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugPlugin
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.server.ServerApplication
-import fr.linkit.server.local.config.schematic.ScalaServerAppSchematic
-import fr.linkit.server.local.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
+import fr.linkit.server.config.schematic.ScalaServerAppSchematic
+import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
 import java.io.File
 import java.nio.file.{Files, Path}
@@ -27,41 +25,36 @@ import java.util.Scanner
 object ServerLauncher {
 
     private val DefaultServerID = "TestServer1"
-    val HomeProperty   : String = "LinkitHome"
-    val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
+    final val HomeProperty   : String = "LinkitHome"
+    final val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
+    final val Port = 48484
 
-    def main(args: Array[String]): Unit = {
-        AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
+    def main(args: Array[String]): Unit = launch(args: _*)
+
+    def launch(args: String*): ServerApplication = {
+        AppLoggers.App.info(s"Running server with arguments '${args.mkString(" ")}'")
 
         //val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
-        val resourcesFolder         = getOrElse(args, "--home-path", getDefaultLinkitHome)
+        val resourcesFolder0 = getOrElse(Array(args:_*), "--home-path", getDefaultLinkitHome)
 
-        val config           = new ServerApplicationConfigBuilder {
-            override val resourceFolder: String = resourcesFolder
+        val config    = new ServerApplicationConfigBuilder {
+            override val resourcesFolder: String = resourcesFolder0
             pluginFolder = None //userDefinedPluginFolder
             mainPoolThreadCount = 2
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = DefaultServerID
-                    override val port      : Int    = 48484
-                    nWorkerThreadFunction = c => c + 1//one thread per connections.
+                    override val port      : Int    = Port
+                    nWorkerThreadFunction = c => c + 1 //one thread per connections.
 
                     configName = "config1"
                 }
             }
         }
-        val serverAppContext = ServerApplication.launch(config, getClass)
-        AppLogger.trace(s"Build complete: $serverAppContext")
-
-        serverAppContext.runLaterControl {
-            val pluginManager = serverAppContext.pluginManager
-            pluginManager.loadAllClass(Array(
-                classOf[ControllerExtension]: Class[_ <: Plugin],
-                classOf[DebugPlugin]: Class[_ <: Plugin],
-            ))
-        }.throwNextThrowable()
-        AppLogger.info("Server Application launched.")
-
+        val serverApp = ServerApplication.launch(config, getClass)
+        AppLoggers.App.trace(s"Build complete: $serverApp")
+        AppLoggers.App.info("Server Application launched.")
+        serverApp
     }
 
     private def getDefaultLinkitHome: String = {

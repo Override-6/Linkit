@@ -1,24 +1,22 @@
 /*
- *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
  *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
- *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
- *  questions.
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
  */
 
 package fr.linkit.client.test
 
-import fr.linkit.api.local.plugin.Plugin
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
-import fr.linkit.client.local.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
-import fr.linkit.client.local.config.schematic.ScalaClientAppSchematic
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugPlugin
+import fr.linkit.client.config.schematic.ScalaClientAppSchematic
+import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
 import org.jetbrains.annotations.NotNull
 
 import java.io.File
@@ -33,29 +31,33 @@ object ClientLauncher {
     val HomeProperty   : String            = "LinkitHome"
     val DefaultHomePath: String            = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
 
-    def main(args: Array[String]): Unit = {
-        AppLogger.info(s"Running client with arguments '${args.mkString(" ")}'")
-        val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
+    def main(args: Array[String]): Unit = launch(args)
 
-        val scanner     = new Scanner(System.in)
-        /*println("Say 'y' to connect to localhost")
-        print("> ")
-        val isLocalhost = scanner.nextLine().startsWith("y")*/
+    def launch(args: Array[String]): ClientApplication = {
+        AppLoggers.App.info(s"Running client with arguments '${args.mkString(" ")}'")
+        val userDefinedPluginFolder = getOrElse(args, "--plugin-path")("/Plugins")
+
         val address     = Localhost
+        val scanner     = new Scanner(System.in)
 
-        println("Choose an identifier")
-        print("> ")
-        val identifier = scanner.nextLine()
+        val identifier = getOrElse(args, "--identifier") {
+            println("Choose an identifier")
+            print("> ")
+            scanner.nextLine()
+        }
 
-        println(s"Choose how much client will connect to $address")
-        print("Nothing = 1 > ")
-        val numberEntry = scanner.nextLine()
-        val raidCount   = if (numberEntry.isEmpty) 1 else Try(numberEntry.toInt).getOrElse(0)
+        val numberEntry = getOrElse(args, "--raid-count"){
+            println(s"Choose how much client will connect to $address")
+            print("Nothing = 1 > ")
+            scanner.nextLine()
+        }
+        val raidCount   = if (numberEntry.isEmpty) 1 else Try(numberEntry.toInt).getOrElse(1)
 
-        val resourcesFolder = getOrElse(args, "--home-path", getDefaultLinkitHome)
+        val resourcesFolder = getOrElse(args, "--home-path")(getDefaultLinkitHome)
 
         launch(userDefinedPluginFolder, address, identifier, resourcesFolder, raidCount)
     }
+
 
     private def getDefaultLinkitHome: String = {
         val homePath = System.getenv(HomeProperty)
@@ -97,21 +99,20 @@ object ClientLauncher {
                 .waitFor()
     }
 
-    private def getOrElse(args: Array[String], key: String, defaultValue: String): String = {
+    private def getOrElse(args: Array[String], key: String)(defaultValue: => String): String = {
         val index = args.indexOf(key)
         if (index < 0 || index + 1 > args.length - 1) {
             defaultValue
         } else {
             args(index + 1)
         }
-
     }
 
     def launch(mainPluginFolder: String,
                address: InetSocketAddress,
                identifier0: String,
                @NotNull resourcesFolder0: String,
-               raidCount: Int): Unit = {
+               raidCount: Int): ClientApplication = {
 
         if (resourcesFolder0 == null) {
             throw new NullPointerException("Resources folder is null !")
@@ -130,15 +131,9 @@ object ClientLauncher {
                 }
             }
         }
-        val client = ClientApplication.launch(config, getClass)
-        AppLogger.trace(s"Build completed: $client")
-        client.runLaterControl {
-            val pluginManager = client.pluginManager
-            pluginManager.loadAllClass(Array(
-                classOf[ControllerExtension]: Class[_ <: Plugin],
-                classOf[DebugPlugin]: Class[_ <: Plugin],
-            ))
-        }.throwNextThrowable()
-        AppLogger.info("Client Application launched.")
+        val clientApp = ClientApplication.launch(config, getClass)
+        AppLoggers.App.trace(s"Build completed: $clientApp")
+        AppLoggers.App.info("Client Application launched.")
+        clientApp
     }
 }

@@ -1,0 +1,21 @@
+name "FSControl"
+
+import java.nio.file.Path
+import java.nio.file.Files
+import fr.linkit.**
+import java.net.URI
+import scala.collection.mutable
+import java.io.*
+import java.nio.file.**
+import java.util.*
+import java.util.function.*
+
+import java.lang.System
+
+@autochip(true) //enables auto chipping for objects expected as being synchronized / mirrored but whose runtime class cannot support generated 'Sync' class generation / overriding.
+
+describe statics Path {
+    //of(path: String, String[]) following only_cache_owner
+    hide method of(URI) "Please use method of(String, String[]) instead."
+}
+describe statics Files, System, FileSystems

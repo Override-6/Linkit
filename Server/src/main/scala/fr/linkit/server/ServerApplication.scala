@@ -1,29 +1,30 @@
 /*
- *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
  *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
- *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
- *  questions.
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
  */
 
 package fr.linkit.server
 
-import fr.linkit.api.connection.{ConnectionInitialisationException, NoSuchConnectionException}
-import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system
-import fr.linkit.api.local.system._
-import fr.linkit.api.local.system.config.ApplicationInstantiationException
-import fr.linkit.api.local.system.security.ConnectionSecurityException
-import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.system.{EngineConstants, Rules, StaticVersions}
-import fr.linkit.server.ServerApplication.Version
-import fr.linkit.server.local.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
+import fr.linkit.api.application.config.ApplicationInstantiationException
+import fr.linkit.api.application.connection.{ConnectionInitialisationException, NoSuchConnectionException}
+import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
+import fr.linkit.api.internal.system
+import fr.linkit.api.internal.system._
+import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.api.internal.system.security.ConnectionSecurityException
+import fr.linkit.engine.application.LinkitApplication
+import fr.linkit.engine.internal.concurrency.pool.ClosedWorkerPool
+import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
+import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
 
 import scala.collection.mutable
@@ -32,11 +33,10 @@ import scala.util.{Failure, Success}
 
 class ServerApplication private(override val configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) {
 
-    protected override val appPool         = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
+    protected override val appPool         = new ClosedWorkerPool(configuration.mainPoolThreadCount, "Application")
     private            val serverCache     = mutable.HashMap.empty[Any, ServerConnection]
     private            val securityManager = configuration.securityManager
-
-    override val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, Version)
+    override val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, ServerApplication.Version)
 
     override def countConnections: Int = {
         /*
@@ -55,7 +55,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         * */
         appPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
-        AppLogger.info("Server application is shutting down...")
+        AppLoggers.App.info("Server application is shutting down...")
 
         val totalConnectionCount = countConnections
         var downCount            = 0
@@ -67,13 +67,13 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             }
             downCount += 1
             if (downCount == totalConnectionCount)
-                shutdownTask.wakeup()
+                shutdownTask.get.continue()
         })
         if (countConnections > 0)
             appPool.pauseCurrentTask()
 
         alive = false
-        AppLogger.info("Server application successfully shutdown.")
+        AppLoggers.App.info("Server application successfully shutdown.")
     }
 
     override def listConnections: Iterable[ServerConnection] = {
@@ -89,13 +89,13 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             throw new IllegalArgumentException(s"Server identifier length > ${Rules.MaxConnectionIDLength}")
 
         securityManager.checkConnectionConfig(configuration)
-        AppLogger.debug("Instantiating server connection...")
+        AppLoggers.App.debug("Instantiating server connection...")
         val serverConnection = new ServerConnection(this, configuration)
 
         serverConnection.runLaterControl {
-            AppLogger.debug("Starting server...")
+            AppLoggers.App.debug("Starting server...")
             serverConnection.start()
-            AppLogger.debug("Server started !")
+            AppLoggers.App.debug("Server started !")
         }.derivate() match {
             case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.identifier} on port ${configuration.port}", e)
             case Success(_) =>
@@ -134,11 +134,11 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         serverCache.remove(identifier)
     }
 
-    override def getConnection(identifier: String): Option[ServerConnection] = {
+    override def findConnection(identifier: String): Option[ServerConnection] = {
         serverCache.get(identifier)
     }
 
-    override def getConnection(port: Int): Option[ServerConnection] = {
+    override def findConnection(port: Int): Option[ServerConnection] = {
         serverCache.get(port)
     }
 
@@ -163,12 +163,12 @@ object ServerApplication {
         }
 
         serverAppContext.runLaterControl {
-            AppLogger.info("Starting Server Application...")
+            AppLoggers.App.info("Starting Server Application...")
             serverAppContext.start()
             val loadSchematic = config.loadSchematic
-            AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
+            AppLoggers.App.debug(s"Applying schematic '${loadSchematic.name}'...")
             loadSchematic.setup(serverAppContext)
-            AppLogger.trace("Schematic applied successfully.")
+            AppLoggers.App.debug("Schematic applied successfully.")
         }.join() match {
             case Failure(exception) => throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
             case Success(_)         =>

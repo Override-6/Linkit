@@ -6,15 +6,15 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package $ClassPackage$
 
-import fr.linkit.engine.local.script.ScriptFile
+import fr.linkit.api.internal.script.ScriptFile
 
-class $ClassName$() extends ScriptFile {
+class $ClassName$($ScriptArguments$) extends $ScriptClass$ {
 
     override def execute(): Unit = {
         $ScriptCode$

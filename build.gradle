@@ -1,22 +1,52 @@
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
+ *
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
+ */
+
 plugins {
     id 'java'
     id 'scala'
     id 'maven-publish'
+    id 'org.javamodularity.moduleplugin' version '1.5.0'
 }
 
+println("Java JDK: " + System.getProperty("java.version"))
+
 group 'fr.override.linkit'
-version '1.0-SNAPSHOT'
+version 'Alpha-0.1'
 
 repositories {
     mavenCentral()
 }
 
+
 subprojects {
+    apply plugin: 'org.javamodularity.moduleplugin'
+    apply plugin: 'java'
     apply plugin: 'scala'
     apply plugin: 'maven-publish'
 
-    sourceCompatibility = 14
-    targetCompatibility = 14
+    task dist(type: Jar, dependsOn: configurations.runtimeClasspath) {
+        from files(sourceSets.main.output.classesDirs)
+        from files(sourceSets.main.output.resourcesDir)
+        from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+        archiveFileName = "${project.name}-Alpha-1.0.jar"
+    }
+
+    tasks.withType(JavaCompile) {
+        sourceCompatibility = '16'
+        targetCompatibility = '16'
+    }
 
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
@@ -37,6 +67,7 @@ subprojects {
         useJUnitPlatform()
     }
 
+
     tasks.withType(ScalaCompile) {
         scalaCompileOptions.additionalParameters = [
                 "-feature",
@@ -44,10 +75,28 @@ subprojects {
                 "-language:experimental.macros"
         ]
     }
-
 }
 
+def docModules = [":Engine", ":API", ":Server", ":Client"]
+
+task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from all child projects as if it were a single project', group: 'Documentation') {
+    destinationDir = file("$buildDir/docs/scaladoc")
+    title = "$project.name $version"
+    classpath = project.files([])
+    scalaClasspath = project.files([])
+
+    docModules.collect{project(it)}.each { proj ->
+        proj.tasks.withType(ScalaDoc).each {
+            source proj.sourceSets.main.allJava
+            source proj.sourceSets.main.allScala
+            classpath += proj.scaladoc.classpath
+            scalaClasspath += proj.scaladoc.scalaClasspath
+            exclude proj.scaladoc.excludes
+            include proj.scaladoc.includes
+        }
+    }
+}
 wrapper {
-    gradleVersion = "6.6"
+    gradleVersion = "7.2"
     distributionType = Wrapper.DistributionType.ALL
 }

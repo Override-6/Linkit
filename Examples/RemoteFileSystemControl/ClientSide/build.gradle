@@ -1,0 +1,22 @@
+plugins {
+    id 'java'
+    id 'scala'
+}
+
+group 'fr.override.linkit'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':API')
+    implementation project(':Engine')
+    implementation project(':Client')
+    implementation project(':Examples:RemoteFileSystemControl:Common')
+}
+
+test {
+    useJUnitPlatform()
+}

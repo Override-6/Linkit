@@ -1,49 +1,47 @@
 /*
- *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
  *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
- *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
- *  questions.
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
  */
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
-import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketTranslator}
-import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
-import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.connection.{ConnectionException, ExternalConnection}
+import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
+import fr.linkit.api.gnom.packet._
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
+import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload, PacketTransfer, PacketUpload}
+import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
+import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
+import fr.linkit.server.connection.traffic.ordinal.ConnectionsOrdinalsRectifier
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
 import java.nio.ByteBuffer
-import scala.reflect.ClassTag
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
-
+    
     import session._
-
+    
     override val currentIdentifier: String           = server.currentIdentifier
     override val traffic          : PacketTraffic    = server.traffic
-    override val translator       : PacketTranslator = server.translator
-    override val eventNotifier    : EventNotifier    = server.eventNotifier
+    override val translator       : ObjectTranslator = server.translator
     override val network          : Network          = session.network
     override val port             : Int              = server.port
     override val boundIdentifier  : String           = session.boundIdentifier
-
-    @volatile private var alive = false
-
+    @volatile private var alive   : Boolean          = false
+    private  val tnol                                = network.gnol.trafficNOL
+    
     override def shutdown(): Unit = {
         WorkerPools.ensureCurrentIsWorker()
         alive = false
@@ -53,29 +51,21 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }*/
         readThread.close()
         session.close()
-
+        
         connectionManager.unregister(currentIdentifier)
-        AppLogger.trace(s"Connection closed for $currentIdentifier")
+        AppLoggers.Connection.info(s"Connection closed for $currentIdentifier")
     }
-
+    
     override def isAlive: Boolean = alive
-
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
-        traffic.getInjectable(injectableID, factory, scopeFactory)
-    }
-
-    override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
-
-    override def createStore(id: Int): PacketInjectableStore = traffic.createStore(id)
-
+    
     override def getState: ExternalConnectionState = session.getSocketState
-
+    
     override def runLaterControl[A](@workerExecution task: => A): AsyncTask[A] = {
         server.runLaterControl(task)
     }
-
+    
     override def runLater(task: => Unit): Unit = server.runLater(task)
-
+    
     def start(): Unit = {
         if (alive) {
             throw ConnectionException(this, "This Connection was already used and is now definitely closed.")
@@ -84,53 +74,78 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         readThread.onPacketRead = result => {
             val coordinates: DedicatedPacketCoordinates = result.coords match {
                 case d: DedicatedPacketCoordinates => d
-                case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
+                case b: BroadcastPacketCoordinates => b.getDedicated(currentIdentifier)
             }
-
-            handlePacket(result.packet, result.attributes, coordinates)
+            val ordinalShift                            = ordinalsRectifier.getOrdinalShift(coordinates.path).get()
+            
+            val rectifiedResult = new PacketDownload {
+                override val ordinal: Int        = result.ordinal + ordinalShift
+                override val buff   : ByteBuffer = result.buff
+                override def coords: PacketCoordinates = coordinates
+                override def attributes: PacketAttributes = result.attributes
+                override def packet: Packet = result.packet
+                override def makeDeserialization(): Unit = result.makeDeserialization()
+                override def isDeserialized: Boolean = result.isDeserialized
+                override def isInjected: Boolean = result.isInjected
+                override def informInjected: Unit = result.informInjected
+            }
+            handlePacket(rectifiedResult)
         }
+        readThread.onReadException = () => runLater(shutdown())
         readThread.start()
         //Method useless but kept because services could need to be started in the future?
     }
-
+    
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
-        runLater {
-            val coords       = DedicatedPacketCoordinates(path, boundIdentifier, server.currentIdentifier)
-            val transferInfo = SimpleTransferInfo(coords, attributes, packet)
-            val result       = translator.translate(transferInfo)
-            session.send(result)
-        }
+        val coords       = DedicatedPacketCoordinates(path, boundIdentifier, currentIdentifier)
+        val config       = traffic.getPersistenceConfig(coords.path)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network)
+        val result       = translator.translate(transferInfo)
+        send(result)
     }
-
+    
     override def isConnected: Boolean = getState == ExternalConnectionState.CONNECTED
-
+    
     private[connection] def updateSocket(socket: Socket): Unit = {
         WorkerPools.ensureCurrentIsWorker()
         session.updateSocket(socket)
     }
-
-    def send(result: PacketSerializationResult): Unit = {
+    
+    def canHandlePacketInjection(result: PacketTransfer): Boolean = {
+        val channelPath = result.coords.path
+        channelPath.length == 0 || {
+            val reference = new TrafficObjectReference(channelPath)
+            val present   = tnol.isPresentOnEngine(boundIdentifier, reference)
+            present
+        }
+    }
+    
+    def send(result: PacketUpload): Unit = {
+        if (!canHandlePacketInjection(result)) {
+            val channelPath = result.coords.path
+            val reference   = new TrafficObjectReference(channelPath)
+            throw new PacketNotInjectableException(this, s"Engine '$boundIdentifier' does not contains any traffic packet injectable presence at $reference.")
+        }
         session.send(result)
     }
-
-    private[connection] def send(buff: ByteBuffer): Unit = {
-        session.send(buff)
-    }
-
+    
     @workerExecution
-    private def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
-        if (!alive)
-            return
-
-        //AppLogger.vWarn(s"HANDLING PACKET $packet, $attributes, $coordinates")
-        serverTraffic.processInjection(packet, attributes, coordinates)
+    private def handlePacket(result: PacketDownload): Unit = {
+        val path = result.coords.path
+        AppLoggers.Debug.trace(s"Handling packet for $boundIdentifier at ${TrafficReference / path}")
+        for (session <- server.getAllSessions) if (session ne this.session) {
+            val shift = session.ordinalsRectifier.getOrdinalShift(path)
+            shift.increment()
+            AppLoggers.Debug.trace(s"Incremented shift for ${session.boundIdentifier}, ($shift)")
+        }
+        traffic.processInjection(result)
     }
-
+    
     override def getApp: ApplicationContext = server.getApp
 }
 
 object ServerExternalConnection {
-
+    
     /**
      * Constructs a ClientConnection without starting it.
      *
@@ -146,5 +161,5 @@ object ServerExternalConnection {
         connection.start()
         connection
     }
-
+    
 }

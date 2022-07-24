@@ -1,20 +1,21 @@
 /*
- *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
  *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
- *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
- *  questions.
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
  */
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.connection.ClientDynamicSocket.UnsetIdentifier
-import fr.linkit.engine.connection.packet.traffic.DynamicSocket
+import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
@@ -41,9 +42,9 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
                 newSocket()
                 notConnected = false
             } catch {
-                case _@(_: SocketException | _: ConnectException) =>
-                    AppLogger.warn("Unable to connect to server.")
-                    AppLogger.warn(s"Waiting for $reconnectionPeriod ms before another try...")
+                case e@(_: SocketException | _: ConnectException) =>
+                    AppLoggers.Traffic.warn("Unable to connect to server.")
+                    AppLoggers.Traffic.warn(s"Waiting for $reconnectionPeriod ms before another try...")
                     Thread.sleep(reconnectionPeriod)
             }
         }

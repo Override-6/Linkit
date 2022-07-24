@@ -1,23 +1,35 @@
 /*
- *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
  *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
- *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
- *  questions.
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
  */
 
 include 'API'
 include 'Engine'
-include 'Tests-Codebin'
 include 'Client'
 include 'Server'
-include 'LinkitPlugins:DebugPlugin'
-findProject(':LinkitPlugins:DebugPlugin')?.name = 'DebugPlugin'
-include 'LinkitPlugins:CLICommands'
-findProject(':LinkitPlugins:CLICommands')?.name = 'CLICommands'
-include 'LinkitAgent'
+include 'Macros'
+include 'Examples:RemoteAPIImplementationControl:ServerSide'
+include 'Examples:RemoteAPIImplementationControl:ClientSide'
+include 'Examples:RemoteAPIImplementationControl:API'
+include 'Examples:RemoteFileSystemControl:ServerStorage'
+include 'Examples:RemoteFileSystemControl:ClientSide'
+
+findProject(':Examples:RemoteAPIImplementationControl:ServerSide')?.name = 'ServerSide'
+findProject(':Examples:RemoteAPIImplementationControl:ClientSide')?.name = 'ClientSide'
+findProject(':Examples:RemoteAPIImplementationControl:API')?.name = 'API'
+findProject(':Examples:RemoteFileSystemControl:ServerStorage')?.name = 'ServerStorage'
+findProject(':Examples:RemoteFileSystemControl:ClientSide')?.name = 'ClientSide'
+include 'Misc-Codebin'
+include 'Examples:RemoteFileSystemControl:Common'
+findProject(':Examples:RemoteFileSystemControl:Common')?.name = 'Common'
+include 'Examples:Messaging'
+findProject(':Examples:Messaging')?.name = 'Messaging'
 

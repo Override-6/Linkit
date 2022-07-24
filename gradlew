@@ -1,15 +1,16 @@
 #!/usr/bin/env sh
 
 #
-#  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
-#  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+# Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
 #
-#  This code is free software; you can only use it for personal uses, studies or documentation.
-#  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
-#  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+# This code is free software; you can only use it for personal uses, studies or documentation.
+# You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+# ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+# For any professional use, please contact me at overridelinkit@gmail.com.
 #
-#  Please contact maximebatista18@gmail.com if you need additional information or have any
-#  questions.
+# Please contact overridelinkit@gmail.com if you need additional information or have any
+# questions.
 #
 
 ##############################################################################
@@ -40,7 +41,7 @@ APP_NAME="Gradle"
 APP_BASE_NAME=`basename "$0"`
 
 # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
+DEFAULT_JVM_OPTS='"-Xmx1024m" "-Xms256m" "-XX:MaxPermSize=1024m"'
 
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD="maximum"
@@ -119,7 +120,7 @@ fi
 
 # For Darwin, add options to specify how the application appears in the dock
 if $darwin; then
-    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/gradle.icns\""
+    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/gradle.icns\" \"-Xmx1024m\" \"-Xms256m\" \"-XX:MaxPermSize=1024m\""
 fi
 
 # For Cygwin or MSYS, switch paths to Windows format before running java
