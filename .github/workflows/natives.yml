@@ -1,8 +1,8 @@
 name: compile for Windows, Linux, OSX (x64/x32)
 on:
   push:
-    paths:
-      - /Natives/*
+    branches:
+      - dev
 jobs:
   Windows:
     name: Windows x32 / x64
