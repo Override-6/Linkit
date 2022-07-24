@@ -22,27 +22,31 @@ import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import java.lang.reflect.{Modifier, Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}
 
-class New[A <: AnyRef](clazz: Class[A],
-                       arguments: Array[Any]) extends SyncInstanceCreator[A] {
-    
+/**
+ * SyncInstance Creator to simulate a "new A(args)" instruction.<br>
+ * The creator will generate a synchronized `A` object using a constructor.
+ * */
+class New[A <: AnyRef] private(clazz: Class[A],
+                               arguments: Array[Any]) extends SyncInstanceCreator[A] {
+
     override val syncClassDef: SyncClassDef = SyncClassDef(clazz)
-    
+
     override def getInstance(syncClass: Class[A with SynchronizedObject[A]]): A with SynchronizedObject[A] = {
         val constructor = getAssignableConstructor(syncClass, arguments)
         constructor.newInstance(arguments: _*)
     }
-    
+
     override def getOrigin: Option[A] = None
 }
 
 object New {
-    
+
     def apply[T <: AnyRef : ClassTag](params: Any*): New[T] = {
         val clazz        = classTag[T].runtimeClass.asInstanceOf[Class[T]]
         val objectsArray = params.toArray
         new New[T](clazz, objectsArray)
     }
-    
+
     def getAssignableConstructor[T](clazz: Class[T], objectsArray: Array[Any]): JConstructor[T] = {
         for (constructor <- clazz.getDeclaredConstructors) {
             val params               = constructor.getParameterTypes
@@ -56,5 +60,5 @@ object New {
         }
         throw new NoSuchMethodException(s"Could not find a constructor matching arguments ${objectsArray.mkString("Array(", ", ", ")")}")
     }
-    
+
 }
