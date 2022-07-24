@@ -12,9 +12,7 @@ jobs:
       - uses: actions/checkout@v3
       - run: |
           cd
-          cd
-          cd
-          cd Natives
+          cd D:\a\Linkit\Linkit\Natives
           cmake .
           mkdir Build
           move LinkitNativesLibraries.dll Build/LinkitNativesLibraries.dll
