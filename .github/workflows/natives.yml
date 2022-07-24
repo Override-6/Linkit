@@ -1,5 +1,6 @@
 name: compile for Windows, Linux, OSX (x64/x32)
 on:
+  workflow_dispatch:
   push:
     branches:
       - dev
@@ -10,4 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: |
+          cd Natives/
           gcc --version
+          cmake --version
+          
