@@ -10,15 +10,15 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-      name: x64
-      run: |
+      - name: x64
+        run: |
           cd D:\a\Linkit\Linkit\Natives
           cmake . -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=Release 
           mkdir Build
           dir
           move cmake-build-debug/LinkitNativesLibraries.dll Build/LinkitNativesLibraries-x64.dll
-      name: x32
-      run: |
+      - name: x32
+        run: |
           cd D:\a\Linkit\Linkit\Natives
           cmake . -DCMAKE_GENERATOR_PLATFORM=x32 -DCMAKE_BUILD_TYPE=Release 
           dir
