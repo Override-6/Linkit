@@ -26,7 +26,6 @@ private[linkit] object InternalLibrariesLoader {
 
     private       val ResourceMark    = "/mapEngineFilter.txt"
     private       val LibsDestination = "system.internal.libraries_dir"
-    private final val processTag      = "@" + ManagementFactory.getRuntimeMXBean.getPid
 
     def extractAndLoad(resources: ResourceFolder, libs: Array[String]): Unit = {
         extract(resources, libs)
@@ -34,7 +33,7 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def load(resources: ResourceFolder): Unit = {
-        val libsPath = Path.of(getPathProperty(resources, LibsDestination) + s"/$processTag")
+        val libsPath = getPathProperty(resources, LibsDestination)
         Files.list(libsPath)
                 .forEach(loadLib)
     }
@@ -65,7 +64,7 @@ private[linkit] object InternalLibrariesLoader {
 
     private def extractFolder(resources: ResourceFolder, filePath: String, libs: Array[String]): Unit = {
         val root               = Path.of(filePath + "/natives/")
-        val extractDestination = Path.of(getPathProperty(resources, LibsDestination).toString + s"/$processTag")
+        val extractDestination = getPathProperty(resources, LibsDestination)
         Files.createDirectories(extractDestination)
         Files.list(root)
                 .filter(p => libs.contains(p.getFileName.toString))
@@ -91,7 +90,7 @@ private[linkit] object InternalLibrariesLoader {
 
     private def extractJar(resources: ResourceFolder, jarPath: String, libs: Array[String]): Unit = {
         val zipFile = new ZipFile(jarPath)
-        val root    = Path.of(getPathProperty(resources, LibsDestination).toString + s"/$processTag")
+        val root    = getPathProperty(resources, LibsDestination)
         Files.createDirectories(root)
         libs.foreach { lib =>
             val entry = zipFile.getEntry("natives/" + lib)
