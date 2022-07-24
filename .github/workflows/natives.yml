@@ -13,14 +13,14 @@ jobs:
       - name: x64
         run: |
           cd D:\a\Linkit\Linkit\Natives
-          cmake . -DCMAKE_GENERATOR_PLATFORM=x64 -DCMAKE_BUILD_TYPE=Release 
+          cmake . -DCMAKE_GENERATOR_PLATFORM=x64 --config Release
           mkdir Build
-          dir
+          dir cmake-build-debug
           move cmake-build-debug/LinkitNativesLibraries.dll Build/LinkitNativesLibraries-x64.dll
       - name: x32
         run: |
           cd D:\a\Linkit\Linkit\Natives
-          cmake . -DCMAKE_GENERATOR_PLATFORM=x32 -DCMAKE_BUILD_TYPE=Release 
+          cmake . -DCMAKE_GENERATOR_PLATFORM=x32 --config Release
           dir
           move cmake-build-debug/LinkitNativesLibraries.dll Build/LinkitNativesLibraries-x32.dll
           
