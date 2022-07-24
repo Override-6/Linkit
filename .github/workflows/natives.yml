@@ -9,5 +9,5 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-      run:
-        gcc --version
+      - run: |
+          gcc --version
