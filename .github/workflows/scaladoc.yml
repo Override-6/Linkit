@@ -6,9 +6,12 @@ name: deploy scaladoc on wiki
 on:
   # Triggers the workflow on push or pull request events but only for the "redesign/syncobjects_contract" branch
   push:
-    branches: [ "redesign/syncobjects_contract" ]
+    branches: [ "dev" ]
+    paths: [ "**.java", "**.scala" ]
+
   pull_request:
-    branches: [ "redesign/syncobjects_contract" ]
+    branches: [ "dev" ]
+    paths: [ "**.java", "**.scala" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
