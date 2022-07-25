@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.referencing
 
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
-import fr.linkit.api.gnom.referencing.presence.ObjectPresenceType._
-import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, NetworkPresenceHandler, ObjectPresenceType}
+import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
+import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, NetworkPresenceHandler, ObjectPresenceState}
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
@@ -39,6 +39,8 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
     
     @inline
     def getPresence(ref: R): NetworkObjectPresence = {
+        if (ref eq null)
+            throw new NullPointerException()
         externalPresences.getOrElseUpdate(ref, {
             new ExternalNetworkObjectPresence[R](this, ref)
         })
@@ -61,10 +63,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
     
     private def casted[A](ref: NetworkObjectReference): A = ref.asInstanceOf[A]
     
-    def findPresence(ref: R): Option[NetworkObjectPresence] = {
-        Some(getPresence(ref))
-    }
-    
+
     private[referencing] def askIfPresent(engineId: String, location: R): Boolean = {
         val traffic = channel.traffic
         //fixme quick wobbly fix
@@ -86,7 +85,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
         }
     }
     
-    private[referencing] def informPresence(enginesId: Array[String], location: R, presence: ObjectPresenceType): Unit = {
+    private[referencing] def informPresence(enginesId: Array[String], location: R, presence: ObjectPresenceState): Unit = {
         channel
                 .makeRequest(ChannelScopes.include(enginesId: _*))
                 .addPacket(AnyRefPacket(presence))
@@ -142,7 +141,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
                 presence.setPresenceFor(senderId, if (isPresent) PRESENT else NOT_PRESENT)
                 AppLoggers.GNOM.trace(s"presence information sent and modified for '$senderId' to ${if (isPresent) PRESENT else NOT_PRESENT}")
             
-            case AnyRefPacket(presenceType: ObjectPresenceType) =>
+            case AnyRefPacket(presenceType: ObjectPresenceState) =>
                 val presence = externalPresences(reference)
                 presenceType match {
                     case NOT_PRESENT => presence.setToNotPresent(senderId)

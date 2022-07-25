@@ -14,8 +14,8 @@
 package fr.linkit.engine.gnom.referencing.presence
 
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
-import fr.linkit.api.gnom.referencing.presence.ObjectPresenceType._
-import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceType}
+import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
+import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceState}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
 
@@ -24,11 +24,11 @@ import scala.collection.mutable
 class ExternalNetworkObjectPresence[R <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[R], val reference: R)
         extends NetworkObjectPresence {
 
-    private val presences = mutable.HashMap.empty[String, ObjectPresenceType]
+    private val presences = mutable.HashMap.empty[String, ObjectPresenceState]
     
     override def isPresenceKnownFor(engineId: String): Boolean = presences.contains(engineId)
     
-    override def getPresenceFor(engineId: String): ObjectPresenceType = {
+    override def getPresenceFor(engineId: String): ObjectPresenceState = {
         if (engineId == null)
             throw new NullPointerException("engineId is null.")
         this.synchronized {

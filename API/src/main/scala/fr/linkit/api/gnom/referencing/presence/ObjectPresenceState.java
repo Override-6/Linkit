@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.referencing.presence;
 
-public enum ObjectPresenceType {
+public enum ObjectPresenceState {
 
     NEVER_ASKED,
     PRESENT,

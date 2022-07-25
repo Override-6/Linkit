@@ -45,7 +45,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
         if (this.isInstanceOf[ObjectManagementChannel])
             SystemNetworkObjectPresence
         else
-            traffic.getTrafficObjectLinker.findPresence(reference).get
+            traffic.getTrafficObjectLinker.getPresence(reference).get
     }
     
     @volatile private var closed = true

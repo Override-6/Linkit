@@ -14,8 +14,8 @@
 package fr.linkit.engine.gnom.referencing.presence
 
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
-import fr.linkit.api.gnom.referencing.presence.ObjectPresenceType._
-import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceType}
+import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
+import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceState}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
 
@@ -23,7 +23,7 @@ import scala.collection.mutable
 
 class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[R], val location: R) extends NetworkObjectPresence {
 
-    private val presences        = mutable.HashMap.empty[String, ObjectPresenceType]
+    private val presences        = mutable.HashMap.empty[String, ObjectPresenceState]
     private var present: Boolean = false
 
     def isPresent: Boolean = present
@@ -32,11 +32,11 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
         presences.contains(engineId)
     }
     
-    def setPresenceFor(engineId: String, kind: ObjectPresenceType): Unit = presences.synchronized {
+    def setPresenceFor(engineId: String, kind: ObjectPresenceState): Unit = presences.synchronized {
         presences.put(engineId, kind)
     }
 
-    override def getPresenceFor(engineId: String): ObjectPresenceType = presences.synchronized {
+    override def getPresenceFor(engineId: String): ObjectPresenceState = presences.synchronized {
         presences.getOrElse(engineId, NEVER_ASKED)
     }
 

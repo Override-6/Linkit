@@ -11,20 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.referencing.presence
+package fr.linkit.engine.test.gnom
 
-import fr.linkit.api.gnom.referencing.NetworkObjectReference
+class LinkageTests {
 
-/**
- * Base class for presence handlers<br>
- * [[R]] The type of reference handled by this handler.
- * */
-trait NetworkPresenceHandler[R <: NetworkObjectReference] {
 
-    /**
-     * tries to find a presence from
-     * */
-    def getPresence(ref: R): NetworkObjectPresence
 
-    def isPresentOnEngine(engineId: String, ref: R): Boolean
 }

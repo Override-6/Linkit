@@ -15,10 +15,10 @@ package fr.linkit.api.gnom.referencing.presence
 
 trait NetworkObjectPresence {
 
-    def getPresenceFor(engineId: String): ObjectPresenceType
+    def getPresenceFor(engineId: String): ObjectPresenceState
 
-    def isPresenceKnownFor(engineId: String): Boolean //true if any presence state is known for the targeted engine
+    def isPresenceKnownFor(engineId: String): Boolean
     
-    def isPresentOn(engineId: String): Boolean = getPresenceFor(engineId) eq ObjectPresenceType.PRESENT
+    def isPresentOn(engineId: String): Boolean = getPresenceFor(engineId) eq ObjectPresenceState.PRESENT
 
 }

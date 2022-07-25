@@ -80,19 +80,19 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
             }
     }
     
-    override def findPresence(reference: NetworkObjectReference): Option[NetworkObjectPresence] = reference match {
-        case ref: SharedCacheManagerReference => cacheNOL.findPresence(ref)
-        case ref: TrafficReference            => trafficNOL.findPresence(ref)
+    override def getPresence(reference: NetworkObjectReference): NetworkObjectPresence = reference match {
+        case ref: SharedCacheManagerReference => cacheNOL.getPresence(ref)
+        case ref: TrafficReference            => trafficNOL.getPresence(ref)
         case _: SystemObjectReference         =>
             /* As other NetworkReferences are guaranteed
             * to be present on every engines,
             * The result of their presence on any engine will be always present if they are legit objects.
             */
-            Some(SystemNetworkObjectPresence)
+            SystemNetworkObjectPresence
         case _                                =>
             otherLinkers.find(_.isAssignable(reference)) match {
-                case Some(linker) => linker.findPresence(reference)
-                case None         => defaultNOL.findPresence(reference)
+                case Some(linker) => linker.getPresence(reference)
+                case None         => defaultNOL.getPresence(reference)
             }
     }
     
@@ -120,7 +120,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
             case _: SystemObjectReference       => SystemObjectPresenceHandler.injectRequest(linkerBundle)
             case _                              =>
                 otherLinkers.find(_.isAssignable(reference)) match {
-                    case Some(linker: TrafficInterestedNPH) => linker.findPresence(reference)
+                    case Some(linker: TrafficInterestedNPH) => linker.getPresence(reference)
                     case None                               => defaultNOL.injectRequest(linkerBundle)
                 }
         }

@@ -37,11 +37,11 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
         }
     }
 
-    override def findPresence(ref: SharedCacheManagerReference): Option[NetworkObjectPresence] = {
+    override def getPresence(ref: SharedCacheManagerReference): NetworkObjectPresence = {
         network.findCacheManager(ref.family).fold[Option[NetworkObjectPresence]](None) { manager =>
             ref match {
-                case ref: SharedCacheReference        => manager.getCachesLinker.findPresence(ref)
-                case ref: SharedCacheManagerReference => super.findPresence(ref)
+                case ref: SharedCacheReference        => manager.getCachesLinker.getPresence(ref)
+                case ref: SharedCacheManagerReference => super.getPresence(ref)
             }
         }
     }

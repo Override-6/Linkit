@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.referencing.linker
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
-import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceType}
+import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceState}
 import fr.linkit.api.gnom.referencing.traffic.LinkerRequestBundle
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.config.PersistenceConfigBuilder
@@ -95,7 +95,7 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
         codeToRef.get(reference.objectID).map(new ContextObject(_, reference))
     }
 
-    override def findPresence(ref: ContextualObjectReference): Option[NetworkObjectPresence] = Some(SystemNetworkObjectPresence)
+    override def getPresence(ref: ContextualObjectReference): Option[NetworkObjectPresence] = Some(SystemNetworkObjectPresence)
 
     override def isPresentOnEngine(engineId: String, ref: ContextualObjectReference): Boolean = {
         true //ObjectManagementChannel only uses objects that are mandatory on all engines

@@ -199,12 +199,12 @@ abstract class AbstractSharedCacheManager(override val family: String,
         
         override def unregisterReference(ref: SharedCacheReference): Unit = super.unregisterReference(ref)
         
-        override def findPresence(reference: SharedCacheReference): Option[NetworkObjectPresence] = {
+        override def getPresence(reference: SharedCacheReference): NetworkObjectPresence = {
             if (reference.getClass eq classOf[SharedCacheReference])
-                super.findPresence(reference)
+                super.getPresence(reference)
             else {
                 LocalCachesStore.findCache(reference.cacheID)
-                        .flatMap(_.objectLinker.flatMap(_.findPresence(silentCast(reference))))
+                        .flatMap(_.objectLinker.flatMap(_.getPresence(cast(reference))))
             }
         }
         
@@ -213,10 +213,10 @@ abstract class AbstractSharedCacheManager(override val family: String,
             if (reference.getClass eq classOf[SharedCacheReference])
                 cacheOpt.map(_.cache)
             else
-                cacheOpt.flatMap(_.objectLinker.flatMap(_.findObject(silentCast(reference))))
+                cacheOpt.flatMap(_.objectLinker.flatMap(_.findObject(cast(reference))))
         }
         
-        private def silentCast[X](t: AnyRef): X = t.asInstanceOf[X]
+        private def cast[X](t: AnyRef): X = t.asInstanceOf[X]
         
         override def injectRequest(bundle: LinkerRequestBundle): Unit = {
             val reference = bundle.linkerReference

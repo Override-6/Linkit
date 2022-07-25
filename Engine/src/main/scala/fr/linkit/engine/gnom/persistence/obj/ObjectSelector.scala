@@ -111,7 +111,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
     
     private def findNetworkObjectReference(obj: NetworkObject[NetworkObjectReference]): Option[NetworkObjectReference] = {
         val reference = obj.reference
-        if (gnol.findPresence(reference).exists(_.isPresentOn(boundId)))
+        if (gnol.getPresence(reference).exists(_.isPresentOn(boundId)))
             Some(reference)
         else {
             if (!gnol.touchesAnyLinker(reference))

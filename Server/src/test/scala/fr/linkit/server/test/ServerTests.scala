@@ -72,10 +72,4 @@ object ServerTests {
         )
     }
 
-    @AfterAll
-    def sleep(): Unit = {
-        //Thread.currentThread().setDaemon(true)
-        AppLoggers.App.trace("Sleeping...")
-        Thread.sleep(9999999999999L)
-    }
 }
