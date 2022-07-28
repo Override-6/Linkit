@@ -50,7 +50,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
     }
 
     override protected def remoteCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
-        //DO Nothing, This cache is the origin, it can do whatever he wants, so no checks have to be performed here.
+        //DO Nothing, This cache is the origin, it can do whatever he wants, so no checks have to be performed from here.
     }
 
     /**
@@ -95,7 +95,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
                         val engine = network.findEngine(senderID).getOrElse {
                             failRequest(s"Unknown engine '$senderID'.")
                         }
-                        value.inspect(engine, cacheType).fold(acceptRequest)(failRequest)
+                        value.inspect(engine, registeredCache.cache.getClass, cacheType).fold(acceptRequest)(failRequest)
                 }
         }
     }

@@ -70,7 +70,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
                 .getOrElse(createCache(cacheID, factory, method))
     }
     
-    override def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A = /*this.synchronized */ {
+    override def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A = {
         LocalCachesStore
                 .findCacheSecure[A](cacheID)
                 .getOrElse {
@@ -160,9 +160,9 @@ abstract class AbstractSharedCacheManager(override val family: String,
         channel.addRequestListener(handleRequest)
     }
     
-    private def createCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], method: CacheSearchMethod): A = {
+    private def createCache[A <: SharedCache](cacheID: Int, factory: SharedCacheFactory[A], method: CacheSearchMethod): A = {
         AppLoggers.GNOM.debug(s"Creating cache $cacheID in $family.")
-        remoteCacheOpenChecks(cacheID, classTag[A].runtimeClass)
+        remoteCacheOpenChecks(cacheID, factory.targetClass)
         val channel = store.getInjectable(cacheID, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
         chainWithTrunkIPU(channel)
         val sharedCache = factory.createNew(channel)
@@ -175,7 +175,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
         if (baseContent != null) {
             channel.getHandler.foreach {
                 case e: CacheContentHandler[CacheContent] => e.initializeContent(baseContent)
-                case _                                    => //Simply don't set the content
+                case _                                    => //if no content handler set, simply don't set the content
             }
         }
         channel.injectStoredBundles()
@@ -204,7 +204,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
                 super.getPresence(reference)
             else {
                 LocalCachesStore.findCache(reference.cacheID)
-                        .flatMap(_.objectLinker.flatMap(_.getPresence(cast(reference))))
+                        .fold(super.getPresence(reference))(_.objectLinker.fold(super.getPresence(reference))(_.getPresence(cast(reference))))
             }
         }
         

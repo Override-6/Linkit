@@ -38,7 +38,7 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
     }
 
     override def getPresence(ref: SharedCacheManagerReference): NetworkObjectPresence = {
-        network.findCacheManager(ref.family).fold[Option[NetworkObjectPresence]](None) { manager =>
+        network.findCacheManager(ref.family).fold[NetworkObjectPresence](super.getPresence(ref)) { manager =>
             ref match {
                 case ref: SharedCacheReference        => manager.getCachesLinker.getPresence(ref)
                 case ref: SharedCacheManagerReference => super.getPresence(ref)
@@ -77,8 +77,8 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
                 ) { manager =>
                     manager.getCachesLinker.initializeObject(obj.asInstanceOf[NetworkObject[_ <: SharedCacheReference]])
                 }
-            case _: SharedCacheManagerReference =>
-                throw new UnsupportedOperationException(s"Can not initialize Shared Cache Manager. Shared Cache Manager can only be opened using Network#declareNewCacheManager.")
+            case ref: SharedCacheManagerReference =>
+                throw new UnsupportedOperationException(s"Cannot initialize Shared Cache Manager from the network. cache manager '${ref.family}' must be declared manually on this engine.")
             case ref                            => throwUnknownRef(ref)
         }
     }
@@ -86,4 +86,6 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
     override def registerReference(ref: SharedCacheManagerReference): Unit = super.registerReference(ref)
 
     override def unregisterReference(ref: SharedCacheManagerReference): Unit = super.unregisterReference(ref)
+
+
 }

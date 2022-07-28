@@ -64,7 +64,7 @@ final class SharedCacheDistantManager @Persist()(family: String,
                 // The cache could not be accepted
                 // (for any reason. Maybe because cacheType is not assignable with the other caches,
                 // or because the AttachHandler of the cache refused the connection.)
-                throw new CacheNotAcceptedException(s"This message comes from engine $ownerID: " + msg)
+                throw new CacheNotAcceptedException(s"engine $ownerID refused cache connection: " + msg)
         }
     }
 

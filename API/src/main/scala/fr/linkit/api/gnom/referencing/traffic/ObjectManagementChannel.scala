@@ -15,4 +15,6 @@ package fr.linkit.api.gnom.referencing.traffic
 
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 
-trait ObjectManagementChannel extends RequestPacketChannel
+trait ObjectManagementChannel extends RequestPacketChannel {
+
+}

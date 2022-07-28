@@ -61,19 +61,19 @@ class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
 }
 
 object DefaultSynchronizedStaticsCache {
-
+import SharedCacheFactory.lambdaToFactory
     private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
-    def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData): SharedCacheFactory[SynchronizedStaticsCache] = {
-        channel => {
+    def apply(contracts: ContractDescriptorData): SharedCacheFactory[SynchronizedStaticsCache] = {
+        lambdaToFactory(classOf[DefaultSynchronizedStaticsCache])(channel => {
             apply(channel, contracts, channel.traffic.connection.network)
-        }
+        })
     }
 
-    private[linkit] def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData, network: Network): SharedCacheFactory[SynchronizedStaticsCache] = {
-        channel => {
+    private[linkit] def apply(contracts: ContractDescriptorData, network: Network): SharedCacheFactory[SynchronizedStaticsCache] = {
+        lambdaToFactory(classOf[DefaultSynchronizedStaticsCache])(channel => {
             apply(channel, contracts, network)
-        }
+        })
     }
 
     private def apply(channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): SynchronizedStaticsCache = {

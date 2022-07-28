@@ -21,16 +21,20 @@ import fr.linkit.api.gnom.network.Engine
  * */
 trait CacheAttachHandler extends CacheHandler {
 
+
     /**
-     * Controls if an engine is accepted or not.
-     * This method is called only if the handler handles a cache where its manager handles itself.
+     * Controls if an engine can attach to the handled cache.
+     * This method is called only on origin caches.
      * @param engine the tested engine
      * @param requestedCacheType the Shared Cache class that the engine want to use.
      *                           The requestedCacheType is assignable to the current handled cache type.
      * @return None if there is no reason for why the engine is not accepted, Some[String]
      *         to specify why the engine is not accepted.
      * */
-    def inspect(engine: Engine, requestedCacheType: Class[_]): Option[String] = None //All engines accepted by default
+    def inspect(engine: Engine, cacheClass: Class[_], engineCacheType: Class[_]): Option[String] = {
+        if (cacheClass eq engineCacheType) None
+        else Some(s"Requested cache class is not ${cacheClass.getName} (received: ${engineCacheType.getName}).")
+    }
 
     /**
      * Called when a [[Engine]] is accepted (see [[inspect()]]) and attaches to the handled cache.

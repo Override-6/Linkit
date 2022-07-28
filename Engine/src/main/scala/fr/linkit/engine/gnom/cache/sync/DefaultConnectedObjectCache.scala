@@ -318,13 +318,6 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
             AppLoggers.SyncObj.debug(s"Engine ${engine} attached to this synchronized object cache")
         }
         
-        override def inspect(engine: Engine, requestedCacheType: Class[_]): Option[String] = {
-            val clazz = classOf[DefaultConnectedObjectCache[A]]
-            if (requestedCacheType eq clazz)
-                None
-            else Some(s"Requested cache class is not ${clazz.getName} (received: ${requestedCacheType.getName}).")
-        }
-        
         override def onEngineDetached(engine: Engine): Unit = {
             AppLoggers.SyncObj.debug(s"Engine ${engine} detached to this synchronized object cache")
         }
@@ -335,7 +328,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
 }
 
 object DefaultConnectedObjectCache {
-    
+    import SharedCacheFactory.lambdaToFactory
     private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
     
     implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = apply
@@ -349,15 +342,15 @@ object DefaultConnectedObjectCache {
     }
     
     implicit def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData): SharedCacheFactory[ConnectedObjectCache[A]] = {
-        channel => {
+        lambdaToFactory(classOf[DefaultConnectedObjectCache[A]])(channel => {
             apply[A](channel, contracts, channel.traffic.connection.network)
-        }
+        })
     }
     
     private[linkit] def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData, network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
-        channel => {
+        lambdaToFactory(classOf[DefaultConnectedObjectCache[A]])(channel => {
             apply[A](channel, contracts, network)
-        }
+        })
     }
     
     private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): ConnectedObjectCache[A] = {

@@ -95,7 +95,7 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
         codeToRef.get(reference.objectID).map(new ContextObject(_, reference))
     }
 
-    override def getPresence(ref: ContextualObjectReference): Option[NetworkObjectPresence] = Some(SystemNetworkObjectPresence)
+    override def getPresence(ref: ContextualObjectReference): NetworkObjectPresence = SystemNetworkObjectPresence
 
     override def isPresentOnEngine(engineId: String, ref: ContextualObjectReference): Boolean = {
         true //ObjectManagementChannel only uses objects that are mandatory on all engines

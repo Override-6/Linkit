@@ -14,13 +14,17 @@
 package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
-import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+
+import scala.reflect.{ClassTag, classTag}
 
 /**
  * Used by the [[SharedCacheManager]] to create a [[SharedCache]] of type [[A]]
  * @tparam A the type of the created [[SharedCache]]
  */
 trait SharedCacheFactory[A <: SharedCache] {
+
+    val targetClass: Class[A]
+
     /**
      * Creates a Shared Cache instance
      * @param channel the channel used by the shared cache
@@ -31,4 +35,14 @@ trait SharedCacheFactory[A <: SharedCache] {
 
     final def factory: this.type = this //for Java users
 
+}
+
+object SharedCacheFactory {
+    implicit def lambdaToFactory[A <: SharedCache](target: Class[_])(f: CachePacketChannel => A): SharedCacheFactory[A] = {
+        new SharedCacheFactory[A] {
+            override val targetClass: Class[A] = target.asInstanceOf[Class[A]]
+
+            override def createNew(channel: CachePacketChannel): A = f(channel)
+        }
+    }
 }
