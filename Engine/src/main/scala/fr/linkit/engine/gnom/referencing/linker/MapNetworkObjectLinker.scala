@@ -24,7 +24,6 @@ private[gnom] class MapNetworkObjectLinker(omc: ObjectManagementChannel) extends
 
     private val map = mutable.HashMap.empty[NetworkObjectReference, NetworkObject[NetworkObjectReference]]
 
-    override def isAssignable(reference: NetworkObjectReference): Boolean = true //all kind of remaining network objects are allowed
 
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = {
         map.get(reference)

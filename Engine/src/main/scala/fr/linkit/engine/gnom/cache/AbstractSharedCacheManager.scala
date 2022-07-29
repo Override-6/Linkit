@@ -260,7 +260,6 @@ abstract class AbstractSharedCacheManager(override val family: String,
             }
         }
         
-        override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SharedCacheReference]
     }
 }
 

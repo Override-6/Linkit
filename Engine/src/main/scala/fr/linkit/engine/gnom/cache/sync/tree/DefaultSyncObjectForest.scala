@@ -45,9 +45,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
     * used to store objects whose synchronized version of keys already have bounded references.
     * */
     private val linkedOrigins = mutable.HashMap.empty[AnyRef, ConnectedObjectReference]
-    
-    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ConnectedObjectReference]
-    
+
     override def findTree(id: Int): Option[ConnectedObjectTree[A]] = findTreeInternal(id)
     
     def findTreeLocal(id: Int): Option[ConnectedObjectTree[A]] = trees.get(id)

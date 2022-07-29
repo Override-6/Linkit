@@ -26,7 +26,6 @@ class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
         extends AbstractNetworkPresenceHandler[SharedCacheManagerReference](null, omc)
                 with InitialisableNetworkObjectLinker[SharedCacheManagerReference] {
 
-    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[SharedCacheManagerReference]
 
     override def isPresentOnEngine(engineId: String, ref: SharedCacheManagerReference): Boolean = {
         val manager = network.findCacheManager(ref.family)

@@ -33,8 +33,6 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
     private val codeToRef = new util.HashMap[Int, AnyRef]()
     private val refToCode = new util.HashMap[AnyRef, Int]()
 
-    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ContextualObjectReference]
-
     override def findReferenceID(obj: AnyRef): Option[Int] = {
         var result = Try(refToCode.get(obj)).getOrElse(0)
         if (result == 0) result = refToCode.get(Identity(obj))

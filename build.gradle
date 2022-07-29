@@ -81,7 +81,7 @@ def docModules = [":Engine", ":API", ":Server", ":Client"]
 
 task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from all child projects as if it were a single project', group: 'Documentation') {
     destinationDir = file("$buildDir/docs/scaladoc")
-    title = "$project.name $version"
+    title = "$project.name documentation"
     classpath = project.files([])
     scalaClasspath = project.files([])
 

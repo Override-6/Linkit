@@ -55,5 +55,4 @@ class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: Abstract
 
     override def unregisterReference(ref: TrafficReference): Unit = super.unregisterReference(ref)
 
-    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[TrafficReference]
 }

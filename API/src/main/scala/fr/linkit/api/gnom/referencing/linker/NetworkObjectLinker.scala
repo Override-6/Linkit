@@ -26,8 +26,6 @@ import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
  * */
 trait NetworkObjectLinker[R <: NetworkObjectReference] extends NetworkPresenceHandler[R] {
 
-    def isAssignable(reference: NetworkObjectReference): Boolean
-
     def findObject(reference: R): Option[NetworkObject[_ <: R]]
 
 }

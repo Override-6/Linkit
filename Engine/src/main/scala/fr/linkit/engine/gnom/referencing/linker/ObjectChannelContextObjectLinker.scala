@@ -36,7 +36,6 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
     private val refToCode = mutable.HashMap.empty[AnyRef, Int]
     builder.forEachRefs((id, ref) => +=(id, ref))
 
-    override def isAssignable(reference: NetworkObjectReference): Boolean = reference.isInstanceOf[ContextualObjectReference]
 
     override def findReferenceID(obj: AnyRef): Option[Int] = refToCode.get(obj)
 
