@@ -35,7 +35,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
     }
 
     override protected def createGlobalCache: SharedCacheManager = {
-        new SharedCacheOriginManager(GlobalCacheID, this, networkStore.createStore(GlobalCacheID.hashCode))
+        new SharedCacheOriginManager(GlobalCacheID, this, objectManagementChannel, networkStore.createStore(GlobalCacheID.hashCode))
     }
 
     def removeEngine(identifier: String): Unit = {

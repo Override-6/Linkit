@@ -11,24 +11,24 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.referencing
+package fr.linkit.engine.gnom.referencing.presence
 
 import fr.linkit.api.gnom.packet.Packet
-import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
 import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, NetworkPresenceHandler, ObjectPresenceState}
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
+import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
-import fr.linkit.engine.gnom.referencing.presence.{ExternalNetworkObjectPresence, InternalNetworkObjectPresence}
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 
-abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](parent: NetworkPresenceHandler[_ >: R], channel: ObjectManagementChannel)
+abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Nullable parent: NetworkPresenceHandler[_ >: R], channel: ObjectManagementChannel)
         extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
     
     private lazy val currentIdentifier = channel.traffic.currentIdentifier

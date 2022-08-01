@@ -23,13 +23,13 @@ import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncIns
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
-import fr.linkit.api.gnom.cache.traffic.handler.{CacheAttachHandler, CacheHandler, CacheContentHandler}
+import fr.linkit.api.gnom.cache.traffic.handler.{CacheAttachHandler, CacheContentHandler, CacheHandler}
 import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
 import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
-import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
+import fr.linkit.api.gnom.referencing.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
@@ -46,7 +46,7 @@ import fr.linkit.engine.gnom.cache.sync.tree.node._
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, ChannelScopes}
 import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
 
 import java.lang.ref.WeakReference
@@ -60,7 +60,13 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         extends AbstractSharedCache(channel) with InternalConnectedObjectCache[A] {
 
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
-    override val forest           : DefaultSyncObjectForest[A] = new DefaultSyncObjectForest[A](this, channel.manager.getCachesLinker, network.objectManagementChannel)
+    override val forest           : DefaultSyncObjectForest[A] = {
+        val omc = network.connection.traffic match {
+            case traffic: AbstractPacketTraffic => traffic.getObjectManagementChannel
+            case _                              => throw new UnsupportedOperationException("Cannot retrieve object management channel.")
+        }
+        new DefaultSyncObjectForest[A](this, channel.manager.getCachesLinker, omc)
+    }
     channel.setHandler(CacheCenterHandler)
 
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A] = {
@@ -358,7 +364,7 @@ object DefaultConnectedObjectCache {
         val context   = channel.manager.network.connection.getApp
         val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
         val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
-        
+
         new DefaultConnectedObjectCache[A](channel, generator, contracts, network)
     }
     

@@ -26,4 +26,16 @@ class ScalaTests(i: Int) {
 
 object ScalaTests {
 
+    class MyObject {
+
+        /**
+         * This method prints a param and return the current JVM version of the engine.
+         * */
+        def doSomething(param: String): String = {
+            print(s"invocation called ! ($param)")
+            System.getProperty("java.version")
+        }
+
+    }
+
 }

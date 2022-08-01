@@ -25,8 +25,8 @@ import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, SyncNodeDataRequest, UnknownObjectSyncNode}
 import fr.linkit.engine.gnom.cache.sync.{CacheRepoContent, InternalConnectedObjectCache}
-import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.referencing.NOLUtils.throwUnknownObject
+import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 

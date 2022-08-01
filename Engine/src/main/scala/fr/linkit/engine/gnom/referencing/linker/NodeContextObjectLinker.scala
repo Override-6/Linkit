@@ -18,7 +18,8 @@ import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
-import fr.linkit.engine.gnom.referencing.{AbstractNetworkPresenceHandler, ContextObject, ObjectAlreadyReferencedException}
+import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
+import fr.linkit.engine.gnom.referencing.{ContextObject, ObjectAlreadyReferencedException}
 import fr.linkit.engine.internal.utils.Identity
 import org.jetbrains.annotations.Nullable
 

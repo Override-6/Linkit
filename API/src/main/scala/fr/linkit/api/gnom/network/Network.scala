@@ -28,8 +28,6 @@ trait Network extends StaticNetworkObject[NetworkReference.type] {
 
     val connection: ConnectionContext
 
-    val objectManagementChannel: ObjectManagementChannel //TODO remove from public !!!
-
     val gnol: GeneralNetworkObjectLinker
 
     def currentEngine: Engine

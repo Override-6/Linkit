@@ -5,7 +5,7 @@ import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 /**
  * object linker to store network objects that could not find an attributed object linker.
  * */
-trait DefaultNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectReference] {
+trait RemainingNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectReference] {
 
     /**
      * Saves the object in this linker

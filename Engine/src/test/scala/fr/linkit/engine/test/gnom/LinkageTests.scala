@@ -16,7 +16,7 @@ package fr.linkit.engine.test.gnom
 import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
-import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
+import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
 class LinkageTests {
 

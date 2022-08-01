@@ -20,24 +20,22 @@ import fr.linkit.api.gnom.network.{EngineReference, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing._
-import fr.linkit.api.gnom.referencing.linker.{DefaultNetworkObjectLinker, GeneralNetworkObjectLinker, InitialisableNetworkObjectLinker, NetworkObjectLinker}
+import fr.linkit.api.gnom.referencing.linker.{GeneralNetworkObjectLinker, InitialisableNetworkObjectLinker, NetworkObjectLinker, RemainingNetworkObjectLinker}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.traffic.channel.request.DefaultRequestBundle
-import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
-import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
+import fr.linkit.engine.gnom.referencing.presence.{AbstractNetworkPresenceHandler, SystemNetworkObjectPresence}
 import fr.linkit.engine.internal.utils.ClassMap
 
-import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 
 class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                                      network: Network,
                                      override val cacheNOL: InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH,
                                      override val trafficNOL: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH,
-                                     override val defaultNOL: DefaultNetworkObjectLinker with TrafficInterestedNPH)
+                                     override val defaultNOL: RemainingNetworkObjectLinker with TrafficInterestedNPH)
         extends GeneralNetworkObjectLinker {
     
     private val connection   = network.connection
@@ -45,11 +43,14 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
     private val otherLinkers = new ClassMap[NetworkObjectLinker[NetworkObjectReference]]()
     
     startObjectManagement()
-    
-    override def addRootLinker[R <: NetworkObjectReference: ClassTag](linker: NetworkObjectLinker[R]): Unit = {
-        otherLinkers put (classTag[R].runtimeClass, linker.asInstanceOf[NetworkObjectLinker[NetworkObjectReference]])
+
+
+    override def addRootLinker[R <: NetworkObjectReference : ClassTag, L <: NetworkObjectLinker[R]](linker: ObjectManagementChannel => L): L = {
+        val ler = linker(omc)
+        otherLinkers put (classTag[R].runtimeClass, ler.asInstanceOf[NetworkObjectLinker[NetworkObjectReference]])
+        ler
     }
-    
+
     /**
      *
      * @param reference the reference to test

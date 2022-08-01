@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.referencing.linker
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
-import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
+import fr.linkit.api.gnom.referencing.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
 
 import scala.reflect.ClassTag
 
@@ -24,9 +24,9 @@ trait GeneralNetworkObjectLinker extends NetworkObjectLinker[NetworkObjectRefere
 
     val cacheNOL  : InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH
     val trafficNOL: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH
-    val defaultNOL: DefaultNetworkObjectLinker
+    val defaultNOL: RemainingNetworkObjectLinker
 
-    def addRootLinker[R <: NetworkObjectReference: ClassTag](linker: NetworkObjectLinker[R]): Unit
+    def addRootLinker[R <: NetworkObjectReference: ClassTag, L <: NetworkObjectLinker[R]](linker: ObjectManagementChannel => L): L
 
     /**
      *

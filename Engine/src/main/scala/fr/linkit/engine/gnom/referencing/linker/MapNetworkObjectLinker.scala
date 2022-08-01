@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.referencing.linker
 import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
-import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
+import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
@@ -24,22 +24,28 @@ private[gnom] class MapNetworkObjectLinker(omc: ObjectManagementChannel) extends
 
     private val map = mutable.HashMap.empty[NetworkObjectReference, NetworkObject[NetworkObjectReference]]
 
-
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = {
         map.get(reference)
     }
-    
-    
-    def save(no: NetworkObject[NetworkObjectReference]): Unit = {
-        val reference = no.reference
+
+    def save(no: NetworkObject[NetworkObjectReference]): Unit = put(no)
+
+    def unsave(ref: NetworkObjectReference): Unit = remove(ref)
+
+    def put(no: NetworkObject[NetworkObjectReference]): Unit = {
+        put(no.reference, no)
+    }
+
+    def put[R <: NetworkObjectReference](reference: R, no: NetworkObject[R]): Unit = {
         if (reference == null)
             throw new NullPointerException("Network Object's reference is null.")
         map.put(reference, no)
         registerReference(reference)
     }
 
-    def unsave(ref: NetworkObjectReference): Unit = {
+    def remove(ref: NetworkObjectReference): Unit = {
         map.remove(ref)
     }
+
 
 }

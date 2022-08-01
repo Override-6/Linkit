@@ -17,7 +17,6 @@ import fr.linkit.api.gnom.referencing.NetworkObjectReference
 import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
 import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceState}
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 

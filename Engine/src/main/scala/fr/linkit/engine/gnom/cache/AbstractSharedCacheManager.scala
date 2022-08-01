@@ -24,13 +24,13 @@ import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.linker.{InitialisableNetworkObjectLinker, NetworkObjectLinker}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
-import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, TrafficInterestedNPH}
+import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
-import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.referencing.NOLUtils.throwUnknownObject
+import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
 import java.util.concurrent.{Executors, ThreadPoolExecutor}
 import scala.collection.mutable
@@ -38,6 +38,7 @@ import scala.reflect.{ClassTag, classTag}
 
 abstract class AbstractSharedCacheManager(override val family: String,
                                           override val network: Network,
+                                          omc: ObjectManagementChannel,
                                           store: PacketInjectableStore) extends SharedCacheManager {
     
     protected val channel          : SimpleRequestPacketChannel  = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
@@ -192,7 +193,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
     
     
     protected object ManagerCachesLinker
-            extends AbstractNetworkPresenceHandler[SharedCacheReference](network.gnol.cacheNOL, network.objectManagementChannel)
+            extends AbstractNetworkPresenceHandler[SharedCacheReference](network.gnol.cacheNOL, omc)
                     with InitialisableNetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH {
         
         override def registerReference(ref: SharedCacheReference): Unit = super.registerReference(ref)

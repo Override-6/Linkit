@@ -21,6 +21,7 @@ import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.AbstractSharedCacheManager.SystemCacheRange
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
@@ -32,7 +33,8 @@ import scala.util.control.Breaks.{break, breakable}
 
 final class SharedCacheOriginManager @Persist()(family: String,
                                                 network: Network,
-                                                store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) with Deconstructible {
+                                                omc: ObjectManagementChannel,
+                                                store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, omc, store) with Deconstructible {
 
     override val ownerID: String = network.connection.currentIdentifier
 

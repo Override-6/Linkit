@@ -19,10 +19,10 @@ import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.gnom.referencing.linker.InitialisableNetworkObjectLinker
-import fr.linkit.engine.gnom.referencing.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.referencing.NOLUtils._
+import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
-class SharedCacheManagerLinker(network: Network, omc: ObjectManagementChannel)
+class SharedCacheManagersLinker(network: Network, omc: ObjectManagementChannel)
         extends AbstractNetworkPresenceHandler[SharedCacheManagerReference](null, omc)
                 with InitialisableNetworkObjectLinker[SharedCacheManagerReference] {
 
