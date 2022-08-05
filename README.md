@@ -5,8 +5,6 @@ counter since 3 march 2021)
 
 <div style="text-align: center;"> <h1>The Linkit Framework</h1> </div>  
 
-![Cover](RCover.png)
-
 Linkit is a high level networking framework in which exchanges between peers are fully object oriented.  
 
 The framework provides a naming system, the ability to implement caches synchronized with other remote engines,
