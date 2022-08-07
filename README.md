@@ -3,7 +3,7 @@ counter since 3 march 2021)
 [![Wiki scaladoc deployment](https://github.com/Override-6/Linkit/actions/workflows/scaladoc.yml/badge.svg)](https://github.com/Override-6/Linkit/actions/workflows/scaladoc.yml)
 [![Wiki deployment](https://github.com/Override-6/Linkit-Wiki/actions/workflows/deploy.yml/badge.svg?branch=master)](https://github.com/Override-6/Linkit-Wiki/actions/workflows/deploy.yml)
 
-<p align="center">
+<p align="center" style="font-weight: bold; font-size: 200%">
   The Linkit Framework
 </p>
 <p align="center">
