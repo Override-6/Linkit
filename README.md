@@ -21,5 +21,5 @@ contract to your objects in order to enhance your control on them
 </p>
 
 <p align="center">
-Learn more on the [Website](https://override-6.github.io/Linkit/) !
+Learn more on the <a href="https://override-6.github.io/Linkit/">Website</a> !
 </p>
