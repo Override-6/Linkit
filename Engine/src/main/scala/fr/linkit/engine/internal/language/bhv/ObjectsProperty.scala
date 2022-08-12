@@ -1,5 +1,6 @@
 package fr.linkit.engine.internal.language.bhv
 
+import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.internal.concurrency.Procrastinator
 

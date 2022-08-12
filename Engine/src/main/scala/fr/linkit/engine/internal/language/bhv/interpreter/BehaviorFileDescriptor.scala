@@ -3,7 +3,7 @@ package fr.linkit.engine.internal.language.bhv.interpreter
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.{CacheOwnerEngine, CurrentEngine, OwnerEngine, RootOwnerEngine}
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreementBuilder
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, RMIRulesAgreementBuilder}
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
@@ -19,7 +19,7 @@ import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuild
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileDescriptor.{DefaultAgreements, DefaultBuilder}
-import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, BHVProperties}
+import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.utils.ClassMap
 
 import scala.collection.mutable

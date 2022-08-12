@@ -11,8 +11,6 @@ repositories {
 }
 
 dependencies {
-    implementation project(':API')
-    implementation project(':Engine')
     implementation project(':Server')
     implementation project(':Examples:RemoteFileSystemControl:Common')
 }

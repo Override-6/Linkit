@@ -11,7 +11,7 @@
  */
 package $ClassPackage$
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-import fr.linkit.engine.internal.language.bhv.BHVProperties
+import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 
 import scala.annotation.switch
 

@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.internal.language.bhv.interpreter
 
+import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.engine.internal.language.bhv.BHVProperties
 
 trait ContractDescriptorDataFactory {
 

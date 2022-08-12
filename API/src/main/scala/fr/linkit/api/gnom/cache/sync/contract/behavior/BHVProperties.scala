@@ -11,12 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv
+package fr.linkit.api.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.internal.concurrency.Procrastinator
 
 trait BHVProperties {
-    
+
     /**
      * a name tag for the properties.
      * the name of the properties is not necessarily the contract's name.

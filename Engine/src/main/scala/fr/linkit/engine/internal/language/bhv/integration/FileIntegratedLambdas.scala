@@ -14,6 +14,7 @@
 package fr.linkit.engine.internal.language.bhv.integration
 
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -21,7 +22,6 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
-import fr.linkit.engine.internal.language.bhv.BHVProperties
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
 
 import scala.collection.mutable

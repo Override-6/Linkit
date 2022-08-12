@@ -14,6 +14,8 @@
 package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.cache.sync.contract.Contract
+import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
@@ -24,20 +26,23 @@ import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
 
-object Contract {
-    
+object ContractImpl extends Contract {
+
+    Contract.setImpl(this)
     private val properties   = mutable.HashMap.empty[String, BHVProperties]
     private val contracts    = mutable.HashMap.empty[String, ContractHandler]
     private val toPrecompute = mutable.HashSet.empty[(String, String)]
     private val center       = new DefaultCompilerCenter
-    
-    private lazy val app = LinkitApplication.getApplication
-    
+
+    private lazy val app = {
+        LinkitApplication.getApplication
+    }
+
     def precompute(application: ApplicationContext): Unit = {
         toPrecompute.foreach { case (text, filePath) => precompute(text, filePath, application) }
         toPrecompute.clear()
     }
-    
+
     def registerProperties(properties: BHVProperties): Unit = {
         this.properties.get(properties.name) match {
             case Some(value) =>
@@ -47,9 +52,9 @@ object Contract {
                 this.properties.put(properties.name, properties)
         }
     }
-    
+
     private[linkit] def addToPrecompute(text: String, filePath: String): Unit = toPrecompute += ((text, filePath))
-    
+
     def apply(name: String, properties: BHVProperties): LangContractDescriptorData = {
         this.properties.get(properties.name) match {
             case Some(value) =>
@@ -59,7 +64,7 @@ object Contract {
         }
         apply(name, properties.name)
     }
-    
+
     def apply(name: String, propertiesName: String): LangContractDescriptorData = {
         contracts.get(name) match {
             case Some(handler) =>
@@ -68,11 +73,11 @@ object Contract {
                 throw new NoSuchElementException(s"Could not find any behavior contract bound with the name '$name'")
         }
     }
-    
+
     def apply(name: String): LangContractDescriptorData = {
         apply(name, ObjectsProperty.empty)
     }
-    
+
     private def precompute(text: String, filePath: String, app: ApplicationContext): ContractHandler = {
         val tokens        = BehaviorLanguageLexer.tokenize(new CharSequenceReader(text), filePath)
         val ast           = BehaviorFileParser.parse(tokens)
@@ -84,12 +89,12 @@ object Contract {
         contracts.put(fileName, partial)
         partial
     }
-    
+
     private class ContractHandler(file: BehaviorFile, callerFactory: BHVProperties => MethodCaller) {
-        
+
         private val callers   = mutable.HashMap.empty[String, MethodCaller]
         private val contracts = mutable.HashMap.empty[String, LangContractDescriptorData]
-        
+
         def get(propertyName: String): LangContractDescriptorData = {
             contracts.getOrElseUpdate(propertyName, {
                 val bhvProperties = properties.getOrElse(propertyName, throw new NoSuchElementException(s"unknown properties '$propertyName'."))
@@ -104,5 +109,5 @@ object Contract {
             })
         }
     }
-    
+
 }
