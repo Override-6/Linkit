@@ -2,8 +2,8 @@
  * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
  *
- * This code is free software; you can only use it for personal uses, studies or documentation.
- * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * This code is free software; you can USE it as you want.
+ * You can download this source code, and modify it ONLY FOR PRIVATE USE but you
  * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  * For any professional use, please contact me at overridelinkit@gmail.com.
  *
