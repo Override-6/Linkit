@@ -13,11 +13,12 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{Worker, WorkerPools}
+import fr.linkit.api.internal.concurrency.{ClosedWorkerPool, Worker}
+import fr.linkit.lib.concurrency.WorkerPools
 
 import java.util.concurrent.LinkedBlockingQueue
 
-class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWorkerPool(name) {
+class SimpleClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWorkerPool(name) with ClosedWorkerPool {
     
     if (initialThreadCount < 0)
         throw new IllegalArgumentException(s"initialThreadCount < 0")
@@ -36,7 +37,7 @@ class ClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWo
     override protected def pollTask: Runnable = workQueue.poll()
     override protected def takeTask: Runnable = workQueue.take()
     
-    def setThreadCount(newCount: Int): Unit = {
+    override def setThreadCount(newCount: Int): Unit = {
         if (workers.size > newCount)
             throw new IllegalArgumentException(s"newCount < workers.size ($newCount < ${workers.size})")
         for (_ <- 0 until newCount - workers.size) {

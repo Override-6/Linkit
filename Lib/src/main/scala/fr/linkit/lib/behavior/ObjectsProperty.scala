@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv
+package fr.linkit.lib.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.network.Network

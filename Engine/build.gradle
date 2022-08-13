@@ -46,4 +46,5 @@ dependencies {
 
     api project(':API')
     api project(':SPI')
+    api project(':Lib')
 }

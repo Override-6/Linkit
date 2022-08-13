@@ -18,8 +18,8 @@ import java.io.{DataInputStream, DataOutputStream}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet}
-import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
+import fr.linkit.lib.concurrency.WorkerPools
 import org.jetbrains.annotations.Nullable
 
 class StreamChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) {

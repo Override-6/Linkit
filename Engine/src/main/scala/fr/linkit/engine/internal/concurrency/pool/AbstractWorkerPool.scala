@@ -18,6 +18,7 @@ import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
 
+import java.io.Closeable
 import java.util.concurrent._
 import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable.ListBuffer
@@ -82,9 +83,9 @@ import scala.util.control.NonFatal
  * @see [[BusyBlockingQueue]] for busy waitings example.
  * @param initialThreadCount The number of threads the pool will contain (can ba changed with [[setThreadCount]].
  * */
-abstract class AbstractWorkerPool(val name: String) extends WorkerPool with AutoCloseable {
+abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Closeable {
     
-    import fr.linkit.api.internal.concurrency.WorkerPools._
+    import fr.linkit.lib.concurrency.WorkerPools._
     
     protected val workers      : ListBuffer[Worker] = ListBuffer.empty
     protected var closed                            = false

@@ -24,7 +24,7 @@ import fr.linkit.client.ClientApplication.Version
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.internal.concurrency.pool.ClosedWorkerPool
+import fr.linkit.engine.internal.concurrency.pool.SimpleClosedWorkerPool
 import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
 
 import scala.collection.mutable
@@ -33,7 +33,7 @@ import scala.util.{Failure, Success}
 
 class ClientApplication private(override val configuration: ClientApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) {
 
-    override protected val appPool             = new ClosedWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
+    override protected val appPool             = new SimpleClosedWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
     private            val connectionCache     = mutable.HashMap.empty[Any, ExternalConnection]
     @volatile private var connectionCount: Int = 0
 

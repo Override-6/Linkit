@@ -30,8 +30,9 @@ import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.referencing.linker.MapNetworkObjectLinker
-import fr.linkit.engine.internal.language.bhv.{Contract, ObjectsProperty}
+import fr.linkit.engine.internal.language.bhv.ContractImpl
 import fr.linkit.engine.internal.mapping.RemoteClassMappings
+import fr.linkit.lib.behavior.ObjectsProperty
 
 import java.sql.Timestamp
 
@@ -135,7 +136,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         //init those lazy vals, do not change the order!
         AppLoggers.GNOM.info("Initialising Network.")
         AppLoggers.GNOM.info("Initialising GNOL and Global Cache.")
-        Contract.registerProperties(ObjectsProperty.defaults(this))
+        ContractImpl.registerProperties(ObjectsProperty.defaults(this))
         gnol
         globalCaches
 
@@ -162,7 +163,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     private[network] def mappingsCache = {
         if (mappingsCacheOpt.isEmpty && !isMappingCacheInitialising) {
             isMappingCacheInitialising = true
-            val contract = Contract("NetworkContract", ObjectsProperty.defaults(this))
+            val contract = ContractImpl("NetworkContract", ObjectsProperty.defaults(this))
             mappingsCacheOpt = Some(globalCaches.attachToCache(2, DefaultConnectedObjectCache[RemoteClassMappings](contract)))
             isMappingCacheInitialising = false
         }

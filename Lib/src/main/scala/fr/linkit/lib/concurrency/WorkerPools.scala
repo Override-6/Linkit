@@ -11,7 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.internal.concurrency
+package fr.linkit.lib.concurrency
+
+import fr.linkit.api.internal.concurrency._
+import fr.linkit.engine.internal.concurrency.pool.{SimpleClosedWorkerPool, SimpleHiringWorkerPool}
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
@@ -23,6 +26,12 @@ object WorkerPools {
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Application Worker")
 
     private val boundedThreads = mutable.Map.empty[Thread, Worker]
+
+    def newHiringPool(name: String): HiringWorkerPool = new SimpleHiringWorkerPool(name)
+
+    def newClosedPool(name: String, initialThreadCount: Int = 0): ClosedWorkerPool = {
+        new SimpleClosedWorkerPool(initialThreadCount, name)
+    }
 
     def bindWorker(thread: Thread, workerVersion: Worker): Unit = {
         boundedThreads.put(thread, workerVersion)

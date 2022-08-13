@@ -19,9 +19,9 @@ import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
-import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.internal.utils.ScalaUtils
+import fr.linkit.lib.concurrency.WorkerPools
 
 import scala.annotation.switch
 

@@ -11,10 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.internal.system.log
+package fr.linkit.engine.internal.system.log
 
-import fr.linkit.api.internal.concurrency.WorkerPools
-import fr.linkit.api.internal.system.log.WorkerTaskStackConverter._
+import fr.linkit.engine.internal.system.log.WorkerTaskStackConverter._
+import fr.linkit.lib.concurrency.WorkerPools
 import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.core.config.plugins.Plugin
 import org.apache.logging.log4j.core.pattern._
@@ -25,17 +25,17 @@ import scala.util.Try
 @Plugin(name = "task_stack", category = PatternConverter.CATEGORY)
 @ConverterKeys(Array("task_stack", "stack", "ts"))
 class WorkerTaskStackConverter(options: Array[String]) extends LogEventPatternConverter("task stack", "default") {
-    
+
     private val separator = Try(options(0)).getOrElse(">")
     private val unknown   = Try(options(1)).getOrElse("?")
-    
+
     override def format(event: LogEvent, sb: lang.StringBuilder): Unit = {
         val start = sb.length()
         if (fullFormat(sb)) {
             fieldColor.format(start, sb)
         } else fieldNoColor.format(start, sb)
     }
-    
+
     private def fullFormat(sb: lang.StringBuilder): Boolean = {
         WorkerPools.currentWorkerOpt match {
             case None         =>
@@ -59,17 +59,17 @@ class WorkerTaskStackConverter(options: Array[String]) extends LogEventPatternCo
                 }
         }
     }
-    
+
 }
 
 object WorkerTaskStackConverter {
-    
+
     private final val green        = AnsiEscape.createSequence("YELLOW")
     private final val MinLength    = 6
     private final val MaxLength    = 16
     private final val fieldNoColor = new FormattingInfo(true, MinLength, MaxLength, true)
     private final val fieldColor   = new FormattingInfo(true, MinLength + green.length, MaxLength + green.length, true)
-    
+
     def newInstance(options: Array[String]): WorkerTaskStackConverter = {
         new WorkerTaskStackConverter(options.headOption.map(_.split(",")).getOrElse(Array()))
     }

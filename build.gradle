@@ -14,8 +14,6 @@
 plugins {
     id 'java'
     id 'scala'
-    id 'maven-publish'
-    id 'org.javamodularity.moduleplugin' version '1.5.0'
 }
 
 println("Java JDK: " + System.getProperty("java.version"))
@@ -23,16 +21,17 @@ println("Java JDK: " + System.getProperty("java.version"))
 group 'fr.override.linkit'
 version 'Alpha-0.1'
 
-repositories {
-    mavenCentral()
-}
-
-
 subprojects {
-    apply plugin: 'org.javamodularity.moduleplugin'
     apply plugin: 'java'
     apply plugin: 'scala'
-    apply plugin: 'maven-publish'
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.7'
+    }
 
     task dist(type: Jar, dependsOn: configurations.runtimeClasspath) {
         from files(sourceSets.main.output.classesDirs)
@@ -77,7 +76,7 @@ subprojects {
     }
 }
 
-def docModules = [":Engine", ":API", ":Server", ":Client"]
+def docModules = [":Engine", ":API", ":Server", ":Client", ":SPI", ":Lib"]
 
 task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from all child projects as if it were a single project', group: 'Documentation') {
     destinationDir = file("$buildDir/docs/scaladoc")

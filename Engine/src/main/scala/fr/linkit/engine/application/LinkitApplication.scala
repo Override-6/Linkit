@@ -26,7 +26,7 @@ import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleRe
 import fr.linkit.engine.gnom.persistence.ConstantProtocol
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.internal.language.bhv.Contract
+import fr.linkit.engine.internal.language.bhv.ContractImpl
 import fr.linkit.engine.internal.mapping.{ClassMappings, MappingEngine}
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
 
@@ -88,7 +88,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
         }
         alive = true
         AppLoggers.App.info("Parsing found behavior contracts...")
-        Contract.precompute(this)
+        ContractImpl.precompute(this)
     }
     
 }

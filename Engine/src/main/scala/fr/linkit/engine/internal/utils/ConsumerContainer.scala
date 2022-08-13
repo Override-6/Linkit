@@ -14,7 +14,8 @@
 package fr.linkit.engine.internal.utils
 
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
-import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
+import fr.linkit.api.internal.concurrency.workerExecution
+import fr.linkit.lib.concurrency.WorkerPools
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal

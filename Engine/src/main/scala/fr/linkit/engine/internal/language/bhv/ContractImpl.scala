@@ -1,16 +1,3 @@
-/*
- * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
- *
- * This code is free software; you can USE it as you want.
- * You can download this source code, and modify it ONLY FOR PRIVATE USE but you
- * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
- * For any professional use, please contact me at overridelinkit@gmail.com.
- *
- * Please contact overridelinkit@gmail.com if you need additional information or have any
- * questions.
- */
-
 package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
@@ -22,13 +9,13 @@ import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCe
 import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
+import fr.linkit.lib.behavior.ObjectsProperty
 
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
 
 object ContractImpl extends Contract {
 
-    Contract.setImpl(this)
     private val properties   = mutable.HashMap.empty[String, BHVProperties]
     private val contracts    = mutable.HashMap.empty[String, ContractHandler]
     private val toPrecompute = mutable.HashSet.empty[(String, String)]

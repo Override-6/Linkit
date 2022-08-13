@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.{PacketDownload, ObjectTranslator}
-import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
+import fr.linkit.api.internal.concurrency.{AsyncTask, packetWorkerExecution, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
@@ -28,6 +28,7 @@ import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.utils.{NumberSerializer, ScalaUtils}
+import fr.linkit.lib.concurrency.WorkerPools
 import org.jetbrains.annotations.NotNull
 
 import java.nio.ByteBuffer

@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.mapping
 
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.language.bhv.Contract
+import fr.linkit.engine.internal.language.bhv.ContractImpl
 import org.jetbrains.annotations.Nullable
 
 import java.io.InputStream
@@ -145,7 +145,7 @@ object MappingEngine {
             val stream = classLoader.getResourceAsStream(relativePath)
             val text   = new String(stream.readAllBytes())
             stream.close()
-            Contract.addToPrecompute(text, path)
+            ContractImpl.addToPrecompute(text, path)
         }
     }
 

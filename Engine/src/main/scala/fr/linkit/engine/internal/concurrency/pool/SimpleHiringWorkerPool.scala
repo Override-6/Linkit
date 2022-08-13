@@ -14,14 +14,15 @@
 package fr.linkit.engine.internal.concurrency.pool
 
 import java.util.concurrent.LinkedBlockingQueue
-import fr.linkit.api.internal.concurrency.{IllegalThreadException, WorkerPools}
+import fr.linkit.api.internal.concurrency.{HiringWorkerPool, IllegalThreadException}
 import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
+import fr.linkit.lib.concurrency.WorkerPools
 
-class HiringBusyWorkerPool(name: String) extends AbstractWorkerPool(name) {
+class SimpleHiringWorkerPool(name: String) extends AbstractWorkerPool(name) with HiringWorkerPool {
 
     private val workQueue = new LinkedBlockingQueue[Runnable]()
 
-    def hireCurrentThread(): Unit = {
+    override def hireCurrentThread(): Unit = {
         val currentWorker = WorkerPools.currentWorkerOpt
         if (currentWorker.isDefined)
             throw IllegalThreadException("could not hire current thread: current thread is a worker thread")
@@ -32,12 +33,11 @@ class HiringBusyWorkerPool(name: String) extends AbstractWorkerPool(name) {
         addWorker(worker)
     }
 
-    override protected def post(runnable: Runnable): Unit = {
-        workQueue.put(runnable)
-    }
-    
+    override protected def post(runnable: Runnable): Unit = workQueue.put(runnable)
+
     override protected def countRemainingTasks: Int = workQueue.size()
 
     override protected def pollTask: Runnable = workQueue.poll()
+
     override protected def takeTask: Runnable = workQueue.take()
 }

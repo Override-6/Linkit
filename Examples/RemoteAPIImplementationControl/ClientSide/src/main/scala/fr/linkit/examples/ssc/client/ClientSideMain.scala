@@ -1,13 +1,13 @@
 package fr.linkit.examples.ssc.client
 
 import fr.linkit.api.application.connection.{ConnectionContext, ExternalConnection}
-import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.internal.concurrency.pool.HiringBusyWorkerPool
 import fr.linkit.examples.ssc.api.UserAccountContainer
+import fr.linkit.lib.concurrency.WorkerPools
 
 import java.net.InetSocketAddress
 import scala.io.StdIn

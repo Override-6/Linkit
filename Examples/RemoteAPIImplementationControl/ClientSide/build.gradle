@@ -11,7 +11,6 @@ repositories {
 }
 
 dependencies {
-    implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.7'
 
     implementation project(':Client')
     implementation project(':Examples:RemoteAPIImplementationControl:API')

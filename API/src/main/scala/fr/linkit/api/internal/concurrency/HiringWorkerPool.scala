@@ -11,14 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.concurrency.pool
+package fr.linkit.api.internal.concurrency
 
-import fr.linkit.api.internal.concurrency.WorkerPool
-import fr.linkit.lib.concurrency.WorkerPools.workerThreadGroup
+trait HiringWorkerPool extends WorkerPool {
 
-class BusyWorkerThread(target: Runnable,
-                       override val pool: WorkerPool,
-                       tid: Int) extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$tid") with AbstractWorker {
-    override val thread: Thread = this
+    def hireCurrentThread(): Unit
+
 }
-

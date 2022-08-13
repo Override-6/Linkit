@@ -13,10 +13,11 @@
 
 package fr.linkit.engine.internal.concurrency
 
-import fr.linkit.api.internal.concurrency.WorkerPools.{currentTask, currentWorker}
+import fr.linkit.lib.concurrency.WorkerPools.{currentTask, currentWorker}
 import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.utils.ConsumerContainer
+import fr.linkit.lib.concurrency.WorkerPools
 import org.jetbrains.annotations.Nullable
 
 import java.util.concurrent.locks.LockSupport

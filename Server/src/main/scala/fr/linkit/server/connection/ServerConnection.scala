@@ -20,13 +20,14 @@ import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
+import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
-import fr.linkit.engine.internal.concurrency.pool.ClosedWorkerPool
+import fr.linkit.engine.internal.concurrency.pool.SimpleClosedWorkerPool
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.utils.NumberSerializer.serializeInt
+import fr.linkit.lib.concurrency.WorkerPools
 import fr.linkit.server.config.ServerConnectionConfiguration
 import fr.linkit.server.connection.traffic.ServerPacketTraffic
 import fr.linkit.server.network.ServerSideNetwork
@@ -41,9 +42,9 @@ class ServerConnection(applicationContext: ServerApplication,
     
     override val currentIdentifier : String                     = configuration.identifier
     override val translator        : ObjectTranslator           = configuration.translatorFactory(applicationContext)
-    override val port              : Int                        = configuration.port
-    private  val workerPool        : ClosedWorkerPool           = new ClosedWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
-    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
+    override val port              : Int                    = configuration.port
+    private  val workerPool        : SimpleClosedWorkerPool = new SimpleClosedWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
+    private  val serverSocket      : ServerSocket           = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     private  val serverTraffic     : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
     override val traffic           : PacketTraffic              = serverTraffic
