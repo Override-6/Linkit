@@ -76,7 +76,7 @@ subprojects {
     }
 }
 
-def docModules = [":Engine", ":API", ":Server", ":Client", ":SPI", ":Lib"]
+def docModules = [":Engine", ":API", ":Server", ":Client", ":SPI"]
 
 task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from all child projects as if it were a single project', group: 'Documentation') {
     destinationDir = file("$buildDir/docs/scaladoc")

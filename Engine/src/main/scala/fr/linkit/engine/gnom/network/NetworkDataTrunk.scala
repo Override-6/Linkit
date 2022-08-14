@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
-import fr.linkit.engine.internal.utils.ConsumerContainer
+import fr.linkit.engine.internal.util.ConsumerContainer
 
 import java.sql.Timestamp
 import scala.collection.mutable

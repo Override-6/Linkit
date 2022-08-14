@@ -11,24 +11,11 @@
  * questions.
  */
 
-package fr.linkit.api.internal.concurrency
+package fr.linkit.engine.internal.util
 
-import java.util.concurrent.{BlockingDeque, BlockingQueue}
+import java.io.OutputStream
 
-import scala.concurrent.ExecutionContext
+object InactiveOutputStream extends OutputStream {
 
-trait WorkerPool extends ProcrastinatorControl with ExecutionContext {
-    val name: String
-
-    def ensureCurrentThreadOwned(msg: String): Unit
-
-    def ensureCurrentThreadOwned(): Unit
-
-    def isCurrentThreadOwned: Boolean
-
-    def pauseCurrentTask(): Unit
-    
-    def pauseCurrentTaskForAtLeast(millis: Long): Unit
-
-    def newBusyQueue[A]: BlockingQueue[A]
+    override def write(b: Int): Unit = ()
 }

@@ -333,32 +333,31 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
     
 }
 
-object DefaultConnectedObjectCache {
+object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
     import SharedCacheFactory.lambdaToFactory
     private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
-    
-    implicit def default[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = apply
-    
-    implicit def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = {
+
+
+    override def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = {
         apply[A](EmptyContractDescriptorData)
     }
-    
-    def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
+
+    override def apply[A <: AnyRef : ClassTag](contract: ContractDescriptorData): SharedCacheFactory[ConnectedObjectCache[A]] = {
+        lambdaToFactory(classOf[DefaultConnectedObjectCache[A]])(channel => {
+            apply[A](channel, contract, channel.traffic.connection.network)
+        })
+    }
+
+    private[linkit] def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
         apply[A](null, network)
     }
-    
-    implicit def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData): SharedCacheFactory[ConnectedObjectCache[A]] = {
+
+    private[linkit] def apply[A <: AnyRef : ClassTag](contract: ContractDescriptorData, network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
         lambdaToFactory(classOf[DefaultConnectedObjectCache[A]])(channel => {
-            apply[A](channel, contracts, channel.traffic.connection.network)
+            apply[A](channel, contract, network)
         })
     }
-    
-    private[linkit] def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData, network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
-        lambdaToFactory(classOf[DefaultConnectedObjectCache[A]])(channel => {
-            apply[A](channel, contracts, network)
-        })
-    }
-    
+
     private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): ConnectedObjectCache[A] = {
         import fr.linkit.engine.application.resource.external.LocalResourceFolder._
         val context   = channel.manager.network.connection.getApp
@@ -367,7 +366,7 @@ object DefaultConnectedObjectCache {
 
         new DefaultConnectedObjectCache[A](channel, generator, contracts, network)
     }
-    
+
     case class ObjectTreeProfile[A <: AnyRef](treeID: Int,
                                               rootObject: A with SynchronizedObject[A],
                                               treeOwner: String,

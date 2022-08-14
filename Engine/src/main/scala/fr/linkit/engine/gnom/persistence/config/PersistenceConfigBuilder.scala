@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.gnom.referencing.linker.NodeContextObjectLinker
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.script.ScriptExecutor
-import fr.linkit.engine.internal.utils.{ClassMap, Identity, ScalaUtils}
+import fr.linkit.engine.internal.util.{ClassMap, Identity, ScalaUtils}
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.Modifier

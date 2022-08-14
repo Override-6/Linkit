@@ -11,11 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.utils
+package fr.linkit.api.internal.concurrency.pool
 
-import java.io.OutputStream
+trait HiringWorkerPool extends WorkerPool {
 
-object InactiveOutputStream extends OutputStream {
+    def hireCurrentThread(): Unit
 
-    override def write(b: Int): Unit = ()
 }

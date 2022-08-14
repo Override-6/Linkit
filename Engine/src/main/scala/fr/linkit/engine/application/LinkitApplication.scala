@@ -165,6 +165,7 @@ object LinkitApplication {
         properties.load(Files.newInputStream(propertiesResources.getPath))
         AppLoggers.App.info("Loading Native Libraries...")
         InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
+
         
         isPrepared = true
         appResources

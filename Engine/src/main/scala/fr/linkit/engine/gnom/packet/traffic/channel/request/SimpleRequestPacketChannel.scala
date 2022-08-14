@@ -18,13 +18,12 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, RequestPacketChannel, ResponseHolder, Submitter}
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.AbstractPacketChannel
-import fr.linkit.engine.internal.utils.ConsumerContainer
-import fr.linkit.lib.concurrency.WorkerPools
+import fr.linkit.engine.internal.util.ConsumerContainer
 
 import java.util
-import java.util.NoSuchElementException
 import java.util.concurrent.LinkedBlockingQueue
 
 class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) with RequestPacketChannel {

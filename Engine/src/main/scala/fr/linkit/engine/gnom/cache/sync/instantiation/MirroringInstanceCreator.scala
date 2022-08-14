@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.instantiation
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
-import fr.linkit.engine.internal.utils.ScalaUtils
+import fr.linkit.engine.internal.util.ScalaUtils
 
 //should not be used by the user.
 private[sync] class MirroringInstanceCreator[A <: AnyRef](override val syncClassDef: SyncClassDef) extends SyncInstanceCreator[A] {

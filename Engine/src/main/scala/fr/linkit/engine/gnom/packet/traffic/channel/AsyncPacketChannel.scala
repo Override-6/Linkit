@@ -13,13 +13,13 @@
 
 package fr.linkit.engine.gnom.packet.traffic.channel
 
-import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
+import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.workerExecution
-import fr.linkit.engine.gnom.packet.{SimplePacketAttributes, SimplePacketBundle}
-import fr.linkit.engine.internal.utils.ConsumerContainer
-import fr.linkit.lib.concurrency.WorkerPools
+import fr.linkit.engine.gnom.packet.SimplePacketAttributes
+import fr.linkit.engine.internal.util.ConsumerContainer
 
 class AsyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope)
     extends AbstractPacketChannel(store, scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {

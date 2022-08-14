@@ -11,12 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.utils
+package fr.linkit.engine.internal.util
 
 import java.lang
 import scala.collection.mutable
 
-object UnWrapper {
+object Unwrapper {
 
     private final val wrapperClasses = mutable.HashSet[Class[_]](classOf[Integer],
         classOf[lang.Byte],

@@ -11,25 +11,26 @@
  * questions.
  */
 
-package fr.linkit.lib.concurrency
+package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency._
-import fr.linkit.engine.internal.concurrency.pool.{SimpleClosedWorkerPool, SimpleHiringWorkerPool}
+import fr.linkit.api.internal.concurrency.{AsyncTask, AsyncTaskController, IllegalThreadException, Worker, workerExecution}
+import fr.linkit.api.internal.concurrency.pool.{ClosedWorkerPool, HiringWorkerPool, WorkerPool, WorkerPools}
 
+import java.lang.Thread.currentThread
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.global
 import scala.util.Try
 
-object WorkerPools {
+object EngineWorkerPools extends WorkerPools.Provider {
 
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Application Worker")
 
     private val boundedThreads = mutable.Map.empty[Thread, Worker]
 
-    def newHiringPool(name: String): HiringWorkerPool = new SimpleHiringWorkerPool(name)
+    override def newHiringPool(name: String): HiringWorkerPool = new SimpleHiringWorkerPool(name)
 
-    def newClosedPool(name: String, initialThreadCount: Int = 0): ClosedWorkerPool = {
+    override def newClosedPool(name: String, initialThreadCount: Int = 0): ClosedWorkerPool = {
         new SimpleClosedWorkerPool(initialThreadCount, name)
     }
 
@@ -45,12 +46,12 @@ object WorkerPools {
      *
      * @param action the action to perform
      * */
-    def runLaterOrHere(action: => Unit): Unit = {
+    override def runLaterOrHere(action: => Unit): Unit = {
         currentPool.fold(action)(_.runLater(action))
     }
 
     @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
-    def runLaterInCurrentPool(@workerExecution action: => Unit): Unit = {
+    override def runLaterInCurrentPool(@workerExecution action: => Unit): Unit = {
         val pool = ensureCurrentIsWorker("Could not run request action because current thread does not belong to any worker pool")
         pool.runLater(action)
     }
@@ -59,7 +60,7 @@ object WorkerPools {
      * @throws IllegalThreadException if the current thread is a [[Worker]]
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
-    def ensureCurrentIsWorker(): WorkerPool = {
+    override def ensureCurrentIsWorker(): WorkerPool = {
         if (!isCurrentThreadWorker)
             throw IllegalThreadException("This action must be performed by a Worker thread !")
         currentPool.get
@@ -70,7 +71,7 @@ object WorkerPools {
      * @param msg the message to complain with the exception
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
-    def ensureCurrentIsWorker(msg: String): WorkerPool = {
+    override def ensureCurrentIsWorker(msg: String): WorkerPool = {
         if (!isCurrentThreadWorker)
             throw IllegalThreadException(s"This action must be performed by a Worker thread ! ($msg)")
         currentPool.get
@@ -80,7 +81,7 @@ object WorkerPools {
      * @throws IllegalThreadException if the current thread is not a [[Worker]]
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is an instance of WorkerThread.")
-    def ensureCurrentIsNotWorker(): Unit = {
+    override def ensureCurrentIsNotWorker(): Unit = {
         if (isCurrentThreadWorker)
             throw IllegalThreadException("This action must not be performed by a Worker thread !")
     }
@@ -90,7 +91,7 @@ object WorkerPools {
      * @param msg the message to complain with the exception
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is an instance of WorkerThread.")
-    def ensureCurrentIsNotWorker(msg: String): Unit = {
+    override def ensureCurrentIsNotWorker(msg: String): Unit = {
         if (isCurrentThreadWorker)
             throw IllegalThreadException(s"This action must not be performed by a Worker thread ! ($msg)")
     }
@@ -98,7 +99,7 @@ object WorkerPools {
     /**
      * @return {{{true}}} if and only if the current thread is an instance of [[Worker]]
      * */
-    def isCurrentThreadWorker: Boolean = {
+    override def isCurrentThreadWorker: Boolean = {
         Try(currentWorker).isSuccess
     }
 
@@ -110,7 +111,7 @@ object WorkerPools {
      * @param orElse    the action to process if the current thread is not a worker thread.
      *
      * */
-    def ifCurrentWorkerOrElse[A](ifCurrent: WorkerPool => A, orElse: => A): A = {
+    override def ifCurrentWorkerOrElse[A](ifCurrent: WorkerPool => A, orElse: => A): A = {
         val pool = currentPool
         if (pool.isDefined) {
             ifCurrent(pool.get)
@@ -122,23 +123,23 @@ object WorkerPools {
     /**
      * @return Some if the current thread is a member of a [[WorkerPool]], None instead
      * */
-    implicit def currentPool: Option[WorkerPool] = {
+    override implicit def currentPool: Option[WorkerPool] = {
         currentWorkerOpt.map(_.pool)
     }
 
     @workerExecution
-    def currentTask: Option[AsyncTask[_]] = {
+    override def currentTask: Option[AsyncTask[_]] = {
         currentWorkerOpt.flatMap(_.getCurrentTask)
     }
 
-    implicit def currentExecutionContext: ExecutionContext = {
+    override implicit def currentExecutionContext: ExecutionContext = {
         currentPool match {
             case Some(pool) => pool
             case None       => global
         }
     }
 
-    def currentWorkerOpt: Option[Worker] = {
+    override def currentWorkerOpt: Option[Worker] = {
         currentThread match {
             case worker: Worker => Some(worker)
             case other          => boundedThreads.get(other)
@@ -146,17 +147,16 @@ object WorkerPools {
     }
 
     @workerExecution
-    def currentWorker: Worker = {
+    override def currentWorker: Worker = {
         currentWorkerOpt.getOrElse(throw IllegalThreadException(s"Current thread is not a WorkerThread. ($currentThread)"))
     }
 
     @workerExecution
-    def currentTaskWithController: Option[AsyncTask[_] with AsyncTaskController] = {
+    override def currentTaskWithController: Option[AsyncTask[_] with AsyncTaskController] = {
         if (!isCurrentThreadWorker)
             return None
         currentWorker.getController.getCurrentTask
     }
 
-    private def currentThread: Thread = Thread.currentThread()
 
 }

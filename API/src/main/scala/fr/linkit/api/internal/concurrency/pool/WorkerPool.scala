@@ -11,19 +11,25 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.contract.behavior
+package fr.linkit.api.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.Procrastinator
-trait BHVProperties {
+import fr.linkit.api.internal.concurrency.ProcrastinatorControl
 
-    /**
-     * a name tag for the properties.
-     * the name of the properties is not necessarily the contract's name.
-     * */
+import java.util.concurrent.BlockingQueue
+import scala.concurrent.ExecutionContext
+
+trait WorkerPool extends ProcrastinatorControl with ExecutionContext {
     val name: String
 
-    def get(refName: String): AnyRef
+    def ensureCurrentThreadOwned(msg: String): Unit
 
-    def getProcrastinator(refName: String): Procrastinator
+    def ensureCurrentThreadOwned(): Unit
 
+    def isCurrentThreadOwned: Boolean
+
+    def pauseCurrentTask(): Unit
+
+    def pauseCurrentTaskForAtLeast(millis: Long): Unit
+
+    def newBusyQueue[A]: BlockingQueue[A]
 }

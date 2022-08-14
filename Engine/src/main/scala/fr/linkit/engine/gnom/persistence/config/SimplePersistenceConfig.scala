@@ -22,7 +22,7 @@ import fr.linkit.engine.gnom.persistence.config.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.config.profile.persistence._
 import fr.linkit.engine.gnom.persistence.defaults.lambda.{NotSerializableLambdasTypePersistence, SerializableLambdasTypePersistence}
 import fr.linkit.engine.gnom.persistence.defaults.special.EmptyObjectTypePersistence
-import fr.linkit.engine.internal.utils.ClassMap
+import fr.linkit.engine.internal.util.ClassMap
 
 import scala.collection.mutable
 

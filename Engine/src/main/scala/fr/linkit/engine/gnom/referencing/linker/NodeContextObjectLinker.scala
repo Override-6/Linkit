@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManage
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.referencing.{ContextObject, ObjectAlreadyReferencedException}
-import fr.linkit.engine.internal.utils.Identity
+import fr.linkit.engine.internal.util.Identity
 import org.jetbrains.annotations.Nullable
 
 import java.util

@@ -2,14 +2,13 @@ package fr.linkit.engine.internal.language.bhv
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.Contract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, ObjectsProperty}
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
-import fr.linkit.lib.behavior.ObjectsProperty
 
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader

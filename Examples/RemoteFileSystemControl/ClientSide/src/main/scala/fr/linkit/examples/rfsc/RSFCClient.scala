@@ -2,11 +2,11 @@ package fr.linkit.examples.rfsc
 
 import fr.linkit.api.application.connection.ExternalConnection
 import fr.linkit.api.gnom.cache.sync.contract.Contract
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
-import fr.linkit.lib.behavior.ObjectsProperty
 
 import java.io.OutputStream
 import java.net.InetSocketAddress

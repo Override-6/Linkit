@@ -33,7 +33,7 @@ import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuild
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileDescriptor.{DefaultAgreements, DefaultBuilder}
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
-import fr.linkit.engine.internal.utils.ClassMap
+import fr.linkit.engine.internal.util.ClassMap
 
 import scala.collection.mutable
 

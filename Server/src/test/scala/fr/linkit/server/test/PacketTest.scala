@@ -20,7 +20,7 @@ import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
-import fr.linkit.engine.internal.utils.ScalaUtils
+import fr.linkit.engine.internal.util.ScalaUtils
 import fr.linkit.server.test.PacketTest.{connection, serialAndDeserial}
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Test, TestInstance}

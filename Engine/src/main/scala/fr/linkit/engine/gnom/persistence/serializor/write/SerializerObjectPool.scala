@@ -23,7 +23,7 @@ import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.ConstantProtocol._
-import fr.linkit.engine.internal.utils.UnWrapper
+import fr.linkit.engine.internal.util.Unwrapper
 
 import scala.math.Equiv.reference
 
@@ -138,7 +138,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
                 getChunkFromFlag(Enum).add(ref)
             case _: Class[_]                            =>
                 getChunkFromFlag(Class).add(ref)
-            case _ if UnWrapper.isPrimitiveWrapper(ref) =>
+            case _ if Unwrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
             case _                                      =>
                 addObj0(ref)

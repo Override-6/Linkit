@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.utils
+package fr.linkit.engine.internal.util
 
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.typeStringClass
@@ -106,7 +106,7 @@ object ScalaUtils {
                 TheUnsafe.objectFieldOffset(field)
         }
         val cookie      = if (instance == null) TheUnsafe.staticFieldBase(field) else instance
-        import UnWrapper.unwrap
+        import Unwrapper.unwrap
         
         import java.lang
         
@@ -217,7 +217,7 @@ object ScalaUtils {
         }
     }
     
-    private[utils] def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
+    private[util] def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
         
         val sb = new StringBuilder("(")
         params.foreach { clazz =>

@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.ProfilePoolObject
-import fr.linkit.engine.internal.utils.JavaUtils
+import fr.linkit.engine.internal.util.JavaUtils
 
 class SimpleObject(override val value: AnyRef,
                    val valueClassRef: Either[Class[_], SyncClassDef],

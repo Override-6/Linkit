@@ -11,11 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.utils
+package fr.linkit.engine.internal.util
 
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.workerExecution
-import fr.linkit.lib.concurrency.WorkerPools
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal

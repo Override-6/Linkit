@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.statics.StaticAccessor
-import fr.linkit.engine.internal.utils.{ScalaUtils, UnWrapper}
+import fr.linkit.engine.internal.util.{ScalaUtils, Unwrapper}
 
 import java.lang.reflect.{Method, Modifier}
 import scala.language.dynamics
@@ -64,7 +64,7 @@ class StaticAccessorImpl(staticCaller: MethodCaller, staticClass: Class[_]) exte
             val value = args(i)
             if (value != null) {
                 val tpe = if (lastIsVarargs && i >= types.length) types.last else types(i)
-                if (!(tpe.isAssignableFrom(value.getClass) || tpe.isAssignableFrom(UnWrapper.getPrimitiveClass(value))))
+                if (!(tpe.isAssignableFrom(value.getClass) || tpe.isAssignableFrom(Unwrapper.getPrimitiveClass(value))))
                     return false
             }
             i += 1

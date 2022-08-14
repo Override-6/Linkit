@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.SyncObjectStructure
-import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
+import fr.linkit.engine.internal.util.{JavaUtils, ScalaUtils}
 import org.jetbrains.annotations.Nullable
 
 class ChippedObjectPersistence(@Nullable chi: ChippedObject[_], objectPersistence: TypePersistence[AnyRef]) extends TypePersistence[AnyRef] {

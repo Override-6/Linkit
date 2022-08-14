@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverrideable
-import fr.linkit.engine.internal.utils.ClassMap
+import fr.linkit.engine.internal.util.ClassMap
 
 import java.lang.reflect.Modifier
 import scala.collection.mutable

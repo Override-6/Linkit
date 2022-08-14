@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.utils
+package fr.linkit.engine.internal.util
 
 import org.jetbrains.annotations.NotNull
 

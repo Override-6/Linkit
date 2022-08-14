@@ -4,7 +4,7 @@ import fr.linkit.engine.gnom.persistence.config.PersistenceConfigBuilder
 import fr.linkit.engine.gnom.persistence.defaults._
 import fr.linkit.engine.internal.language.bhv.ContractImpl
 import fr.linkit.engine.internal.language.bhv.interpreter.LangContractDescriptorData
-import fr.linkit.engine.internal.utils.Identity
+import fr.linkit.engine.internal.util.Identity
 
 import java.nio.file.Path
 

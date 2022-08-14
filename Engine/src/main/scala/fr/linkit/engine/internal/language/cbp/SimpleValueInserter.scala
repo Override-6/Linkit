@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.language.cbp
 
 import fr.linkit.api.internal.language.cbp.ValueInserter
-import fr.linkit.engine.internal.utils.ArrayByteInserter
+import fr.linkit.engine.internal.util.ArrayByteInserter
 import org.jetbrains.annotations.NotNull
 
 class SimpleValueInserter(val posInScopeBp: Int, @NotNull val source: String) extends ArrayByteInserter(source.getBytes) with ValueInserter {

@@ -13,10 +13,10 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
+import fr.linkit.api.internal.concurrency.IllegalThreadException
+import fr.linkit.api.internal.concurrency.pool.{HiringWorkerPool, WorkerPools}
+
 import java.util.concurrent.LinkedBlockingQueue
-import fr.linkit.api.internal.concurrency.{HiringWorkerPool, IllegalThreadException}
-import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
-import fr.linkit.lib.concurrency.WorkerPools
 
 class SimpleHiringWorkerPool(name: String) extends AbstractWorkerPool(name) with HiringWorkerPool {
 
@@ -29,7 +29,7 @@ class SimpleHiringWorkerPool(name: String) extends AbstractWorkerPool(name) with
 
         val currentThread = Thread.currentThread()
         val worker        = new HiredWorker(currentThread, this)
-        WorkerPools.bindWorker(currentThread, worker)
+        EngineWorkerPools.bindWorker(currentThread, worker)
         addWorker(worker)
     }
 

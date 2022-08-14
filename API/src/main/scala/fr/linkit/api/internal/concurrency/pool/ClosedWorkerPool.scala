@@ -11,25 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.utils
+package fr.linkit.api.internal.concurrency.pool
 
-class PerformanceMeter {
+trait ClosedWorkerPool extends WorkerPool {
 
-    private var reference = now
-
-    def printPerf(): Unit = {
-        val t = now
-        println(s"time passed between now and last reference : ${t - reference}ms")
-        reference = now
-    }
-
-    def printPerf(cause: String): Unit = {
-        val t = now
-        println(s"time passed between now and last reference : ${t - reference}ms ($cause)")
-        reference = now
-    }
-
-    @inline
-    private def now: Long = System.currentTimeMillis()
+    def setThreadCount(count: Int): Unit
 
 }

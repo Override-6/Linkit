@@ -13,16 +13,15 @@
 
 package fr.linkit.engine.gnom.packet.traffic.unit
 
-import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule
 import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.Worker
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.internal.concurrency.pool.{EquilibratedWorkerController, SimpleWorkerController}
-import fr.linkit.lib.concurrency.WorkerPools
 
 import java.lang.Thread.State._
 import java.util.{Comparator, PriorityQueue}

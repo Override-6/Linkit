@@ -13,6 +13,8 @@
 
 package fr.linkit.api.internal.concurrency
 
+import fr.linkit.api.internal.concurrency.pool.WorkerPool
+
 trait Worker {
 
     val pool: WorkerPool

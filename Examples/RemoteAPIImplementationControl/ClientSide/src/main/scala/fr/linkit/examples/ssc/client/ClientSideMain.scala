@@ -1,13 +1,12 @@
 package fr.linkit.examples.ssc.client
 
 import fr.linkit.api.application.connection.{ConnectionContext, ExternalConnection}
+import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
-import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
-import fr.linkit.engine.internal.concurrency.pool.HiringBusyWorkerPool
 import fr.linkit.examples.ssc.api.UserAccountContainer
-import fr.linkit.lib.concurrency.WorkerPools
 
 import java.net.InetSocketAddress
 import scala.io.StdIn
@@ -17,7 +16,7 @@ object ClientSideMain {
     private final val Address = new InetSocketAddress("localhost", 48481)
 
     def main(args: Array[String]): Unit = {
-        val pool = new HiringBusyWorkerPool("main")
+        val pool = WorkerPools.newHiringPool("main")
         pool.hireCurrentThread()
         start()
     }
@@ -38,9 +37,8 @@ object ClientSideMain {
     }
 
     private def connectToAccounts(connection: ConnectionContext): UserAccountContainer = {
-        Thread.sleep(250)
         val global     = connection.network.globalCaches
-        val cache      = global.attachToCache(51, DefaultConnectedObjectCache[UserAccountContainer])
+        val cache      = global.attachToCache(51, ConnectedObjectCache[UserAccountContainer])
         cache.findObject(0).getOrElse(throw new NoSuchElementException("could not find accounts container"))
     }
 

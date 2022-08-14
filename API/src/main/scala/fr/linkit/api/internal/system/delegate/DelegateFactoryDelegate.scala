@@ -11,14 +11,15 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.concurrency.pool
+package fr.linkit.api.internal.system.delegate
 
-import fr.linkit.api.internal.concurrency.pool.WorkerPool
-import fr.linkit.engine.internal.concurrency.pool.EngineWorkerPools.workerThreadGroup
+import fr.linkit.api.gnom.cache.sync.ConnectedObjectCacheFactories
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 
-class BusyWorkerThread(target: Runnable,
-                       override val pool: WorkerPool,
-                       tid: Int) extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$tid") with AbstractWorker {
-    override val thread: Thread = this
+trait DelegateFactoryDelegate {
+
+    def workerPools: WorkerPools.Provider
+
+    def defaultCOCFactories: ConnectedObjectCacheFactories
+
 }
-

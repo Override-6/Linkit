@@ -16,6 +16,7 @@ package fr.linkit.server
 import fr.linkit.api.application.config.ApplicationInstantiationException
 import fr.linkit.api.application.connection.{ConnectionInitialisationException, NoSuchConnectionException}
 import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system
 import fr.linkit.api.internal.system._
@@ -24,7 +25,6 @@ import fr.linkit.api.internal.system.security.ConnectionSecurityException
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.concurrency.pool.SimpleClosedWorkerPool
 import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
-import fr.linkit.lib.concurrency.WorkerPools
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
 

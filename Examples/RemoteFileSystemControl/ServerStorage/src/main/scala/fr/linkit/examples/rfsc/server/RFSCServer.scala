@@ -2,9 +2,9 @@ package fr.linkit.examples.rfsc.server
 
 import fr.linkit.api.application.connection.CentralConnection
 import fr.linkit.api.gnom.cache.sync.contract.Contract
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.lib.behavior.ObjectsProperty
-import fr.linkit.lib.concurrency.WorkerPools
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}

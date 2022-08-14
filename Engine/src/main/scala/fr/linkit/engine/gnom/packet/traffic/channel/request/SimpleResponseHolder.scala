@@ -14,9 +14,7 @@
 package fr.linkit.engine.gnom.packet.traffic.channel.request
 
 import fr.linkit.api.gnom.packet.channel.request.{ResponseHolder, SubmitterPacket}
-import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.utils.ConsumerContainer
-import fr.linkit.lib.concurrency.WorkerPools
+import fr.linkit.engine.internal.util.ConsumerContainer
 
 import java.util.concurrent.BlockingQueue
 

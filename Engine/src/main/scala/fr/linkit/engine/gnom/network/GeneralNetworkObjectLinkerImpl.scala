@@ -27,7 +27,7 @@ import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAtt
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.traffic.channel.request.DefaultRequestBundle
 import fr.linkit.engine.gnom.referencing.presence.{AbstractNetworkPresenceHandler, SystemNetworkObjectPresence}
-import fr.linkit.engine.internal.utils.ClassMap
+import fr.linkit.engine.internal.util.ClassMap
 
 import scala.reflect.{ClassTag, classTag}
 

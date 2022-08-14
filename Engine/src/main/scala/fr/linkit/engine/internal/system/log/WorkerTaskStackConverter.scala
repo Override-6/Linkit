@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.internal.system.log
 
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.engine.internal.system.log.WorkerTaskStackConverter._
-import fr.linkit.lib.concurrency.WorkerPools
 import org.apache.logging.log4j.core.LogEvent
 import org.apache.logging.log4j.core.config.plugins.Plugin
 import org.apache.logging.log4j.core.pattern._

@@ -14,9 +14,7 @@
 package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerController, workerExecution}
-import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController.ControlTicket
-import fr.linkit.lib.concurrency.WorkerPools
 
 import scala.collection.mutable
 
@@ -98,14 +96,14 @@ class SimpleWorkerController extends WorkerController {
     }
     
 
-    private def pauseCurrentTask(millis: Long): Unit = WorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
+    private def pauseCurrentTask(millis: Long): Unit = EngineWorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
     
     protected def createControlTicket(pauseCondition: => Boolean): Unit = {
         this.synchronized {
-            val currentTask = WorkerPools.currentTask.get
+            val currentTask = EngineWorkerPools.currentTask.get
             pausedTasks.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
         }
-        WorkerPools.ensureCurrentIsWorker().pauseCurrentTask()
+        EngineWorkerPools.ensureCurrentIsWorker().pauseCurrentTask()
     }
     
 }

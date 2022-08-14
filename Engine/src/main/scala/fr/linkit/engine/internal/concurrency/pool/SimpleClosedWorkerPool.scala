@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{ClosedWorkerPool, Worker}
-import fr.linkit.lib.concurrency.WorkerPools
+import fr.linkit.api.internal.concurrency.Worker
+import fr.linkit.api.internal.concurrency.pool.ClosedWorkerPool
 
 import java.util.concurrent.LinkedBlockingQueue
 
@@ -58,7 +58,7 @@ class SimpleClosedWorkerPool(initialThreadCount: Int, name: String) extends Abst
     override protected def post(runnable: Runnable): Unit = workQueue.offer(runnable)
     
     private def waitingRoom(): Unit = {
-        val self = WorkerPools.currentWorker.asInstanceOf[BusyWorkerThread]
+        val self = EngineWorkerPools.currentWorker.asInstanceOf[BusyWorkerThread]
         self.execWhileCurrentTaskPaused(workQueue.take(), !closed)(_.run())
     }
 }

@@ -16,12 +16,12 @@ package fr.linkit.engine.gnom.packet.traffic.channel
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
-import fr.linkit.engine.internal.utils.ConsumerContainer
-import fr.linkit.engine.internal.utils.ScalaUtils.ensurePacketType
-import fr.linkit.lib.concurrency.WorkerPools
+import fr.linkit.engine.internal.util.ConsumerContainer
+import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag

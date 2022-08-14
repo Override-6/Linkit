@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.config.structure
 
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.internal.utils.UnWrapper
+import fr.linkit.engine.internal.util.Unwrapper
 
 abstract class ArrayObjectStructure() extends ObjectStructure {
 
@@ -46,7 +46,7 @@ abstract class ArrayObjectStructure() extends ObjectStructure {
             val value = args(i)
             if (value != null) {
                 val tpe = types(i)
-                if (!(tpe.isAssignableFrom(value.getClass) || tpe.isAssignableFrom(UnWrapper.getPrimitiveClass(value))))
+                if (!(tpe.isAssignableFrom(value.getClass) || tpe.isAssignableFrom(Unwrapper.getPrimitiveClass(value))))
                     return false
             }
             i += 1

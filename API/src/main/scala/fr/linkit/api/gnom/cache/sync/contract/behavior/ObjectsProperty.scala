@@ -11,12 +11,14 @@
  * questions.
  */
 
-package fr.linkit.lib.behavior
+package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.internal.concurrency.Procrastinator
 
+/**
+ * A default implementation of BHVProperties
+ * */
 class ObjectsProperty private(override val name: String,
                               private val parent: BHVProperties,
                               private val map: Map[String, AnyRef]) extends BHVProperties {

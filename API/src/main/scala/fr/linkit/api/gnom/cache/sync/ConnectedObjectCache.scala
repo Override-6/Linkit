@@ -13,12 +13,15 @@
 
 package fr.linkit.api.gnom.cache.sync
 
-import fr.linkit.api.gnom.cache.SharedCache
+import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheFactory}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.PacketAttributesPresence
+import fr.linkit.api.internal.system.delegate.DelegateFactory
+
+import scala.reflect.ClassTag
 
 /**
  * The main class of the Synchronized object system.<br>
@@ -27,7 +30,7 @@ import fr.linkit.api.gnom.packet.PacketAttributesPresence
  * Once the object is posted in the cache, it's cloned then transformed to an object of type `A with SynchronizedObject[A]`.<br>
  * Then, The object is broadcasted to all engines that are attached to this cache. <bt>
  * All method invocations performed on the transformed object will be synchronized,
- * This means that an RMI may occur following the [[fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior]] of the synchronized object.<br>
+ * This means that an RMI may occur following the [[fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedStructureBehavior]] of the synchronized object.<br>
  * Notes: - A Synchronized object of type `A with SynchronizedObject[A]` can also hold inner synchronized objects of [[AnyRef]] type.
  * These inner objects can be fields, or method parameters or return values.
  *        - An object posted on the cache is called a "Root object", they must be of type [A] but, as said before, they can contains
@@ -109,4 +112,12 @@ trait ConnectedObjectCache[A <: AnyRef] extends SharedCache with PacketAttribute
     def isRegistered(id: Int): Boolean
     
     
+}
+
+object ConnectedObjectCache extends ConnectedObjectCacheFactories {
+    private val delegate = DelegateFactory.defaultCOCFactories
+
+    implicit override def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = delegate.apply
+
+    override def apply[A <: AnyRef : ClassTag](contract: ContractDescriptorData): SharedCacheFactory[ConnectedObjectCache[A]] = delegate.apply(contract)
 }

@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.contract
 import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncLevel, SyncObjectFieldManipulation}
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, SynchronizedObject}
-import fr.linkit.engine.internal.utils.ScalaUtils
+import fr.linkit.engine.internal.util.ScalaUtils
 
 class FieldContractImpl[A](val description: FieldDescription,
                            val autoChip: Boolean,

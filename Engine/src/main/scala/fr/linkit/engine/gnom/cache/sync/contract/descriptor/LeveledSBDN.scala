@@ -28,7 +28,7 @@ import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescript
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{collectInterfaces, findReasonTypeCantBeSync, getSyncableInterface, listMethodIds}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
-import fr.linkit.engine.internal.utils.ScalaUtils
+import fr.linkit.engine.internal.util.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.{Member, Method, Modifier}

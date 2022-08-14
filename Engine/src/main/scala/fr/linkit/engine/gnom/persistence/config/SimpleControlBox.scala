@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.persistence.context.ControlBox
 import fr.linkit.api.internal.concurrency.Procrastinator
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
-import fr.linkit.lib.concurrency.WorkerPools
 
 class SimpleControlBox extends ControlBox {
 

@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.defaults
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
-import fr.linkit.engine.internal.utils.ScalaUtils
+import fr.linkit.engine.internal.util.ScalaUtils
 
 import java.util
 class JavaHashMapTypePersistence extends TypePersistence[util.HashMap[Any, Any]]{

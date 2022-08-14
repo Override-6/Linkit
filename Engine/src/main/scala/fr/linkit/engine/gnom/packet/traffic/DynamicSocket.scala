@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.network.ExternalConnectionState
 import fr.linkit.api.internal.concurrency.packetWorkerExecution
 import fr.linkit.api.internal.system._
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.utils.{ConsumerContainer, NumberSerializer}
+import fr.linkit.engine.internal.util.{ConsumerContainer, NumberSerializer}
 
 import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}

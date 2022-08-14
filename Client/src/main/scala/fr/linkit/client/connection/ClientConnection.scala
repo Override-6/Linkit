@@ -27,7 +27,7 @@ import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.internal.system.Rules
-import fr.linkit.engine.internal.utils.{NumberSerializer, ScalaUtils}
+import fr.linkit.engine.internal.util.{NumberSerializer, ScalaUtils}
 import fr.linkit.lib.concurrency.WorkerPools
 import org.jetbrains.annotations.NotNull
 

@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.packet.channel.request.SubmitterPacket
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
-import fr.linkit.engine.internal.utils.ScalaUtils.ensurePacketType
+import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
 
 import java.util.NoSuchElementException
 import scala.reflect.ClassTag

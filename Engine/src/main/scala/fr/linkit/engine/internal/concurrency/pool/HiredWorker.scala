@@ -13,7 +13,8 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{WorkerPool, InternalWorkerThread}
+import fr.linkit.api.internal.concurrency.InternalWorkerThread
+import fr.linkit.api.internal.concurrency.pool.WorkerPool
 import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
 
 import scala.util.Failure

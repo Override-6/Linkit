@@ -11,10 +11,16 @@
  * questions.
  */
 
-package fr.linkit.api.internal.concurrency
+package fr.linkit.api.gnom.cache.sync
 
-trait ClosedWorkerPool extends WorkerPool {
+import fr.linkit.api.gnom.cache.SharedCacheFactory
+import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 
-    def setThreadCount(count: Int): Unit
+import scala.reflect.ClassTag
 
+trait ConnectedObjectCacheFactories {
+
+    def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]]
+
+    def apply[A <: AnyRef : ClassTag](contracts: ContractDescriptorData): SharedCacheFactory[ConnectedObjectCache[A]]
 }

@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.config.structure
 
-import fr.linkit.engine.internal.utils.ScalaUtils
+import fr.linkit.engine.internal.util.ScalaUtils
 import java.lang.reflect.{Field, Modifier}
 
 import scala.collection.mutable

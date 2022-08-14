@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.statics.StaticAccess
@@ -32,7 +33,6 @@ import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.referencing.linker.MapNetworkObjectLinker
 import fr.linkit.engine.internal.language.bhv.ContractImpl
 import fr.linkit.engine.internal.mapping.RemoteClassMappings
-import fr.linkit.lib.behavior.ObjectsProperty
 
 import java.sql.Timestamp
 

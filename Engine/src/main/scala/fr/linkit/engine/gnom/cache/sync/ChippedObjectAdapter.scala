@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.tree.ChippedObjectNode
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter.addChippedObject
-import fr.linkit.engine.internal.utils.Identity
+import fr.linkit.engine.internal.util.Identity
 
 import scala.collection.mutable
 import scala.util.Try

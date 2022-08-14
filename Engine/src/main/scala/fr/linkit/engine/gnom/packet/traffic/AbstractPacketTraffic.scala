@@ -32,7 +32,7 @@ import fr.linkit.engine.gnom.packet.traffic.unit.SequentialInjectionProcessorUni
 import fr.linkit.engine.gnom.persistence.config.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.referencing.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
-import fr.linkit.engine.internal.utils.ClassMap
+import fr.linkit.engine.internal.util.ClassMap
 
 import java.net.URL
 import scala.reflect.ClassTag

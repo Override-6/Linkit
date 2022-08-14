@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.persistence.context.{Deconstructor, PersistenceContext}
-import fr.linkit.engine.internal.utils.ClassMap
+import fr.linkit.engine.internal.util.ClassMap
 
 import java.lang.reflect.Constructor
 import scala.reflect.{ClassTag, classTag}

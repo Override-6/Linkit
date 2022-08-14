@@ -13,16 +13,15 @@
 
 package fr.linkit.engine.gnom.packet.traffic.channel
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
-
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore, PacketSender, PacketSyncReceiver}
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes}
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.Reason
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
-import fr.linkit.engine.internal.utils.ScalaUtils.ensurePacketType
-import fr.linkit.lib.concurrency.WorkerPools
+import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
 
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag
 
 //TODO doc

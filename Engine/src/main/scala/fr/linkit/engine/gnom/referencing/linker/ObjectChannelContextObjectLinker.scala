@@ -22,7 +22,7 @@ import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.config.PersistenceConfigBuilder
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 import fr.linkit.engine.gnom.referencing.{ContextObject, ObjectAlreadyReferencedException}
-import fr.linkit.engine.internal.utils.Identity
+import fr.linkit.engine.internal.util.Identity
 
 import scala.collection.mutable
 

@@ -20,14 +20,14 @@ import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.concurrency.pool.SimpleClosedWorkerPool
 import fr.linkit.engine.internal.system.Rules
-import fr.linkit.engine.internal.utils.NumberSerializer.serializeInt
-import fr.linkit.lib.concurrency.WorkerPools
+import fr.linkit.engine.internal.util.NumberSerializer.serializeInt
 import fr.linkit.server.config.ServerConnectionConfiguration
 import fr.linkit.server.connection.traffic.ServerPacketTraffic
 import fr.linkit.server.network.ServerSideNetwork
