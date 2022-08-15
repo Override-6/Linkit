@@ -43,7 +43,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
     
     private      val autochip = descriptor.autochip
     private lazy val clazz    = descriptor.targetClass //only called if descriptor is non null
-    
+
     def verify(): Unit = {
         if (descriptor == null) return
         verifyMirroringHierarchy()
@@ -53,7 +53,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         ensureFieldsAndMethodsCorrespondToTheRightLevel()
         warnAllHiddenMethodsWithDescribedBehavior()
     }
-    
+
     private def ensureNoSyncValueIsStaticOrMirroring(): Unit = {
         val level = descriptor.syncLevel
         if (descriptor.fields.exists(fc => fc.registrationKind != NotRegistered && (level == Mirror || Modifier.isStatic(fc.description.javaField.getModifiers)))) {

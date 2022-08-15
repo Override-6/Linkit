@@ -18,7 +18,8 @@ import fr.linkit.api.application.connection.{ConnectionInitialisationException, 
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
-import fr.linkit.api.gnom.persistence.{PacketDownload, ObjectTranslator}
+import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload}
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.{AsyncTask, packetWorkerExecution, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
@@ -28,7 +29,6 @@ import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.util.{NumberSerializer, ScalaUtils}
-import fr.linkit.lib.concurrency.WorkerPools
 import org.jetbrains.annotations.NotNull
 
 import java.nio.ByteBuffer
@@ -101,7 +101,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                 handlePacket(result, coordinates)
             } catch {
                 case NonFatal(e) =>
-                    AppLoggers.Persistence.error(s"Could not deserialize packet ${result.ordinal}: ${e.getMessage} (${e.getStackTrace.head})")
+                    AppLoggers.Persistence.error(s"Could not deserialize packet ${result.ordinal}: $e (${e.getStackTrace.head})")
             }
         }
         readThread.onReadException = () => this.runLater(this.shutdown())

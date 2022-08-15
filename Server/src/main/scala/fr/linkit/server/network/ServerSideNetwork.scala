@@ -15,13 +15,13 @@ package fr.linkit.server.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
+import fr.linkit.api.gnom.cache.sync.instantiation.New
 import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
-import fr.linkit.engine.gnom.cache.sync.instantiation.New
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
-import fr.linkit.engine.internal.language.bhv.ContractImpl
+import fr.linkit.engine.internal.language.bhv.ContractProvider
 
 class ServerSideNetwork(traffic: AbstractPacketTraffic)
         extends AbstractNetwork(traffic) {
@@ -30,7 +30,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
     override def serverIdentifier: String = traffic.currentIdentifier
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
-        val contracts = ContractImpl("NetworkContract", ObjectsProperty.defaults(this))
+        val contracts = ContractProvider("NetworkContract", ObjectsProperty.defaults(this))
         globalCaches.attachToCache(0, DefaultConnectedObjectCache[NetworkDataTrunk](this))
                 .syncObject(0, New[NetworkDataTrunk](this), contracts)
     }

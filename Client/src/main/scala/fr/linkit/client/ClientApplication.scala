@@ -31,7 +31,7 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class ClientApplication private(override val configuration: ClientApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) {
+class ClientApplication private(override val configuration: ClientApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ClientApplicationContext {
 
     override protected val appPool             = new SimpleClosedWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
     private            val connectionCache     = mutable.HashMap.empty[Any, ExternalConnection]
@@ -58,7 +58,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         })
     }
 
-    override def listConnections: Iterable[ConnectionContext] = connectionCache.values.toSet
+    override def listConnections: Iterable[ExternalConnection] = connectionCache.values.toSet
 
     override def findConnection(identifier: String): Option[ExternalConnection] = {
         connectionCache.get(identifier).orElse(connectionCache.find(_._2.boundIdentifier == identifier).map(_._2))
@@ -70,7 +70,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
     @workerExecution
-    def openConnection(config: ClientConnectionConfiguration): ExternalConnection = {
+    override def openConnection(config: ClientConnectionConfiguration): ExternalConnection = {
         appPool.ensureCurrentThreadOwned("Connection creation must be executed by the client application's thread pool")
 
         val identifier = config.identifier
@@ -103,7 +103,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     }
 
     @throws[NoSuchElementException]("If no connection is found into the application's cache.")
-    def unregister(connectionContext: ExternalConnection): Unit = {
+    override def unregister(connectionContext: ExternalConnection): Unit = {
         import connectionContext.{boundIdentifier, currentIdentifier}
 
         connectionCache.remove(currentIdentifier)
@@ -122,7 +122,7 @@ object ClientApplication {
 
     @volatile private var initialized = false
 
-    def launch(config: ClientApplicationConfiguration, otherSources: Class[_]*): ClientApplication = {
+    def launch(config: ClientApplicationConfiguration, otherSources: Class[_]*): ClientApplicationContext = {
         if (initialized)
             throw new IllegalStateException("Client Application is already launched.")
 

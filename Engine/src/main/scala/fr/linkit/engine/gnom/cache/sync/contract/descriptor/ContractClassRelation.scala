@@ -113,6 +113,6 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
     private var node: StructureBehaviorDescriptorNodeImpl[A] = _
     
     private def err(compName: String): Nothing = {
-        throw new BadContractException(s"Two Structure Contract Descriptors describes different $compName.")
+        throw new BadContractException(s"Two Class Contracts describes different $compName. (in: ${targetClass.getName})")
     }
 }

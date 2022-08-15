@@ -14,10 +14,10 @@
 package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.api.gnom.cache.sync.instantiation.New
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.internal.system.Versions
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.cache.sync.instantiation.New
 import fr.linkit.engine.internal.mapping.RemoteClassMappings
 import fr.linkit.engine.internal.system.StaticVersions
 

@@ -41,20 +41,20 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                              app: ApplicationContext,
                              propertyClass: BHVProperties,
                              caller: MethodCaller) {
-    
+
     private val ast                                                            = file.ast
     private val autoChip                                                       = computeOptions()
     private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
     private val valueModifiers   : Map[String, (Class[_], ValueModifier[Any])] = computeValueModifiers()
     private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
     private val contracts        : Seq[ContractDescriptorGroup[AnyRef]]        = computeContracts()
-    
+
     lazy val data = new ContractDescriptorDataImpl(contracts.toArray, ast.fileName) with LangContractDescriptorData {
         override val filePath       = file.filePath
         override val fileName       = ast.fileName
         override val propertiesName = propertyClass.name
     }
-    
+
     private def computeOptions(): Boolean = {
         ast.options match {
             case AutoChip(enable) :: Nil => enable
@@ -63,7 +63,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                 throw new BHVLanguageException(s"option set contains unknown option: '${options}'")
         }
     }
-    
+
     private def computeContracts(): Seq[ContractDescriptorGroup[AnyRef]] = {
         ast.classDescriptions.groupBy(_.head.classNames.map(file.findClass)).flatMap { case (classes, descs) => {
             val unhandledMethods = mutable.HashMap.empty[AttributedMethodDescription, Boolean]
@@ -89,12 +89,12 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             })
         }
     }
-    
+
     private def computeContract(clazz: Class[_], descs: List[ClassDescription])
                                (unhandledMethods: mutable.HashMap[AttributedMethodDescription, Boolean],
                                 unhandledFields: mutable.HashMap[AttributedFieldDescription, Boolean]): ContractDescriptorGroup[AnyRef] = {
         implicit val castedClass = clazz.asInstanceOf[Class[AnyRef]]
-        val descriptors0 = descs.map {
+        val descriptors0 = descs.flatMap {
             case ClassDescription(ClassDescriptionHead(kind, _), foreachMethod, foreachField, fieldDescs, methodDescs) => {
                 val classDesc = kind match {
                     case StaticsDescription => SyncStaticsDescription(clazz)
@@ -102,27 +102,26 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                 }
                 implicit val methods0 = describeAttributedMethods(classDesc, kind, foreachMethods(classDesc)(foreachMethod))(methodDescs, unhandledMethods)
                 implicit val fields0  = describeAttributedFields(classDesc, kind, foreachFields(classDesc)(foreachField))(fieldDescs, unhandledFields)
-                
+
                 def cast[X](y: Any): X = y.asInstanceOf[X]
-                
+
                 kind match {
-                    case StaticsDescription         => scd(Statics)
-                    case RegularDescription         => scd()
+                    case StaticsDescription         => List(scd(Statics))
+                    case RegularDescription         => List(scd())
                     case LeveledDescription(levels) =>
-                        levels.find(_.isInstanceOf[MirroringLevel])
-                                .map { case MirroringLevel(stub) =>
-                                    MirroringInfo(SyncClassDef(stub.fold(clazz)(cast(file.findClass(_)))))
-                                }
-                                .fold(scd(levels.map(_.syncLevel).filter(_ != Mirror): _*))(
-                                    mi => new MirroringStructureContractDescriptor[AnyRef] {
-                                        override val mirroringInfo = mi
-                                        override val autochip      = BehaviorFileDescriptor.this.autoChip
-                                        override val targetClass   = castedClass
-                                        override val methods       = methods0
-                                        override val fields        = fields0
-                                    })
+                        val result = List(scd(levels.map(_.syncLevel).filter(_ != Mirror): _*))
+                        levels.find(_.isInstanceOf[MirroringLevel]) match {
+                            case None                       => result
+                            case Some(MirroringLevel(stub)) =>
+                                new MirroringStructureContractDescriptor[AnyRef] {
+                                    override val mirroringInfo = MirroringInfo(SyncClassDef(stub.fold(clazz)(cast(file.findClass(_)))))
+                                    override val autochip      = BehaviorFileDescriptor.this.autoChip
+                                    override val targetClass   = castedClass
+                                    override val methods       = methods0
+                                    override val fields        = fields0
+                                } :: result
+                        }
                 }
-                
             }
         }
         val group        = new ContractDescriptorGroup[AnyRef] {
@@ -134,12 +133,12 @@ class BehaviorFileDescriptor(file: BehaviorFile,
         }
         group
     }
-    
+
     private def defaultContracts(clazz: Class[AnyRef], usedDescs: List[StructureContractDescriptor[AnyRef]]): StructureContractDescriptor[AnyRef] = {
         val missingLevels = StructureBehaviorDescriptorNodeImpl.MandatoryLevels.filterNot(usedDescs.contains)
         scd(missingLevels: _*)(clazz, Array(), Array())
     }
-    
+
     private def scd(levels: SyncLevel*)(implicit clazz0: Class[AnyRef],
                                         methods0: Array[MethodContractDescriptor],
                                         fields0: Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
@@ -157,7 +156,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             override val fields      = fields0
         }
     }
-    
+
     private def foreachFields(classDesc: SyncStructureDescription[_])
                              (descOpt: Option[FieldDescription]): Array[FieldContract[Any]] = {
         if (descOpt.isEmpty)
@@ -167,15 +166,15 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                 .map(new FieldContractImpl[Any](_, autoChip, desc.state.lvl))
                 .toArray
     }
-    
+
     private def foreachMethods(classDesc: SyncStructureDescription[_])
                               (descOpt: Option[MethodDescription]): Array[MethodContractDescriptor] = {
         if (descOpt.isEmpty)
             return Array()
         val desc = descOpt.get
-        
+
         def cast[X](y: Any) = y.asInstanceOf[X]
-        
+
         val methods = classDesc match {
             case desc: SyncObjectDescription[_]  => desc.listMethods(cast(desc.specs.mainClass))
             case desc: SyncStaticsDescription[_] => desc.listMethods()
@@ -193,7 +192,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                             else Some(new SimpleModifiableValueContract[Any](rvLvl, autoChip, None))
                         } else None
                     }
-                    
+
                     val agreement      = desc.agreement.map(ag => getAgreement(ag.name)).getOrElse(DefaultBuilder)
                     val procrastinator = findProcrastinator(desc.properties)
                     MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, desc.invocationHandlingMethod, agreement)
@@ -203,17 +202,17 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             }
         }.toArray
     }
-    
+
     private def encodedIntMethodString(i: Int): String = {
         if (i > 0) i.toString
         else "_" + i.abs.toString
     }
-    
+
     private def describeAttributedMethods(classDesc: SyncStructureDescription[_], kind: DescriptionKind,
                                           foreachResult: Array[MethodContractDescriptor])
                                          (descriptions: Seq[AttributedMethodDescription],
                                           unhandledMethods: mutable.HashMap[AttributedMethodDescription, Boolean]): Array[MethodContractDescriptor] = {
-        
+
         val result = descriptions.map { method =>
             val signature     = method.signature
             val targetedClass = signature.target
@@ -228,25 +227,25 @@ class BehaviorFileDescriptor(file: BehaviorFile,
         }
         foreachResult.filter(_ != null) ++ result.filter(_ != null)
     }
-    
+
     private def describeAttributedMethod(method: AttributedMethodDescription,
                                          classDesc: SyncStructureDescription[_], kind: DescriptionKind,
                                          foreachResult: Array[MethodContractDescriptor]): MethodContractDescriptor = {
         val signature  = method.signature
         val methodDesc = file.getMethodDescFromSignature(kind, signature, classDesc)
-        
+
         val referentPos = foreachResult.indexWhere(x => x != null && x.description == methodDesc)
         val referent    = if (referentPos == -1) None else Some(foreachResult(referentPos))
         if (referentPos >= 0) {
             //removing description in foreach statement result
             foreachResult(referentPos) = null
         }
-        
+
         def checkParams(): Unit = {
             if (signature.params.exists(_.syncState.lvl != NotRegistered))
                 throw new BHVLanguageException("disabled methods can't define connected arguments")
         }
-        
+
         def extractModifier(mod: CompModifier, valType: String): ValueModifier[Any] = {
             mod match {
                 case ValueModifierReference(_, ref) => getValueModifier(ref, valType)
@@ -254,7 +253,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                     s"method_${encodedIntMethodString(methodDesc.methodId)}", valType, in, out)
             }
         }
-        
+
         val result = (method: MethodDescription) match {
             case _: DisabledMethodDescription  =>
                 checkParams()
@@ -263,7 +262,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                 checkParams()
                 val msg = Some(desc.hideMessage.getOrElse(s"${methodDesc.javaMethod} is hidden"))
                 MethodContractDescriptorImpl(methodDesc, true, None, None, Array(), msg, Inherit, DefaultBuilder)
-            
+
             case desc: EnabledMethodDescription with AttributedEnabledMethodDescription =>
                 val rvContract         = {
                     val returnTypeName = methodDesc.javaMethod.getReturnType.getName
@@ -295,7 +294,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
         }
         result
     }
-    
+
     private def describeAttributedFields(classDesc: SyncStructureDescription[_],
                                          kind: DescriptionKind,
                                          foreachResult: Array[FieldContract[Any]])
@@ -321,7 +320,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
         }
         foreachResult.filter(_ != null) ++ result.filter(_ != null)
     }
-    
+
     private def getValueModifier(name: String, expectedType: String): ValueModifier[Any] = {
         val (modTypeTarget, mod) = valueModifiers.getOrElse(name, throw new BHVLanguageException(s"Unknown modifier '$name'"))
         val expectedTypeClass    = file.findClass(expectedType)
@@ -329,16 +328,16 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             throw new BHVLanguageException(s"trying to apply a modifier '${modTypeTarget.getName}' on value of type '${expectedTypeClass.getName}'")
         mod
     }
-    
+
     private def findProcrastinator(properties: Seq[MethodProperty]): Option[Procrastinator] = {
         properties.find(_.name == "executor").map(x => propertyClass.getProcrastinator(x.value))
     }
-    
+
     private def getAgreement(name: String): RMIRulesAgreementBuilder = {
         agreementBuilders
                 .getOrElse(name, throw new BHVLanguageException(s"undefined agreement '$name'."))
     }
-    
+
     private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {
         val map = ast.typesModifiers.map {
             case TypeModifier(className, in, out) => {
@@ -347,27 +346,27 @@ class BehaviorFileDescriptor(file: BehaviorFile,
         }.toMap
         new ClassMap(map)
     }
-    
+
     private def computeValueModifiers(): Map[String, (Class[_], ValueModifier[Any])] = {
         ast.valueModifiers.map {
             case ValueModifier(name, tpeName, in, out) =>
                 (name, (file.findClass(tpeName), makeModifier[Any](s"value_$name", tpeName, in, out)))
         }.toMap
     }
-    
+
     private def makeModifier[A](tpe: String, valTpeName: String, in: Option[LambdaExpression], out: Option[LambdaExpression]): ValueModifier[A] = {
         val formattedTpeName = file.formatClassName(file.findClass(valTpeName))
         val inLambdaName     = s"${tpe}_in_${formattedTpeName}"
         val outLambdaName    = s"${tpe}_out_${formattedTpeName}"
         new ValueModifier[A] {
-            
+
             override def fromRemote(input: A, remote: Engine): A = {
                 if (in.isDefined) {
                     val result = caller.call(inLambdaName, Array(input, remote))
                     if (result == ()) input else result.asInstanceOf[A]
                 } else input
             }
-            
+
             override def toRemote(input: A, remote: Engine): A = {
                 if (out.isDefined) {
                     val result = caller.call(outLambdaName, Array(input, remote))
@@ -376,13 +375,13 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             }
         }
     }
-    
+
     private def computeAgreements(): Map[String, RMIRulesAgreementBuilder] = {
         DefaultAgreements ++ ast.agreementBuilders.map(agreement => {
             (agreement.name, followInstructions(agreement.instructions))
         }).toMap
     }
-    
+
     private def followInstructions(instructions: Seq[AgreementInstruction]): RMIRulesAgreementBuilder = {
         def follow(instructions: Seq[AgreementInstruction], base: RMIRulesAgreementBuilder): RMIRulesAgreementBuilder = {
             instructions.foldLeft(base)((builder, instruction) => {
@@ -392,7 +391,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                     case AppointEngine(appointed) => builder.appointReturn(appointed)
                     case AcceptEngines(tags)      => tags.foldLeft(builder) { case (builder, tag) => builder.accept(tag) }
                     case DiscardEngines(tags)     => tags.foldLeft(builder) { case (builder, tag) => builder.discard(tag) }
-                    
+
                     case Condition(Equals(a, b, false), ifTrue, ifFalse) =>
                         (builder assuming a isElse b) (follow(ifTrue, _), follow(ifFalse, _))
                     case Condition(Equals(a, b, true), ifTrue, ifFalse)  =>
@@ -400,14 +399,14 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                 }
             })
         }
-        
+
         follow(instructions, EmptyBuilder)
     }
-    
+
 }
 
 object BehaviorFileDescriptor {
-    
+
     private final val DefaultBuilder    = new RMIRulesAgreementGenericBuilder().accept(CurrentEngine)
     private final val DefaultAgreements = Map(
         "default" -> DefaultBuilder,
@@ -436,6 +435,6 @@ object BehaviorFileDescriptor {
                 .accept(CurrentEngine)
                 .accept(OwnerEngine)
                 .appointReturn(CurrentEngine)
-        )
-    
+    )
+
 }

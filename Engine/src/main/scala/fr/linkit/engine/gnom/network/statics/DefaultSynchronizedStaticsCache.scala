@@ -53,7 +53,7 @@ class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
     override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator     =>
-                factory.getContract(creator.targettedClass.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
+                factory.getContract(creator.targetedClass.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
             case InstanceWrapper(methodCaller: StaticsCaller) =>
                 val cl = methodCaller.staticsTarget
                 factory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))

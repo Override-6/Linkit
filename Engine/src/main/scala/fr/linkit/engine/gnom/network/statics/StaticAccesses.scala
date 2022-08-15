@@ -15,11 +15,11 @@ package fr.linkit.engine.gnom.network.statics
 
 import fr.linkit.api.gnom.cache.CacheAlreadyDeclaredException
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
+import fr.linkit.api.gnom.cache.sync.instantiation.New
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
-import fr.linkit.engine.gnom.cache.sync.instantiation.New
 
 class StaticAccesses(network: Network) {
 

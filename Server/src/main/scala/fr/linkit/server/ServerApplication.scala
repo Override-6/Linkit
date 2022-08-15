@@ -32,7 +32,7 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class ServerApplication private(override val configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) {
+class ServerApplication private(override val configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ServerApplicationContext {
 
     protected override val appPool            = new SimpleClosedWorkerPool(configuration.mainPoolThreadCount, "Application")
     private            val serverCache        = mutable.HashMap.empty[Any, ServerConnection]
@@ -82,7 +82,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
     }
 
     @workerExecution
-    def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = /*this.synchronized*/ {
+    override def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = /*this.synchronized*/ {
         appPool.ensureCurrentThreadOwned("Open server connection must be performed into Application's pool.")
 
         ensureAlive()
@@ -121,7 +121,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
     }
 
     @throws[NoSuchConnectionException]("If the connection isn't found in the application's cache.")
-    def unregister(serverConnection: ServerConnection): Unit = {
+    override def unregister(serverConnection: ServerConnection): Unit = {
         ensureAlive()
 
         val configuration = serverConnection.configuration
@@ -150,7 +150,7 @@ object ServerApplication {
     @volatile private var initialized = false
     val Version: Version = system.Version(name = "Server", "1.0.0", false)
 
-    def launch(config: ServerApplicationConfiguration, otherSources: Class[_]*): ServerApplication = this.synchronized {
+    def launch(config: ServerApplicationConfiguration, otherSources: Class[_]*): ServerApplicationContext = this.synchronized {
         if (initialized)
             throw new IllegalStateException("ServerApplication was already launched !")
 
@@ -178,7 +178,7 @@ object ServerApplication {
         }
     }
 
-    def launch(builder: ServerApplicationConfigBuilder, caller: Class[_]): ServerApplication = {
+    def launch(builder: ServerApplicationConfigBuilder, caller: Class[_]): ServerApplicationContext = {
         launch(builder.buildConfig(), caller)
     }
 }

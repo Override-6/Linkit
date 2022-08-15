@@ -15,30 +15,26 @@ package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
+import fr.linkit.api.internal.system.delegate.DelegateFactory
 
-private[linkit] trait Contract {
-    def registerProperties(properties: BHVProperties): Unit
+object Contract {
+    private final val delegate: Provider = DelegateFactory.contracts
 
-    def apply(name: String, properties: BHVProperties): ContractDescriptorData
+    def registerProperties(properties: BHVProperties): Unit = delegate.registerProperties(properties)
 
-    def apply(name: String, propertiesName: String): ContractDescriptorData
+    def apply(name: String, properties: BHVProperties): ContractDescriptorData = delegate.apply(name, properties)
 
-    def apply(name: String): ContractDescriptorData
-}
+    def apply(name: String, propertiesName: String): ContractDescriptorData = delegate.apply(name, propertiesName)
 
-object Contract extends Contract {
-    private final var impl: Contract = _
+    def apply(name: String): ContractDescriptorData  = delegate.apply(name)
 
-    private[linkit] def setImpl(impl: Contract): Unit = {
-        if (this.impl != null) throw new IllegalArgumentException()
-        this.impl = impl
+    trait Provider {
+        def registerProperties(properties: BHVProperties): Unit
+
+        def apply(name: String, properties: BHVProperties): ContractDescriptorData
+
+        def apply(name: String, propertiesName: String): ContractDescriptorData
+
+        def apply(name: String): ContractDescriptorData
     }
-
-    override def registerProperties(properties: BHVProperties): Unit = impl.registerProperties(properties)
-
-    override def apply(name: String, properties: BHVProperties): ContractDescriptorData = impl.apply(name, properties)
-
-    override def apply(name: String, propertiesName: String): ContractDescriptorData = impl.apply(name, propertiesName)
-
-    override def apply(name: String): ContractDescriptorData  = impl.apply(name)
 }

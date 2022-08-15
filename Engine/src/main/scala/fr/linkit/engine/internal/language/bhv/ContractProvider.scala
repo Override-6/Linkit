@@ -13,7 +13,7 @@ import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 import scala.collection.mutable
 import scala.util.parsing.input.CharSequenceReader
 
-object ContractImpl extends Contract {
+object ContractProvider extends Contract.Provider {
 
     private val properties   = mutable.HashMap.empty[String, BHVProperties]
     private val contracts    = mutable.HashMap.empty[String, ContractHandler]

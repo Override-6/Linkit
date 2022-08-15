@@ -14,13 +14,17 @@
 package fr.linkit.engine.internal.system.delegate
 
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCacheFactories
+import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.delegate.DelegateFactoryDelegate
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.internal.concurrency.pool.EngineWorkerPools
+import fr.linkit.engine.internal.language.bhv.ContractProvider
 
 class EngineDelegateFactory extends DelegateFactoryDelegate {
     override val workerPools: WorkerPools.Provider = EngineWorkerPools
 
     override def defaultCOCFactories: ConnectedObjectCacheFactories = DefaultConnectedObjectCache
+
+    override def contracts: Contract.Provider = ContractProvider
 }

@@ -11,20 +11,18 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.instantiation
+package fr.linkit.api.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
-import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
-import fr.linkit.engine.gnom.cache.sync.instantiation.New.getAssignableConstructor
-import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
+import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.cache.sync.instantiation.New.getAssignableConstructor
 
 import java.lang.reflect.{Modifier, Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}
 
 /**
  * SyncInstance Creator to simulate a "new A(args)" instruction.<br>
- * The creator will generate a synchronized `A` object using a constructor.
+ * The creator will instantiate a new connected `A` object using a constructor.
  * */
 class New[A <: AnyRef] private(clazz: Class[A],
                                arguments: Array[Any]) extends SyncInstanceCreator[A] {
@@ -47,11 +45,9 @@ object New {
         new New[T](clazz, objectsArray)
     }
 
-    def getAssignableConstructor[T](clazz: Class[T], objectsArray: Array[Any]): JConstructor[T] = {
+    private[linkit] def getAssignableConstructor[T](clazz: Class[T], objectsArray: Array[Any]): JConstructor[T] = {
         for (constructor <- clazz.getDeclaredConstructors) {
-            val params               = constructor.getParameterTypes
-            val constructorStructure = ArrayObjectStructure(params: _*)
-            if (constructorStructure.isAssignable(objectsArray)) {
+            if (isAssignable(objectsArray, constructor)) {
                 val mods = constructor.getModifiers
                 if (Modifier.isPrivate(mods) || Modifier.isProtected(mods))
                     throw new IllegalArgumentException("Provided method objects structure matches a non public constructor")
@@ -59,6 +55,19 @@ object New {
             }
         }
         throw new NoSuchMethodException(s"Could not find a constructor matching arguments ${objectsArray.mkString("Array(", ", ", ")")}")
+    }
+
+    private def isAssignable(args: Array[Any], constructor: JConstructor[_]): Boolean = {
+        val params = constructor.getParameterTypes
+        if (params.length != args.length)
+            return false
+
+        for (i <- args.indices) {
+            val arg = args(i)
+            if (arg != null && !params(i).isAssignableFrom(arg.getClass))
+                return false
+        }
+        true
     }
 
 }
