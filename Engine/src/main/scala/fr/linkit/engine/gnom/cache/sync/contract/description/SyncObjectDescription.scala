@@ -23,7 +23,7 @@ import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.JavaK
 import java.lang.reflect.{Executable, Method, Modifier}
 import scala.collection.mutable
 
-class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDef) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
+class SyncObjectDescription[A <: AnyRef] @Persist() protected(private val clazz: SyncClassDef) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
     
     private val overrideableDescs: Iterable[MethodDescription] = {
         listMethods().filterNot(md => notFilter(true, md.javaMethod))
@@ -78,6 +78,12 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(clazz: SyncClassDe
                         method.getParameterTypes.exists(isNotAccessible(_, "parameter type"))
             case _              => false
         }
+    }
+
+    override def equals(obj: Any): Boolean = obj match {
+        case desc: SyncObjectDescription[_] =>
+            (desc eq this) || (desc.clazz == clazz && desc.listMethods() == listMethods())
+        case _ => false
     }
 }
 

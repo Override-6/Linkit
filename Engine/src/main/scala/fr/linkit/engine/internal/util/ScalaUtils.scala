@@ -106,7 +106,7 @@ object ScalaUtils {
                 TheUnsafe.objectFieldOffset(field)
         }
         val cookie      = if (instance == null) TheUnsafe.staticFieldBase(field) else instance
-        import Unwrapper.unwrap
+        import fr.linkit.api.internal.util.Unwrapper.unwrap
         
         import java.lang
         

@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.config.structure
 
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.internal.util.Unwrapper
+import fr.linkit.api.internal.util.Unwrapper
 
 abstract class ArrayObjectStructure() extends ObjectStructure {
 

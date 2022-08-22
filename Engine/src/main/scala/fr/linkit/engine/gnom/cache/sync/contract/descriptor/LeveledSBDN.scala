@@ -147,7 +147,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             case _                                                   =>
                 if (context.syncLevel.mustBeMirrored()) Some(autoDefineMirroringInfo(clazz)) else None
         }
-        //set a generic description to all methods that are not bound with any contract.
+        //set a context-specific description for all methods that are not bound with any contract.
         fixUndescribedMethods(methodMap, context)
         new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }

@@ -32,9 +32,14 @@ trait UniqueStructureContractDescriptor[A <: AnyRef] extends StructureContractDe
 
     val syncLevel: SyncLevel
 
+    override def toString: String = s"Unique $syncLevel (${targetClass.getName})"
+
 }
 
 trait MultiStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A] {
 
     val syncLevels: Set[SyncLevel]
+
+    override def toString: String = s"Multi (${syncLevels.mkString(", ")}) (${targetClass.getName})"
+
 }

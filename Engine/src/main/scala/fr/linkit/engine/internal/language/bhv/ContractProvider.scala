@@ -6,7 +6,7 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, ObjectsPr
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileDescriptor, BehaviorFileLambdaExtractor, LangContractDescriptorData}
+import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileInterpreter, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 
@@ -86,7 +86,7 @@ object ContractProvider extends Contract.Provider {
                 val bhvProperties = properties.getOrElse(propertyName, throw new NoSuchElementException(s"unknown properties '$propertyName'."))
                 val caller        = callers.getOrElseUpdate(propertyName, callerFactory(bhvProperties))
                 try {
-                    val interpreter = new BehaviorFileDescriptor(file, app, bhvProperties, caller)
+                    val interpreter = new BehaviorFileInterpreter(file, app, bhvProperties, caller)
                     interpreter.data
                 } catch {
                     case e: BHVLanguageException =>

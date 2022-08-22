@@ -16,7 +16,8 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.gnom.network.statics.StaticAccessor
-import fr.linkit.engine.internal.util.{ScalaUtils, Unwrapper}
+import fr.linkit.api.internal.util.Unwrapper
+import fr.linkit.engine.internal.util.ScalaUtils
 
 import java.lang.reflect.{Method, Modifier}
 import scala.language.dynamics

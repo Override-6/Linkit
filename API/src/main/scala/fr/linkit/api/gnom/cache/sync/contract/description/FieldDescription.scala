@@ -20,6 +20,11 @@ import java.lang.reflect.Field
 case class FieldDescription(javaField: Field, classDesc: SyncStructureDescription[_ <: AnyRef]) {
 
     val fieldId: Int = computeID(javaField)
+
+    override def equals(obj: Any): Boolean = obj match {
+        case d: FieldDescription => d.fieldId == fieldId && javaField == d.javaField && classDesc == d.classDesc
+        case _                   => false
+    }
 }
 
 object FieldDescription {

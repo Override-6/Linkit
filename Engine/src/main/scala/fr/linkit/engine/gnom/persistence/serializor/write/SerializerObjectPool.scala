@@ -19,11 +19,11 @@ import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.api.internal.util.Unwrapper
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.ConstantProtocol._
-import fr.linkit.engine.internal.util.Unwrapper
 
 import scala.math.Equiv.reference
 

@@ -16,6 +16,7 @@ package fr.linkit.api.gnom.cache.sync.instantiation
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.instantiation.New.getAssignableConstructor
+import fr.linkit.api.internal.util.Unwrapper
 
 import java.lang.reflect.{Modifier, Constructor => JConstructor}
 import scala.reflect.{ClassTag, classTag}
@@ -64,7 +65,7 @@ object New {
 
         for (i <- args.indices) {
             val arg = args(i)
-            if (arg != null && !params(i).isAssignableFrom(arg.getClass))
+            if (arg != null && !(params(i).isAssignableFrom(arg.getClass) || params(i).isAssignableFrom(Unwrapper.getPrimitiveClass(arg))))
                 return false
         }
         true

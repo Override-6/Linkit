@@ -31,16 +31,16 @@ import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModif
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder.EmptyBuilder
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileDescriptor.{DefaultAgreements, DefaultBuilder}
+import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileInterpreter.{DefaultAgreements, DefaultBuilder}
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.util.ClassMap
 
 import scala.collection.mutable
 
-class BehaviorFileDescriptor(file: BehaviorFile,
-                             app: ApplicationContext,
-                             propertyClass: BHVProperties,
-                             caller: MethodCaller) {
+class BehaviorFileInterpreter(file: BehaviorFile,
+                              app: ApplicationContext,
+                              propertyClass: BHVProperties,
+                              caller: MethodCaller) {
 
     private val ast                                                            = file.ast
     private val autoChip                                                       = computeOptions()
@@ -82,7 +82,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
             override val clazz       = classOf[Object]
             override val modifier    = None
             override val descriptors = Array(new OverallStructureContractDescriptor[Object] {
-                override val autochip    = BehaviorFileDescriptor.this.autoChip
+                override val autochip    = BehaviorFileInterpreter.this.autoChip
                 override val targetClass = classOf[Object]
                 override val methods     = Array()
                 override val fields      = Array()
@@ -110,17 +110,18 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                     case RegularDescription         => List(scd())
                     case LeveledDescription(levels) =>
                         val result = List(scd(levels.map(_.syncLevel).filter(_ != Mirror): _*))
-                        levels.find(_.isInstanceOf[MirroringLevel]) match {
+                        val r = levels.find(_.isInstanceOf[MirroringLevel]) match {
                             case None                       => result
                             case Some(MirroringLevel(stub)) =>
                                 new MirroringStructureContractDescriptor[AnyRef] {
                                     override val mirroringInfo = MirroringInfo(SyncClassDef(stub.fold(clazz)(cast(file.findClass(_)))))
-                                    override val autochip      = BehaviorFileDescriptor.this.autoChip
+                                    override val autochip      = BehaviorFileInterpreter.this.autoChip
                                     override val targetClass   = castedClass
                                     override val methods       = methods0
                                     override val fields        = fields0
                                 } :: result
                         }
+                        r
                 }
             }
         }
@@ -143,14 +144,14 @@ class BehaviorFileDescriptor(file: BehaviorFile,
                                         methods0: Array[MethodContractDescriptor],
                                         fields0: Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
         if (levels.isEmpty) return new OverallStructureContractDescriptor[AnyRef] {
-            override val autochip    = BehaviorFileDescriptor.this.autoChip
+            override val autochip    = BehaviorFileInterpreter.this.autoChip
             override val targetClass = clazz0
             override val methods     = methods0
             override val fields      = fields0
         }
         new MultiStructureContractDescriptor[AnyRef] {
             override val syncLevels  = levels.toSet
-            override val autochip    = BehaviorFileDescriptor.this.autoChip
+            override val autochip    = BehaviorFileInterpreter.this.autoChip
             override val targetClass = clazz0
             override val methods     = methods0
             override val fields      = fields0
@@ -405,7 +406,7 @@ class BehaviorFileDescriptor(file: BehaviorFile,
 
 }
 
-object BehaviorFileDescriptor {
+object BehaviorFileInterpreter {
 
     private final val DefaultBuilder    = new RMIRulesAgreementGenericBuilder().accept(CurrentEngine)
     private final val DefaultAgreements = Map(

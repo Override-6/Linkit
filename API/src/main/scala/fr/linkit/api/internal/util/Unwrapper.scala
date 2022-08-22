@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.util
+package fr.linkit.api.internal.util
 
 import java.lang
 import scala.collection.mutable

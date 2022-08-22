@@ -19,4 +19,7 @@ trait MirroringStructureContractDescriptor[A <: AnyRef] extends UniqueStructureC
 
     override final val syncLevel = SyncLevel.Mirror
     val mirroringInfo: MirroringInfo
+
+    override def toString: String = s"Mirroring $syncLevel (${targetClass.getName}, $mirroringInfo)"
+
 }

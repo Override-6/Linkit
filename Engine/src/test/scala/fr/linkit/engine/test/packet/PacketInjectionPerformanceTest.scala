@@ -12,13 +12,9 @@
 
 package fr.linkit.engine.test.packet
 
-import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
-import fr.linkit.engine.connection.packet.traffic.{ChannelScopes, SocketPacketTraffic}
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.utils.PerformanceMeter
+
 import org.junit.jupiter.api.TestInstance.Lifecycle
-import org.junit.jupiter.api.{Assertions, RepeatedTest, Test, TestInstance}
+import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketInjectionPerformanceTest {
