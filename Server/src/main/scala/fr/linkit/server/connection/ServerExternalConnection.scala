@@ -31,9 +31,9 @@ import java.net.Socket
 import java.nio.ByteBuffer
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
-    
+
     import session._
-    
+
     override val currentIdentifier: String           = server.currentIdentifier
     override val traffic          : PacketTraffic    = server.traffic
     override val translator       : ObjectTranslator = server.translator
@@ -42,7 +42,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override val boundIdentifier  : String           = session.boundIdentifier
     @volatile private var alive   : Boolean          = false
     private  val tnol                                = network.gnol.trafficNOL
-    
+
     override def shutdown(): Unit = {
         WorkerPools.ensureCurrentIsWorker()
         alive = false
@@ -52,21 +52,21 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }*/
         readThread.close()
         session.close()
-        
+
         connectionManager.unregister(currentIdentifier)
         AppLoggers.Connection.info(s"Connection closed for $currentIdentifier")
     }
-    
+
     override def isAlive: Boolean = alive
-    
+
     override def getState: ExternalConnectionState = session.getSocketState
-    
+
     override def runLaterControl[A](@workerExecution task: => A): AsyncTask[A] = {
         server.runLaterControl(task)
     }
-    
+
     override def runLater(task: => Unit): Unit = server.runLater(task)
-    
+
     def start(): Unit = {
         if (alive) {
             throw ConnectionException(this, "This Connection was already used and is now definitely closed.")
@@ -78,17 +78,17 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
                 case b: BroadcastPacketCoordinates => b.getDedicated(currentIdentifier)
             }
             val ordinalShift                            = ordinalsRectifier.getOrdinalShift(coordinates.path).get()
-            
+
             val rectifiedResult = new PacketDownload {
-                override val ordinal: Int        = result.ordinal + ordinalShift
-                override val buff   : ByteBuffer = result.buff
-                override def coords: PacketCoordinates = coordinates
-                override def attributes: PacketAttributes = result.attributes
-                override def packet: Packet = result.packet
-                override def makeDeserialization(): Unit = result.makeDeserialization()
-                override def isDeserialized: Boolean = result.isDeserialized
-                override def isInjected: Boolean = result.isInjected
-                override def informInjected: Unit = result.informInjected
+                override val ordinal                : Int               = result.ordinal + ordinalShift
+                override val buff                   : ByteBuffer        = result.buff
+                override def coords                 : PacketCoordinates = coordinates
+                override def attributes             : PacketAttributes  = result.attributes
+                override def packet                 : Packet            = result.packet
+                override def makeDeserialization()  : Unit              = result.makeDeserialization()
+                override def isDeserialized         : Boolean           = result.isDeserialized
+                override def isInjected             : Boolean           = result.isInjected
+                override def informInjected         : Unit              = result.informInjected
             }
             handlePacket(rectifiedResult)
         }
@@ -96,7 +96,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         readThread.start()
         //Method useless but kept because services could need to be started in the future?
     }
-    
+
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
         val coords       = DedicatedPacketCoordinates(path, boundIdentifier, currentIdentifier)
         val config       = traffic.getPersistenceConfig(coords.path)
@@ -104,14 +104,14 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         val result       = translator.translate(transferInfo)
         send(result)
     }
-    
+
     override def isConnected: Boolean = getState == ExternalConnectionState.CONNECTED
-    
+
     private[connection] def updateSocket(socket: Socket): Unit = {
         WorkerPools.ensureCurrentIsWorker()
         session.updateSocket(socket)
     }
-    
+
     def canHandlePacketInjection(result: PacketTransfer): Boolean = {
         val channelPath = result.coords.path
         channelPath.length == 0 || {
@@ -120,7 +120,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
             present
         }
     }
-    
+
     def send(result: PacketUpload): Unit = {
         if (!canHandlePacketInjection(result)) {
             val channelPath = result.coords.path
@@ -129,24 +129,25 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }
         session.send(result)
     }
-    
+
     @workerExecution
     private def handlePacket(result: PacketDownload): Unit = {
         val path = result.coords.path
         AppLoggers.Debug.trace(s"Handling packet for $boundIdentifier at ${TrafficReference / path}")
-        for (session <- server.getAllSessions) if (session ne this.session) {
-            val shift = session.ordinalsRectifier.getOrdinalShift(path)
+        for (session <- server.getAllConnectionSessions) if (session ne this.session) {
+            ""
+            /*val shift = session.ordinalsRectifier.getOrdinalShift(path)
             shift.increment()
-            AppLoggers.Debug.trace(s"Incremented shift for ${session.boundIdentifier}, ($shift)")
+            AppLoggers.Debug.trace(s"Incremented shift for ${session.boundIdentifier}, ($shift)")*/
         }
         traffic.processInjection(result)
     }
-    
+
     override def getApp: ApplicationContext = server.getApp
 }
 
 object ServerExternalConnection {
-    
+
     /**
      * Constructs a ClientConnection without starting it.
      *
@@ -162,5 +163,5 @@ object ServerExternalConnection {
         connection.start()
         connection
     }
-    
+
 }

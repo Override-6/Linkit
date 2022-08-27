@@ -17,10 +17,10 @@ import scala.collection.mutable
 
 class ServerOrdinals {
     
-    private final val ordinal = mutable.HashMap.empty[Int, Counter]
+    private final val ordinals = mutable.HashMap.empty[Int, Counter]
     
     def forChannel(path: Array[Int]): Counter = {
-        ordinal.getOrElseUpdate(java.util.Arrays.hashCode(path), new Counter)
+        ordinals.getOrElseUpdate(java.util.Arrays.hashCode(path), new Counter)
     }
     
 }

@@ -122,7 +122,7 @@ class ServerConnection(applicationContext: ServerApplication,
     
     private[connection] def getSideNetwork: ServerSideNetwork = sideNetwork
     
-    private[server] def getAllSessions: List[ExternalConnectionSession] = connectionsManager.listConnectionSessions
+    private[server] def getAllConnectionSessions: List[ExternalConnectionSession] = connectionsManager.listConnectionSessions
     
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

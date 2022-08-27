@@ -48,7 +48,8 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     def getSocketState: ExternalConnectionState = socket.getState
     
     private[connection] def send(result: PacketUpload): Unit = {
-        socket.write(result.buff(() => serverOrdinals.forChannel(result.coords.path).increment()))
+        val bytes = result.buff(() => serverOrdinals.forChannel(result.coords.path).increment())
+        socket.write(bytes)
     }
     
     private[connection] def updateSocket(socket: Socket): Unit = this.socket.set(socket)
