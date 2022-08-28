@@ -11,15 +11,17 @@
  * questions.
  */
 
-package fr.linkit.client.connection.traffic
+package fr.linkit.engine.internal.util
+
+import java.util.concurrent.atomic.AtomicInteger
+import scala.collection.mutable
 
 class OrdinalCounter {
-    
-    private var ordinal: Int = 0
-    
-    def next(): Int = this.synchronized {
-        ordinal += 1
-        ordinal
+
+    private val counters = mutable.HashMap.empty[String, AtomicInteger]
+
+    def increment(target: String): Int = {
+        counters.getOrElseUpdate(target, new AtomicInteger()).incrementAndGet()
     }
-    
+
 }

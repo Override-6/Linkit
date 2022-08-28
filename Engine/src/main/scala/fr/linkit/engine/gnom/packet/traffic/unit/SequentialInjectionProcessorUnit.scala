@@ -26,27 +26,31 @@ import fr.linkit.engine.internal.concurrency.pool.{EquilibratedWorkerController,
 import java.lang.Thread.State._
 import java.util.{Comparator, PriorityQueue}
 import scala.annotation.switch
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends InjectionProcessorUnit {
 
-    private final val queue            = new PriorityQueue[PacketDownload](((a, b) => a.ordinal - b.ordinal): Comparator[PacketDownload])
+    private final val queues           = mutable.HashMap.empty[String, OrdinalQueue]
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
     private final var executor: Worker = _
 
     private final val joinLocker                           = new SimpleWorkerController()
     private final val refocusingLocker                     = new EquilibratedWorkerController()
     private       val reference                            = injectable.reference
-    @volatile private final var waitingForRefocus: Boolean = false
 
-    private final var currentOrdinal: Int = 0
+    @volatile private final var waitingForRefocus: Boolean = false
+    @volatile private final var packetCount = 0
 
     override def post(result: PacketDownload): Unit = {
-        AppLoggers.Persistence.trace(s"(SIPU $reference): adding packet ord: ${result.ordinal} Current unit executor: $executor. packet queue length = ${queue.size}")
+        AppLoggers.Persistence.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderID}) Current unit executor: $executor.")
 
-        queue.synchronized {
-            queue.offer(result)
-            if (waitingForRefocus && result.ordinal == currentOrdinal + 1) {
+
+        queues.synchronized {
+            val senderId = result.coords.senderID
+            queues.getOrElseUpdate(senderId, new OrdinalQueue).offer(result)
+            packetCount += 1
+            if (waitingForRefocus) {
                 refocusingLocker.wakeupAnyTask()
                 waitingForRefocus = false
             }
@@ -60,7 +64,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                 if (executor.isSleeping) {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
-                    AppLoggers.Persistence.info(s"(SIPU $reference):: Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
+                    AppLoggers.Persistence.info(s"(SIPU $reference): Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
                     try executor.runWhileSleeping(deserializeAll(true))
                     catch {
                         case _: IllegalThreadStateException =>
@@ -74,14 +78,15 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                         // just add the packet and let the executor wakeup
                         return
                     case WAITING | BLOCKED        =>
-                        //thread is blocked, let's transfer all the remaining deserialisation / injection work to this thread.
+                        //thread is blocked, let's transfer all the remaining deserialization / injection work to this thread.
                         //This operation has been made up in order to avoid possible deadlocks in local, or through the network.
                         //If the initial executor is notified or unparked, it will simply give up this SIPU.
                         AppLoggers.Persistence.info(s"(SIPU $reference): Turns out that the executor is blocked. All injections of the executor ($executor) are transferred to this thread.")
-                    //don't return and let the thread enter in the deserialization process, when the initial executor will get unblocked, the
+                    //do not returns which will let the current thread enter in the deserialization process,
+                    //when the initial executor will get unblocked, it'll detect that his work has been transferred to current thread and so will exit this unit.
 
                     case other =>
-                        throw new IllegalThreadStateException(s"Could not inject packet into SIPU: unit's executor is ${other.name().toLowerCase()}.")
+                        throw new IllegalThreadStateException(s"Could not inject packet into SIPU: unit's executor is in a dead state (${other.name().toLowerCase()}).")
                 }
             }
             executor = currentWorker
@@ -90,48 +95,27 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
         deserializeAll(false)
     }
 
-    def getCurrentOrdinal: Int = currentOrdinal
+    def getCurrentOrdinal: Int = -1
 
     private def nextResult(): PacketDownload = {
-        val result = queue.remove()
-        if (result == null)
-            throw new NullPointerException("queue.remove returned null.")
-        val queueLength     = queue.size
-        val resultOrd       = result.ordinal
-        val expectedOrdinal = currentOrdinal + 1
-        if (resultOrd != expectedOrdinal) {
-            val diff = resultOrd - expectedOrdinal
-            if (diff < 0) {
-                throw UnexpectedPacketException(s"in channel ${injectable.reference}: Received packet with ordinal '$resultOrd', while current ordinal is $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
+        val queues = this.queues.values
+        var minQueue = queues.head
+        if (queues.size > 1) {
+            minQueue = null
+            var minQueueUpdate = Long.MaxValue
+            for (queue <- queues) if (queue.nonEmpty) {
+                val lastUpdate = queue.lastUpdate
+                if (lastUpdate < minQueueUpdate) {
+                    minQueueUpdate = lastUpdate
+                    minQueue = queue
+                }
             }
-            waitingForRefocus = true
-            if (queueLength != queue.size) { //the queue was updated, maybe the remaining packets has been added
-                waitingForRefocus = false
-                queue.offer(result)
-                return nextResult()
-            }
-            if (waitingForRefocus) {
-                AppLoggers.Persistence.debug(s"(SIPU $reference): Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
-                refocusingLocker.pauseTask()
-                waitingForRefocus = false
-            }
-            if (queue.peek().ordinal == resultOrd)
-                throw UnexpectedPacketException(s"in channel ${injectable.reference}: received packet with same ordinal after refocus.")
-            queue.offer(result)
-            return nextResult()
         }
-        if (currentOrdinal ne result) {
-            currentOrdinal = expectedOrdinal
-            AppLoggers.Debug.trace(s"(SIPU $reference): current ordinal is now $currentOrdinal.")
-        }
-        result
+        packetCount -= 1
+        minQueue.remove()
     }
 
     private def deserializeAll(duringSleep: Boolean): Unit = {
-        if (duringSleep) {
-            println(queue.size())
-            ""
-        }
         val currentWorker = WorkerPools.currentWorker
         val currentTask   = currentWorker.getCurrentTask
         for (unit <- chain) {
@@ -143,7 +127,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
         }
         // Only the executor thread can run here
         //deserializing all packets that are added in the queue
-        while (!queue.isEmpty) {
+        while (packetCount > 0) {
             if (executor ne currentWorker)
                 return
             deserializeNextResult()
@@ -190,6 +174,57 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
 
     def chainWith(unit: SequentialInjectionProcessorUnit): Unit = {
         chain += unit
+    }
+
+    private class OrdinalQueue {
+
+        private val queue          = new PriorityQueue[PacketDownload](((a, b) => a.ordinal - b.ordinal): Comparator[PacketDownload])
+        private var currentOrdinal = 0
+
+        var lastUpdate: Long = 0
+
+        def nonEmpty: Boolean = queue.size() > 0
+
+        def offer(packet: PacketDownload): Unit = {
+            queue.offer(packet)
+            lastUpdate = System.currentTimeMillis()
+        }
+
+        def remove(): PacketDownload = {
+            val result = queue.remove()
+            if (result == null)
+                throw new NullPointerException("queue.remove returned null.")
+            val queueLength     = queue.size
+            val resultOrd       = result.ordinal
+            val expectedOrdinal = currentOrdinal + 1
+            if (resultOrd != expectedOrdinal) {
+                val diff = resultOrd - expectedOrdinal
+                if (diff < 0) {
+                    throw UnexpectedPacketException(s"in channel ${injectable.reference}: Received packet with ordinal '$resultOrd', while current ordinal is $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
+                }
+                waitingForRefocus = true
+                if (queueLength != queue.size) { //the queue was updated, maybe the remaining packets has been added
+                    waitingForRefocus = false
+                    queue.offer(result)
+                    return nextResult()
+                }
+                if (waitingForRefocus) {
+                    AppLoggers.Persistence.debug(s"(SIPU $reference): Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
+                    refocusingLocker.pauseTask()
+                    waitingForRefocus = false
+                }
+                if (queue.peek().ordinal == resultOrd)
+                    throw UnexpectedPacketException(s"in channel ${injectable.reference}: received packet with same ordinal after refocus.")
+                queue.offer(result)
+                return nextResult()
+            }
+            if (currentOrdinal ne result) {
+                currentOrdinal = expectedOrdinal
+                AppLoggers.Debug.trace(s"(SIPU $reference): current ordinal is now $currentOrdinal.")
+            }
+            result
+        }
+
     }
 
 }

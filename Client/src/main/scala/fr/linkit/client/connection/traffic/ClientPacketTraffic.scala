@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, DynamicSocket, WriterInfo}
+import fr.linkit.engine.internal.util.OrdinalCounter
 
 import java.net.URL
 import scala.collection.mutable

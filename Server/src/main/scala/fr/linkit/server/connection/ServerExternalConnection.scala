@@ -77,7 +77,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
                 case d: DedicatedPacketCoordinates => d
                 case b: BroadcastPacketCoordinates => b.getDedicated(currentIdentifier)
             }
-            val ordinalShift                            = ordinalsRectifier.getOrdinalShift(coordinates.path).get()
+            /*val ordinalShift                            = ordinalsRectifier.getOrdinalShift(coordinates.path).get()
 
             val rectifiedResult = new PacketDownload {
                 override val ordinal                : Int               = result.ordinal + ordinalShift
@@ -89,8 +89,8 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
                 override def isDeserialized         : Boolean           = result.isDeserialized
                 override def isInjected             : Boolean           = result.isInjected
                 override def informInjected         : Unit              = result.informInjected
-            }
-            handlePacket(rectifiedResult)
+            }*/
+            handlePacket(result)
         }
         readThread.onReadException = () => runLater(shutdown())
         readThread.start()

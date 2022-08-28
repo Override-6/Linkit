@@ -101,7 +101,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                 handlePacket(result, coordinates)
             } catch {
                 case NonFatal(e) =>
-                    AppLoggers.Persistence.error(s"Could not deserialize packet ${result.ordinal}: $e (${e.getStackTrace.head})")
+                    val coords = result.coords
+                    AppLoggers.Persistence.error(s"Could not deserialize packet @${coords.path.mkString("/")}$$${coords.senderID}:${result.ordinal}. $e (${e.getStackTrace.head})")
             }
         }
         readThread.onReadException = () => this.runLater(this.shutdown())

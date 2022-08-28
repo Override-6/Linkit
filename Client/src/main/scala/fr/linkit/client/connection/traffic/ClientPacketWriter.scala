@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.traffic.{DynamicSocket, WriterInfo}
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
+import fr.linkit.engine.internal.util.OrdinalCounter
 
 class ClientPacketWriter(socket: DynamicSocket,
                          ordinal: OrdinalCounter,
@@ -68,12 +69,12 @@ class ClientPacketWriter(socket: DynamicSocket,
                     send(coords)(attributes, packet)
                 })
     }
-    
-    
+
     private def send(coords: DedicatedPacketCoordinates)(attributes: PacketAttributes, packet: Packet): Unit = {
         val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, network)
+        val target = coords.targetID
         val result = translator.translate(transferInfo)
-        socket.write(result.buff(() => this.ordinal.next()))
+        socket.write(result.buff(() => this.ordinal.increment(target)))
     }
     
     override def writeBroadcastPacket(packet: Packet, discardedIDs: Array[String]): Unit = {
