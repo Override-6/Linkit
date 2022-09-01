@@ -1,5 +1,3 @@
-[<img alt="wakatime" src="https://wakatime.com/badge/github/Override-6/Linkit.svg"/>](https://wakatime.com/badge/github/Override-6/Linkit) (
-counter since 3 march 2021)
 [![Wiki scaladoc deployment](https://github.com/Override-6/Linkit/actions/workflows/scaladoc.yml/badge.svg)](https://github.com/Override-6/Linkit/actions/workflows/scaladoc.yml)
 [![Wiki deployment](https://github.com/Override-6/Linkit-Wiki/actions/workflows/deploy.yml/badge.svg?branch=master)](https://github.com/Override-6/Linkit-Wiki/actions/workflows/deploy.yml)
 
@@ -9,17 +7,15 @@ counter since 3 march 2021)
 </p>
 
 <p align="center">
-Linkit is a high level networking framework in which exchanges between peers are fully object oriented.
+Linkit is a high level networking framework in which communication between peers are fully object oriented.
 </p>
 
-<p align="center">
-The framework provides a naming system, the ability to implement caches synchronized with other remote engines,
-and a whole system of object connection to create "inter-engine" objects in which methods calls are replicated to the
-engines that uses the objects (RMI).
-This object connection is the biggest part of the framework, and this system is fully customizable as you can impose a
-contract to your objects in order to enhance your control on them
+<h2 align="center">How to download</h2>
+<p align="center">Project stills in hard development, so there is no stable version that can be downloaded using a build tool.</p>
+<p align="center">If you still want to test the project,
+first keep in mind that a lot of things might work wrongly, then, 
 </p>
 
-<p align="center">
+<h2 align="center">
 Learn more on the <a href="https://override-6.github.io/Linkit/">Website</a> !
-</p>
+</h2>

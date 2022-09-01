@@ -97,6 +97,8 @@ task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from all
         }
     }
 }
+
+
 wrapper {
     gradleVersion = "7.2"
     distributionType = Wrapper.DistributionType.ALL
