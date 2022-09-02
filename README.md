@@ -19,3 +19,5 @@ first keep in mind that a lot of things might work wrongly, then,
 <h2 align="center">
 Learn more on the <a href="https://override-6.github.io/Linkit/">Website</a> !
 </h2>
+
+<img src="Diagrams-Readme/README footer.svg" />
