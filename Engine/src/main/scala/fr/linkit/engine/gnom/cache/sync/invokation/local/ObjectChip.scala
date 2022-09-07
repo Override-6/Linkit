@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.internal.util.ScalaUtils
 
@@ -81,6 +82,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         val worker                = WorkerPools.currentWorker
         val task                  = WorkerPools.currentTask.get
         val pool                  = worker.pool
+        AppLoggers.SyncObj.debug(s"Calling Method in another Procrastinator - '${contract.description.javaMethod}'")
         contract.procrastinator.runLater {
             result = callMethod(contract, params, caller)
             task.continue()

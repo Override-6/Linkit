@@ -209,12 +209,11 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
     
     @inline
     def putPoolRef(obj: Any): Unit = {
-        /*val idx0 = pool.globalPosition(obj)
-        if (idx0 == -1)
-            ""*/
         val idx = pool.globalPosition(obj)
-        if (idx < 0)
+        if (idx < 0) {
+            pool.globalPosition(obj) //for debugger purposes
             throw new ConcurrentModificationException(s"Unknown object $obj, Maybe the object has been added or it has replaced an old object during the serialisation.")
+        }
         putRef(idx)
     }
     

@@ -21,14 +21,14 @@ import org.jetbrains.annotations.NotNull
 import java.util
 import scala.reflect.ClassTag
 
-final class PoolChunk[T](val tag: Byte,
-                         val isData: Boolean,
+class PoolChunk[T](val tag: Byte,
+                         val useHashCode: Boolean, //true to bind items with their .hashCode, false to bind with their identity hash code
                          pool: ObjectPool,
                          length: Int) //-1 if no limit
                         (implicit cTag: ClassTag[T]) extends Freezable {
 
     private var buff          = new Array[T](if (length < 0) BuffSteps else length)
-    private final val buffMap = new util.HashMap[Int, Int]() //Buff item Identity Hash Code -> Buff Pos
+    protected final val buffMap = new util.HashMap[Int, Int]() //Buff item Hash Code -> Buff Pos
     private var pos           = 0
 
     private var frozen = false
@@ -40,6 +40,8 @@ final class PoolChunk[T](val tag: Byte,
         pos = buff.length
     }
 
+    protected def position() = pos
+
     def resetPos(): Unit = pos = 0
 
     def array: Array[T] = buff
@@ -47,6 +49,21 @@ final class PoolChunk[T](val tag: Byte,
     def add(t: T): Unit = {
         if (t == null)
             throw new NullPointerException("Can't add null item")
+        resize()
+        buff(pos) = t
+        if (useHashCode) {
+            buffMap.put(t.hashCode(), pos)
+        } else t match {
+            case obj: PoolObject[AnyRef] =>
+                buffMap.put(obj.identity, pos)
+            case obj: AnyRef             =>
+                buffMap.put(System.identityHashCode(obj), pos)
+        }
+        pos += 1
+
+    }
+
+    protected def resize(): Unit = {
         val pos = this.pos
         if (pos != 0 && pos % BuffSteps == 0) {
             if (length > 0 && pos >= length)
@@ -56,16 +73,6 @@ final class PoolChunk[T](val tag: Byte,
             System.arraycopy(buff, 0, extendedBuff, 0, pos)
             buff = extendedBuff
         }
-        buff(pos) = t
-        if (isData) {
-            buffMap.put(t.hashCode(), pos + 1)
-        } else t match {
-            case obj: PoolObject[AnyRef] =>
-                buffMap.put(obj.identity, pos + 1)
-            case obj: AnyRef             =>
-                buffMap.put(System.identityHashCode(obj), pos + 1)
-        }
-        this.pos += 1
     }
 
     def addIfAbsent(t: T): Int = {
@@ -74,7 +81,6 @@ final class PoolChunk[T](val tag: Byte,
             add(t)
         }
         idx
-
     }
 
     @NotNull
@@ -90,7 +96,7 @@ final class PoolChunk[T](val tag: Byte,
     def indexOf(t: Any): Int = {
         if (t == null)
             return -1
-        if (isData) buffMap.get(t.hashCode()) - 1
+        if (useHashCode) buffMap.get(t.hashCode()) - 1
         else buffMap.get(System.identityHashCode(t)) - 1
     }
 

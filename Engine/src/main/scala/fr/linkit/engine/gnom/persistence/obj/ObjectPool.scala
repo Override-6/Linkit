@@ -43,7 +43,7 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
         new PoolChunk[Enum[_]](Enum, true, this, sizes(Enum)),
         new PoolChunk[ProfilePoolObject[AnyRef]](Object, false, this, sizes(Object)),
         // Arrays
-        new PoolChunk[Array[_]](Array, false, this, sizes(Array)),
+        new ArrayPoolChunk(Array, this, sizes(Array)),
         // Context Objects Locations
         new PoolChunk[ReferencedPoolObject](RNO, false, this, sizes(RNO))
         )

@@ -28,8 +28,11 @@ object ArrayPersistence {
     def writeArrayContent(writer: ObjectWriter, array: Array[Any]): Unit = {
         val buff = writer.buff
         buff.putInt(array.length)
-        for (n <- array) {
-            writer.putPoolRef(n)
+        var n   = 0
+        val len = array.length
+        while (n < len) {
+            writer.putPoolRef(array(n))
+            n += 1
         }
     }
 
@@ -106,8 +109,8 @@ object ArrayPersistence {
         kind match {
             case Object => readObjectArray(reader)
             case String =>
-                val length = buff.getInt()
-                val array = new Array[String](length)
+                val length  = buff.getInt()
+                val array   = new Array[String](length)
                 val content = readArrayContent(reader, length)
                 new NotInstantiatedArray[String](reader.getPool, content, array)
             case _      =>
