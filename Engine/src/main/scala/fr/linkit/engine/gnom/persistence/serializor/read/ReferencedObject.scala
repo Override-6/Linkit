@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.persistence.ConstantProtocol.Object
 class ReferencedObject(override val referenceIdx: Int,
                        selector: ObjectSelector,
                        pool: DeserializerObjectPool) extends ReferencedPoolObject {
-    
+
     override lazy val reference: NetworkObjectReference = pool
             .getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
             .get(referenceIdx)
@@ -34,15 +34,17 @@ class ReferencedObject(override val referenceIdx: Int,
         case o                         =>
             throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
     }
-    
+
     override val identity: Int = referenceIdx
-    
+
     override lazy val value: AnyRef = {
-        NetworkObjectReferencesLocks.getLock(reference).synchronized {
+        val lock = NetworkObjectReferencesLocks.getLock(reference)
+        lock.lock()
+        try {
             retrieveObject()
-        }
+        } finally lock.unlock()
     }
-    
+
     private def retrieveObject(): AnyRef = (reference match {
         case OriginReferencedConnectedObjectReference(syncRef, originRef) =>
             val cacheRef = new SharedCacheReference(syncRef.family, syncRef.cacheID)
@@ -56,7 +58,7 @@ class ReferencedObject(override val referenceIdx: Int,
                 case cache                                      =>
                     throw new UnsupportedOperationException(s"Could not deserialize referenced sync object: $cacheRef referer to a shared cache of type '${cache.getClass.getName}', expected: ${classOf[DefaultConnectedObjectCache[_]].getName}. ")
             }.getOrElse(throw new NoSuchElementException(s"Could not find any shared cache at $cacheRef"))
-        
+
         case loc =>
             selector.findObject(loc).getOrElse {
                 throw new NoSuchElementException(s"Could not find network object referenced at $loc.")

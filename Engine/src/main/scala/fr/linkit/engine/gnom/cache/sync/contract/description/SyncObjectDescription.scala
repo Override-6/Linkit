@@ -56,7 +56,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(private val clazz:
     private def isIllegal(e: Executable): Boolean = {
         val isNameJKeyword = JavaKeywords(e.getName)
         if (isNameJKeyword)
-            AppLoggers.SyncObj.warn(s"Cannot handle method ${e} because its name is a java keyword.")
+            AppLoggers.ConnObj.warn(s"Cannot handle method ${e} because its name is a java keyword.")
         isNameJKeyword
     }
     
@@ -68,7 +68,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(private val clazz:
             import Modifier._
             val notAccessible = isPrivate(mods) || !(isProtected(mods) || isPublic(mods))
             if (notAccessible)
-                AppLoggers.SyncObj.warn(s"Cannot handle method ${e} because $tpe '${clazz.getName}' is not accessible for the generated Sync implementation class of '${this.clazz}'")
+                AppLoggers.ConnObj.warn(s"Cannot handle method ${e} because $tpe '${clazz.getName}' is not accessible for the generated Sync implementation class of '${this.clazz}'")
             notAccessible
         }
         

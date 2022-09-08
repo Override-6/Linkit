@@ -11,23 +11,27 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="GNOM" level="TRACE" additivity="false" includeLocation="false">
+        <Logger name="GNOM" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="GNOM.SyncObj" level="TRACE" additivity="false" includeLocation="false">
+        <Logger name="GNOM.ConnObj" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Mappings" level="TRACE" additivity="false" includeLocation="false">
+        <Logger name="GNOM.CO.Inv" level="OFF" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Persistence" level="TRACE" additivity="false" includeLocation="false">
+        <Logger name="Mappings" level="DEBUG" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="Traffic" level="TRACE" additivity="false" includeLocation="false">
+        <Logger name="Persistence" level="INFO" additivity="false" includeLocation="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Logger name="Traffic" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

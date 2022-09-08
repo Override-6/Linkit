@@ -151,7 +151,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         if (nrlOpt.isEmpty) {
             ref match {
                 case no: NetworkObject[_] =>
-                    AppLoggers.Persistence.trace(s"Sending Network Object (reference: ${no.reference}) to ${bundle.boundId}.")
+                    AppLoggers.Persistence.trace(s"Writing Network Object (reference: ${no.reference}) to ${bundle.boundId}.")
                 case _                    =>
             }
 
@@ -179,7 +179,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     private def addReferencedObject(ref: AnyRef, nrl: NetworkObjectReference): Unit = {
         ref match {
             case no: NetworkObject[_] =>
-                AppLoggers.Persistence.trace(s"Sending Network object (reference: ${no.reference}) to ${bundle.boundId}. The object is replaced by its reference.")
+                AppLoggers.Persistence.trace(s"Writing Network object (reference: ${no.reference}) to ${bundle.boundId}. The object is replaced by its reference.")
             case _                    =>
         }
 

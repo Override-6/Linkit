@@ -102,7 +102,6 @@ class ConsumerContainer[A]@Persist()() extends Deconstructible {
                 consumers -= this
                 return
             }
-            //AppLogger.debug(s"Calling $consumer...")
             consumer(t)
         }
 

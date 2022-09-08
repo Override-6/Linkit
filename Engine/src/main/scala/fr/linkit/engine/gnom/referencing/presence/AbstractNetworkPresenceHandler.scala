@@ -126,7 +126,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         val reference: R      = bundle.linkerReference.asInstanceOf[R]
         val pct               = request.nextPacket[Packet]
         val senderId          = bundle.coords.senderID
-        AppLoggers.GNOM.trace(s"handling bundle, request from $senderId. packet : $pct")
+        AppLoggers.GNOM.trace(s"Handling presence request bundle, request from $senderId. packet : $pct")
         pct match {
             case EmptyPacket =>
                 val isPresent = isLocationReferenced(reference)

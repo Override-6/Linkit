@@ -91,7 +91,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                 .filter(_.returnValueContract.isDefined)
                 .foreach { method =>
                     val javaMethod = method.description.javaMethod
-                    AppLoggers.SyncObj.warn(s"Method $javaMethod is hidden but seems to contain behavior contracts in its return value nor its parameters")
+                    AppLoggers.ConnObj.warn(s"Method $javaMethod is hidden but seems to contain behavior contracts in its return value nor its parameters")
                 }
     }
     

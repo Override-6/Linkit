@@ -51,7 +51,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
     def findTreeLocal(id: Int): Option[ConnectedObjectTree[A]] = trees.get(id)
     
     private[sync] def findTreeInternal(id: Int): Option[DefaultConnectedObjectTree[A]] = {
-        AppLoggers.Debug.trace(s"findTreeInternal($id): (${trees.get(id)})")
+        //AppLoggers.Debug.trace(s"findTreeInternal($id): (${trees.get(id)})")
         trees.get(id).orElse {
             center.requestTree(id)
             trees.get(id)
@@ -136,7 +136,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
         val reference = syncObj.reference
         if (syncObj.isInitialized)
             return
-        AppLoggers.SyncObj.trace(s"Initialising synchronized object at $reference.")
+        AppLoggers.ConnObj.trace(s"Initialising connected object at $reference.")
         val path    = reference.nodePath
         val treeID  = path.head
         val treeOpt = trees.get(treeID)
@@ -172,7 +172,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
             throw new SynchronizedObjectException(s"A tree with id '$id' already exists.")
         if (tree.dataFactory ne center)
             throw new SynchronizedObjectException("Attempted to attach a tree that comes from an unknown cache.")
-        AppLoggers.SyncObj.debug(s"New tree added ${tree.rootNode.reference}.")
+        AppLoggers.ConnObj.debug(s"New tree added ${tree.rootNode.reference}.")
         registerReference(tree.rootNode.reference)
         trees.put(id, tree)
     }

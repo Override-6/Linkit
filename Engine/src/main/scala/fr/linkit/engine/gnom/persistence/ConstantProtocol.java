@@ -22,24 +22,21 @@ public class ConstantProtocol {
     public static final byte UShortSize = 2;
     public static final byte IntSize = 3;
 
-    public static final byte Class = 0;     // announcement mark = 0b000000000000001
-    public static final byte SyncDef = 1;   // announcement mark = 0b000000000000010
-
-    public static final byte String = 2;    // announcement mark = 0b000000000000100
-    public static final byte Int = 3;       // announcement mark = 0b000000000001000
-    public static final byte Short = 4;     // announcement mark = 0b000000000010000
-    public static final byte Long = 5;      // announcement mark = 0b000000000100000
-    public static final byte Byte = 6;      // announcement mark = 0b000000001000000
-    public static final byte Double = 7;    // announcement mark = 0b000000010000000
-    public static final byte Float = 8;     // announcement mark = 0b000000100000000
-    public static final byte Boolean = 9;   // announcement mark = 0b000001000000000
-    public static final byte Char = 10;     // announcement mark = 0b000010000000000
-
-    public static final byte Enum = 11;     // announcement mark = 0b000100000000000
-    public static final byte Object = 12;   // announcement mark = 0b001000000000000
-    public static final byte Array = 13;    // announcement mark = 0b010000000000000
-    public static final byte RNO = 14;      // announcement mark = 0b100000000000000 - Referenced Network Object
-
+    public static final byte Class = 0;     // chunk mark = 0b000000000000001
+    public static final byte SyncDef = 1;   // chunk mark = 0b000000000000010
+    public static final byte String = 2;    // chunk mark = 0b000000000000100
+    public static final byte Int = 3;       // chunk mark = 0b000000000001000
+    public static final byte Short = 4;     // chunk mark = 0b000000000010000
+    public static final byte Long = 5;      // chunk mark = 0b000000000100000
+    public static final byte Byte = 6;      // chunk mark = 0b000000001000000
+    public static final byte Double = 7;    // chunk mark = 0b000000010000000
+    public static final byte Float = 8;     // chunk mark = 0b000000100000000
+    public static final byte Boolean = 9;   // chunk mark = 0b000001000000000
+    public static final byte Char = 10;     // chunk mark = 0b000010000000000
+    public static final byte Enum = 11;     // chunk mark = 0b000100000000000
+    public static final byte Object = 12;   // chunk mark = 0b001000000000000
+    public static final byte Array = 13;    // chunk mark = 0b010000000000000
+    public static final byte RNO = 14;      // chunk mark = 0b100000000000000 - Referenced Network Object
     public static final byte ChunkCount = 15;
 
 }

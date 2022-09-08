@@ -122,7 +122,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${obj.reference} on engine ${obj.ownerID}")
         modifyArgsIn(origin, args)
         val method = description.javaMethod
-        AppLoggers.SyncObj.debug {
+        AppLoggers.COInv.info {
             val name        = method.getName
             val methodID    = description.methodId
             val methodClass = obj.getClassDef.mainClass.getName
@@ -195,11 +195,11 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             }
         }
         if (currentMustReturn) {
-            AppLoggers.SyncObj.debug(debugMsg(null, localInvocation))
+            AppLoggers.COInv.info(debugMsg(null, localInvocation))
             puppeteer.sendInvoke(remoteInvocation)
             result = localResult
         } else {
-            AppLoggers.SyncObj.debug(debugMsg(remoteInvocation.agreement.getAppointedEngineReturn, localInvocation))
+            AppLoggers.COInv.info(debugMsg(remoteInvocation.agreement.getAppointedEngineReturn, localInvocation))
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
         }
 
@@ -207,7 +207,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     private def debugMsg(appointed: String, invocation: LocalMethodInvocation[_]): String = {
-        if (!AppLoggers.SyncObj.isDebugEnabled) return null
+        if (!AppLoggers.COInv.isInfoEnabled) return null
         val method    = description.javaMethod
         val name      = method.getName
         val methodID  = description.methodId

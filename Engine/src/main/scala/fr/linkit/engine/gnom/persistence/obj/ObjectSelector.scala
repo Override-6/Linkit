@@ -23,14 +23,16 @@ import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.referencing.ContextObject
 import fr.linkit.engine.gnom.referencing.presence.ExternalNetworkObjectPresence
 
+import java.util.concurrent.locks.ReentrantReadWriteLock
+
 class ObjectSelector(bundle: PersistenceBundle) {
-    
+
     private val gnol       = bundle.network.gnol
     private val rnol       = gnol.defaultNOL
     private val col        = bundle.config.contextualObjectLinker
     private val boundId    = bundle.boundId
     private val packetPath = bundle.packetPath
-    
+
     def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
         if (!obj.isInstanceOf[NetworkObject[_]]) {
             return findNonNetworkObjectReference(obj)
@@ -47,7 +49,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
         }
         found
     }
-    
+
     private def findConnectedObjectReference(obj: ConnectedObject[_]): Option[NetworkObjectReference] = {
         val reference = obj.reference
         val presence  = obj.presence
@@ -65,14 +67,14 @@ class ObjectSelector(bundle: PersistenceBundle) {
                         // object is present in several successive packets
                         presence.setToPresent(boundId)
                         AppLoggers.Persistence.trace(s"Presence at '$reference' automatically presumed to be present on engine $boundId as the object will be send to the engine")
-                    
+
                     case _ =>
                 }
             }
             opt
         }
     }
-    
+
     private def findNonNetworkObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {
         (col.findReferenceID(obj) match {
             case None     => None
@@ -82,7 +84,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
                 else None
         }).orElse(ChippedObjectAdapter.findAdapter(obj).flatMap(findConnectedObjectReference))
     }
-    
+
     private def findDynamicNetworkObjectReference(obj: DynamicNetworkObject[NetworkObjectReference]): Option[NetworkObjectReference] = {
         val reference = obj.reference
         val presence  = obj.presence
@@ -101,14 +103,14 @@ class ObjectSelector(bundle: PersistenceBundle) {
                         // object is present in several successive packets
                         presence.setToPresent(boundId)
                         AppLoggers.Persistence.trace(s"Presence at '$reference' automatically presumed to be present on engine $boundId as the object will be send to the engine")
-                    
+
                     case _ =>
                 }
             }
             opt
         }
     }
-    
+
     private def findNetworkObjectReference(obj: NetworkObject[NetworkObjectReference]): Option[NetworkObjectReference] = {
         val reference = obj.reference
         if (gnol.getPresence(reference).isPresentOn(boundId))
@@ -119,7 +121,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
             findNonNetworkObjectReference(obj) //send a reference of the object we want to synchronize
         }
     }
-    
+
     def findObject(reference: NetworkObjectReference): Option[AnyRef] = {
         gnol.findObject(reference) match {
             case Some(value: ContextObject) =>
@@ -127,10 +129,12 @@ class ObjectSelector(bundle: PersistenceBundle) {
             case o                          => o
         }
     }
-    
+
     def handleObject(obj: NetworkObject[NetworkObjectReference]): Unit = {
         val reference = obj.reference
-        NetworkObjectReferencesLocks.getLock(reference).synchronized {
+        val lock = NetworkObjectReferencesLocks.getLock(reference)
+        lock.lock()
+        try {
             gnol.findRootLinker(reference) match {
                 case Some(linker: InitialisableNetworkObjectLinker[NetworkObjectReference]) =>
                     AppLoggers.Persistence.trace(s"Initializing network object $reference")
@@ -143,7 +147,9 @@ class ObjectSelector(bundle: PersistenceBundle) {
                     }
                     AppLoggers.Persistence.trace(s"No handling method found for reference $reference.")
             }
+        } finally {
+            lock.unlock()
         }
     }
-    
+
 }

@@ -37,9 +37,19 @@ object RSFCClient {
         dir.register(watcher, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE)
         new Thread(() => while (true) {
             val key = watcher.take()
+            //val context = key.watchable()
             key.pollEvents().forEach {
                 event => {
-                    println(s"${event.context()}: ${event.kind()}")
+                    val path = event.context().asInstanceOf[Path]
+                    event.kind() match {
+                        case ENTRY_DELETE => println(s"Deleted file '$path'")
+                        case ENTRY_CREATE => println(s"Created file '$path'")
+                        case ENTRY_MODIFY =>
+                            //val content = serverStatics[Files].readString(path): String
+                            println(s"Modified file '$path'")
+                        //println(s"content is now:")
+                        //println(content)
+                    }
                 }
             }
             key.reset()

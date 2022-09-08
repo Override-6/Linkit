@@ -16,11 +16,12 @@ package fr.linkit.api.internal.system.log
 import org.apache.logging.log4j.{LogManager, Logger}
 
 object AppLoggers {
-    
+
     final val Root        = LogManager.getRootLogger
     final val App         = logger("Application")
     final val GNOM        = logger("GNOM")
-    final val SyncObj     = logger("GNOM.SyncObj")
+    final val ConnObj     = logger("GNOM.ConnObj")
+    final val COInv       = logger("GNOM.CO.Inv")
     final val Mappings    = logger("Mappings")
     final val Persistence = logger("Persistence")
     final val Traffic     = logger("Traffic")
@@ -28,9 +29,9 @@ object AppLoggers {
     final val Compilation = logger("Compilation")
     final val Worker      = logger("Worker")
     final val Connection  = logger("Connection")
-    
+
     //Debug logger used to print stuff that are not pertinent for the user and that must be removed once the bug is fixed
     final val Debug = logger("Debug")
-    
+
     private def logger(name: String): Logger = LogManager.getLogger(name)
 }

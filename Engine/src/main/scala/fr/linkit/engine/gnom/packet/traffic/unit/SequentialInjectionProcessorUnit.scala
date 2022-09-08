@@ -43,7 +43,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
     @volatile private final var packetCount = 0
 
     override def post(result: PacketDownload): Unit = {
-        AppLoggers.Persistence.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderID}) Current unit executor: $executor.")
+        AppLoggers.Traffic.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderID}) Current unit executor: $executor.")
 
 
         queues.synchronized {
@@ -64,7 +64,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                 if (executor.isSleeping) {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
-                    AppLoggers.Persistence.info(s"(SIPU $reference): Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
+                    AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
                     try executor.runWhileSleeping(deserializeAll(true))
                     catch {
                         case _: IllegalThreadStateException =>
@@ -81,7 +81,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                         //thread is blocked, let's transfer all the remaining deserialization / injection work to this thread.
                         //This operation has been made up in order to avoid possible deadlocks in local, or through the network.
                         //If the initial executor is notified or unparked, it will simply give up this SIPU.
-                        AppLoggers.Persistence.info(s"(SIPU $reference): Turns out that the executor is blocked. All injections of the executor ($executor) are transferred to this thread.")
+                        AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that the executor is blocked. All injections of the executor ($executor) are transferred to this thread.")
                     //do not returns which will let the current thread enter in the deserialization process,
                     //when the initial executor will get unblocked, it'll detect that his work has been transferred to current thread and so will exit this unit.
 
@@ -136,7 +136,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
             return
         //everything deserialized, now realising this deserialization unit.
         currentTask.synchronized {
-            AppLoggers.Persistence.trace(s"Releasing current unit...")
+            AppLoggers.Traffic.trace(s"Releasing current unit...")
             if (!duringSleep) executor = null
             joinLocker.wakeupAllTasks()
             this.synchronized(this.notifyAll())
@@ -148,12 +148,12 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
      * */
     def join(): Unit = {
         if (executor == null) return //the current IPU is not processing any injection
-        AppLoggers.Persistence.debug(s"(SIPU $reference): Waiting for unit to end injections before continuing")
+        AppLoggers.Traffic.debug(s"(SIPU $reference): Waiting for unit to end injections before continuing")
         val currentTask = WorkerPools.currentTask.orNull
         if (currentTask == null && executor != null)
             this.synchronized(wait())
         else if (executor != null) {
-            AppLoggers.Persistence.trace(s"Pausing task, waiting for '$executor' to finish.")
+            AppLoggers.Traffic.trace(s"Pausing task, waiting for '$executor' to finish.")
             currentTask.synchronized {}
             joinLocker.pauseTask()
         }
@@ -162,7 +162,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
     private def deserializeNextResult(): Unit = {
         val result = nextResult()
         if (result == null) return
-        AppLoggers.Persistence.trace(s"(SIPU $reference): handling packet deserialization and injection (ord: ${result.ordinal})")
+        AppLoggers.Traffic.trace(s"(SIPU $reference): handling packet deserialization and injection (ord: ${result.ordinal})")
         result.makeDeserialization()
         val bundle = new PacketBundle {
             override val packet    : Packet            = result.packet
@@ -209,7 +209,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                     return nextResult()
                 }
                 if (waitingForRefocus) {
-                    AppLoggers.Persistence.debug(s"(SIPU $reference): Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
+                    AppLoggers.Traffic.debug(s"(SIPU $reference): Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
                     refocusingLocker.pauseTask()
                     waitingForRefocus = false
                 }
@@ -220,7 +220,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
             }
             if (currentOrdinal ne result) {
                 currentOrdinal = expectedOrdinal
-                AppLoggers.Debug.trace(s"(SIPU $reference): current ordinal is now $currentOrdinal.")
+                AppLoggers.Traffic.trace(s"(SIPU $reference): current ordinal is now $currentOrdinal.")
             }
             result
         }

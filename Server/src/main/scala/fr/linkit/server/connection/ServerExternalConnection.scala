@@ -18,17 +18,15 @@ import fr.linkit.api.application.connection.{ConnectionException, ExternalConnec
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
+import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload, PacketTransfer, PacketUpload}
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
-import fr.linkit.server.connection.traffic.ordinal.ConnectionsOrdinalsRectifier
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
-import java.nio.ByteBuffer
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
 
@@ -133,7 +131,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     @workerExecution
     private def handlePacket(result: PacketDownload): Unit = {
         val path = result.coords.path
-        AppLoggers.Debug.trace(s"Handling packet for $boundIdentifier at ${TrafficReference / path}")
         for (session <- server.getAllConnectionSessions) if (session ne this.session) {
             ""
             /*val shift = session.ordinalsRectifier.getOrdinalShift(path)

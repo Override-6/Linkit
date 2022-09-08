@@ -29,7 +29,7 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
         new PoolChunk[Class[_]](Class, true, this, sizes(Class)),
         new PoolChunk[SyncClassDef](SyncDef, true, this, sizes(SyncDef)),
         // Strings
-        new PoolChunk[String](String, false, this, sizes(String)),
+        new PoolChunk[String](String, true, this, sizes(String)),
         // Primitives (primitives stored into primitives arrays are not contained in those chunks)
         new PoolChunk[Int](Int, true, this, sizes(Int)),
         new PoolChunk[Short](Short, true, this, sizes(Short)),

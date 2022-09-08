@@ -46,12 +46,12 @@ class DefaultEngine(override val identifier: String,
                     isMappingsInitializing = true
                     mappings = {
                         if (isCurrentEngine) {
-                            AppLoggers.Persistence.info(s"Class mappings of this engine has been sent over the network.")
+                            AppLoggers.Mappings.debug(s"Class mappings of this engine has been sent over the network.")
                             Some(cache.syncObject(identifier.hashCode, New[RemoteClassMappings](identifier)))
                         } else {
                             val r = cache.findObject(identifier.hashCode)
                             if (r.isDefined)
-                                AppLoggers.Persistence.info(s"Established connection with class mappings of '$identifier'.")
+                                AppLoggers.Mappings.debug(s"Established connection with class mappings of '$identifier'.")
                             r
                         }
                     }

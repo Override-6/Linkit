@@ -22,14 +22,14 @@ import java.util
 import scala.reflect.ClassTag
 
 class PoolChunk[T](val tag: Byte,
-                         val useHashCode: Boolean, //true to bind items with their .hashCode, false to bind with their identity hash code
-                         pool: ObjectPool,
-                         length: Int) //-1 if no limit
-                        (implicit cTag: ClassTag[T]) extends Freezable {
+                   val useHashCode: Boolean, //true to bind items with their .hashCode, false to bind with their identity hash code
+                   pool: ObjectPool,
+                   length: Int) //-1 if no limit
+                  (implicit cTag: ClassTag[T]) extends Freezable {
 
-    private var buff          = new Array[T](if (length < 0) BuffSteps else length)
+    private var buff            = new Array[T](if (length < 0) BuffSteps else length)
     protected final val buffMap = new util.HashMap[Int, Int]() //Buff item Hash Code -> Buff Pos
-    private var pos           = 0
+    private var pos             = 0
 
     private var frozen = false
 
@@ -51,6 +51,7 @@ class PoolChunk[T](val tag: Byte,
             throw new NullPointerException("Can't add null item")
         resize()
         buff(pos) = t
+        pos += 1
         if (useHashCode) {
             buffMap.put(t.hashCode(), pos)
         } else t match {
@@ -59,7 +60,6 @@ class PoolChunk[T](val tag: Byte,
             case obj: AnyRef             =>
                 buffMap.put(System.identityHashCode(obj), pos)
         }
-        pos += 1
 
     }
 

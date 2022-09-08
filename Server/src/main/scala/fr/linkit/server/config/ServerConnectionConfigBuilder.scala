@@ -25,7 +25,7 @@ abstract class ServerConnectionConfigBuilder {
 
     var maxConnection                 : Int               = Int.MaxValue
     var enableEventHandling           : Boolean           = true
-    var nWorkerThreadFunction         : Int => Int        = _ * 2 + 2 //2 threads per external connection allocated + 1 for the server connection
+    var nWorkerThreadFunction         : Int => Int        = _ + 2 //1 thread per client connection + 2 for the server connection
     var configName                    : String            = s"config#$count"
     var hasher                        : BytesHasher       = BytesHasher.inactive
     var identifierAmbiguityStrategy   : AmbiguityStrategy = AmbiguityStrategy.REJECT_NEW

@@ -44,7 +44,7 @@ class StaticAccessorImpl(staticCaller: MethodCaller, staticClass: Class[_]) exte
         val method          = {
             val found = staticMethods.filter(m => m.getName == name && (mustSpeculate || m.getReturnType == returnType) && isAssignable(params, m))
             if (found.length == 1) found.head
-            else throw new NoSuchElementException(s"Could not find static method '$name(${params.mkString("Array(", ", ", ")")}): ${if (mustSpeculate) "<?>" else returnType.getName}' in class $staticClass")
+            else throw new NoSuchElementException(s"Could not find static method '$name(${params.mkString(", ")}): ${if (mustSpeculate) "<?>" else returnType.getName}' in class $staticClass")
         }
         val methodID        = MethodDescription.computeID(method)
         val nameID          = if (methodID < 0) s"_${methodID.abs}" else methodID.toString
@@ -57,7 +57,7 @@ class StaticAccessorImpl(staticCaller: MethodCaller, staticClass: Class[_]) exte
         val params        = method.getParameters
         val types         = params.map(_.getType)
         val lastIsVarargs = params.lastOption.exists(_.isVarArgs)
-        if (!lastIsVarargs && params.length != types.length)
+        if (!lastIsVarargs && args.length != params.length)
             return false
         val argsLength = args.length
         var i          = 0

@@ -39,7 +39,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
 
     override def callMethod(methodID: Int, params: Array[Any], caller: Engine): Any = {
         val methodContract = contract.findMethodContract[Any](methodID).getOrElse {
-            throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${chippedObject.getClassDef}.")
+             throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${chippedObject.getClassDef}.")
         }
         val hideMsg        = methodContract.hideMessage
         if (hideMsg.isDefined)
@@ -82,7 +82,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         val worker                = WorkerPools.currentWorker
         val task                  = WorkerPools.currentTask.get
         val pool                  = worker.pool
-        AppLoggers.SyncObj.debug(s"Calling Method in another Procrastinator - '${contract.description.javaMethod}'")
+        AppLoggers.COInv.debug(s"Calling Method in another Procrastinator - '${contract.description.methodId}'")
         contract.procrastinator.runLater {
             result = callMethod(contract, params, caller)
             task.continue()
