@@ -13,6 +13,8 @@
 
 package fr.linkit.engine.internal.mapping
 
+import fr.linkit.api.internal.system.log.AppLoggers
+
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -36,7 +38,7 @@ object MappedClassesTree {
         def findClass(className: String): Option[Class[_]] = {
             findClass0(className.split('.').last)
         }
-        
+
         private def findClass0(className: String): Option[Class[_]] = {
             val result = classes.get(className)
             if (result.nonEmpty)
@@ -56,18 +58,18 @@ object MappedClassesTree {
                 throw new IllegalArgumentException("pckName.length <= this package name length")
 
             val bound = if (name.isEmpty) name.length else name.length + 1
-            val idx = pckName.indexOf('.', bound)
+            val idx   = pckName.indexOf('.', bound)
             val first = pckName.take(if (idx == -1) pckName.length else idx)
             subPackages.get(first).flatMap(_.findPackage(pckName))
         }
-        
+
         private def getFullPackageName(clazz: Class[_]): String = {
             val packageName = clazz.getPackageName
-            var c = clazz.getDeclaringClass
+            var c           = clazz.getDeclaringClass
             if (c == null) {
                 return packageName
             }
-            
+
             val classes = ListBuffer.empty[String]
             while (c != null) {
                 classes += c.getSimpleName
@@ -76,26 +78,28 @@ object MappedClassesTree {
             packageName + "." + classes.reverse.mkString(".")
         }
 
-        private[MappedClassesTree] def addClass(clazz: Class[_]): Unit = addClass(getFullPackageName(clazz), clazz)
-        
+        private[MappedClassesTree] def addClass(clazz: Class[_]): Unit = {
+            addClass(getFullPackageName(clazz), clazz)
+        }
+
         private def addClass(classPackage: String, clazz: Class[_]): Unit = {
             if (classPackage == name) {
                 classes.put(clazz.getSimpleName, clazz)
                 for (inner <- clazz.getDeclaredClasses) {
                     val nextPackageName = classPackage + "." + clazz.getSimpleName
-                    val nextPackage = subPackages.getOrElseUpdate(nextPackageName, PackageItem(nextPackageName))
+                    val nextPackage     = subPackages.getOrElseUpdate(nextPackageName, PackageItem(nextPackageName))
                     nextPackage.addClass(nextPackageName, inner)
                 }
                 return
             }
             if (!classPackage.startsWith(name))
                 throw new IllegalArgumentException(s"could not add $clazz to package item '$name': class package is not a child of this package.")
-            val idx = classPackage.indexOf('.', name.length + 1)
+            val idx             = classPackage.indexOf('.', name.length + 1)
             val nextPackageName = if (idx == -1) classPackage else classPackage.take(idx)
-            val nextPackage = subPackages.getOrElseUpdate(nextPackageName, PackageItem(nextPackageName))
+            val nextPackage     = subPackages.getOrElseUpdate(nextPackageName, PackageItem(nextPackageName))
             nextPackage.addClass(classPackage, clazz)
         }
-        
+
 
     }
 

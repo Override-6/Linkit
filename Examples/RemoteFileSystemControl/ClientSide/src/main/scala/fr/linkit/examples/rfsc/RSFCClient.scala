@@ -13,6 +13,8 @@ import java.net.InetSocketAddress
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
 import java.util.concurrent.ThreadLocalRandom
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 object RSFCClient {
 
@@ -37,18 +39,17 @@ object RSFCClient {
         dir.register(watcher, ENTRY_DELETE, ENTRY_MODIFY, ENTRY_CREATE)
         new Thread(() => while (true) {
             val key = watcher.take()
-            //val context = key.watchable()
             key.pollEvents().forEach {
                 event => {
-                    val path = event.context().asInstanceOf[Path]
+                    val path: Path = serverStatics[Path].of(event.context().toString)
                     event.kind() match {
                         case ENTRY_DELETE => println(s"Deleted file '$path'")
                         case ENTRY_CREATE => println(s"Created file '$path'")
                         case ENTRY_MODIFY =>
-                            //val content = serverStatics[Files].readString(path): String
+                            val content = serverStatics[Files].readString(path): String
                             println(s"Modified file '$path'")
-                        //println(s"content is now:")
-                        //println(content)
+                            println(s"content is now:")
+                            println(content)
                     }
                 }
             }

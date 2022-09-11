@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{FieldDescription, MethodDescription, SyncClassDef}
 import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.{SyntheticMod, isNotOverrideable}
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverrideable
 import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.JavaKeywords
 
 import java.lang.reflect.{Executable, Method, Modifier}
@@ -47,7 +47,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(private val clazz:
         if (!mustBeOverrideable) {
             import Modifier._
             val mods = e.getModifiers
-            isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || !isPublic(mods) || isIllegal(e)
+            isPrivate(mods) || isStatic(mods) || !isPublic(mods) || isIllegal(e)
         }  else isNotOverrideable(e.getModifiers) || containsNonAccessibleElements(e) || isIllegal(e)
     }
     
@@ -89,8 +89,7 @@ class SyncObjectDescription[A <: AnyRef] @Persist() protected(private val clazz:
 
 object SyncObjectDescription {
     
-    private val SyntheticMod = 0x00001000
-    
+
     private val cache = mutable.HashMap.empty[Int, SyncObjectDescription[_]]
     
     def apply[A <: AnyRef](specs: SyncClassDef): SyncObjectDescription[A] = cache.getOrElseUpdate(specs.id, {
@@ -103,6 +102,6 @@ object SyncObjectDescription {
     
     def isNotOverrideable(mods: Int): Boolean = {
         import Modifier._
-        isPrivate(mods) || (mods & SyntheticMod) != 0 /*is Synthetic*/ || isStatic(mods) || isFinal(mods) || !isPublic(mods)
+        isPrivate(mods) || isStatic(mods) || isFinal(mods) || !isPublic(mods)
     }
 }

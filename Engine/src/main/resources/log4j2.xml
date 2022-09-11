@@ -19,7 +19,7 @@
             <AppenderRef ref="Console"/>
         </Logger>
 
-        <Logger name="GNOM.CO.Inv" level="OFF" additivity="false" includeLocation="false">
+        <Logger name="GNOM.CO.Inv" level="INFO" additivity="false" includeLocation="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

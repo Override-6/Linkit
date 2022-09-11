@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription.computeID
+import fr.linkit.api.internal.system.log.AppLoggers
 
 import java.lang.reflect.{InaccessibleObjectException, Method, Parameter}
 

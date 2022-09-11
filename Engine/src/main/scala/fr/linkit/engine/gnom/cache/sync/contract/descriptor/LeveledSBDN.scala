@@ -320,7 +320,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                         md, None, null)
                     methods.put(id, emergencyContract)
                 case None     =>
-                //throw new NoSuchElementException(s"Could not find method with id '$id'")
+                    //throw new NoSuchElementException(s"Could not find method with id '$id'")
             }
         }
     }

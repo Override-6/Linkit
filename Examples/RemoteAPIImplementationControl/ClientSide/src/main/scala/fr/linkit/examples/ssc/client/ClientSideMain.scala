@@ -16,6 +16,7 @@ object ClientSideMain {
     private final val Address = new InetSocketAddress("localhost", 48481)
 
     def main(args: Array[String]): Unit = {
+
         val pool = WorkerPools.newHiringPool("main")
         pool.hireCurrentThread()
         start()

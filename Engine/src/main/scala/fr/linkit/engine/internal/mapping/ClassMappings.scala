@@ -32,7 +32,7 @@ object ClassMappings {
     private var haveListeners = false
 
     private[mapping] def classCodes: Array[Int] = classes.keys.toArray
-    
+
     def classCount: Int = classes.size
 
     def putClass(className: String, loader: ClassLoader): Class[_] = {
@@ -40,8 +40,15 @@ object ClassMappings {
         val clazz     = Class.forName(className, false, loader)
         val classCode = className.hashCode
         classes.put(classCode, createMapValue(clazz))
-        notifyListeners(classCode)
-        MappedClassesTree.addClass(clazz)
+        try {
+            notifyListeners(classCode)
+            MappedClassesTree.addClass(clazz)
+        } catch {
+            case e: LinkageError =>
+                val insights = if (AppLoggers.Mappings.isDebugEnabled) e.toString else e.getClass.getSimpleName
+                AppLoggers.Mappings.error(s"Could not map '$clazz' (code: $classCode): $insights")
+                classes.remove(classCode)
+        }
         clazz
     }
 
