@@ -11,10 +11,12 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.context
+package fr.linkit.engine.test.mocks
 
-trait Deconstructible {
+import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
 
-    def deconstruct(): Array[Any]
-
+class NetworkObjectLinkerMock[R <: NetworkObjectReference](val alwaysPresent: Boolean) extends AbstractNetworkPresenceHandlerMock[R](alwaysPresent) with NetworkObjectLinker[R] {
+    
+    override def findObject(reference: R): Option[NetworkObject[_ <: R]] =
 }
