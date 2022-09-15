@@ -23,6 +23,9 @@ import java.util.zip.Adler32
 
 class LocalResourceFile(@NotNull parent: ResourceFolder, path: Path) extends AbstractResource(parent, path) with ResourceFile with LocalResource {
 
+    if (parent == null)
+        throw new IllegalStateException("Resource file has no parent.")
+    
     protected val entry = new DefaultResourceEntry[ResourceFile](this)
 
     override def getEntry: ResourceEntry[ResourceFile] = entry

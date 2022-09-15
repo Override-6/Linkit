@@ -56,7 +56,7 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
         val id = reference.objectID
         val result = codeToRef.get(id)
         if (result == null && parent != null)
-            return findObject(reference)
+            return parent.findObject(reference)
         if (result eq null) None
         else {
             val obj = result match {

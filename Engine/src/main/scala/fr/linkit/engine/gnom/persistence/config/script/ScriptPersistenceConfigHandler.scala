@@ -22,6 +22,6 @@ object ScriptPersistenceConfigHandler extends SimpleScriptHandler[PersistenceScr
     override val classPackage: String = "gen.scala.persistence.config.script"
 
     override def newScriptContext(scriptSourceCode: String, scriptName: String, additionalArguments: Map[String, Class[_]], scriptClassLoader: ClassLoader): ScriptContext = {
-        new ScriptConfigContext(scriptSourceCode, scriptName, classOf[PersistenceScriptConfig], additionalArguments, scriptClassLoader)
+        new PersistenceScriptConfigContext(scriptSourceCode, scriptName, classOf[PersistenceScriptConfig], additionalArguments, scriptClassLoader)
     }
 }

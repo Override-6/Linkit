@@ -20,7 +20,7 @@ import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
-private[gnom] class MapNetworkObjectLinker(omc: ObjectManagementChannel) extends AbstractNetworkPresenceHandler[NetworkObjectReference](null, omc) with NetworkObjectLinker[NetworkObjectReference] {
+class MapNetworkObjectLinker(omc: ObjectManagementChannel) extends AbstractNetworkPresenceHandler[NetworkObjectReference](null, omc) with NetworkObjectLinker[NetworkObjectReference] {
 
     private val map = mutable.HashMap.empty[NetworkObjectReference, NetworkObject[NetworkObjectReference]]
 

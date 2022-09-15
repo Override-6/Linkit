@@ -22,9 +22,7 @@ import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.Versions
 
 trait ApplicationContext extends StaticNetworkObject[ApplicationReference.type] with ProcrastinatorControl {
-
-    val configuration: ApplicationConfiguration
-
+    
     val versions: Versions
 
     val compilerCenter: CompilerCenter

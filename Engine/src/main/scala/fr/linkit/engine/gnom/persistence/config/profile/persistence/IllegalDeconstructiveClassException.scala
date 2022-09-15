@@ -11,13 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.persistence.context;
+package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import fr.linkit.engine.gnom.persistence.PersistenceException
 
-@Target(ElementType.CONSTRUCTOR)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Persist {}
+class IllegalDeconstructiveClassException(msg: String, cause: Throwable = null) extends PersistenceException(msg, cause)

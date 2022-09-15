@@ -17,15 +17,15 @@ import fr.linkit.api.application.resource.external._
 import fr.linkit.api.application.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
 import fr.linkit.api.application.resource.{OpenActionShortener, ResourceListener}
 import fr.linkit.engine.application.resource.base.BaseResourceFolder
+import org.jetbrains.annotations.Nullable
 
 import java.nio.file.{Files, Path}
 import scala.reflect.{ClassTag, classTag}
 
 class LocalResourceFolder protected(adapter: Path,
                                     listener: ResourceListener,
-                                    parent: ResourceFolder) extends BaseResourceFolder(parent, listener, adapter) with LocalFolder {
+                                    @Nullable parent: ResourceFolder) extends BaseResourceFolder(parent, listener, adapter) with LocalFolder {
 
-    //println(s"Creating resource folder $getLocation...")
 
     override def createOnDisk(): Unit = Files.createDirectories(getPath)
 

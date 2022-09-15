@@ -32,7 +32,7 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class ServerApplication private(override val configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ServerApplicationContext {
+class ServerApplication(configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ServerApplicationContext {
 
     protected override val appPool            = new SimpleClosedWorkerPool(configuration.mainPoolThreadCount, "Application")
     private            val serverCache        = mutable.HashMap.empty[Any, ServerConnection]

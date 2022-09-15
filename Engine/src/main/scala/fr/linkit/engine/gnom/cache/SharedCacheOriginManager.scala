@@ -13,14 +13,15 @@
 
 package fr.linkit.engine.gnom.cache
 
+import fr.linkit.api.gnom.cache.CacheSearchMethod._
 import fr.linkit.api.gnom.cache.traffic.handler.{CacheAttachHandler, CacheContentHandler}
 import fr.linkit.api.gnom.cache.{CacheContent, CacheOpenException, CacheSearchMethod}
-import CacheSearchMethod._
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
-import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+import fr.linkit.api.gnom.persistence.context.Deconstructible
+import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.AbstractSharedCacheManager.SystemCacheRange
@@ -35,11 +36,11 @@ final class SharedCacheOriginManager @Persist()(family: String,
                                                 network: Network,
                                                 omc: ObjectManagementChannel,
                                                 store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, omc, store) with Deconstructible {
-
+    
     override val ownerID: String = network.connection.currentIdentifier
-
+    
     override def deconstruct(): Array[Any] = Array(family, network, store)
-
+    
     override def handleRequest(requestBundle: RequestPacketBundle): Unit = {
         val coords        = requestBundle.coords
         val requestPacket = requestBundle.packet
@@ -50,11 +51,11 @@ final class SharedCacheOriginManager @Persist()(family: String,
             case unknown                                      => throw UnexpectedPacketException(s"Unknown packet $unknown.")
         }
     }
-
+    
     override protected def remoteCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
         //DO Nothing, This cache is the origin, it can do whatever he wants, so no checks have to be performed from here.
     }
-
+    
     /**
      * Retrieves the cache content of a given cache identifier.
      *
@@ -67,18 +68,18 @@ final class SharedCacheOriginManager @Persist()(family: String,
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
         LocalCachesStore.getContent(cacheID)
     }
-
+    
     private def handlePreCacheOpeningRequest(cacheID: Int, cacheType: Class[_], senderID: String, response: Submitter[_]): Unit = breakable {
         def acceptRequest: Nothing = {
             response.addPacket(EmptyPacket).submit()
             break
         }
-
+        
         def failRequest(msg: String): Nothing = {
             response.addPacket(StringPacket(msg)).submit()
             break
         }
-
+        
         LocalCachesStore.findCache(cacheID) match {
             case None                  =>
                 //The cache is accepted because it is not yet opened.
@@ -88,7 +89,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
                 val cacheClass = registeredCache.cache.getClass
                 if (!cacheType.isAssignableFrom(cacheClass))
                     failRequest(s"For cache identifier $cacheID: Shared cache of type '${cacheClass.getName}', contained in local storage is not assignable to requested cache '${cacheType.getName}'.")
-
+                
                 val isSystemCache = SystemCacheRange contains cacheID
                 registeredCache.channel.getHandler match {
                     case None                            => acceptRequest //There is no attach handler set, the cache is free to accept any thing
@@ -101,29 +102,29 @@ final class SharedCacheOriginManager @Persist()(family: String,
                 }
         }
     }
-
+    
     private def handleContentRetrievalRequest(requestBundle: RequestPacketBundle, cacheID: Int): Unit = breakable {
         AppLoggers.GNOM.trace(s"handling content retrieval request (cacheID: $cacheID, family: $family)")
         val coords   = requestBundle.coords
         val request  = requestBundle.packet
         val response = requestBundle.responseSubmitter
-
+        
         val senderID: String = coords.senderID
         val behavior         = request.getAttribute[CacheSearchMethod]("behavior").get //TODO orElse throw an exception
-
+        
         def failRequest(msg: String): Nothing = {
             AppLoggers.GNOM.error(s"Could not send cache content to $senderID: $msg")
             response.addPacket(StringPacket(msg))
                     .submit()
             break
         }
-
+        
         def sendContent(content: Option[CacheContent]): Unit = {
             AppLoggers.GNOM.trace(s"sending cache content (cacheID: $cacheID, family: $family)")
             response.addPacket(RefPacket[Option[CacheContent]](content))
                     .submit()
         }
-
+        
         def handleContentNotAvailable(): Unit = behavior match {
             case GET_OR_CRASH =>
                 failRequest(s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
@@ -138,7 +139,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
             case GET_OR_OPEN  =>
                 sendContent(None)
         }
-
+        
         LocalCachesStore.findCache(cacheID)
                 .fold(handleContentNotAvailable()) { storedCache =>
                     val content       = storedCache.getContent

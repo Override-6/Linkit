@@ -29,12 +29,6 @@ trait InjectableTrafficNode[+C <: PacketInjectable] extends TrafficNode[C] {
      *     However, for anything else that just needs speed (streaming etc), the performance state can be interesting.
      * </p>
      * <p>
-     *     __Note__ : if [[persistenceConfig.autoContextObjects]] is enabled while using this mode, the persistence system could
-     *     end up with [[fr.linkit.api.gnom.persistence.context.ContextualObjectReference]] that are badly synchronized with other engines.
-     *     This could have for effect, depending on the amount of object that are to resynchronize,
-     *     to use much more bandwidth because the persistence system will be forced to send
-     *     a lot of packets in order to retrieve/send objects that are referenced by ContextualObjectReferences, but that could not point to an actual object
-     * </p>
      * */
     def setPerformantInjection(): this.type
     

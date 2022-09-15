@@ -29,7 +29,7 @@ import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.unit.SequentialInjectionProcessorUnit
-import fr.linkit.engine.gnom.persistence.config.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
+import fr.linkit.engine.gnom.persistence.config.{PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.referencing.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 import fr.linkit.engine.internal.util.ClassMap
@@ -40,15 +40,14 @@ import scala.reflect.ClassTag
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
                                      defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
     
-    private  val context                 : ImmutablePersistenceContext = ImmutablePersistenceContext()
-    private  val minimalConfigBuilder                                  = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
-    private  val omcNode                                               = createObjectManagementChannel()
-    private  val objectChannel                                         = omcNode.injectable
-    override val defaultPersistenceConfig: PersistenceConfig           = {
+    private  val minimalConfigBuilder                        = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
+    private  val omcNode                                     = createObjectManagementChannel()
+    private  val objectChannel                               = omcNode.injectable
+    override val defaultPersistenceConfig: PersistenceConfig = {
         defaultPersistenceConfigUrl
                 .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
                 .transfer(minimalConfigBuilder)
-                .build(context, null, objectChannel)
+                .build(null, objectChannel)
     }
     
     override  val reference  : TrafficReference      = TrafficReference
@@ -142,10 +141,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     private def createObjectManagementChannel(): TrafficNode[ObjectManagementChannel] = {
         val objectChannelConfig = {
             val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
-            new SimplePersistenceConfig(
-                context, new ClassMap(), linker,
-                false, true
-                )
+            new SimplePersistenceConfig(new ClassMap(), linker)
         }
         val objectChannel       = {
             val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)

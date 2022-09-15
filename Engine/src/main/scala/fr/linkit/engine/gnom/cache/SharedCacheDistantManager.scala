@@ -18,7 +18,8 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
-import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+import fr.linkit.api.gnom.persistence.context.Deconstructible
+import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}

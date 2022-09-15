@@ -17,12 +17,7 @@ import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
 
 trait PersistenceConfig extends TypeProfileStore {
-
-
-    def contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH
     
-    def useUnsafe: Boolean
-
-    def autoContextObjects: Boolean
+    def contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH
 
 }

@@ -38,7 +38,7 @@ class ObjectsProperty private(override val name: String,
     }
     
     override def equals(obj: Any): Boolean = obj match {
-        case obj: ObjectsProperty => obj.name == name && obj.map == map && obj.parent == parent
+        case obj: ObjectsProperty => obj.name == name && obj.map.keys == map.keys && obj.parent == parent
         case _                    => false
     }
     
@@ -65,7 +65,6 @@ object ObjectsProperty {
             "connection" -> network.connection,
             "app" -> network.connection.getApp,
             "application" -> network.connection.getApp,
-            //"server" -> network.serverEngine,
             "traffic" -> network.connection.traffic,
             ))
     }

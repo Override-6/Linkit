@@ -34,61 +34,56 @@ import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class PersistenceConfigBuilder {
-
+    
     private val persistors     = new ClassMap[TypePersistence[_ <: AnyRef]]
     private val referenceStore = mutable.HashMap.empty[Int, AnyRef]
-
-    protected var unsafeUse           = true
-    protected var referenceAllObjects = false
-
+    
     def this(other: PersistenceConfigBuilder) {
         this()
         transfer(other)
     }
-
+    
     object profiles {
-
+        
         private[PersistenceConfigBuilder] val customProfiles = new mutable.HashMap[Class[_], TypeProfileBuilder[_ <: AnyRef]]()
-
+        
         def +=[T <: AnyRef : ClassTag](builder: TypeProfileBuilder[T]): this.type = {
             val clazz = classTag[T].runtimeClass
             customProfiles.put(clazz, builder)
             this
         }
     }
-
+    
     private[gnom] def forEachRefs(action: (Int, AnyRef) => Unit): Unit = {
         referenceStore.foreachEntry(action)
     }
-
+    
     def transfer(other: PersistenceConfigBuilder): this.type = {
         persistors ++= other.persistors
         referenceStore ++= other.referenceStore
-        unsafeUse = other.unsafeUse
-        referenceAllObjects = other.referenceAllObjects
         profiles.customProfiles ++= other.profiles.customProfiles
         this
     }
-
+    
     def bindConstants[C: ClassTag]: Unit = {
         val clazz = classTag[C].runtimeClass
-        clazz.getDeclaredFields.foreach {field =>
+        clazz.getDeclaredFields.foreach { field =>
             val mods = field.getModifiers
             if (Modifier.isStatic(mods) && Modifier.isFinal(mods))
                 putContextReference(field.hashCode, field.get(null))
         }
     }
-
+    
     def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A, procrastinator: => Procrastinator = null): this.type = {
         val fromClass                     = classTag[A].runtimeClass
         val toClass                       = classTag[B].runtimeClass
         val persistor: TypePersistence[A] = new TypePersistence[A] {
             private def fields(clazz: Class[_]) = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
-
+            
             override val structure: ObjectStructure = new ArrayObjectStructure {
                 override val types: Array[Class[_]] = Array(toClass)
             }
-
+            
             override def initInstance(allocatedObject: A, args: Array[Any], box: ControlBox): Unit = {
                 if (procrastinator eq null)
                     initInstance0(allocatedObject, args)
@@ -98,7 +93,7 @@ class PersistenceConfigBuilder {
                     }
                 }
             }
-
+            
             private def initInstance0(allocatedObject: A, args: Array[Any]): Unit = {
                 val t: B        = args.head.asInstanceOf[B]
                 val from        = fFrom(t)
@@ -106,7 +101,7 @@ class PersistenceConfigBuilder {
                 val values      = ObjectCreator.getAllFields(from, classFields)
                 ObjectCreator.pasteAllFields(allocatedObject, classFields, values)
             }
-
+            
             override def toArray(t: A): Array[Any] = {
                 val to = fTo(t)
                 Array(to)
@@ -115,19 +110,19 @@ class PersistenceConfigBuilder {
         persistors put(fromClass, persistor)
         this
     }
-
+    
     def putContextReference(ref: AnyRef): Unit = {
         referenceStore put(ref.hashCode(), ref)
     }
-
+    
     def putContextReference(id: Int, ref: AnyRef): Unit = {
         referenceStore put(id, ref)
     }
-
+    
     def putContextReference(id: Int, ref: Identity[AnyRef]): Unit = {
         referenceStore put(id, ref)
     }
-
+    
     def putPersistence[T <: AnyRef : ClassTag](persistence: TypePersistence[T]): this.type = {
         val clazz = classTag[T].runtimeClass
         if (persistence eq null) {
@@ -137,54 +132,54 @@ class PersistenceConfigBuilder {
         }
         this
     }
-
-    def build(context: PersistenceContext, @Nullable storeParent: ContextObjectLinker, omc: ObjectManagementChannel): PersistenceConfig = {
+    
+    def build(@Nullable storeParent: ContextObjectLinker, omc: ObjectManagementChannel): PersistenceConfig = {
         if (omc == null)
             throw new NullPointerException("ObjectManagementChannel is null")
+        build(new NodeContextObjectLinker(storeParent, omc))
+    }
+    
+    private[linkit] def build(linker: ContextObjectLinker): PersistenceConfig = {
         var config: PersistenceConfig = null
         val store                     = new TypeProfileStore {
             @inline private def check(): Unit = if (config eq null) throw new IllegalStateException("config not initialized")
-
+            
             override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
                 check()
                 config.getProfile[T](clazz)
             }
-
+            
             override def getProfile[T <: AnyRef](ref: T): TypeProfile[T] = {
                 check()
                 config.getProfile(ref)
             }
-
+            
         }
         val profiles                  = collectProfiles(store)
-        val refStore                  = new NodeContextObjectLinker(storeParent, omc)
-        refStore ++= referenceStore.toMap
-        config = new SimplePersistenceConfig(
-            context, profiles, refStore,
-            unsafeUse, referenceAllObjects
-        )
+        linker ++= referenceStore.toMap
+        config = new SimplePersistenceConfig(profiles, linker)
         config
     }
-
+    
     private def collectProfiles(store: TypeProfileStore): ClassMap[TypeProfile[_]] = {
         val map = profiles.customProfiles
-
+        
         def cast[X](a: Any): X = a.asInstanceOf[X]
-
+        
         persistors.foreachEntry((clazz, persistence) => {
             map.getOrElseUpdate(clazz, new TypeProfileBuilder()(ClassTag(clazz)))
-                .addPersistence(cast(persistence))
+                    .addPersistence(cast(persistence))
         })
         val finalMap = map.toSeq
-            .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
-            .map(pair => {
-                val clazz   = pair._1
-                val profile = pair._2.build(store)
-                (clazz, profile)
-            }).toMap
+                .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
+                .map(pair => {
+                    val clazz   = pair._1
+                    val profile = pair._2.build(store)
+                    (clazz, profile)
+                }).toMap
         new ClassMap[TypeProfile[_]](finalMap)
     }
-
+    
     private def getClassHierarchicalDepth(clazz: Class[_]): Int = {
         var cl    = clazz
         var depth = 0
@@ -194,19 +189,19 @@ class PersistenceConfigBuilder {
         }
         depth
     }
-
+    
 }
 
 object PersistenceConfigBuilder {
-
+    
     def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
         val application = traffic.application
         val script      = ScriptExecutor
-            .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
-            .newScript(application, traffic)
+                .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
+                .newScript(application, traffic)
         script.execute()
         script
     }
-
+    
 }
 

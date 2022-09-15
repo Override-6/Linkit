@@ -20,11 +20,9 @@ object ContractProvider extends Contract.Provider {
     private val toPrecompute = mutable.HashSet.empty[(String, String)]
     private val center       = new DefaultCompilerCenter
 
-    private lazy val app = {
-        LinkitApplication.getApplication
-    }
+    private lazy val app = LinkitApplication.getApplication
 
-    def precompute(application: ApplicationContext): Unit = {
+    def precompute(application: ApplicationContext): Unit = this.synchronized {
         toPrecompute.foreach { case (text, filePath) => precompute(text, filePath, application) }
         toPrecompute.clear()
     }

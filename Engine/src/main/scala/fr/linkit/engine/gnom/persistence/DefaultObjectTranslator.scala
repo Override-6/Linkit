@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoo
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncClassStorageResource}
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
 
@@ -32,7 +32,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
     private val serializer = {
         import fr.linkit.engine.application.resource.external.LocalResourceFolder._
         val prop           = LinkitApplication.getProperty("compilation.working_dir.classes")
-        val resources      = app.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](prop)
+        val resources      = app.getAppResources.getOrOpenThenRepresent[SyncClassStorageResource](prop)
         val compilerCenter = app.compilerCenter
         val center         = new DefaultSyncClassCenter(compilerCenter, resources)
         new DefaultObjectPersistence(center)

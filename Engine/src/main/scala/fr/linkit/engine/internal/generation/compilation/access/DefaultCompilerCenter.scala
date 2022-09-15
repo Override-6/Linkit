@@ -21,13 +21,13 @@ import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
 class DefaultCompilerCenter extends CompilerCenter {
-
-    private val accesses      = mutable.HashSet.from[CompilerAccess](Seq(ScalacCompilerAccess, JavacCompilerAccess))
-
+    
+    private val accesses = mutable.HashSet.from[CompilerAccess](Seq(ScalacCompilerAccess, JavacCompilerAccess))
+    
     override def addAccess(access: CompilerAccess): Unit = accesses += access
-
+    
     override def getAccessForFile(filePath: Path): Option[CompilerAccess] = accesses.find(_.canCompileFile(filePath))
-
+    
     override def compileAll(files: Seq[Path], destination: Path, classPaths: Seq[Path]): Unit = {
         files.map(f => (getAccessForFile(f), f))
                 .filterNot(_._1.isEmpty)
@@ -39,14 +39,14 @@ class DefaultCompilerCenter extends CompilerCenter {
                     access.compileAll(paths, destination, classPaths)
                 })
     }
-
+    
     override def compileAll(folder: Path, recursively: Boolean, destination: Path, classPaths: Seq[Path]): Unit = {
         val files = {
             def collect(f: Path): Seq[Path] = {
                 if (Files.isDirectory(f)) Files.list(f).toArray((i: Int) => new Array[Path](i)).flatMap(collect)
                 else Seq(f)
             }
-
+            
             if (recursively) collect(folder) else
                 Files.list(folder)
                         .toArray(new Array[Path](_))
@@ -54,10 +54,10 @@ class DefaultCompilerCenter extends CompilerCenter {
         }
         compileAll(files, destination, classPaths)
     }
-
+    
     override def processRequest[A](request: CompilationRequest[A]): CompilationResult[A] = {
         val restAccesses = accesses.clone()
-        var results = request
+        var results      = request
                 .compilationOrder
                 .flatMap(kind => {
                     accesses.filter(_.getType == kind)
@@ -65,9 +65,9 @@ class DefaultCompilerCenter extends CompilerCenter {
                             .map(_.compileRequest(request))
                 })
         results ++= restAccesses.map(_.compileRequest(request))
-        val outs = results.flatMap(_.getOuterFiles)
+        val outs        = results.flatMap(_.getOuterFiles)
         val compileTime = results.map(_.getCompileTime).sum
         request.conclude(outs, compileTime)
     }
-
+    
 }

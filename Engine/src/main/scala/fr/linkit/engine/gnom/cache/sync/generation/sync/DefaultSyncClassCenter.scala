@@ -25,7 +25,7 @@ import fr.linkit.engine.internal.mapping.ClassMappings
 
 import scala.util.Try
 
-class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends SyncClassCenter {
+class DefaultSyncClassCenter(center: CompilerCenter, storage: SyncClassStorageResource) extends SyncClassCenter {
     
     private val requestFactory = new SyncClassCompilationRequestFactory()
     
@@ -50,7 +50,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     private def getOrGenClass[S <: AnyRef](desc: SyncObjectDescription[S]): Class[S with SynchronizedObject[S]] = desc.specs.synchronized {
         val classDef = desc.specs
         classDef.ensureOverrideable()
-        val opt = resources.findClass[S](classDef)
+        val opt = storage.findClass[S](classDef)
         if (opt.isDefined) opt.get
         else {
             val genClassFullName = desc.classPackage + '.' + desc.className
@@ -142,7 +142,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     }
     
     override def isClassGenerated(classDef: SyncClassDef): Boolean = {
-        resources.findClass[AnyRef](classDef).isDefined
+        storage.findClass[AnyRef](classDef).isDefined
     }
     
 }

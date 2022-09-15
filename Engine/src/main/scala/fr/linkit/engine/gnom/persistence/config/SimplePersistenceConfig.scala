@@ -26,18 +26,11 @@ import fr.linkit.engine.internal.util.ClassMap
 
 import scala.collection.mutable
 
-class SimplePersistenceConfig private[linkit](context: PersistenceContext,
-                                              customProfiles: ClassMap[TypeProfile[_]],
-                                              override val contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH,
-                                              override val autoContextObjects: Boolean,
-                                              override val useUnsafe: Boolean) extends PersistenceConfig {
+class SimplePersistenceConfig private[linkit](customProfiles: ClassMap[TypeProfile[_]],
+                                              override val contextualObjectLinker: ContextObjectLinker with TrafficInterestedNPH) extends PersistenceConfig {
     
     private val cachedProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
-    
-    @inline
-    private def isLambdaClass(clazz: Class[_]): Boolean = {
-        clazz.getSimpleName.contains("$$Lambda$")
-    }
+
     
     private def getLambdaProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
         if (classOf[Serializable].isAssignableFrom(clazz))
@@ -109,22 +102,10 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
     }
     
     private def determinePersistence[T <: AnyRef](clazz: Class[_]): TypePersistence[T] = {
-        val constructor = context.findConstructor[T](clazz)
         if (classOf[Deconstructible].isAssignableFrom(clazz)) {
-            constructor.fold(new DeconstructiveTypePersistence[T with Deconstructible](clazz)) { ctr =>
-                new DeconstructiveTypePersistence[T with Deconstructible](ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructible]])
-            }.asInstanceOf[TypePersistence[T]]
+            new DeconstructiveTypePersistence[T with Deconstructible](clazz).asInstanceOf[TypePersistence[T]]
         } else {
-            val deconstructor = context.findDeconstructor[T](clazz)
-            constructor.fold(getSafestTypeProfileOfAnyClass[T](clazz, deconstructor)) { ctr =>
-                if (deconstructor.isEmpty) {
-                    if (!useUnsafe)
-                        throw new NoSuchElementException(s"Could not find constructor: A Deconstructor must be set for the class '${clazz.getName}' in order to create a safe TypePersistence.")
-                    new RegularTypePersistence[T](clazz)
-                } else {
-                    new ConstructorTypePersistence[T](ctr, deconstructor.get)
-                }
-            }
+            new RegularTypePersistence[T](clazz)
         }
     }
     
@@ -133,14 +114,9 @@ class SimplePersistenceConfig private[linkit](context: PersistenceContext,
         classOf[SynchronizedObject[_]].isAssignableFrom(clazz)
     }
     
-    private def getSafestTypeProfileOfAnyClass[T <: AnyRef](clazz: Class[_], deconstructor: Option[Deconstructor[T]]): TypePersistence[T] = {
-        val constructor = if (classOf[Deconstructible].isAssignableFrom(clazz)) ConstructorTypePersistence.findPersistConstructor[T](clazz) else None
-        if (constructor.isEmpty || deconstructor.isEmpty) {
-            //FIXME if (!useUnsafe)
-            //    throw new NoSuchElementException(s"Could not find constructor: A Constructor and a Deconstructor must be set for the '${clazz}' in order to create a safe TypePersistence.")
-            return new RegularTypePersistence[T](clazz)
-        }
-        new ConstructorTypePersistence[T](constructor.get, deconstructor.get)
+    @inline
+    private def isLambdaClass(clazz: Class[_]): Boolean = {
+        clazz.getSimpleName.contains("$$Lambda$")
     }
     
     private def warpTypePersistencesWithSyncPersist[T <: AnyRef](profile: TypeProfile[T]): TypeProfile[T] = {

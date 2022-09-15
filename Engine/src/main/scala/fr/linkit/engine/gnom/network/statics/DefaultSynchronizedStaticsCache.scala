@@ -15,22 +15,20 @@ package fr.linkit.engine.gnom.network.statics
 
 import fr.linkit.api.gnom.cache.SharedCacheFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
+import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.{StaticsCaller, SynchronizedStaticsCache}
-import fr.linkit.api.gnom.persistence.context.Persist
+import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
-import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncClassStorageResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
-
-import scala.reflect.ClassTag
 
 //this class is used by the statics synchronization side.
 //It is not directly used by the user and must uses a specific sync instance creator.
@@ -92,7 +90,7 @@ import SharedCacheFactory.lambdaToFactory
     private def apply(channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): SynchronizedStaticsCache = {
         import fr.linkit.engine.application.resource.external.LocalResourceFolder._
         val context   = channel.manager.network.connection.getApp
-        val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
+        val resources = context.getAppResources.getOrOpenThenRepresent[SyncClassStorageResource](ClassesResourceDirectory)
         val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
 
         new DefaultSynchronizedStaticsCache(channel, generator, contracts, network)

@@ -19,20 +19,18 @@ import fr.linkit.client.ClientApplication
 
 abstract class ClientApplicationConfigBuilder {
 
-    private final val enableEventHandling: Boolean = false //still in development
 
     val resourcesFolder: String
     var loadSchematic           : AppSchematic[ClientApplication] = new EmptySchematic()
     var nWorkerThreadFunction   : Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 threads for application.
     var pluginFolder            : Option[String]                  = Some("/Plugins")
-    var securityManager         : ApplicationSecurityManager      = ApplicationSecurityManager.none
+    var securityManager         : ApplicationSecurityManager      = ApplicationSecurityManager.None
 
     def buildConfig(): ClientApplicationConfiguration = {
         val builder = this
         new ClientApplicationConfiguration {
             override val loadSchematic        : AppSchematic[ClientApplication] = builder.loadSchematic
             override val nWorkerThreadFunction: Int => Int                      = builder.nWorkerThreadFunction
-            override val pluginFolder         : Option[String]                  = builder.pluginFolder
             override val resourceFolder       : String                          = builder.resourcesFolder
             override val securityManager      : ApplicationSecurityManager      = builder.securityManager
         }

@@ -16,7 +16,8 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor, StaticsCaller}
-import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+import fr.linkit.api.gnom.persistence.context.Deconstructible
+import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.external.LocalResourceFolder._
@@ -48,7 +49,7 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
     
     private def getMethodCaller(clazz: Class[_]): SyncStaticAccessInstanceCreator = {
         val staticsDesc = SyncStaticsDescription(clazz)
-        val className = staticsDesc.classPackage + "." + clazz.getSimpleName + "StaticsCaller"
+        val className   = staticsDesc.classPackage + "." + clazz.getSimpleName + "StaticsCaller"
         val mcClass     = resource.findClass[StaticsCaller](className, staticsDesc.parentLoader).getOrElse {
             genClass(staticsDesc)
         }.asInstanceOf[Class[StaticsCaller]]
@@ -67,6 +68,7 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
 }
 
 object StaticAccessImpl {
+    
     private final val Blueprint                 = new StaticsCallerClassBlueprint(getClass.getResourceAsStream("/generation/statics_caller.scbp"))
     private final val CompilationRequestFactory = new ClassCompilationRequestFactory[SyncStaticsDescription[_], StaticsCaller](Blueprint)
 }

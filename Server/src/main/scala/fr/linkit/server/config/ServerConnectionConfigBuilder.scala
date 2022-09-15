@@ -24,7 +24,6 @@ import java.net.URL
 abstract class ServerConnectionConfigBuilder {
 
     var maxConnection                 : Int               = Int.MaxValue
-    var enableEventHandling           : Boolean           = true
     var nWorkerThreadFunction         : Int => Int        = _ + 2 //1 thread per client connection + 2 for the server connection
     var configName                    : String            = s"config#$count"
     var hasher                        : BytesHasher       = BytesHasher.inactive
@@ -34,7 +33,7 @@ abstract class ServerConnectionConfigBuilder {
     val port      : Int
 
     //Can't be configurable for now
-    val translatorFactory: ApplicationContext => ObjectTranslator = new DefaultObjectTranslator(_)
+    final val translatorFactory: ApplicationContext => ObjectTranslator = new DefaultObjectTranslator(_)
 
     def build(): ServerConnectionConfiguration = {
         val builder = this

@@ -16,19 +16,21 @@ package fr.linkit.engine.gnom.persistence.config.script
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile}
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.gnom.persistence.config.script.ScriptConfigContext.{DefaultScriptConfigParameter, EndOfContext, LineComment, StartOfContext}
+import fr.linkit.engine.gnom.persistence.config.script.PersistenceScriptConfigContext.{DefaultScriptConfigParameter, EndOfContext, LineComment, StartOfContext}
 import fr.linkit.engine.internal.script.ScriptException
 
-case class ScriptConfigContext(private val scriptCode: String,
-                               scriptName: String,
-                               override val scriptSuperClass: Class[_ <: ScriptFile],
-                               parameters: Map[String, Class[_]],
-                               override val parentLoader: ClassLoader = classOf[LinkitApplication].getClassLoader)
+import scala.collection.mutable
+
+case class PersistenceScriptConfigContext(private val scriptCode: String,
+                                          scriptName: String,
+                                          override val scriptSuperClass: Class[_ <: ScriptFile],
+                                          parameters: Map[String, Class[_]],
+                                          override val parentLoader: ClassLoader = classOf[LinkitApplication].getClassLoader)
         extends ScriptContext {
 
     override      val scriptArguments : Map[String, Class[_]] = parameters ++ DefaultScriptConfigParameter
     override lazy val scriptSourceCode: String                = {
-        val builder = new StringBuilder(scriptCode)
+        val builder = new mutable.StringBuilder(scriptCode)
         val lines   = scriptCode.split('\n')
 
         def idxOfLineStartThatContains(searched: String): Int = {
@@ -64,7 +66,7 @@ case class ScriptConfigContext(private val scriptCode: String,
 
 }
 
-object ScriptConfigContext {
+object PersistenceScriptConfigContext {
 
     final val DefaultScriptConfigParameter = Map(
         "app" -> classOf[LinkitApplication],

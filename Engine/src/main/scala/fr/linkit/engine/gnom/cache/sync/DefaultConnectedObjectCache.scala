@@ -36,7 +36,7 @@ import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.{LockConditionTag, ObjectTreeProfile}
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, EmptyContractDescriptorData}
-import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncClassStorageResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageConnectedObjectContext
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip
@@ -397,7 +397,7 @@ object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
     private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): ConnectedObjectCache[A] = {
         import fr.linkit.engine.application.resource.external.LocalResourceFolder._
         val context   = channel.manager.network.connection.getApp
-        val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
+        val resources = context.getAppResources.getOrOpenThenRepresent[SyncClassStorageResource](ClassesResourceDirectory)
         val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
 
         new DefaultConnectedObjectCache[A](channel, generator, contracts, network)

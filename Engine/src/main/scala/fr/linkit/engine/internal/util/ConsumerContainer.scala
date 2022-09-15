@@ -13,7 +13,8 @@
 
 package fr.linkit.engine.internal.util
 
-import fr.linkit.api.gnom.persistence.context.{Deconstructible, Persist}
+import fr.linkit.api.gnom.persistence.context.Deconstructible
+import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.workerExecution
 

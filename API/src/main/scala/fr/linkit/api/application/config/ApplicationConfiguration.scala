@@ -18,7 +18,6 @@ import org.jetbrains.annotations.NotNull
 
 trait ApplicationConfiguration {
 
-    val pluginFolder: Option[String] //can be relative or global
 
     @NotNull val resourceFolder: String
 

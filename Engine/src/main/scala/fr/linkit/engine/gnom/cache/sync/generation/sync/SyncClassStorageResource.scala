@@ -17,10 +17,10 @@ import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.application.resource.representation.ResourceRepresentationFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncObjectClassResource.{GeneratedClassesPackage, SyncSuffixName}
+import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassStorageResource.{GeneratedClassesPackage, SyncSuffixName}
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
 
-class SyncObjectClassResource(resource: ResourceFolder) extends CachedClassFolderResource[SynchronizedObject[AnyRef]](resource) {
+class SyncClassStorageResource(resource: ResourceFolder) extends CachedClassFolderResource[SynchronizedObject[AnyRef]](resource) {
 
     def findClass[S <: AnyRef](classDef: SyncClassDef): Option[Class[S with SynchronizedObject[S]]] = {
         val mainClass = classDef.mainClass
@@ -38,10 +38,10 @@ class SyncObjectClassResource(resource: ResourceFolder) extends CachedClassFolde
     }
 }
 
-object SyncObjectClassResource extends ResourceRepresentationFactory[SyncObjectClassResource, ResourceFolder] {
+object SyncClassStorageResource extends ResourceRepresentationFactory[SyncClassStorageResource, ResourceFolder] {
 
     val SyncSuffixName          = "Sync"
     val GeneratedClassesPackage = "gen."
 
-    override def apply(resource: ResourceFolder): SyncObjectClassResource = new SyncObjectClassResource(resource)
+    override def apply(resource: ResourceFolder): SyncClassStorageResource = new SyncClassStorageResource(resource)
 }

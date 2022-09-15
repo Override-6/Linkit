@@ -48,7 +48,6 @@ class ServerConnection(applicationContext: ServerApplication,
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     private  val serverTraffic     : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
     override val traffic           : PacketTraffic              = serverTraffic
-    // override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(serverTraffic)
     override val network           : Network                    = sideNetwork
     @volatile private var alive    : Boolean                    = false

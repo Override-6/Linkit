@@ -19,14 +19,14 @@ import fr.linkit.api.application.resource.{ResourceListener, ResourcesMaintainer
 import fr.linkit.engine.application.resource.ResourceFolderMaintainer
 import fr.linkit.engine.application.resource.external.DefaultResourceEntry
 import fr.linkit.engine.application.resource.external.LocalResourceFolder.ForbiddenChars
-import org.jetbrains.annotations.NotNull
+import org.jetbrains.annotations.{NotNull, Nullable}
 
 import java.io.File
 import java.nio.file.{Files, Path}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceListener, adapter: Path) extends AbstractResource(parent, adapter) with ResourceFolder {
+abstract class BaseResourceFolder(@Nullable parent: ResourceFolder, listener: ResourceListener, adapter: Path) extends AbstractResource(parent, adapter) with ResourceFolder {
 
     protected val resources                                 = new mutable.HashMap[String, Resource]()
     protected val entry     : ResourceEntry[ResourceFolder] = new DefaultResourceEntry[ResourceFolder](this)

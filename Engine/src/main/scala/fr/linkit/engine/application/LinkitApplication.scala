@@ -42,7 +42,9 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
     protected val appPool: AbstractWorkerPool
     override val reference = ApplicationReference
     
-    setInstance(this)
+    if (LinkitApplication.instance != null)
+        AppLoggers.App.error(s"${getClass.getSimpleName}: Could not initialize singleton.")
+    else setInstance(this)
     
     override def getAppResources: ResourceFolder = appResources
     
@@ -81,10 +83,10 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
     }
     
     @workerExecution
-    protected def start(): Unit = {
+    protected[linkit] def start(): Unit = {
         appPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
         if (alive) {
-            throw new AppException("Client is already started")
+            throw new AppException("Application is already started")
         }
         alive = true
         AppLoggers.App.info("Parsing found behavior contracts...")
@@ -166,7 +168,6 @@ object LinkitApplication {
         AppLoggers.App.info("Loading Native Libraries...")
         InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
 
-        
         isPrepared = true
         appResources
     }
