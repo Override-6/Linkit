@@ -20,8 +20,8 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload, PacketTransfer, PacketUpload}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import org.jetbrains.annotations.NotNull

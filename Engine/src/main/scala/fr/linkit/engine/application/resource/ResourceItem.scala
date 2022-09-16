@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.application.resource
 
-import fr.linkit.api.application.resource.external.Resource
+import fr.linkit.api.application.resource.local.Resource
 import fr.linkit.engine.internal.system.DynamicVersions
 
 case class ResourceItem(name: String) extends Serializable {

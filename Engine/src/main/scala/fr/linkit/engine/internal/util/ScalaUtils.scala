@@ -24,6 +24,7 @@ import java.io.{BufferedInputStream, File}
 import java.lang.reflect.{AccessibleObject, Field, InaccessibleObjectException, Modifier}
 import java.nio.{Buffer, ByteBuffer}
 import scala.annotation.switch
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
@@ -58,7 +59,7 @@ object ScalaUtils {
     }
     
     implicit def deepToString(array: Array[Any]): String = {
-        val sb = new StringBuilder("Array(")
+        val sb = new mutable.StringBuilder("Array(")
         array.foreach {
             case subArray: Array[Any] => sb.append(deepToString(subArray))
             case any: Any             => sb.append(any).append(", ")
@@ -219,7 +220,7 @@ object ScalaUtils {
     
     private[util] def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
         
-        val sb = new StringBuilder("(")
+        val sb = new mutable.StringBuilder("(")
         params.foreach { clazz =>
             sb.append(typeStringClass(clazz))
         }

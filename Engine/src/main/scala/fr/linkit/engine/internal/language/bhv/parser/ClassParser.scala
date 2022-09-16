@@ -81,7 +81,7 @@ object ClassParser extends BehaviorLanguageParser {
         val methodsParser              = enabledMethodParser | disabledMethodParser | hiddenMethodParser
         val fieldsParser               = (identifier <~ Dot).? ~ syncParser ~ identifier ^^ { case clazz ~ state ~ name => AttributedFieldDescription(clazz, name, state) }
         val targetLevels               = {
-            val stubParser = ParenLeft ~> identifier <~ ParenRight
+            val stubParser = Stub ~> Colon ~> identifier | (ParenLeft ~> identifier <~ ParenRight) //two syntaxes are valid: "mirror stub: classname" or "mirror(classname)"
             val mirroring  = BehaviorLanguageKeyword.Mirror ~> stubParser.? ^^ MirroringLevel
             mirroring | (Sync ^^^ SynchronizeLevel) | (Chip ^^^ ChipLevel)
         }

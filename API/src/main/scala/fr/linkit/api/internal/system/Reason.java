@@ -42,20 +42,13 @@ public enum Reason {
 
 
     public Reason reversedPOV() {
-        switch (this) {
-            case INTERNAL:
-                return EXTERNAL;
-            case INTERNAL_ERROR:
-                return EXTERNAL_ERROR;
-
-            case EXTERNAL:
-                return INTERNAL;
-            case EXTERNAL_ERROR:
-                return INTERNAL_ERROR;
-
-            default:
-                return this;
-        }
+        return switch (this) {
+            case INTERNAL -> EXTERNAL;
+            case INTERNAL_ERROR -> EXTERNAL_ERROR;
+            case EXTERNAL -> INTERNAL;
+            case EXTERNAL_ERROR -> INTERNAL_ERROR;
+            default -> this;
+        };
     }
 
 }

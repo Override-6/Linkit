@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
 
+import scala.annotation.tailrec
 import scala.collection.IterableFactory
 import scala.collection.immutable.ArraySeq
 import scala.util.control.NonFatal

@@ -38,7 +38,7 @@ object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
     /////////// Parsers
     
     private val codeBlock     = pos("${" ~> codeBlockParser ^^ CodeBlock)
-    private val stringLiteral = pos("\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ (Literal))
+    private val stringLiteral = pos("\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ Literal)
     private val identifier    = pos(identifierParser ^^ Identifier)
     private val numberParser  = pos("[0-9]+(\\.[0-9]+)?".r ^^ Number)
     private val boolParser    = pos("true|false".r ^^ Bool)

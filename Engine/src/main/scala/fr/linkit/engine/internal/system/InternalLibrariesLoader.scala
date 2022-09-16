@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.system
 
-import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.resource.local.ResourceFolder
 import fr.linkit.api.internal.system.AppInitialisationException
 import java.io.File
 import java.lang.management.ManagementFactory

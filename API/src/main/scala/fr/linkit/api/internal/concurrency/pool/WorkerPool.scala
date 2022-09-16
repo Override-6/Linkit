@@ -14,7 +14,6 @@
 package fr.linkit.api.internal.concurrency.pool
 
 import fr.linkit.api.internal.concurrency.ProcrastinatorControl
-
 import java.util.concurrent.BlockingQueue
 import scala.concurrent.ExecutionContext
 

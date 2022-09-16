@@ -64,7 +64,7 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
             addCondition(compare(left, right), _, x => x)
         }
         
-        override def isNot(right: EngineTag): (AgreementConditionAction) => RMIRulesAgreementBuilder = {
+        override def isNot(right: EngineTag): AgreementConditionAction => RMIRulesAgreementBuilder = {
             addCondition(compareNot(left, right), _, x => x)
         }
         

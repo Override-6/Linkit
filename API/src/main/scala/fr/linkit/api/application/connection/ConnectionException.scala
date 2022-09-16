@@ -16,10 +16,12 @@ package fr.linkit.api.application.connection
 import fr.linkit.api.internal.system.AppException
 import org.jetbrains.annotations.Nullable
 
+import scala.collection.mutable
+
 class ConnectionException(@Nullable connection: ConnectionContext,
                           msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
-    override def appendMessage(sb: StringBuilder): Unit = {
+    override def appendMessage(sb: mutable.StringBuilder): Unit = {
         super.appendMessage(sb)
         if (connection == null)
             return

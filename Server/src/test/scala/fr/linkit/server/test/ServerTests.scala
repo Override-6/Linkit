@@ -36,18 +36,14 @@ import org.junit.jupiter.api._
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[HierarchyRaiserOrderer])
-object ServerTests {
-
+class ServerTests {
+    
     private val DefaultServerID = "TestServer1"
     var application: ServerApplication = _
-
+    
     @Test
     def launchApplication(): Unit = {
-        //AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
-
-        //val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
-        //val resourcesFolder = getDefaultLinkitHome
-
+        
         val config = new ServerApplicationConfigBuilder {
             override val resourcesFolder: String = resourcesFolder
             pluginFolder = None //userDefinedPluginFolder
@@ -57,7 +53,7 @@ object ServerTests {
                     override val identifier: String = DefaultServerID
                     override val port      : Int    = 48484
                     nWorkerThreadFunction = _ + 1 //Two threads per connections.
-
+                    
                     configName = "config1"
                 }
             }
@@ -66,10 +62,10 @@ object ServerTests {
             ServerApplication.launch(config, getClass)
         }
         AppLoggers.App.trace(s"Launch complete: $application")
-
+        
         Assertions.assertAll("App launch conclusion",
-            Assertions.assertNotNull(application)
-        )
+                             Assertions.assertNotNull(application)
+                             )
     }
-
+    
 }

@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.gnom.network.ExecutorEngine
-import fr.linkit.api.internal.concurrency._
+import fr.linkit.api.internal.concurrency.{AsyncTask, IllegalThreadException, Worker, workerExecution, _}
 import fr.linkit.api.internal.concurrency.pool.WorkerPool
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.EngineWorkerPools._
@@ -121,7 +121,6 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
             val oldEngine = ExecutorEngine.currentEngine
             if (currentEngine != null)
                 ExecutorEngine.setCurrentEngine(currentEngine)
-            val rootExecution = currentTaskExecutionDepth == 0
             
             try {
                 currentWorker

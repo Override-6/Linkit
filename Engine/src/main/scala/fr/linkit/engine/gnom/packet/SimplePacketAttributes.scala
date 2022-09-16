@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.packet.PacketAttributes
 import java.io.Serializable
 import scala.collection.mutable
 
-class SimplePacketAttributes extends PacketAttributes /*with Deconstructible */{
+class SimplePacketAttributes extends PacketAttributes {
 
     protected[packet] val attributes: mutable.Map[Serializable, Serializable] = mutable.HashMap[Serializable, Serializable]()
 
@@ -27,7 +27,6 @@ class SimplePacketAttributes extends PacketAttributes /*with Deconstructible */{
         attributes.attributes.foreachEntry(putAttribute)
     }
 
-    //@Persist
     def this(array: Array[(Serializable, Serializable)]) = {
         this()
         array.foreach(x => putAttribute(x._1, x._2))
@@ -40,7 +39,6 @@ class SimplePacketAttributes extends PacketAttributes /*with Deconstructible */{
 
     override def putAttribute(name: Serializable, value: Serializable): this.type = {
         attributes.put(name, value)
-        //AppLogger.vError(s"Attribute put ($name -> $value), $attributes - $hashCode")
         this
     }
 
@@ -64,7 +62,6 @@ class SimplePacketAttributes extends PacketAttributes /*with Deconstructible */{
 
     override def isEmpty: Boolean = attributes.isEmpty
 
-    //override def deconstruct(): Array[Any] = attributes.toArray
 }
 
 object SimplePacketAttributes {

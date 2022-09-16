@@ -84,8 +84,6 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         center.preGenerateClasses(classes.toList.map(SyncClassDef(_)))
     }
     
-    def markAsPrecompiled(): Unit = precompiled = true
-    
     def isPrecompiled: Boolean = precompiled
     
     override def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A] = {

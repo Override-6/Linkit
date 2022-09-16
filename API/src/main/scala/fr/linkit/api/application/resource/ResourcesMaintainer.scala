@@ -13,7 +13,7 @@
 
 package fr.linkit.api.application.resource
 
-import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.resource.local.ResourceFolder
 import fr.linkit.api.application.resource.exception.NoSuchResourceException
 import fr.linkit.api.internal.system.Versions
 

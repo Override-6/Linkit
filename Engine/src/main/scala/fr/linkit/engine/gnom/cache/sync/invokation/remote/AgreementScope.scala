@@ -20,7 +20,8 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageRMIRulesAgreement
-import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAttributes}
+import fr.linkit.engine.gnom.packet.SimplePacketAttributes
+import fr.linkit.spi.gnom.packet.AbstractAttributesPresence
 
 class AgreementScope(override val writer: PacketWriter, network: Network, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {
 

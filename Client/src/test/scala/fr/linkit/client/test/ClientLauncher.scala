@@ -14,7 +14,7 @@
 package fr.linkit.client.test
 
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.client.ClientApplication
+import fr.linkit.client.{ClientApplication, ClientApplicationContext}
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
 import org.jetbrains.annotations.NotNull
@@ -112,7 +112,7 @@ object ClientLauncher {
                address: InetSocketAddress,
                identifier0: String,
                @NotNull resourcesFolder0: String,
-               raidCount: Int): ClientApplication = {
+               raidCount: Int): ClientApplicationContext = {
 
         if (resourcesFolder0 == null) {
             throw new NullPointerException("Resources folder is null !")

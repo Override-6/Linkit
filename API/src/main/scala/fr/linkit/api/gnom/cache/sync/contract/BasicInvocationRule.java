@@ -26,7 +26,7 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
 
 
     /**
-     * Blocks every engines from remote invocation.<br>
+     * Blocks any engine from remote invocation.<br>
      * The invocation will only be performed on the local object.<br>
      * This behavior is the same as calling any normal java method.<br>
      * <u>This is the default rule applied for methods</u>
@@ -99,12 +99,10 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
      * If the current machine owns the wrapper object, the execution will be called only once.
      * The return value of the invocation will come from the current machine.
      */
-    CURRENT_AND_ORIGIN(((agreement) -> {
-        return agreement.discardAll()
-                .accept(CurrentEngine())
-                .accept(OwnerEngine())
-                .appointReturn(CurrentEngine());
-    }));
+    CURRENT_AND_ORIGIN(((agreement) -> agreement.discardAll()
+            .accept(CurrentEngine())
+            .accept(OwnerEngine())
+            .appointReturn(CurrentEngine())));
 
     private final RemoteInvocationRule rule;
 

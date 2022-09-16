@@ -49,7 +49,7 @@ public class AppException extends Exception {
     }
 
     protected void appendMessage(StringBuilder sb) {
-        //Must be override by implementations to take effect.
+        //Must be overridden by implementations to take effect.
     }
 
     private StringBuilder implementationHeaders() {

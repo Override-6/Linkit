@@ -55,7 +55,7 @@ class ArrayByteInserter(@NotNull val origin: Array[Byte]) {
             else insertionHistory.insert(idx + 1, (pos, shift))
         }
 
-        insertionHistory.find(_._1 == pos).fold(insert(shift)) { (pair) =>
+        insertionHistory.find(_._1 == pos).fold(insert(shift)) { pair =>
             insert(shift + pair._2)
         }
     }

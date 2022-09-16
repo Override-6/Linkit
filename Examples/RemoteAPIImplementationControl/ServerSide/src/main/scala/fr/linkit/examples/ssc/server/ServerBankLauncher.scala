@@ -52,6 +52,7 @@ object ServerBankLauncher {
     private def launchApp(): ServerConnection = {
         val config = new ServerApplicationConfigBuilder {
             val resourcesFolder: String = System.getenv("LinkitHome")
+            logfilename = Some("examples/bank server logs")
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = ServerIdentifier

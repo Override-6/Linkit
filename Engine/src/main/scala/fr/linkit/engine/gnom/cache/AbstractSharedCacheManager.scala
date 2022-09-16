@@ -42,7 +42,6 @@ abstract class AbstractSharedCacheManager(override val family: String,
                                           store: PacketInjectableStore) extends SharedCacheManager {
     
     protected val channel          : SimpleRequestPacketChannel  = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
-    protected val broadcastScope   : ChannelScope                = prepareScope(ChannelScopes.broadcast)
     protected val currentIdentifier: String                      = network.connection.currentIdentifier
     override  val reference        : SharedCacheManagerReference = new SharedCacheManagerReference(family)
     

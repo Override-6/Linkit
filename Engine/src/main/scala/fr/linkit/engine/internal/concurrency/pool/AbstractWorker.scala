@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency._
+import fr.linkit.api.internal.concurrency.{AsyncTask, AsyncTaskController, IllegalThreadException, InternalWorkerThread, Worker, _}
 import fr.linkit.api.internal.concurrency.pool.WorkerPool
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.SimpleAsyncTask

@@ -39,8 +39,6 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
     private val trees        = new mutable.HashMap[Int, DefaultConnectedObjectTree[A]]
     private val unknownTrees = new mutable.HashMap[Int, UnknownTree]()
     
-    private[tree] val cacheOwnerID: String = center.ownerID
-    
     /*
     * used to store objects whose synchronized version of keys already have bounded references.
     * */

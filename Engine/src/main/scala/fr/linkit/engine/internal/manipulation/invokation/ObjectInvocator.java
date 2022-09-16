@@ -14,22 +14,7 @@
 package fr.linkit.engine.internal.manipulation.invokation;
 
 public class ObjectInvocator {
-    
-    private static String getMethodDescriptor(Class<?>[] params, Class<?> returnType) {
-        var sb = new StringBuilder("(");
-        for (Class<?> param : params) {
-            sb.append(typeStringClass(param));
-        }
-        sb.append(')').append(typeStringClass(returnType));
-        return sb.toString();
-    }
 
-    private static String typeStringClass(Class<?> clazz) {
-        if (clazz == Void.TYPE)
-            return "V";
-        String arrayString = java.lang.reflect.Array.newInstance(clazz, 0).toString();
-        return arrayString.substring(1, arrayString.indexOf('@')).replace(".", "/");
-    }
 
     static native Object invokeMethod0(
             Object o, String name, String signature,

@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{AsyncTask, AsyncTaskController, IllegalThreadException, Worker, workerExecution}
 import fr.linkit.api.internal.concurrency.pool.{ClosedWorkerPool, HiringWorkerPool, WorkerPool, WorkerPools}
+import fr.linkit.api.internal.concurrency.{AsyncTask, AsyncTaskController, IllegalThreadException, Worker, workerExecution}
 
 import java.lang.Thread.currentThread
 import scala.collection.mutable

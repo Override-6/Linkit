@@ -26,13 +26,7 @@ class DefaultPacketReader(socket: DynamicSocket,
                           procrastinator: ProcrastinatorControl,
                           traffic: PacketTraffic,
                           translator: ObjectTranslator) extends PacketReader {
-    
-    private var packetOrdinal = 0
-    
-    private def nextOrdinal: Int = {
-        packetOrdinal += 1
-        packetOrdinal
-    }
+
     
     /**
      * @return a tuple containing the next packet with its coordinates and its local number identifier

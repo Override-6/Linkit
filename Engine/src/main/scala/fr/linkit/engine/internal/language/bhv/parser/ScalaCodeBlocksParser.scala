@@ -32,7 +32,7 @@ object ScalaCodeBlocksParser extends Parsers {
         case name ~ types =>
             val tpe = types.getOrElse("scala.Any")
             (LambdaCallerClassBlueprint.getPropertyAccessCodeString(name, tpe), tpe)
-    } withFailureMessage("external value access syntax is wrong. Syntax must be: £{@<value>: <valueType>}")
+    } withFailureMessage "external value access syntax is wrong. Syntax must be: £{@<value>: <valueType>}"
     private val fragmentParser   = accept("code fragment", { case CodeFragment(fragment) => fragment })
 
     def parse(input: CharSequenceReader): ScalaCodeBlock = {

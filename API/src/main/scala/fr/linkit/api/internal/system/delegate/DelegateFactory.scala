@@ -13,6 +13,7 @@
 
 package fr.linkit.api.internal.system.delegate
 
+import fr.linkit.api.application.resource.ResourceInternFactories
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCacheFactories
 import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
@@ -32,6 +33,8 @@ object DelegateFactory {
         }
     }
 
+    def resourceFactories: ResourceInternFactories = delegate.resourceFactories
+    
     def workerPools: WorkerPools.Provider = delegate.workerPools
 
     def defaultCOCFactories: ConnectedObjectCacheFactories = delegate.defaultCOCFactories

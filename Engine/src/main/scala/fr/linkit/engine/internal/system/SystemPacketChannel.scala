@@ -21,10 +21,7 @@ import fr.linkit.engine.gnom.packet.traffic.channel.SyncPacketChannel
 class SystemPacketChannel(store: PacketInjectableStore, scope: ChannelScope)
     extends SyncPacketChannel(store, scope) {
 
-    def sendOrder(systemOrder: SystemOrder, reason: Reason, content: Array[Byte] = Array()): Unit = {
-        send(SystemPacket(systemOrder, reason, content))
-        //notifier.onSystemOrderSent(systemOrder) TODO rebased event system
-    }
+ 
 
 }
 

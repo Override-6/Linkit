@@ -15,7 +15,7 @@ package fr.linkit.mock.application
 
 import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.application.connection.{ConnectionContext, ExternalConnection}
-import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.resource.local.ResourceFolder
 import fr.linkit.api.internal.system.{Version, Versions}
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfiguration}

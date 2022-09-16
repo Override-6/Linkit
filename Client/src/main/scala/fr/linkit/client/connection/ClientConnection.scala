@@ -19,8 +19,8 @@ import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.{AsyncTask, packetWorkerExecution, workerExecution}
+import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration

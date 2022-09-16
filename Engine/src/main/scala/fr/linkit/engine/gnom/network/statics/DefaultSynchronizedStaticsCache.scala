@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.network.statics
 
+import fr.linkit.api.application.resource.local.LocalFolder
 import fr.linkit.api.gnom.cache.SharedCacheFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
@@ -36,18 +37,18 @@ class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
                                                  classCenter: SyncClassCenter,
                                                  override val defaultContracts: ContractDescriptorData,
                                                  override val network: Network) extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
-
+    
     //ensuring that the creator is of the right type
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {
         checkCreator(creator)
         super.syncObject(id, creator)
     }
-
+    
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller], contracts: ContractDescriptorData): StaticsCaller with SynchronizedObject[StaticsCaller] = {
         checkCreator(creator)
         super.syncObject(id, creator, contracts)
     }
-
+    
     override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator     =>
@@ -59,41 +60,44 @@ class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
                 throwUOE()
         }
     }
-
+    
     private def checkCreator(creator: SyncInstanceCreator[_ <: StaticsCaller]): Unit = {
         if (!creator.isInstanceOf[SyncStaticAccessInstanceCreator])
             throwUOE()
     }
-
+    
     private def throwUOE(): Nothing = {
         throw new UnsupportedOperationException(s"Can only accept Sync Instance Creator of type '${classOf[SyncStaticAccessInstanceCreator].getSimpleName}'.")
     }
-
+    
 }
 
 object DefaultSynchronizedStaticsCache {
-import SharedCacheFactory.lambdaToFactory
+    
+    import SharedCacheFactory.lambdaToFactory
+    
     private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
-
+    
     def apply(contracts: ContractDescriptorData): SharedCacheFactory[SynchronizedStaticsCache] = {
         lambdaToFactory(classOf[DefaultSynchronizedStaticsCache])(channel => {
             apply(channel, contracts, channel.traffic.connection.network)
         })
     }
-
+    
     private[linkit] def apply(contracts: ContractDescriptorData, network: Network): SharedCacheFactory[SynchronizedStaticsCache] = {
         lambdaToFactory(classOf[DefaultSynchronizedStaticsCache])(channel => {
             apply(channel, contracts, network)
         })
     }
-
+    
     private def apply(channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): SynchronizedStaticsCache = {
-        import fr.linkit.engine.application.resource.external.LocalResourceFolder._
         val context   = channel.manager.network.connection.getApp
-        val resources = context.getAppResources.getOrOpenThenRepresent[SyncClassStorageResource](ClassesResourceDirectory)
+        val resources = context.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
+                .getEntry
+                .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
         val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
-
+        
         new DefaultSynchronizedStaticsCache(channel, generator, contracts, network)
     }
-
+    
 }

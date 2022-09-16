@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence;
 
 public class ConstantProtocol {
 
-    //increment each time the write protocol changes
+    //increment each time the traffic protocol changes
     public static final short ProtocolVersion = 5;
 
     public static final byte UByteSize = 1;

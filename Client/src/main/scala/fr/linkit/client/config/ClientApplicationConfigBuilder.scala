@@ -23,7 +23,6 @@ abstract class ClientApplicationConfigBuilder {
     var logfilename          : Option[String]                  = Some(s"client logs @${ProcessHandle.current().pid()}")
     var loadSchematic        : AppSchematic[ClientApplication] = new EmptySchematic()
     var nWorkerThreadFunction: Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 threads for application.
-    var pluginFolder         : Option[String]                  = Some("/Plugins")
     var securityManager      : ApplicationSecurityManager      = ApplicationSecurityManager.None
     
     def buildConfig(): ClientApplicationConfiguration = {

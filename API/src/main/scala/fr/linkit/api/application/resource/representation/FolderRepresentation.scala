@@ -13,7 +13,7 @@
 
 package fr.linkit.api.application.resource.representation
 
-import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.resource.local.ResourceFolder
 
 trait FolderRepresentation extends ResourceRepresentation {
 

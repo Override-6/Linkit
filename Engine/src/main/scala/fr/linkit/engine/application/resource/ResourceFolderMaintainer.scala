@@ -15,9 +15,9 @@ package fr.linkit.engine.application.resource
 
 import fr.linkit.api.application.resource._
 import fr.linkit.api.application.resource.exception.NoSuchResourceException
-import fr.linkit.api.application.resource.external.{Resource, ResourceFolder}
+import fr.linkit.api.application.resource.local.{Resource, ResourceFolder}
 import fr.linkit.engine.application.resource.ResourceFolderMaintainer.{MaintainerFileName, Resources}
-import fr.linkit.engine.application.resource.external.LocalResourceFactories
+import fr.linkit.engine.application.resource.local.LocalResourceFactories
 import fr.linkit.engine.internal.system.EngineConstants.{UserGson => Gson}
 import fr.linkit.engine.internal.system.{DynamicVersions, StaticVersions}
 
@@ -65,12 +65,12 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
             }
     }
 
-    private[resource] def unregisterResource(name: String): Unit = {
+    private[linkit] def unregisterResource(name: String): Unit = {
         resources -= name
     }
 
-    private[resource] def registerResource(resource: Resource): Unit = {
-        if (resource.getParent.ne(maintained))
+    private[linkit] def registerResource(resource: Resource): Unit = {
+        if (resource.getParent.exists(_.ne(maintained)))
             throw new IllegalArgumentException("Given resource's parent folder is not handled by this maintainer.")
 
         if (resources.get(resource.name).isDefined)

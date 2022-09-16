@@ -13,7 +13,7 @@
 
 package fr.linkit.api.application.resource.representation
 
-import fr.linkit.api.application.resource.external.Resource
+import fr.linkit.api.application.resource.local.Resource
 
 trait ResourceRepresentation extends AutoCloseable {
 

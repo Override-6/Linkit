@@ -32,8 +32,8 @@ dependencies {
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0-M1'
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0-M1'
     testImplementation project(':API').sourceSets.test.output
-    testImplementation 'org.mockito:mockito-inline:4.7.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.7.0'
+    testImplementation 'org.mockito:mockito-inline:4.8.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:4.8.0'
 
 
     implementation group: 'org.scala-lang', name: 'scala-compiler', version: '2.13.7'
@@ -44,5 +44,5 @@ dependencies {
 
 
     api project(':API')
-    api project(':SPI')
+    api project(':SPI') //cylick
 }

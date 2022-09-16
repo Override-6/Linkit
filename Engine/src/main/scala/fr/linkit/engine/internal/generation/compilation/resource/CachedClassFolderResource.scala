@@ -13,23 +13,22 @@
 
 package fr.linkit.engine.internal.generation.compilation.resource
 
-import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.resource.local.ResourceFolder
 import fr.linkit.api.application.resource.representation.ResourceRepresentationFactory
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
 import fr.linkit.api.internal.generation.resource.ClassFolderResource
-import fr.linkit.engine.internal.mapping.ClassMappings
-import java.io.File
-import java.nio.file.{Files, Path}
-
 import fr.linkit.engine.application.LinkitApplication
+import fr.linkit.engine.internal.mapping.ClassMappings
 
+import java.io.File
+import java.nio.file.Files
 import scala.collection.mutable
 
 class CachedClassFolderResource[C](override val resource: ResourceFolder) extends ClassFolderResource[C] {
-
+    
     private val folderPath       = resource.getPath
     private val generatedClasses = mutable.Map.empty[String, Class[_ <: C]]
-
+    
     override def findClass[S <: AnyRef](className: String, loader: ClassLoader): Option[Class[S with C]] = {
         generatedClasses.getOrElse(className, {
             val wrapperClassPath = folderPath.resolve(className.replace('.', File.separatorChar) + ".class")
@@ -47,14 +46,14 @@ class CachedClassFolderResource[C](override val resource: ResourceFolder) extend
             case _                      => None
         }
     }
-
+    
     override protected def initialize(): Unit = ()
-
+    
 }
 
 object CachedClassFolderResource {
-
-    implicit def factory[A]: ResourceRepresentationFactory[CachedClassFolderResource[A], ResourceFolder] = {
+    
+    implicit def apply[A]: ResourceRepresentationFactory[CachedClassFolderResource[A], ResourceFolder] = {
         new CachedClassFolderResource[A](_)
     }
 }

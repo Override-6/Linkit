@@ -42,7 +42,7 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
                 newSocket()
                 notConnected = false
             } catch {
-                case e@(_: SocketException | _: ConnectException) =>
+                case _: SocketException | _: ConnectException =>
                     AppLoggers.Traffic.warn("Unable to connect to server.")
                     AppLoggers.Traffic.warn(s"Waiting for $reconnectionPeriod ms before another try...")
                     Thread.sleep(reconnectionPeriod)

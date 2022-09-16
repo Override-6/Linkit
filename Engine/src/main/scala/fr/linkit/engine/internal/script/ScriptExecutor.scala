@@ -14,31 +14,31 @@
 package fr.linkit.engine.internal.script
 
 import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.resource.local.LocalFolder
 import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile, ScriptHandler, ScriptInstantiator}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.application.resource.external.LocalResourceFolder
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
 
 import java.net.URL
 
 object ScriptExecutor {
-
+    
     val DefaultScriptHandler = new SimpleScriptHandler[ScriptFile]
-
+    
     @throws[ScriptCompileException]
     def newScalaScript(scriptName: String)(scriptCode: String)(implicit center: CompilerCenter): ScriptInstantiator[ScriptFile] = {
         newScalaScript[ScriptFile](scriptName, Map.empty)(scriptCode)(DefaultScriptHandler, center)
     }
-
+    
     @throws[ScriptCompileException]
     def newScalaScript(scriptName: String, additionalArguments: Map[String, Class[_]])(scriptCode: String)(implicit center: CompilerCenter): ScriptInstantiator[ScriptFile] = {
         newScalaScript[ScriptFile](scriptName, additionalArguments)(scriptCode)(DefaultScriptHandler, center)
     }
-
+    
     @throws[ScriptCompileException]
     def newScalaScript[S <: ScriptFile](scriptName: String, additionalArguments: Map[String, Class[_]] = Map.empty)(scriptCode: String)(implicit scriptHandler: ScriptHandler[S], center: CompilerCenter): ScriptInstantiator[S] = {
         val classLoader = Thread.currentThread().getContextClassLoader
@@ -46,7 +46,7 @@ object ScriptExecutor {
             AppLoggers.Compilation.info(s"Performing Class generation for script '$scriptName'")
             val blueprint = new ScalaScriptBlueprint(scriptHandler.scriptClassBlueprint).asInstanceOf[ClassBlueprint[ScriptContext]]
             new ClassCompilationRequestFactory[ScriptContext, S](blueprint)
-                .makeRequest(scriptHandler.newScriptContext(scriptCode, scriptName, additionalArguments, classLoader))
+                    .makeRequest(scriptHandler.newScriptContext(scriptCode, scriptName, additionalArguments, classLoader))
         }
         AppLoggers.Compilation.info(s"Script '$scriptName' class generation ended in ${result.getCompileTime} ms.")
         val clazz = result.getValue.get
@@ -54,7 +54,7 @@ object ScriptExecutor {
             throw new ScriptCompileException(s"Some exception occurred during class compilation of script '$scriptName'. See above messages for further details.")
         scriptHandler.newScript(clazz, _: _*)
     }
-
+    
     @throws[ScriptCompileException]
     def newScalaScriptFromUrl[S <: ScriptFile](scriptUrl: URL, additionalArguments: Map[String, Class[_]])(implicit scriptHandler: ScriptHandler[S], center: CompilerCenter): ScriptInstantiator[S] = {
         val scriptCode = new String(scriptUrl.openStream().readAllBytes())
@@ -63,12 +63,12 @@ object ScriptExecutor {
         val scriptName = path.slice(path.lastIndexOf('/') + 1, if (nameEndPos < 0) path.length else nameEndPos)
         newScalaScript[S](scriptName, additionalArguments)(scriptCode)(scriptHandler, center)
     }
-
+    
     @throws[ScriptCompileException]
     def newScalaScriptFromUrl[S <: ScriptFile](scriptUrl: URL)(implicit scriptHandler: ScriptHandler[S], center: CompilerCenter): ScriptInstantiator[S] = {
         newScalaScriptFromUrl[S](scriptUrl, Map.empty[String, Class[_]])(scriptHandler, center)
     }
-
+    
     @throws[ScriptCompileException]
     def getOrCreateScript[S <: ScriptFile](scriptUrl: URL, app: ApplicationContext, additionalArguments: Map[String, Class[_]] = Map.empty)(implicit scriptHandler: ScriptHandler[S]): ScriptInstantiator[S] = {
         val path       = scriptUrl.getPath
@@ -76,22 +76,22 @@ object ScriptExecutor {
         val scriptName = path.slice(path.lastIndexOf('/') + 1, if (nameEndPos < 0) path.length else nameEndPos)
         findScript[S](scriptName, app).getOrElse(newScalaScriptFromUrl(scriptUrl, additionalArguments)(scriptHandler, app.compilerCenter))
     }
-
+    
     @throws[ScriptCompileException]
     def getOrCreateScript(scriptUrl: URL, app: ApplicationContext): ScriptInstantiator[ScriptFile] = {
         getOrCreateScript[ScriptFile](scriptUrl, app)(DefaultScriptHandler)
     }
-
+    
     def findScript(name: String)(implicit app: ApplicationContext): Option[ScriptInstantiator[ScriptFile]] = {
         findScript(name, app)(DefaultScriptHandler)
     }
-
+    
     def findScript[S <: ScriptFile](name: String, app: ApplicationContext)(implicit handler: ScriptHandler[S]): Option[ScriptInstantiator[S]] = {
         val resources = app.getAppResources
-            .getOrOpen[LocalResourceFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
-            .getEntry
-            .getOrAttachRepresentation[CachedClassFolderResource[ScriptFile]]("script")
+                .getOrOpen[LocalFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
+                .getEntry
+                .getOrAttachRepresentation[CachedClassFolderResource[ScriptFile]]("script")
         handler.findScript(name, resources)
     }
-
+    
 }

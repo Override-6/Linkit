@@ -17,10 +17,12 @@ import fr.linkit.api.application.connection.ConnectionException
 import fr.linkit.server.connection.ServerConnection
 import org.jetbrains.annotations.NotNull
 
+import scala.collection.mutable
+
 class ServerException(@NotNull connection: ServerConnection,
                       msg: String, cause: Throwable = null) extends ConnectionException(connection, msg, cause) {
 
-    override def appendMessage(sb: StringBuilder): Unit = {
+    override def appendMessage(sb: mutable.StringBuilder): Unit = {
         super.appendMessage(sb)
         val port = connection.configuration.port
         sb.append(s"Server opened on port '$port'")

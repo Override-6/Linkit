@@ -28,6 +28,7 @@ import javassist.bytecode.{AnnotationsAttribute, MethodInfo}
 import java.lang.reflect.{Constructor, Method, Modifier}
 import scala.annotation.switch
 import scala.collection.immutable.HashSet
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class SyncClassRectifier(desc: SyncObjectDescription[_],
@@ -312,7 +313,7 @@ object SyncClassRectifier {
 
     def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
 
-        val sb = new StringBuilder("(")
+        val sb = new mutable.StringBuilder("(")
         params.foreach { clazz =>
             sb.append(typeStringClass(clazz))
         }
@@ -323,7 +324,7 @@ object SyncClassRectifier {
 
     def getMethodDescriptor(params: Array[CtClass], returnType: Class[_]): String = {
 
-        val sb = new StringBuilder("(")
+        val sb = new mutable.StringBuilder("(")
         params.foreach { clazz =>
             sb.append(typeStringCtClass(clazz))
         }
@@ -334,13 +335,13 @@ object SyncClassRectifier {
 
     def typeStringCtClass(clazz: CtClass): String = {
         var cl      = clazz
-        val finalSB = new StringBuilder
+        val finalSB = new mutable.StringBuilder
         while (cl.isArray) {
             finalSB.append("[")
             cl = clazz.getComponentType
         }
         val jvmTpe = StringToPrimitiveID.getOrElse(cl.getName, {
-            val objSB = new StringBuilder()
+            val objSB = new mutable.StringBuilder()
             objSB.append("L")
                     .append(cl.getName.replace(".", "/"))
                     .append(";")

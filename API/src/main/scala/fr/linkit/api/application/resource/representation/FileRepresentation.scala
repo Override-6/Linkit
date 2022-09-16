@@ -13,7 +13,7 @@
 
 package fr.linkit.api.application.resource.representation
 
-import fr.linkit.api.application.resource.external.ResourceFile
+import fr.linkit.api.application.resource.local.ResourceFile
 
 trait FileRepresentation extends ResourceRepresentation {
 

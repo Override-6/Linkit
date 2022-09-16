@@ -13,13 +13,14 @@
 
 package fr.linkit.api.application.resource.representation
 
-import fr.linkit.api.application.resource.external.Resource
+import fr.linkit.api.application.resource.local.{Resource, ResourceFactory}
+
+import scala.reflect.ClassTag
 
 trait ResourceRepresentationFactory[R <: ResourceRepresentation, -E <: Resource] {
-
+    
     final implicit val self: ResourceRepresentationFactory[R, E] = this
-
-
+    
     def apply(resource: E): R
-
+    
 }

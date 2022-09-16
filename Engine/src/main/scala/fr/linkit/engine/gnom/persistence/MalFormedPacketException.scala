@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.persistence
 import fr.linkit.api.gnom.packet.PacketException
 
 import java.nio.ByteBuffer
+import scala.collection.mutable
 
 case class MalFormedPacketException(bytes: Array[Byte], msg: String) extends PacketException(msg) {
 
@@ -27,7 +28,7 @@ case class MalFormedPacketException(bytes: Array[Byte], msg: String) extends Pac
         this(null: Array[Byte], msg)
     }
 
-    override protected def appendMessage(sb: StringBuilder): Unit = {
+    override protected def appendMessage(sb: mutable.StringBuilder): Unit = {
         super.appendMessage(sb)
         if (bytes != null)
             sb.append(s"For sequence: ${new String(bytes)}")

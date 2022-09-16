@@ -15,7 +15,7 @@ package fr.linkit.api.application
 
 import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.application.connection.ConnectionContext
-import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.resource.local.ResourceFolder
 import fr.linkit.api.gnom.referencing.StaticNetworkObject
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.internal.generation.compilation.CompilerCenter

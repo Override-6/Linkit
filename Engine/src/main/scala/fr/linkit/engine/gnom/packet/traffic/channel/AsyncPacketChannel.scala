@@ -20,6 +20,7 @@ import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.internal.util.ConsumerContainer
+import fr.linkit.spi.gnom.packet.traffic.AbstractPacketChannel
 
 class AsyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope)
     extends AbstractPacketChannel(store, scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {

@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.network.statics
 
+import fr.linkit.api.application.resource.local.{LocalFolder, ResourceEntry, ResourceFolder}
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor, StaticsCaller}
@@ -20,12 +21,11 @@ import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.application.resource.external.LocalResourceFolder._
+import fr.linkit.engine.application.resource.local.LocalResourceFolder._
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncStaticsDescription
 import fr.linkit.engine.gnom.network.statics.StaticAccessImpl.CompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
-import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource.factory
 
 import scala.reflect.{ClassTag, classTag}
 
@@ -35,8 +35,16 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
     private val app      = cache.network.connection.getApp
     private val center   = app.compilerCenter
     private val resource = {
-        val prop = LinkitApplication.getProperty("compilation.working_dir.classes")
-        app.getAppResources.getOrOpenThenRepresent[CachedClassFolderResource[StaticsCaller]](prop)
+        val prop     = LinkitApplication.getProperty("compilation.working_dir.classes")
+        val resource = app.getAppResources.getOrOpen[LocalFolder](prop)
+        type R = CachedClassFolderResource[StaticsCaller]
+        val entry = resource.getEntry.asInstanceOf[ResourceEntry[ResourceFolder]]
+        entry
+                .findRepresentation[R]()
+                .getOrElse {
+                    entry.attachRepresentation[R]()(classTag[R], CachedClassFolderResource[StaticsCaller])
+                    entry.getRepresentation[R]()
+                }
     }
     
     override def apply[S: ClassTag]: StaticAccessor = {

@@ -16,8 +16,8 @@ package fr.linkit.engine.gnom.packet.traffic.channel.request
 import fr.linkit.api.gnom.packet.channel.request.SubmitterPacket
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
+import fr.linkit.spi.gnom.packet.AbstractAttributesPresence
 
 import java.util.NoSuchElementException
 import scala.reflect.ClassTag
@@ -29,8 +29,6 @@ sealed abstract class AbstractSubmitterPacket(id: Int, packets: Array[Packet]) e
 
     @throws[NoSuchElementException]("If this method is called more times than packet array's length" + this)
     override def nextPacket[P <: Packet : ClassTag]: P = {
-        //AppLogger.debug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")} + id: $id, code: $hashCode")
-        //        Thread.dumpStack()
         if (packetIndex >= packets.length) {
             throw new NoSuchElementException(s"Packet Index >= packets.length ($packetIndex >= ${packets.length})")
         }

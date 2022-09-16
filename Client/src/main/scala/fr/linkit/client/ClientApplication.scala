@@ -15,7 +15,7 @@ package fr.linkit.client
 
 import fr.linkit.api.application.config.ApplicationInstantiationException
 import fr.linkit.api.application.connection.{ConnectionContext, ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.resource.local.ResourceFolder
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system
 import fr.linkit.api.internal.system._

@@ -16,6 +16,7 @@ package fr.linkit.api.internal.generation
 import java.lang.reflect.{GenericDeclaration, Type, TypeVariable}
 import java.util.function.IntFunction
 import java.util.regex.{MatchResult, Pattern}
+import scala.collection.mutable
 
 object TypeVariableTranslator {
 
@@ -88,7 +89,7 @@ object TypeVariableTranslator {
     }
 
     private def toDeclaration(types: Array[_ <: TypeVariable[_ <: GenericDeclaration]]): String = {
-        val builder = new StringBuilder
+        val builder = new mutable.StringBuilder
         types.foreach { typeVar =>
             builder.append(toJavaGenericParameter(typeVar))
                 .append(",")
@@ -101,7 +102,7 @@ object TypeVariableTranslator {
     }
 
     private def toJavaGenericParameter(typeVar: TypeVariable[_ <: GenericDeclaration]): String = {
-        val builder   = new StringBuilder(typeVar.getTypeName)
+        val builder   = new mutable.StringBuilder(typeVar.getTypeName)
         var firstType = true
         typeVar.getBounds
             .filter(_ != classOf[Object])

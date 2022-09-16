@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.generation.sync
 
-import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.resource.local.{LocalFolder, ResourceFactory, ResourceFolder}
 import fr.linkit.api.application.resource.representation.ResourceRepresentationFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
@@ -44,4 +44,5 @@ object SyncClassStorageResource extends ResourceRepresentationFactory[SyncClassS
     val GeneratedClassesPackage = "gen."
 
     override def apply(resource: ResourceFolder): SyncClassStorageResource = new SyncClassStorageResource(resource)
+    
 }

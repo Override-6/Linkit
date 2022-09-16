@@ -18,6 +18,7 @@ import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint.removeBPComments
 
 import java.io.InputStream
+import scala.collection.mutable
 
 abstract class AbstractClassBlueprint[V <: CompilationContext] private(protected val blueprint: String) extends ClassBlueprint[V] {
 
@@ -52,7 +53,7 @@ object AbstractClassBlueprint {
 
     def removeBPComments(blueprint: String): String = {
         var nextCommentPos = blueprint.indexOf(BlueprintCommentPrefix)
-        val result         = new StringBuilder(blueprint)
+        val result         = new mutable.StringBuilder(blueprint)
 
         def shouldDeleteWholeLine(from: Int): Boolean = {
             for (i <- from to nextCommentPos) {
