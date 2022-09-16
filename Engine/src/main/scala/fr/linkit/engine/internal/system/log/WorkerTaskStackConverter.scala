@@ -28,10 +28,11 @@ class WorkerTaskStackConverter(options: Array[String]) extends LogEventPatternCo
 
     private val separator = Try(options(0)).getOrElse(">")
     private val unknown   = Try(options(1)).getOrElse("?")
+    private val nocolor   = Try(options(2) == "nocolor").getOrElse(false)
 
     override def format(event: LogEvent, sb: lang.StringBuilder): Unit = {
         val start = sb.length()
-        if (fullFormat(sb)) {
+        if (!nocolor & fullFormat(sb)) {
             fieldColor.format(start, sb)
         } else fieldNoColor.format(start, sb)
     }
@@ -54,7 +55,7 @@ class WorkerTaskStackConverter(options: Array[String]) extends LogEventPatternCo
                         i += 1
                     }
                     val last = stack(i)
-                    sb.append(green).append(last)
+                    (if (nocolor) sb else sb.append(color)).append(last)
                     true
                 }
         }
@@ -64,11 +65,11 @@ class WorkerTaskStackConverter(options: Array[String]) extends LogEventPatternCo
 
 object WorkerTaskStackConverter {
 
-    private final val green        = AnsiEscape.createSequence("YELLOW")
+    private final val color        = AnsiEscape.createSequence("YELLOW")
     private final val MinLength    = 6
     private final val MaxLength    = 16
     private final val fieldNoColor = new FormattingInfo(true, MinLength, MaxLength, true)
-    private final val fieldColor   = new FormattingInfo(true, MinLength + green.length, MaxLength + green.length, true)
+    private final val fieldColor   = new FormattingInfo(true, MinLength + color.length, MaxLength + color.length, true)
 
     def newInstance(options: Array[String]): WorkerTaskStackConverter = {
         new WorkerTaskStackConverter(options.headOption.map(_.split(",")).getOrElse(Array()))

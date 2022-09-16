@@ -11,18 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.application.config
+package fr.linkit.api.internal.system.log
 
-import fr.linkit.api.internal.system.security.ApplicationSecurityManager
-import org.jetbrains.annotations.NotNull
-
-trait ApplicationConfiguration {
+class InvalidLoggerConfigurationException(msg: String, cause: Throwable = null) extends Exception(msg, cause) {
     
-    val logfilename        : Option[String]
-
-    @NotNull val resourceFolder: String
-
-    @NotNull val securityManager: ApplicationSecurityManager
-
-
 }

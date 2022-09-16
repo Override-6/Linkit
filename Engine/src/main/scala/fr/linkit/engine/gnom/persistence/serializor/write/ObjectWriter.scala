@@ -138,8 +138,8 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         (flag: @switch) match {
             case Class   => foreach[Class[_]](writeClass)
             case SyncDef => foreach[SyncClassDef](writeSyncClassDef)
-            case String  => foreach[String](putString)
-            case Enum    => foreach[Enum[_]](putEnum)
+            case String  => foreach[String](writeString)
+            case Enum    => foreach[Enum[_]](writeEnum)
             case Array   => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
             case Object  => foreach[SimpleObject](writeObject)
             case RNO     => foreach[ReferencedPoolObject](obj => putRef(obj.referenceIdx))
@@ -166,13 +166,14 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         }
     }
     
-    private def putEnum(enum: Enum[_]): Unit = {
+    private def writeEnum(enum: Enum[_]): Unit = {
         putTypeRef(enum.getClass)
-        putString(enum.name())
+        writeString(enum.name())
     }
     
-    private def putString(str: String): Unit = {
-        buff.putInt(str.length).put(str.getBytes())
+    private def writeString(str: String): Unit = {
+        val bytes = str.getBytes()
+        buff.putInt(bytes.length).put(bytes)
     }
     
     private def writeObject(poolObj: SimpleObject): Unit = {

@@ -21,7 +21,9 @@ import java.util.concurrent.LinkedBlockingQueue
 class SimpleHiringWorkerPool(name: String) extends AbstractWorkerPool(name) with HiringWorkerPool {
 
     private val workQueue = new LinkedBlockingQueue[Runnable]()
-
+    
+    override def nextTaskCount: Int = super.nextTaskCount
+    
     override def hireCurrentThread(): Unit = {
         val currentWorker = WorkerPools.currentWorkerOpt
         if (currentWorker.isDefined)

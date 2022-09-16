@@ -40,6 +40,8 @@ private[concurrency] trait AbstractWorker
     
     private var currentLock = new Object
     
+    protected def nextPoolTaskCount: Int
+    
     override def getCurrentTask: Option[ThreadTask] = Option(currentTask)
     
     override def getTaskStack: Array[Int] = workingTasks.keys.toArray
@@ -127,9 +129,8 @@ private[concurrency] trait AbstractWorker
     override def runWhileSleeping(task: => Unit): Unit = {
         if (!isSleeping)
             throw new IllegalThreadStateException("Thread isn't sleeping.")
-        val id = if (currentTask == null) 0 else currentTask.taskID + 1
         currentLock.synchronized {
-            forcedTasks += new SimpleAsyncTask(id, currentTask, () => Try(task))
+            forcedTasks += new SimpleAsyncTask(nextPoolTaskCount, currentTask, () => Try(task))
         }
         if (currentTask != null)
             wakeup(currentTask)

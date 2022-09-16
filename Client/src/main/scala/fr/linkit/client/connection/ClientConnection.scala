@@ -182,13 +182,10 @@ object ClientConnection {
         socket.identifier = serverIdentifier
 
         //Constructing connection instance session
-        AppLoggers.Connection.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
         val sessionInfo = ClientConnectionSessionInfo(context, configuration, serverIdentifier, translator)
         val session     = ClientConnectionSession(socket, sessionInfo)
         //Constructing connection instance...
-        //Stage 2 will be completed into ClientConnection constructor.
         val connection  = new ClientConnection(session)
-        AppLoggers.Connection.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
         connection
     }
 

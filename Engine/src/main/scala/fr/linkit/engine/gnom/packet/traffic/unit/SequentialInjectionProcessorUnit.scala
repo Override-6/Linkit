@@ -43,7 +43,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
     @volatile private final var packetCount = 0
 
     override def post(result: PacketDownload): Unit = {
-        AppLoggers.Traffic.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderID}) Current unit executor: $executor.")
+        AppLoggers.Traffic.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderID}) Current unit executor: ${executor}.")
 
 
         queues.synchronized {
@@ -64,7 +64,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                 if (executor.isSleeping) {
                     //If the thread that is in charge of the deserialization / injection process is doing nothing
                     //then force it to deserialize all remaining packets
-                    AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that the executor is sleeping, waking up executor ($executor) to inject remaining packets.")
+                    AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that the executor is sleeping, waking up executor (${executor.thread.getName}) to inject remaining packets.")
                     try executor.runWhileSleeping(deserializeAll(true))
                     catch {
                         case _: IllegalThreadStateException =>
@@ -81,7 +81,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                         //thread is blocked, let's transfer all the remaining deserialization / injection work to this thread.
                         //This operation has been made up in order to avoid possible deadlocks in local, or through the network.
                         //If the initial executor is notified or unparked, it will simply give up this SIPU.
-                        AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that the executor is blocked. All injections of the executor ($executor) are transferred to this thread.")
+                        AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that the executor is blocked. All injections of the executor (${executor.thread.getName}) are being transferred to this thread.")
                     //do not returns which will let the current thread enter in the deserialization process,
                     //when the initial executor will get unblocked, it'll detect that his work has been transferred to current thread and so will exit this unit.
 
@@ -153,7 +153,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
         if (currentTask == null && executor != null)
             this.synchronized(wait())
         else if (executor != null) {
-            AppLoggers.Traffic.trace(s"Pausing task, waiting for '$executor' to finish.")
+            AppLoggers.Traffic.trace(s"Pausing task, waiting for '${executor.thread.getName}' to finish.")
             currentTask.synchronized {}
             joinLocker.pauseTask()
         }
@@ -186,12 +186,12 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
         def nonEmpty: Boolean = queue.size() > 0
 
         def offer(packet: PacketDownload): Unit = {
-            queue.offer(packet)
+            queue.synchronized(queue.offer(packet))
             lastUpdate = System.currentTimeMillis()
         }
 
         def remove(): PacketDownload = {
-            val result = queue.remove()
+            val result = queue.synchronized(queue.remove())
             if (result == null)
                 throw new NullPointerException("queue.remove returned null.")
             val queueLength     = queue.size

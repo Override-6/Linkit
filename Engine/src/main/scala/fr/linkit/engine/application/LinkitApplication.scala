@@ -89,7 +89,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             throw new AppException("Application is already started")
         }
         alive = true
-        AppLoggers.App.info("Parsing found behavior contracts...")
+        AppLoggers.App.debug("Parsing found behavior contracts...")
         ContractProvider.precompute(this)
     }
     
@@ -147,6 +147,7 @@ object LinkitApplication {
     def prepareApplication(implVersion: Version, configuration: ApplicationConfiguration, otherSources: Seq[Class[_]]): ResourceFolder = this.synchronized {
         
         System.setProperty(EngineConstants.ImplVersionProperty, implVersion.toString)
+        configuration.logfilename.foreach(System.setProperty(AppLoggers.LogFileProperty, _))
         
         AppLoggers.App.info("-------------------------------------- Linkit Framework --------------------------------------")
         AppLoggers.App.info(s"\tApi Version            | ${ApiConstants.Version}")
@@ -163,11 +164,11 @@ object LinkitApplication {
                     Files.write(res.getPath, getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes())
                     res
                 }
-        AppLoggers.App.info("Loading properties...")
+        AppLoggers.App.debug("Loading properties...")
         properties.load(Files.newInputStream(propertiesResources.getPath))
         AppLoggers.App.info("Loading Native Libraries...")
         InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
-
+        
         isPrepared = true
         appResources
     }
@@ -175,9 +176,9 @@ object LinkitApplication {
     def mapEnvironment(otherSources: Seq[Class[_]]): Unit = {
         AppLoggers.App.info("Mapping classes...")
         MappingEngine.mapAllSourcesOfClasses(Seq(getClass, MappingEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
-        MappingEngine.mapJDK()
         MappingEngine.mapAllSourcesOfClasses(otherSources)
-        AppLoggers.Mappings.info(s"Environment mapped: mapped total of ${ClassMappings.classCount} classes.")
+        MappingEngine.mapJDK()
+        AppLoggers.Mappings.debug(s"Environment mapped: mapped total of ${ClassMappings.classCount} classes.")
     }
     
     private def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {

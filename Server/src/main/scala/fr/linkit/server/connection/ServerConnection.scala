@@ -134,7 +134,7 @@ class ServerConnection(applicationContext: ServerApplication,
     private def listenSocketConnection(): Unit = {
         val socketContainer = new SocketContainer(true)
         val port            = configuration.port
-        AppLoggers.Connection.info(s"Ready to accept next connection on port $port")
+        AppLoggers.Connection.debug(s"Ready to accept next connection on port $port")
         
         try {
             val socket = serverSocket.accept()
@@ -215,7 +215,6 @@ class ServerConnection(applicationContext: ServerApplication,
             verdict.concludeRefusal(socket)
             return
         }
-        AppLoggers.Connection.info("Stage 1 Completed : Connection seems able to support this server configuration.")
         val identifier = verdict.identifier
         socket.identifier = identifier
         handleNewConnection(identifier, socket)

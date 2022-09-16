@@ -19,9 +19,9 @@ import fr.linkit.server.ServerApplication
 import org.jetbrains.annotations.NotNull
 
 trait ServerApplicationConfiguration extends ApplicationConfiguration {
-
+    
     val mainPoolThreadCount: Int
-
+    
     @NotNull var loadSchematic: AppSchematic[ServerApplication]
-
+    
 }

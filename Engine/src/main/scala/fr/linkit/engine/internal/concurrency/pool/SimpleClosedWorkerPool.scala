@@ -32,6 +32,8 @@ class SimpleClosedWorkerPool(initialThreadCount: Int, name: String) extends Abst
     }
     setThreadCount(initialThreadCount)
     
+    override def nextTaskCount: Int = super.nextTaskCount
+    
     override protected def countRemainingTasks: Int = workQueue.size()
     
     override protected def pollTask: Runnable = workQueue.poll()

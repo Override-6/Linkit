@@ -77,22 +77,10 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         val info              = ExternalConnectionSessionInfo(server, this, server.getSideNetwork, readerThread)
         val connectionSession = ExternalConnectionSession(identifier, socket, info)
         val connection        = ServerExternalConnection.open(connectionSession)
-        AppLoggers.Connection.info(s"Stage 2 completed : Connection '$identifier' created.")
         connections.put(identifier, connection)
         sessions += connectionSession
         
         server.sendAuthorisedConnection(socket)
-        
-        val canConnect = true //server.configuration.checkConnection(connection)
-        if (canConnect) {
-            AppLoggers.Connection.info(s"Stage 3 completed : Connection of '$identifier' was registered into connection manager")
-            return
-        }
-        
-        AppLoggers.Connection.error(s"Security Manager discarded connection $identifier from the server.")
-        
-        connections.remove(identifier)
-        connection.shutdown()
     }
     
     /**

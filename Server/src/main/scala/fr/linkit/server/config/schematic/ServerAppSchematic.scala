@@ -31,7 +31,7 @@ abstract class ServerAppSchematic extends AppSchematic[ServerApplication] {
     override def setup(a: ServerApplication): Unit = {
         for (configuration <- serverConfigs) {
             try {
-                AppLoggers.App.info(s"Loading configuration ${configuration.configName}")
+                AppLoggers.App.info(s"Opening server connection with configuration name ${configuration.configName}...")
                 a.openServerConnection(configuration)
             } catch {
                 case NonFatal(e) =>

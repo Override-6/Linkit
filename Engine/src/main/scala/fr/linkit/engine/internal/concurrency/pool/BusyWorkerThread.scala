@@ -17,8 +17,10 @@ import fr.linkit.api.internal.concurrency.pool.WorkerPool
 import fr.linkit.engine.internal.concurrency.pool.EngineWorkerPools.workerThreadGroup
 
 class BusyWorkerThread(target: Runnable,
-                       override val pool: WorkerPool,
+                       override val pool: SimpleClosedWorkerPool,
                        tid: Int) extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$tid") with AbstractWorker {
     override val thread: Thread = this
+    
+    override protected def nextPoolTaskCount: Int = pool.nextTaskCount
 }
 

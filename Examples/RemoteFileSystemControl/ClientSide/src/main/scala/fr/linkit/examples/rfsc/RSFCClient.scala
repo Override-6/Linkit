@@ -76,8 +76,10 @@ object RSFCClient {
     }
 
     private def launchConnection(identifier0: String): ExternalConnection = {
+        println(s"Using identifier $identifier0")
         val config = new ClientApplicationConfigBuilder {
             val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            logfilename = Some(s"rsfc client $identifier0")
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {
                     override val identifier    = identifier0

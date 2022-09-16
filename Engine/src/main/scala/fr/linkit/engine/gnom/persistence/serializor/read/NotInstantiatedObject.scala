@@ -49,6 +49,8 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         }
     }
     
+    override def toString: String = s"Uninstantiated $clazz"
+    
     override def value: T = {
         if (!isInit)
             buildObject()

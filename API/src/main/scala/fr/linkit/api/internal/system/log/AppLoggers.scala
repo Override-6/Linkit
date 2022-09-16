@@ -13,11 +13,17 @@
 
 package fr.linkit.api.internal.system.log
 
+import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.{LogManager, Logger}
+import org.apache.logging.log4j.core.config.Configurator
 
 object AppLoggers {
-
-    final val Root        = LogManager.getRootLogger
+    
+    
+    Configurator.initialize(null, "log4j2-development.xml")
+    
+    final val LogFileProperty = "logfilename"
+    
     final val App         = logger("Application")
     final val GNOM        = logger("GNOM")
     final val ConnObj     = logger("GNOM.ConnObj")
@@ -29,9 +35,17 @@ object AppLoggers {
     final val Compilation = logger("Compilation")
     final val Worker      = logger("Worker")
     final val Connection  = logger("Connection")
-
-    //Debug logger used to print stuff that are not pertinent for the user and that must be removed once the bug is fixed
-    final val Debug = logger("Debug")
-
-    private def logger(name: String): Logger = LogManager.getLogger(name)
+    
+    private var init = false
+    
+    private def logger(name: String): Logger = {
+        if (!init && System.getProperty(LogFileProperty) == null) {
+            println(s"Warn: No logfile will be generated because no '$LogFileProperty' system property was found.")
+            val context = LogManager.getContext(false).asInstanceOf[LoggerContext]
+            val config  = context.getConfiguration
+            config.getLoggers.values().forEach(_.removeAppender("LogFile"))
+            init = true
+        }
+        LogManager.getLogger(name)
+    }
 }

@@ -19,9 +19,11 @@ import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
 
 import scala.util.Failure
 
-class HiredWorker(override val thread: Thread, override val pool: WorkerPool)
+class HiredWorker(override val thread: Thread, override val pool: SimpleHiringWorkerPool)
         extends AbstractWorker with InternalWorkerThread { that =>
-
+    
+    override protected def nextPoolTaskCount: Int = pool.nextTaskCount
+    
     private final val rootTask = new SimpleAsyncTask[Nothing](-1, null, () => Failure[Nothing](null)) {
         setWorker(that)
     }
