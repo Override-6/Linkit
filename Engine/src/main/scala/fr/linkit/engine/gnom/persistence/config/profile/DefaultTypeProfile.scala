@@ -46,7 +46,7 @@ class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
         }
         val result = if (declaredParent ne null) declaredParent.getPersistence(args) else null
         if (result == null)
-            throw new NoSuchElementException(s"No Type Persistence matching with object structure array '${args.mkString("(", ", ", ")")}' has been found, for type profile '$typeClass'")
+            throw new NoSuchElementException(s"No type persistence matching with object structure array '${args.mkString("(", ", ", ")")}' has been found, for type profile of class '$typeClass'")
         result
     }
 }

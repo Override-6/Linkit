@@ -209,6 +209,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         val node = try findNode(path) finally lock.unlock()
 
         val senderID = bundle.coords.senderID
+        AppLoggers.COInv.trace(s"Handling invocation packet over object ${ip.objRef}. For method with id '${ip.methodID}'")
         node.fold(AppLoggers.ConnObj.error(s"Could not find sync object node for connected object located at $ref")) {
             case node: TrafficInterestedNode[_] => node.handlePacket(ip, senderID, bundle.responseSubmitter)
             case _                              =>
@@ -259,7 +260,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
             return
         requestLock.lock()
         forest.putUnknownTree(id)
-        AppLoggers.ConnObj.trace(requestLock.getHoldCount + s" Requesting root object $treeRef.")
+        AppLoggers.ConnObj.trace(s" Requesting root object $treeRef.")
 
         if (isSyncOnRefLock) refLock.unlock()
         try {

@@ -27,7 +27,7 @@ class UserInputHandler(accounts: UserAccountContainer) {
         Option(current.findWallet(walletName)).fold(current.openWallet(walletName, initialAmount)) { _ =>
             fail(s"Wallet '$walletName' already exists !")
         }
-        println(s"Successfully opened walled '$walletName' with initial amount of $initialAmount$$")
+        println(s"Successfully opened wallet '$walletName' with initial amount of $initialAmount$$")
     }
 
     private def printHistory(args: Array[String]): Unit = {
@@ -39,6 +39,8 @@ class UserInputHandler(accounts: UserAccountContainer) {
                 .getOrElse(fail(s"could not find wallet '$walletName'"))
                 .getHistory
         history.foreach(println)
+        if (history.isEmpty)
+            println(s"No history for wallet $walletName")
     }
 
     private def sendMoney(args: Array[String]): Unit = {

@@ -102,14 +102,14 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             } catch {
                 case NonFatal(e) =>
                     val coords = result.coords
-
+                    val errMsg = s"Could not deserialize packet @${coords.path.mkString("/")}$$${coords.senderID}:${result.ordinal}."
                     if (AppLoggers.Persistence.isDebugEnabled) {
-                        AppLoggers.Persistence.error(s"Could not deserialize packet @${coords.path.mkString("/")}$$${coords.senderID}:${result.ordinal}.")
+                        AppLoggers.Persistence.error(errMsg)
                         e.printStackTrace()
                     } else {
                         val st = e.getStackTrace
                         val firstInterestingStackTrace = st.find(el => Class.forName(el.getClassName).getClassLoader != null).getOrElse(st.head)
-                        AppLoggers.Persistence.error(s"Could not deserialize packet @${coords.path.mkString("/")}$$${coords.senderID}:${result.ordinal}. $e ($firstInterestingStackTrace)")
+                        AppLoggers.Persistence.error(s"$errMsg $e ($firstInterestingStackTrace)")
                     }
             }
         }
