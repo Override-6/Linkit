@@ -22,17 +22,16 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
+import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.api.gnom.referencing.linker.{InitialisableNetworkObjectLinker, NetworkObjectLinker}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
-import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 import fr.linkit.engine.gnom.referencing.NOLUtils.throwUnknownObject
 import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
-import java.util.concurrent.{Executors, ThreadPoolExecutor}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 

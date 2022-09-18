@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.invocation.local
 
 import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.internal.concurrency.workerExecution
 
 /**
  * The Chip is a class that controls an object of type [[S]]
@@ -23,14 +24,15 @@ import fr.linkit.api.gnom.network.Engine
 trait Chip[S] {
 
     /**
-     * Invokes the method of the chipped object.
-     * The method is determined by the methodID integer.
+     * Calls method pointed by methodID parameter.
+     * The return value of the invocated method is supplied by the onResult parameter.
+     * The method can return immediatelly, or after onResult is called depending on the method's contract.
      * @param methodID the method identifier that must be called
      * @param params the parameters for the method call
      * @param caller the engine that is calling the method
      * @see [[fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription]]
      * */
-    def callMethod(methodID: Int, params: Array[Any], caller: Engine): Any
+    def callMethod(methodID: Int, params: Array[Any], caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit
     /**
      * this method will transfer to the chipped object every fields
      * values of the given object.

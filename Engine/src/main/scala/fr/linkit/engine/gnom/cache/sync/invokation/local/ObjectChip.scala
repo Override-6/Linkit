@@ -19,12 +19,12 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
+import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.internal.util.ScalaUtils
 
 import scala.annotation.switch
+import scala.util.control.NonFatal
 
 class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
                                       network: Network, chippedObject: ChippedObject[A]) extends Chip[A] {
@@ -37,7 +37,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         ScalaUtils.pasteAllFields(chipped, obj)
     }
 
-    override def callMethod(methodID: Int, params: Array[Any], caller: Engine): Any = {
+    override def callMethod(methodID: Int, params: Array[Any], caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit = {
         val methodContract = contract.findMethodContract[Any](methodID).getOrElse {
              throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${chippedObject.getClassDef}.")
         }
@@ -48,13 +48,17 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
             throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring ${chippedObject.reference} on engine ${chippedObject.ownerID}")
         val procrastinator = methodContract.procrastinator
         if (procrastinator != null) {
-            callMethodProcrastinator(methodContract, params, caller)
+            AppLoggers.COInv.debug(s"Calling Method in another Procrastinator - '$methodID'")
+            procrastinator.runLater {
+                val result = callMethod(methodContract, params, caller)(onException)
+                network.connection.runLater(onResult(result)) //return back to initial worker pool
+            }
         } else {
-            callMethod(methodContract, params, caller)
+            onResult(callMethod(methodContract, params, caller)(onException))
         }
     }
 
-    @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], caller: Engine): Any = {
+    @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], caller: Engine)(onException: Throwable => Unit): Any = {
         val invKind = contract.invocationHandlingMethod
 
         def call() = contract.choreographer.disinv {
@@ -63,7 +67,11 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
                 override val obj      : ChippedObject[_] = ObjectChip.this.chippedObject
                 override val arguments: Array[Any]       = params
             }
-            val result = contract.executeMethodInvocation(caller, data)
+            val result = try {
+                contract.executeMethodInvocation(caller, data)
+            } catch {
+                case NonFatal(e) => onException(e)
+            }
             ExecutorEngine.setCurrentEngine(network.currentEngine) //return to the current engine.
             result
         }
@@ -77,25 +85,10 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         }
     }
 
-    @inline private def callMethodProcrastinator(contract: MethodContract[Any], params: Array[Any], caller: Engine): Any = {
-        @volatile var result: Any = NoResult
-        val worker                = WorkerPools.currentWorker
-        val task                  = WorkerPools.currentTask.get
-        val pool                  = worker.pool
-        AppLoggers.COInv.debug(s"Calling Method in another Procrastinator - '${contract.description.methodId}'")
-        contract.procrastinator.runLater {
-            result = callMethod(contract, params, caller)
-            task.continue()
-        }
-        if (result == NoResult)
-            pool.pauseCurrentTask()
-        result
-    }
 }
 
 object ObjectChip {
 
-    object NoResult
 
     def apply[S <: AnyRef](contract: StructureContract[S], network: Network, chippedObject: ChippedObject[S]): ObjectChip[S] = {
         if (chippedObject == null)

@@ -154,7 +154,6 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
                     AppLoggers.Persistence.trace(s"Writing Network Object (reference: ${no.reference}) to ${bundle.boundId}.")
                 case _                    =>
             }
-
             addObjectDecomposed(ref)
         } else {
             addReferencedObject(ref, nrlOpt.get)

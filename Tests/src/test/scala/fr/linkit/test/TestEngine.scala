@@ -22,7 +22,7 @@ import fr.linkit.server.config.ServerConnectionConfigBuilder
 
 import java.net.InetSocketAddress
 
-object LinkitTestEngine {
+object TestEngine {
     
     var application      : LinkitApplicationMock = _
     var clientSideNetwork: Network               = _
@@ -32,6 +32,7 @@ object LinkitTestEngine {
     
     def launchMockingNetwork(): Unit = {
         application = LinkitApplicationMock.launch(new ApplicationConfiguration {
+            override val logfilename    : Option[String] = None
             override val securityManager: ApplicationSecurityManager = ApplicationSecurityManager.None
             override val resourceFolder : String                     = {
                 val envValue = System.getenv("LinkitHome")

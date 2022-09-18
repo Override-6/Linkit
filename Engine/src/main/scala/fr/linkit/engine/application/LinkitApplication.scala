@@ -190,7 +190,7 @@ object LinkitApplication {
         val root = LocalResourceFolder(
             path = rootPath,
             listener = resourceListener,
-            parent = null
+            parent = None
             )
         recursiveScan(root)
         

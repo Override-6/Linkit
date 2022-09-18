@@ -5,9 +5,11 @@ import fr.linkit.engine.internal.mapping.*
 import java.nio.file.Path
 import java.net.URI
 
+/*
 code ${
     val network = £{@network: AbstractNetwork}
 }
+*/
 
 agreement current_and_origin = discard * -> accept current and owner -> appoint current
 
@@ -31,7 +33,7 @@ describe RemoteClassMappings {
     onClassMapped(int) following broadcast
     requestClassName(int) following only_owner
 }
-
+/*
 modifier SharedCacheOriginManager {
     out: ${(cache, _) => network.transformToDistant(cache)}
 }
@@ -39,4 +41,4 @@ modifier DefaultEngine {
     out: ${(e, _) => {
        new DefaultEngine(e.identifier, network.findCacheManager(e.identifier).get, network)
    }}
-}
+}*/

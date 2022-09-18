@@ -46,12 +46,12 @@ final class SharedCacheDistantManager @Persist()(family: String,
                 .submit()
 
         val response = request.nextResponse
-            response.nextPacket[Packet] match {
-                case StringPacket(errorMsg)               =>
-                    throw new CacheOpenException(s"Could not open cache '$cacheID' in shared cache manager <$family, $ownerID>. Received error message from '$ownerID': $errorMsg")
-                case ref: RefPacket[Option[CacheContent]] =>
-                    ref.value
-            }
+        response.nextPacket[Packet] match {
+            case StringPacket(errorMsg)               =>
+                throw new CacheOpenException(s"Could not open cache '$cacheID' in shared cache manager <$family, $ownerID>. Received error message from '$ownerID': $errorMsg")
+            case ref: RefPacket[Option[CacheContent]] =>
+                ref.value
+        }
     }
 
     override protected def remoteCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {

@@ -210,7 +210,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         val node = try findNode(path) finally lock.unlock()
         
         val senderID = bundle.coords.senderID
-        AppLoggers.COInv.trace(s"Handling invocation packet over object ${ip.objRef}. For method with id '${ip.methodID}'")
+        AppLoggers.COInv.trace(s"Handling invocation packet over object ${ip.objRef}. For method with id '${ip.methodID}', expected engine identifier return : '${ip.expectedEngineIDReturn}'")
         node.fold(AppLoggers.ConnObj.error(s"Could not find sync object node for connected object located at $ref")) {
             case node: TrafficInterestedNode[_] => node.handlePacket(ip, senderID, bundle.responseSubmitter)
             case _                              =>

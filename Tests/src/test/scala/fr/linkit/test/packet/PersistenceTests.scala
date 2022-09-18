@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.StringPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.SyncPacketChannel
-import fr.linkit.test.LinkitTestEngine
+import fr.linkit.test.TestEngine
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions._
 
@@ -26,8 +26,8 @@ import scala.reflect.ClassTag
 
 class PersistenceTests {
     
-    private final val clientChannel = LinkitTestEngine.clientSideNetwork.connection.traffic.getInjectable(201, SyncPacketChannel, ChannelScopes.broadcast)
-    private final val serverChannel = LinkitTestEngine.serverSideNetwork.connection.traffic.getInjectable(201, SyncPacketChannel, ChannelScopes.broadcast)
+    private final val clientChannel = TestEngine.clientSideNetwork.connection.traffic.getInjectable(201, SyncPacketChannel, ChannelScopes.broadcast)
+    private final val serverChannel = TestEngine.serverSideNetwork.connection.traffic.getInjectable(201, SyncPacketChannel, ChannelScopes.broadcast)
     
     private def testPacket[P <: Packet : ClassTag](packet: P, print: Boolean = true)(assertions: ((P, P) => Unit)*): Unit = {
         if (print)
