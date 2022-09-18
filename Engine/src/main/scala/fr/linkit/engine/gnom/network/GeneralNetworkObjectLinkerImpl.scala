@@ -23,8 +23,10 @@ import fr.linkit.api.gnom.referencing._
 import fr.linkit.api.gnom.referencing.linker.{GeneralNetworkObjectLinker, InitialisableNetworkObjectLinker, NetworkObjectLinker, RemainingNetworkObjectLinker}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
+import fr.linkit.engine.gnom.cache.SharedCacheManagersLinker
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinkerImpl.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
+import fr.linkit.engine.gnom.packet.traffic.TrafficNetworkObjectLinker
 import fr.linkit.engine.gnom.packet.traffic.channel.request.DefaultRequestBundle
 import fr.linkit.engine.gnom.referencing.presence.{AbstractNetworkPresenceHandler, SystemNetworkObjectPresence}
 import fr.linkit.engine.internal.util.ClassMap
@@ -33,21 +35,21 @@ import scala.reflect.{ClassTag, classTag}
 
 class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                                      network: Network,
-                                     override val cacheNOL: InitialisableNetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH,
-                                     override val trafficNOL: NetworkObjectLinker[TrafficReference] with TrafficInterestedNPH,
+                                     override val cacheNOL: SharedCacheManagersLinker,
+                                     override val trafficNOL: TrafficNetworkObjectLinker,
                                      override val defaultNOL: RemainingNetworkObjectLinker with TrafficInterestedNPH)
         extends GeneralNetworkObjectLinker {
-    
+
     private val connection   = network.connection
     private val application  = connection.getApp
     private val otherLinkers = new ClassMap[NetworkObjectLinker[NetworkObjectReference]]()
-    
+
     startObjectManagement()
 
 
     override def addRootLinker[R <: NetworkObjectReference : ClassTag, L <: NetworkObjectLinker[R]](linker: ObjectManagementChannel => L): L = {
         val ler = linker(omc)
-        otherLinkers put (classTag[R].runtimeClass, ler.asInstanceOf[NetworkObjectLinker[NetworkObjectReference]])
+        otherLinkers put(classTag[R].runtimeClass, ler.asInstanceOf[NetworkObjectLinker[NetworkObjectReference]])
         ler
     }
 
@@ -62,7 +64,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                 reference.isInstanceOf[SystemObjectReference] ||
                 otherLinkers.contains(reference.getClass)
     }
-    
+
     override def findRootLinker(reference: NetworkObjectReference): Option[NetworkObjectLinker[_ <: NetworkObjectReference]] = {
         reference match {
             case _: SharedCacheManagerReference => Some(cacheNOL)
@@ -71,7 +73,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
             case _                              => otherLinkers.get(reference.getClass)
         }
     }
-    
+
     override def isPresentOnEngine(engineID: String, reference: NetworkObjectReference): Boolean = reference match {
         case ref: SharedCacheManagerReference => cacheNOL.isPresentOnEngine(engineID, ref)
         case ref: TrafficReference            => trafficNOL.isPresentOnEngine(engineID, ref)
@@ -82,7 +84,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                 case None         => defaultNOL.isPresentOnEngine(engineID, reference)
             }
     }
-    
+
     override def getPresence(reference: NetworkObjectReference): NetworkObjectPresence = reference match {
         case ref: SharedCacheManagerReference => cacheNOL.getPresence(ref)
         case ref: TrafficReference            => trafficNOL.getPresence(ref)
@@ -98,7 +100,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                 case None         => defaultNOL.getPresence(reference)
             }
     }
-    
+
     override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = reference match {
         case ref: SharedCacheManagerReference => cacheNOL.findObject(ref)
         case ref: TrafficReference            => trafficNOL.findObject(ref)
@@ -109,7 +111,7 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                 case None         => defaultNOL.findObject(reference)
             }
     }
-    
+
     private def handleRequest(request: RequestPacketBundle): Unit = {
         val reference    = request.attributes.getAttribute[NetworkObjectReference](ReferenceAttributeKey).getOrElse {
             throw UnexpectedPacketException(s"Could not find attribute '$ReferenceAttributeKey' in object management request bundle $request")
@@ -128,12 +130,20 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                 }
         }
     }
-    
+
     private def startObjectManagement(): Unit = omc.addRequestListener(handleRequest)
-    
+
+    def unregister(nor: NetworkObjectReference): Unit = {
+        defaultNOL.unsave(nor)
+        nor match {
+            case ref: SharedCacheManagerReference =>
+                cacheNOL.unregisterObject(ref)
+        }
+    }
+
 
     object SystemObjectPresenceHandler extends AbstractNetworkPresenceHandler[SystemObjectReference](null, omc) {
-        
+
         def findObject(location: SystemObjectReference): Option[NetworkObject[_ <: SystemObjectReference]] = {
             location match {
                 case NetworkConnectionReference => Some(connection)
@@ -144,12 +154,12 @@ class GeneralNetworkObjectLinkerImpl(omc: ObjectManagementChannel,
                 case _                          => None
             }
         }
-        
+
     }
-    
+
 }
 
 object GeneralNetworkObjectLinkerImpl {
-    
+
     final val ReferenceAttributeKey: String = "ref"
 }

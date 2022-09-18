@@ -15,10 +15,10 @@ package fr.linkit.engine.gnom.cache
 
 import fr.linkit.api.gnom.cache.{NoSuchCacheManagerException, SharedCacheManagerReference, SharedCacheReference}
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
-import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.gnom.referencing.linker.InitialisableNetworkObjectLinker
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.engine.gnom.referencing.NOLUtils._
 import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
@@ -53,16 +53,15 @@ class SharedCacheManagersLinker(network: Network, omc: ObjectManagementChannel)
             case _                              => throwUnknownRef(reference)
         }
     }
-    
-    
+
+
     override def injectRequest(bundle: LinkerRequestBundle): Unit = {
         bundle.linkerReference match {
             case ref: SharedCacheReference      =>
                 network.findCacheManager(ref.family)
-                        .fold(throw new NoSuchElementException(s"Could not find cache manager '${ref.family}'."))
-                { manager =>
-                    manager.getCachesLinker.injectRequest(bundle)
-                }
+                        .fold(throw new NoSuchElementException(s"Could not find cache manager '${ref.family}'.")) { manager =>
+                            manager.getCachesLinker.injectRequest(bundle)
+                        }
             case _: SharedCacheManagerReference => super.injectRequest(bundle)
             case ref                            => throwUnknownRef(ref)
         }
@@ -70,7 +69,7 @@ class SharedCacheManagersLinker(network: Network, omc: ObjectManagementChannel)
 
     override def initializeObject(obj: NetworkObject[_ <: SharedCacheManagerReference]): Unit = {
         obj.reference match {
-            case ref: SharedCacheReference      =>
+            case ref: SharedCacheReference        =>
                 network.findCacheManager(ref.family).fold(
                     throw new NoSuchCacheManagerException(s"Could not initialize object located at ${ref}: no such cache manager '${ref.family}")
                 ) { manager =>
@@ -78,13 +77,18 @@ class SharedCacheManagersLinker(network: Network, omc: ObjectManagementChannel)
                 }
             case ref: SharedCacheManagerReference =>
                 throw new UnsupportedOperationException(s"Cannot initialize Shared Cache Manager from the network. cache manager '${ref.family}' must be declared manually on this engine.")
-            case ref                            => throwUnknownRef(ref)
+            case ref                              => throwUnknownRef(ref)
         }
     }
 
-    override def registerReference(ref: SharedCacheManagerReference): Unit = super.registerReference(ref)
+    override def registerReference(ref: SharedCacheManagerReference): Unit = {
+        if (ref.getClass == classOf[SharedCacheManagerReference])
+            super.registerReference(ref)
+        else throw new IllegalArgumentException(s"Cannot register reference $ref in SharedCacheManagersLinker, only SharedCacheManagerReference are expected.")
+    }
 
-    override def unregisterReference(ref: SharedCacheManagerReference): Unit = super.unregisterReference(ref)
-
+    def unregisterObject(ref: SharedCacheManagerReference): Unit = {
+        ???
+    }
 
 }
