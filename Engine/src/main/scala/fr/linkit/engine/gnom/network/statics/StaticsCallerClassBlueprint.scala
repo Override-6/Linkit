@@ -16,8 +16,8 @@ package fr.linkit.engine.gnom.network.statics
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncStaticsDescription
-import fr.linkit.engine.gnom.cache.sync.generation.sync.ScalaBlueprintUtilities.{getParameters, toScalaString}
-import fr.linkit.engine.gnom.cache.sync.generation.sync.{CastsScope, SyncMethodScope}
+import fr.linkit.engine.gnom.cache.sync.generation.ScalaBlueprintUtilities.{getParameters, toScalaString}
+import fr.linkit.engine.gnom.cache.sync.generation.{CastsScope, SyncMethodScope}
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
 

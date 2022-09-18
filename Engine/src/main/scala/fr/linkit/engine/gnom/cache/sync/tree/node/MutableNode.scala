@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectNode
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 import org.jetbrains.annotations.Nullable
 
 trait MutableNode[A <: AnyRef] extends ConnectedObjectNode[A] {
@@ -22,7 +23,7 @@ trait MutableNode[A <: AnyRef] extends ConnectedObjectNode[A] {
 
     def addChild(child: MutableNode[_]): Unit
 
-    def getChild[B <: AnyRef](id: Int): Option[MutableNode[B]]
+    def getChild[B <: AnyRef](id: NamedIdentifier): Option[MutableNode[B]]
 
 }
 

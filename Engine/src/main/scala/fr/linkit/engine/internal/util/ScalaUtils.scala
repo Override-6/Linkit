@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.util
 
 import fr.linkit.api.gnom.packet.Packet
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.typeStringClass
+import fr.linkit.engine.gnom.cache.sync.generation.SyncClassRectifier.typeStringClass
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
 import fr.linkit.engine.internal.manipulation.invokation.ConstructorInvoker

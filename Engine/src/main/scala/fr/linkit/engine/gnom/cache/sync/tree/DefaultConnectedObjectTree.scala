@@ -21,6 +21,7 @@ import fr.linkit.api.gnom.cache.sync.contract.{SyncLevel, SyncObjectFieldManipul
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.network.{Engine, Network}
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.cache.sync.instantiation.{ContentSwitcher, MirroringInstanceCreator}
 import fr.linkit.engine.gnom.cache.sync.tree.node._
@@ -34,7 +35,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                                                             private[sync] val forest: DefaultSyncObjectForest[A],
                                                             val instantiator: SyncInstanceInstantiator,
                                                             val dataFactory: NodeDataFactory,
-                                                            override val id: Int,
+                                                            override val id: NamedIdentifier,
                                                             override val contractFactory: ObjectContractFactory) extends ConnectedObjectTree[A] with ObjectConnector {
     
     private var root: RootObjectNodeImpl[A] = _
@@ -42,7 +43,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
     def this(currentIdentifier: String,
              network: Network,
              center: DefaultSyncObjectForest[A],
-             id: Int,
+             id: NamedIdentifier,
              instantiator: SyncInstanceInstantiator,
              dataFactory: NodeDataFactory,
              behaviorTree: ObjectContractFactory)(rootSupplier: DefaultConnectedObjectTree[A] => RootObjectNodeImpl[A]) = {
@@ -60,7 +61,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
     
     override def rootNode: ObjectSyncNode[A] = root
     
-    override def findNode[B <: AnyRef](path: Array[Int]): Option[MutableNode[B]] = {
+    override def findNode[B <: AnyRef](path: Array[NamedIdentifier]): Option[MutableNode[B]] = {
         checkPath(path)
         findNode0[B](path)
     }
@@ -76,7 +77,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         }
     }
     
-    private def checkPath(path: Array[Int]): Unit = {
+    private def checkPath(path: Array[NamedIdentifier]): Unit = {
         if (path.isEmpty)
             throw new InvalidNodePathException("Path is empty")
     }
@@ -90,7 +91,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         insertObject[B](parent.nodePath, source, ownerID, insertionKind)
     }
     
-    override def insertObject[B <: AnyRef](parentPath: Array[Int], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
+    override def insertObject[B <: AnyRef](parentPath: Array[NamedIdentifier], source: AnyRef, ownerID: String, insertionKind: SyncLevel): ConnectedObjectNode[B] = {
         insertObject(parentPath, source, ownerID, insertionKind, source match {
             case e: Engine => e.hashCode() //as Engines are handled specifically by the system, they need a hash-based id
             case _         => ThreadLocalRandom.current().nextInt()
@@ -104,16 +105,16 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         })(obj, kind)
     }
     
-    override def insertObject[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int): ConnectedObjectNode[B] = {
+    override def insertObject[B <: AnyRef](parentPath: Array[NamedIdentifier], obj: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int): ConnectedObjectNode[B] = {
         insertObject0(parentPath, obj, ownerID, insertionKind, idHint)
     }
     
-    override def createConnectedObj(parentRef: ConnectedObjectReference, idHint: Int)(obj: Any, insertionKind: SyncLevel): ConnectedObject[AnyRef] = {
+    override def createConnectedObj(parentRef: ConnectedObjectReference, id: Int)(obj: Any, insertionKind: SyncLevel): ConnectedObject[AnyRef] = {
         val currentPath = parentRef.nodePath
-        insertObject0(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier, insertionKind, idHint).obj
+        insertObject0(currentPath, obj.asInstanceOf[AnyRef], currentIdentifier, insertionKind, id).obj
     }
     
-    private def insertObject0[B <: AnyRef](parentPath: Array[Int], obj: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int): ConnectedObjectNode[B] = {
+    private def insertObject0[B <: AnyRef](parentPath: Array[NamedIdentifier], obj: AnyRef, ownerID: String, insertionKind: SyncLevel, idHint: Int): ConnectedObjectNode[B] = {
         val parentNode = findNode[B](parentPath).getOrElse {
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
@@ -123,22 +124,21 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
                 val id = forest
                         .removeLinkedReference(obj)
                         .map(_.nodePath.last)
-                        .getOrElse(idHint)
+                        .getOrElse(NamedIdentifier(obj.getClass.getSimpleName, idHint))
                 getOrGenConnectedObject[B](parentNode, id, obj.asInstanceOf[B], insertionKind)(ownerID)
         }
     }
     
-    override def createMirroredObject[B <: AnyRef](parentPath: Array[Int], classDef: SyncClassDef, ownerID: String, idHint: Int): ConnectedObjectNode[B] = {
+    override def createMirroredObject[B <: AnyRef](parentPath: Array[NamedIdentifier], classDef: SyncClassDef, ownerID: String, id: Int): ConnectedObjectNode[B] = {
         val parentNode                     = findNode[B](parentPath).getOrElse {
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
-        val id                             = idHint
         val syncObject                     = instantiator.newSynchronizedInstance[B](new MirroringInstanceCreator[B](classDef))
         val result: ConnectedObjectNode[B] = initSynchronizedObject[B](parentNode, id, syncObject, None, ownerID, true)
         result
     }
     
-    private def findNode0[B <: AnyRef](path: Array[Int]): Option[MutableNode[B]] = {
+    private def findNode0[B <: AnyRef](path: Array[NamedIdentifier]): Option[MutableNode[B]] = {
         if (path.isEmpty || path.head != root.id)
             return None
         var ch: MutableNode[_] = root
@@ -151,7 +151,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         Option(ch.asInstanceOf[MutableNode[B]])
     }
     
-    private def getOrGenConnectedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int,
+    private def getOrGenConnectedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: NamedIdentifier,
                                                      source: B, level: SyncLevel)(ownerID: String): ConnectedObjectNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not present in this tree.")
@@ -183,14 +183,14 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         }
     }
     
-    private def newChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, chipped: B): ChippedObjectNode[B] = {
+    private def newChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: NamedIdentifier, chipped: B): ChippedObjectNode[B] = {
         //if (ownerID != currentIdentifier)
         //    throw new IllegalConnectedObjectRegistration("Attempted to create a chipped object that is not owned by the current engine. Chipped Objects can only exists on their origin engines.")
         val adapter = new ChippedObjectAdapter[B](chipped)
         initChippedObject(parent, id, adapter)
     }
     
-    private def initChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: Int, adapter: ChippedObjectAdapter[B]): ChippedObjectNode[B] = {
+    private def initChippedObject[B <: AnyRef](parent: MutableNode[_ <: AnyRef], id: NamedIdentifier, adapter: ChippedObjectAdapter[B]): ChippedObjectNode[B] = {
         val data = dataFactory.newNodeData(new ChippedObjectNodeDataRequest[B](parent, id, adapter, currentIdentifier))
         val node = new ChippedObjectNodeImpl[B](data)
         parent.addChild(node)
@@ -198,7 +198,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         node
     }
     
-    private def initSynchronizedObject[B <: AnyRef](parent: MutableNode[_], id: Int,
+    private def initSynchronizedObject[B <: AnyRef](parent: MutableNode[_], id: NamedIdentifier,
                                                     syncObject: B with SynchronizedObject[B], origin: Option[B],
                                                     ownerID: String, isMirroring: Boolean): ObjectSyncNodeImpl[B] = {
         if (syncObject.isInitialized)
@@ -238,7 +238,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
             override def createConnectedObject(obj: AnyRef, kind: SyncLevel): ConnectedObject[AnyRef] = {
                 val id = forest.removeLinkedReference(obj)
                         .map(_.nodePath.last)
-                        .getOrElse(ThreadLocalRandom.current().nextInt())
+                        .getOrElse(NamedIdentifier(obj.getClass.getSimpleName, ThreadLocalRandom.current().nextInt()))
                 getOrGenConnectedObject(node, id, obj, kind)(ownerID).obj
             }
         }
@@ -247,7 +247,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
     
     private def cast[X](y: Any): X = y.asInstanceOf[X]
     
-    private def createUnknownObjectNode(path: Array[Int]): MutableNode[AnyRef] = {
+    private def createUnknownObjectNode(path: Array[NamedIdentifier]): MutableNode[AnyRef] = {
         val parent = getParent(path.dropRight(1))
         val data   = dataFactory.newNodeData(new NormalNodeDataRequest[AnyRef](parent, path, null))
         val node   = new UnknownObjectSyncNode(data)
@@ -255,13 +255,13 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(currentIdentifier: S
         node
     }
     
-    private def getParent[B <: AnyRef](parentPath: Array[Int]): MutableNode[B] = {
+    private def getParent[B <: AnyRef](parentPath: Array[NamedIdentifier]): MutableNode[B] = {
         findNode[B](parentPath).getOrElse {
             createUnknownObjectNode(parentPath).asInstanceOf[MutableNode[B]]
         }
     }
     
-    private[tree] def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int,
+    private[tree] def registerSynchronizedObject[B <: AnyRef](parentPath: Array[NamedIdentifier], id: NamedIdentifier,
                                                               syncObject: B with SynchronizedObject[B], ownerID: String,
                                                               origin: Option[B]): ObjectSyncNode[B] = {
         val wrapperNode = getParent[B](parentPath)

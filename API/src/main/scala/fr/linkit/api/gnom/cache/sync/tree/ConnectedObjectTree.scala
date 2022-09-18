@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectContractFactory
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 
 trait ConnectedObjectTree[A <: AnyRef] {
@@ -21,7 +22,7 @@ trait ConnectedObjectTree[A <: AnyRef] {
     /**
      * This tree's identifier (rootNode.id == this.id)
      */
-    val id: Int
+    val id: NamedIdentifier
 
     /**
      * The behavior store of this object's tree
@@ -41,6 +42,6 @@ trait ConnectedObjectTree[A <: AnyRef] {
      * @tparam B the type of the node's synchronized object
      * @return Some(SyncNode) if found, None instead.
      */
-    def findNode[B <: AnyRef](path: Array[Int]): Option[ConnectedObjectNode[B]]
+    def findNode[B <: AnyRef](path: Array[NamedIdentifier]): Option[ConnectedObjectNode[B]]
 
 }

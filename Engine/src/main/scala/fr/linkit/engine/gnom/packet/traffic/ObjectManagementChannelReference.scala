@@ -14,5 +14,6 @@
 package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
+import fr.linkit.api.gnom.referencing.SystemObjectReference
 
-object ObjectManagementChannelReference extends TrafficObjectReference(Array.empty)
+object ObjectManagementChannelReference extends TrafficObjectReference(Array.empty) with SystemObjectReference

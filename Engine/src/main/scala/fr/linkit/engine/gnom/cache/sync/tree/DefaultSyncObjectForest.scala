@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObje
 import fr.linkit.api.gnom.referencing.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.referencing.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
-import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.referencing.{NamedIdentifier, NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, SyncNodeDataRequest, UnknownObjectSyncNode}
@@ -36,27 +36,26 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
         extends AbstractNetworkPresenceHandler[ConnectedObjectReference](cachePresenceHandler, omc)
                 with InitialisableNetworkObjectLinker[ConnectedObjectReference] with SynchronizedObjectForest[A] {
     
-    private val trees        = new mutable.HashMap[Int, DefaultConnectedObjectTree[A]]
-    private val unknownTrees = new mutable.HashMap[Int, UnknownTree]()
+    private val trees        = new mutable.HashMap[NamedIdentifier, DefaultConnectedObjectTree[A]]
+    private val unknownTrees = new mutable.HashMap[NamedIdentifier, UnknownTree]()
     
     /*
     * used to store objects whose synchronized version of keys already have bounded references.
     * */
     private val linkedOrigins = mutable.HashMap.empty[AnyRef, ConnectedObjectReference]
 
-    override def findTree(id: Int): Option[ConnectedObjectTree[A]] = findTreeInternal(id)
+    override def findTree(id: NamedIdentifier): Option[ConnectedObjectTree[A]] = findTreeInternal(id)
     
-    def findTreeLocal(id: Int): Option[ConnectedObjectTree[A]] = trees.get(id)
+    def findTreeLocal(id: NamedIdentifier): Option[ConnectedObjectTree[A]] = trees.get(id)
     
-    private[sync] def findTreeInternal(id: Int): Option[DefaultConnectedObjectTree[A]] = {
-        //AppLoggers.Debug.trace(s"findTreeInternal($id): (${trees.get(id)})")
+    private[sync] def findTreeInternal(id: NamedIdentifier): Option[DefaultConnectedObjectTree[A]] = {
         trees.get(id).orElse {
             center.requestTree(id)
             trees.get(id)
         }
     }
     
-    def putUnknownTree(id: Int): Unit = {
+    def putUnknownTree(id: NamedIdentifier): Unit = {
         if (unknownTrees.contains(id))
             return
         if (trees.contains(id))
@@ -109,9 +108,9 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
     
     def isObjectLinked(obj: AnyRef): Boolean = linkedOrigins.contains(obj)
     
-    def isRegisteredAsUnknown(id: Int): Boolean = unknownTrees.contains(id)
+    def isRegisteredAsUnknown(id: NamedIdentifier): Boolean = unknownTrees.contains(id)
     
-    def transferUnknownTree(id: Int): Unit = {
+    def transferUnknownTree(id: NamedIdentifier): Unit = {
         if (findTreeInternal(id).isEmpty)
             throw new IllegalStateException(s"Can not transfer unknown tree with id $id: a tree with the same id must be created before transfering all UnknownTree objects into its 'Known' tree ")
         val tree = unknownTrees.remove(id).get
@@ -165,7 +164,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
         }
     }
     
-    private[sync] def addTree(id: Int, tree: DefaultConnectedObjectTree[A]): Unit = {
+    private[sync] def addTree(id: NamedIdentifier, tree: DefaultConnectedObjectTree[A]): Unit = {
         if (trees.contains(id))
             throw new SynchronizedObjectException(s"A tree with id '$id' already exists.")
         if (tree.dataFactory ne center)

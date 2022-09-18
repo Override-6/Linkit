@@ -27,7 +27,7 @@ import scala.collection.mutable.ListBuffer
  * @see [[AbstractWorkerPool]] for more details on the 'busy operations' (or called 'busy thread system' in the doc).
  * @param pool the pool that created this blocking queue, at which will be used by the queue to handle busy locks.
  * */
-class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extends BlockingQueue[A] {
+class WorkerBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extends BlockingQueue[A] {
     
     private val content    = new util.LinkedList[A]()
     private val controller = new SimpleWorkerController()
@@ -36,7 +36,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
         if (e == null)
             throw new NullPointerException("attempted to add a null item.")
         content.synchronized {
-            AppLoggers.Worker.trace(s"Adding content in $this (${System.identityHashCode(this)})")
+            //AppLoggers.Worker.trace(s"Add content in $this (${System.identityHashCode(this)})")
             content.add(e)
         }
         controller.wakeupAnyTask()
@@ -62,12 +62,12 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
     
     @workerExecution
     override def take(): A = {
-        AppLoggers.Worker.trace(s"Taking item in $this (${System.identityHashCode(this)})...")
+        //AppLoggers.Worker.trace(s"Taking item in $this (${System.identityHashCode(this)})...")
         if (content.isEmpty) {
             controller.pauseTask() //will be released once the queue isn't empty anymore
             return poll()
         }
-        AppLoggers.Worker.trace(s"Something has been added ! $this (${System.identityHashCode(this)})")
+        //AppLoggers.Worker.trace(s"Something has been added ! $this (${System.identityHashCode(this)})")
         if (content.isEmpty)
             throw new Error("Content can't be empty.")
         poll()
@@ -144,7 +144,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extend
         buff.toArray.asInstanceOf[Array[AnyRef]]
     }
     
-    override def toString: String = toArray().mkString("ProvidedBlockingQueue(", ", ", ")")
+    override def toString: String = toArray().mkString(getClass.getSimpleName + "(", ", ", ")")
     
     override def toArray[T](a: Array[T with Object]): Array[T with Object] = {
         toArray.asInstanceOf[Array[T with Object]]

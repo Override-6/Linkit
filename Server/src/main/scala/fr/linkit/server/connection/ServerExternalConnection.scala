@@ -19,9 +19,9 @@ import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
-import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload, PacketTransfer, PacketUpload}
-import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
+import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketTransfer, PacketUpload}
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
+import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import org.jetbrains.annotations.NotNull
@@ -44,10 +44,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override def shutdown(): Unit = {
         WorkerPools.ensureCurrentIsWorker()
         alive = false
-        /*if (reason.isInternal && isConnected) {
-            val sysChannel = session.channel
-            sysChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
-        }*/
+
         readThread.close()
         session.close()
 
@@ -70,26 +67,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
             throw ConnectionException(this, "This Connection was already used and is now definitely closed.")
         }
         alive = true
-        readThread.onPacketRead = result => {
-            val coordinates: DedicatedPacketCoordinates = result.coords match {
-                case d: DedicatedPacketCoordinates => d
-                case b: BroadcastPacketCoordinates => b.getDedicated(currentIdentifier)
-            }
-            /*val ordinalShift                            = ordinalsRectifier.getOrdinalShift(coordinates.path).get()
-
-            val rectifiedResult = new PacketDownload {
-                override val ordinal                : Int               = result.ordinal + ordinalShift
-                override val buff                   : ByteBuffer        = result.buff
-                override def coords                 : PacketCoordinates = coordinates
-                override def attributes             : PacketAttributes  = result.attributes
-                override def packet                 : Packet            = result.packet
-                override def makeDeserialization()  : Unit              = result.makeDeserialization()
-                override def isDeserialized         : Boolean           = result.isDeserialized
-                override def isInjected             : Boolean           = result.isInjected
-                override def informInjected         : Unit              = result.informInjected
-            }*/
-            handlePacket(result)
-        }
+        readThread.onPacketRead = traffic.processInjection
         readThread.onReadException = () => runLater(shutdown())
         readThread.start()
         //Method useless but kept because services could need to be started in the future?
@@ -126,18 +104,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
             throw new PacketNotInjectableException(this, s"Engine '$boundIdentifier' does not contains any traffic packet injectable presence at $reference.")
         }
         session.send(result)
-    }
-
-    @workerExecution
-    private def handlePacket(result: PacketDownload): Unit = {
-        val path = result.coords.path
-        for (session <- server.getAllConnectionSessions) if (session ne this.session) {
-            ""
-            /*val shift = session.ordinalsRectifier.getOrdinalShift(path)
-            shift.increment()
-            AppLoggers.Debug.trace(s"Incremented shift for ${session.boundIdentifier}, ($shift)")*/
-        }
-        traffic.processInjection(result)
     }
 
     override def getApp: ApplicationContext = server.getApp

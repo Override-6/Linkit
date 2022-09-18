@@ -15,12 +15,14 @@ package fr.linkit.engine.gnom.packet.traffic.channel
 
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.referencing.StaticNetworkObject
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
+import fr.linkit.engine.gnom.packet.traffic.ObjectManagementChannelReference
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 
-class DefaultObjectManagementChannel(rootStore: PacketInjectableStore, scope: ChannelScope)
+class SystemObjectManagementChannel(rootStore: PacketInjectableStore, scope: ChannelScope)
         extends SimpleRequestPacketChannel(rootStore, scope) with ObjectManagementChannel {
     override lazy val presence: NetworkObjectPresence = SystemNetworkObjectPresence
 }

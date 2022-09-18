@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.contract.description._
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassStorageResource._
+import fr.linkit.engine.gnom.cache.sync.generation.SyncClassStorageResource.{GeneratedClassesPackage, SyncSuffixName}
 
 import java.lang.reflect._
 import scala.collection.mutable

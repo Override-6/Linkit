@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation.sync
+package fr.linkit.engine.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
@@ -19,8 +19,8 @@ import fr.linkit.api.gnom.cache.sync.invocation.local.AbstractMethodInvocationEx
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassBlueprint.unsupportedMethodFilter
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.{JavaKeywords, SuperMethodModifiers, getMethodDescriptor}
+import SyncClassBlueprint.unsupportedMethodFilter
+import SyncClassRectifier.{JavaKeywords, SuperMethodModifiers, getMethodDescriptor}
 import javassist._
 import javassist.bytecode.annotation._
 import javassist.bytecode.{AnnotationsAttribute, MethodInfo}

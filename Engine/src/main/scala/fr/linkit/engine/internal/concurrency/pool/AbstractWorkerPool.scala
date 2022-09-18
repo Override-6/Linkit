@@ -82,7 +82,7 @@ import scala.util.control.NonFatal
  * The Busy thread system will save this lost time in order to fluidify task execution,
  * and make one thread able to handle multiple tasks even if a task needs to wait a Linkit resource.
  *
- * @see [[BusyBlockingQueue]] for busy waitings example.
+ * @see [[WorkerBlockingQueue]] for busy waitings example.
  * @param initialThreadCount The number of threads the pool will contain (can ba changed with [[setThreadCount]].
  * */
 abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Closeable {
@@ -216,7 +216,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
     
     final def haveMoreTasks: Boolean = countRemainingTasks > 0
     
-    //TODO much better to return a ThreadTask instead of having a runnable that will declare a ThreadTask in it.
+    //TODO should return a ThreadTask.
     protected def pollTask: Runnable
     
     protected def takeTask: Runnable
@@ -280,10 +280,10 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
      * [[BlockingQueue#take()]]
      *
      * @tparam A the type of element the queue will contains
-     * @return a [[BusyBlockingQueue]]
+     * @return a [[WorkerBlockingQueue]]
      */
     override def newBusyQueue[A]: BlockingQueue[A] = {
-        new BusyBlockingQueue[A](this)
+        new WorkerBlockingQueue[A](this)
     }
     
     /**

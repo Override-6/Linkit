@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation.sync
+package fr.linkit.engine.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import ScalaBlueprintUtilities.{getParameters, getReturnType}

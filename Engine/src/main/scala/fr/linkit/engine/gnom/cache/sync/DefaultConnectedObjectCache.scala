@@ -29,6 +29,7 @@ import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -36,15 +37,15 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, EmptyContractDescriptorData}
-import fr.linkit.engine.gnom.cache.sync.generation.sync.{DefaultSyncClassCenter, SyncClassStorageResource}
+import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncClassStorageResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageConnectedObjectContext
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.{InvocationPacket, ObjectPuppeteer}
 import fr.linkit.engine.gnom.cache.sync.tree._
 import fr.linkit.engine.gnom.cache.sync.tree.node._
-import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
-import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, ChannelScopes}
 import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
@@ -151,7 +152,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         factory.getContract[A](creator.syncClassDef.mainClass.asInstanceOf[Class[A]], context)
     }
     
-    private def createNewTree(id: Int,
+    private def createNewTree(id: NamedIdentifier,
                               rootObjectOwner: String,
                               creator: SyncInstanceCreator[A],
                               mirror: Boolean,
@@ -218,7 +219,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         }
     }
     
-    private def findNode(path: Array[Int]): Option[ConnectedObjectNode[A]] = {
+    private def findNode(path: Array[NamedIdentifier]): Option[ConnectedObjectNode[A]] = {
         forest
                 .findTree(path.head)
                 .flatMap(tree => {
@@ -234,15 +235,15 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         createNewTree(treeID, treeOwner, new InstanceWrapper[A](rootObject), mirror, contracts)
     }
     
-    override def isRegistered(id: Int): Boolean = {
+    override def isRegistered(id: NamedIdentifier): Boolean = {
         forest.findTreeLocal(id).isDefined || {
             forest.isPresentOnEngine(ownerID, ConnectedObjectReference(family, cacheID, ownerID, Array(id)))
         }
     }
     
-    private final val treeRequestsLocks = mutable.HashMap.empty[Int, ReentrantLock]
+    private final val treeRequestsLocks = mutable.HashMap.empty[NamedIdentifier, ReentrantLock]
     
-    override def requestTree(id: Int): Unit = {
+    override def requestTree(id: NamedIdentifier): Unit = {
         val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
         
         val refLock         = NetworkObjectReferencesLocks.getLock(treeRef)
@@ -266,7 +267,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         if (isSyncOnRefLock) refLock.unlock()
         try {
             channel.makeRequest(ChannelScopes.include(ownerID))
-                    .addPacket(IntPacket(id))
+                    .addPacket(AnyRefPacket(id))
                     .submit()
                     .nextResponse
                     .nextPacket[Packet] match {
@@ -282,7 +283,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         }
     }
     
-    private def handleTreeRetrieval(id: Int, response: Submitter[Unit]): Unit = {
+    private def handleTreeRetrieval(id: NamedIdentifier, response: Submitter[Unit]): Unit = {
         forest.findTreeInternal(id) match {
             case Some(tree) =>
                 val node        = tree.rootNode
@@ -347,7 +348,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
             response.nextPacket[Packet] match {
                 case ip: InvocationPacket                        =>
                     handleInvocationPacket(ip, bundle)
-                case IntPacket(id)                               =>
+                case AnyRefPacket(id: NamedIdentifier)                               =>
                     handleTreeRetrieval(id, bundle.responseSubmitter)
                 case ObjectPacket(profile: ObjectTreeProfile[A]) =>
                     handleNewTree(profile)
@@ -405,7 +406,7 @@ object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
         new DefaultConnectedObjectCache[A](channel, generator, contracts, network)
     }
     
-    case class ObjectTreeProfile[A <: AnyRef](treeID: Int,
+    case class ObjectTreeProfile[A <: AnyRef](treeID: NamedIdentifier,
                                               rootObject: A with SynchronizedObject[A],
                                               treeOwner: String,
                                               mirror: Boolean,

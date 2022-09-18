@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription.isNotOverrideable
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier.JavaKeywords
+import fr.linkit.engine.gnom.cache.sync.generation.SyncClassRectifier.JavaKeywords
 
 import java.lang.reflect.{Executable, Method, Modifier}
 import scala.collection.mutable

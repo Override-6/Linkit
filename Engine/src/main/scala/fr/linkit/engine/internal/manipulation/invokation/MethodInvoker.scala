@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.manipulation.invokation
 
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassRectifier
+import fr.linkit.engine.gnom.cache.sync.generation.SyncClassRectifier
 import fr.linkit.engine.internal.manipulation.ClassTypeTranslator
 
 import java.lang.reflect.Method

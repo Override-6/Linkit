@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation.sync
+package fr.linkit.engine.gnom.cache.sync.generation
 
 import fr.linkit.engine.internal.language.cbp.AbstractValueScope
 

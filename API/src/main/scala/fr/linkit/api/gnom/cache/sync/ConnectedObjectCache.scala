@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.PacketAttributesPresence
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.internal.system.delegate.DelegateFactory
 
 import scala.reflect.ClassTag
@@ -109,7 +110,7 @@ trait ConnectedObjectCache[A <: AnyRef] extends SharedCache with PacketAttribute
      * @param id the object's identifier.
      * @return true if an object of the given id is posted in this cache.
      * */
-    def isRegistered(id: Int): Boolean
+    def isRegistered(id: NamedIdentifier): Boolean
     
     
 }

@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeEx
 import fr.linkit.api.gnom.cache.sync.{CannotConnectException, ChippedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.channel.request.Submitter
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
@@ -37,7 +38,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
     //and the method `discoverParent(ObjectSyncNodeImpl)` can be called at any time by the system.
     private var parent0            : ConnectedObjectNode[_]        = data.parent.orNull
     override  val reference        : ConnectedObjectReference      = data.reference
-    override  val id               : Int                           = reference.nodePath.last
+    override  val id               : NamedIdentifier               = reference.nodePath.last
     override  val chip             : Chip[A]                       = data.chip
     override  val tree             : DefaultConnectedObjectTree[_] = data.tree
     override  val contract         : StructureContract[A]          = data.contract
@@ -50,7 +51,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
      * This map contains all the synchronized object of the parent object
      * including method return values and parameters and class fields
      * */
-    protected val childs                                           = new mutable.HashMap[Int, MutableNode[_]]
+    protected val childs                                           = new mutable.HashMap[NamedIdentifier, MutableNode[_]]
     private   val currentIdentifier: String                        = data.currentIdentifier
     /**
      * This set stores every engine where this object is synchronized.
@@ -92,7 +93,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
 
     override def toString: String = s"node $reference for chipped object ${obj.connected}"
 
-    def getChild[B <: AnyRef](id: Int): Option[MutableNode[B]] = {
+    override def getChild[B <: AnyRef](id: NamedIdentifier): Option[MutableNode[B]] = {
         (childs.get(id): Any).asInstanceOf[Option[MutableNode[B]]]
     }
 
@@ -117,11 +118,11 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
         val params   = packet.params
         scanParams(params)
 
-        def handleException(e: Throwable): Unit  = {
-            e.printStackTrace ()
-            val ex = if (e.isInstanceOf[InvocationTargetException] ) e.getCause else e
+        def handleException(e: Throwable): Unit = {
+            e.printStackTrace()
+            val ex = if (e.isInstanceOf[InvocationTargetException]) e.getCause else e
             if (packet.expectedEngineIDReturn == currentIdentifier)
-            handleRemoteInvocationException (response, ex)
+                handleRemoteInvocationException(response, ex)
         }
 
         chip.callMethod(packet.methodID, params, executor)(handleException, result => try {

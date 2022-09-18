@@ -228,12 +228,10 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
     }
 
     class SIPUWorkerController extends SimpleWorkerController {
-
         override protected def createControlTicket(pauseCondition: => Boolean): Unit = {
             if (!pauseCondition) return
             super.createControlTicket(pauseCondition)
         }
-
     }
 
 }

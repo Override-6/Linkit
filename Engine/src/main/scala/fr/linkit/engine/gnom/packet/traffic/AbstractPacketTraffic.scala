@@ -27,7 +27,7 @@ import fr.linkit.api.gnom.referencing.traffic.{ObjectManagementChannel, TrafficI
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{ClosedException, Reason}
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
-import fr.linkit.engine.gnom.packet.traffic.channel.DefaultObjectManagementChannel
+import fr.linkit.engine.gnom.packet.traffic.channel.SystemObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.unit.SequentialInjectionProcessorUnit
 import fr.linkit.engine.gnom.persistence.config.{PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.referencing.linker.ObjectChannelContextObjectLinker
@@ -145,7 +145,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         }
         val objectChannel       = {
             val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
-            new DefaultObjectManagementChannel(null, scope)
+            new SystemObjectManagementChannel(null, scope)
         }
         new InjectableTrafficNode[ObjectManagementChannel] {
             override val injectable       : ObjectManagementChannel = objectChannel

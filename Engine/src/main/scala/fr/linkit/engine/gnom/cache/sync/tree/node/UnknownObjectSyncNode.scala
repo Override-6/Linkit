@@ -13,8 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectSyncNode, ConnectedObjectTree}
+import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectTree, ObjectSyncNode}
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.SynchronizedObjectException
 
@@ -22,12 +23,12 @@ import scala.collection.mutable
 
 class UnknownObjectSyncNode(data: NodeData[AnyRef]) extends MutableSyncNode[AnyRef] {
 
-    override val tree          : ConnectedObjectTree[_] = data.tree
-    override val objectPresence: NetworkObjectPresence  = data.presence
-    override val reference     : ConnectedObjectReference  = data.reference
-    override val ownerID       : String                    = data.ownerID
-    override val id            : Int                       = reference.nodePath.last
-    private  val childs                                    = mutable.HashMap.empty[Int, MutableNode[_]]
+    override val tree          : ConnectedObjectTree[_]   = data.tree
+    override val objectPresence: NetworkObjectPresence    = data.presence
+    override val reference     : ConnectedObjectReference = data.reference
+    override val ownerID       : String                   = data.ownerID
+    override val id            : NamedIdentifier          = reference.nodePath.last
+    private  val childs                                   = mutable.HashMap.empty[NamedIdentifier, MutableNode[_]]
 
     private var parent0: MutableNode[_] = data.parent.getOrElse {
         throw new SynchronizedObjectException("Unexpected Unknown Object sync node with no parent")
@@ -49,7 +50,7 @@ class UnknownObjectSyncNode(data: NodeData[AnyRef]) extends MutableSyncNode[AnyR
         childs.put(child.id, child)
     }
 
-    override def getChild[B <: AnyRef](id: Int): Option[MutableNode[B]] = childs.get(id).asInstanceOf[Option[MutableNode[B]]]
+    override def getChild[B <: AnyRef](id: NamedIdentifier): Option[MutableNode[B]] = childs.get(id).asInstanceOf[Option[MutableNode[B]]]
 
     override def getMatchingSyncNode(origin: AnyRef): MutableSyncNode[_ <: AnyRef] = {
         for (child <- childs.values) child match {

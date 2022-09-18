@@ -11,13 +11,13 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.generation.sync
+package fr.linkit.engine.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDefMultiple, SyncStructureDescription}
 import fr.linkit.api.internal.generation.compilation.access.CompilerType
 import ScalaBlueprintUtilities._
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.generation.sync.SyncClassBlueprint.unsupportedMethodFilter
+import SyncClassBlueprint.unsupportedMethodFilter
 import fr.linkit.engine.gnom.persistence.config.structure.SyncObjectStructure
 import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint

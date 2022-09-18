@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.cache
 
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 import java.util
 
 class SharedCacheReference(family: String, val cacheID: Int) extends SharedCacheManagerReference(family) {

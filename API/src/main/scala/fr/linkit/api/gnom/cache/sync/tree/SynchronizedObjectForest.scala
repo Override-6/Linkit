@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.CacheContent
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 /**
  * Used by [[fr.linkit.api.gnom.cache.sync.ConnectedObjectCache]] to store its trees
@@ -26,7 +27,7 @@ trait SynchronizedObjectForest[A <: AnyRef] {
      * @param id the tree's identifier.
      * @return Some(SynchronizedObjectTree[A]) if the tree is found, None instead.
      */
-    def findTree(id: Int): Option[ConnectedObjectTree[A]]
+    def findTree(id: NamedIdentifier): Option[ConnectedObjectTree[A]]
 
     /**
      * Return the content of all stored trees.

@@ -14,10 +14,11 @@
 package fr.linkit.engine.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 import scala.collection.mutable.ListBuffer
 
-class UnknownTree(val id: Int) {
+class UnknownTree(val id: NamedIdentifier) {
 
     private val objects = ListBuffer.empty[AnyRef with SynchronizedObject[_]]
 
