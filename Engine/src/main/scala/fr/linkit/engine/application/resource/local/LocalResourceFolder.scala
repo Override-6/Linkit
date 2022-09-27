@@ -15,7 +15,7 @@ package fr.linkit.engine.application.resource.local
 
 import fr.linkit.api.application.resource.ResourceListener
 import fr.linkit.api.application.resource.local._
-import fr.linkit.spi.application.resource.base.BaseResourceFolder
+import fr.linkit.engine.application.resource.BaseResourceFolder
 import org.jetbrains.annotations.Nullable
 
 import java.nio.file.{Files, Path}

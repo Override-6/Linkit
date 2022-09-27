@@ -11,12 +11,11 @@
  * questions.
  */
 
-package fr.linkit.spi.application.resource.base
+package fr.linkit.engine.application.resource
 
 import fr.linkit.api.application.resource.exception.{IllegalResourceException, IncompatibleResourceTypeException, NoSuchResourceException, ResourceAlreadyPresentException}
 import fr.linkit.api.application.resource.local.{Resource, ResourceFactory, ResourceFolder}
 import fr.linkit.api.application.resource.{ResourceListener, ResourcesMaintainer}
-import fr.linkit.engine.application.resource.ResourceFolderMaintainer
 import fr.linkit.engine.application.resource.local.LocalResourceFolder.ForbiddenChars
 
 import java.io.File

@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.spi.application.resource.base
+package fr.linkit.engine.application.resource
 
 import fr.linkit.api.application.resource.ResourcesMaintainer
 import fr.linkit.api.application.resource.local.{Resource, ResourceFolder}

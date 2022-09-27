@@ -17,8 +17,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
-import fr.linkit.engine.gnom.packet.SimplePacketAttributes
-import fr.linkit.spi.gnom.packet.AbstractAttributesPresence
+import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
 object ChannelScopes {
 

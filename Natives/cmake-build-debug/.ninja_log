@@ -1,7 +1,0 @@
-# ninja log v5
-11	1257	6803767822562224	CMakeFiles/LinkitNativesHelper.dir/fr_linkit_engine_internal_manipulation_invokation_ObjectInvocator.cpp.obj	7cfd3fc8affb3372
-16	1410	6803767824092914	CMakeFiles/LinkitNativesHelper.dir/fr_linkit_engine_internal_manipulation_creation_ObjectCreator.cpp.obj	7b7d7242fa562771
-1	20	0	clean	d2b29aea8311849b
-4	1228	6803767822272263	CMakeFiles/LinkitNativesHelper.dir/JValueTranslator.cpp.obj	f4e0f4379734c4a2
-4	385	6803767949253755	LinkitNativesHelper.dll	e4e2c98a637a4e7e
-4	385	6803767949253755	libLinkitNativesHelper.dll.a	e4e2c98a637a4e7e

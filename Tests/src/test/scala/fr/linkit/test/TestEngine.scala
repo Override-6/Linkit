@@ -20,19 +20,20 @@ import fr.linkit.client.config.ClientConnectionConfigBuilder
 import fr.linkit.mock.application.LinkitApplicationMock
 import fr.linkit.server.config.ServerConnectionConfigBuilder
 
+
 import java.net.InetSocketAddress
 
 object TestEngine {
-    
+
     var application      : LinkitApplicationMock = _
     var clientSideNetwork: Network               = _
     var serverSideNetwork: Network               = _
-    
+
     launchMockingNetwork()
-    
+
     def launchMockingNetwork(): Unit = {
         application = LinkitApplicationMock.launch(new ApplicationConfiguration {
-            override val logfilename    : Option[String] = None
+            override val logfilename    : Option[String]             = None
             override val securityManager: ApplicationSecurityManager = ApplicationSecurityManager.None
             override val resourceFolder : String                     = {
                 val envValue = System.getenv("LinkitHome")
@@ -41,17 +42,17 @@ object TestEngine {
                 envValue
             }
         })
-        
+
         serverSideNetwork = application.openServerConnection(new ServerConnectionConfigBuilder {
             override val identifier: String = "Server"
             override val port      : Int    = 49490
         }).network
-        
+
         clientSideNetwork = application.openClientConnection(new ClientConnectionConfigBuilder {
             override val identifier   : String            = "Client"
             override val remoteAddress: InetSocketAddress = new InetSocketAddress(49490)
         }).network
         Thread.sleep(1000)
     }
-    
+
 }

@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.referencing
 
 
-class NamedIdentifier(private val name: Option[String], private val id: Int) {
+class NamedIdentifier(private val name: Option[String], val id: Int) {
     override def equals(id: Any): Boolean = id match {
         case ni: NamedIdentifier => ni.name == name && ni.id == this.id
         case _                   => false

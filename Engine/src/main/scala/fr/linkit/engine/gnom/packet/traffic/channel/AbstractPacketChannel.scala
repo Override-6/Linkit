@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.spi.gnom.packet.traffic
+package fr.linkit.engine.gnom.packet.traffic.channel
 
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
@@ -21,8 +21,8 @@ import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.Reason
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 import fr.linkit.engine.gnom.packet.traffic.DefaultChannelPacketBundle
-import fr.linkit.spi.gnom.packet.AbstractAttributesPresence
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

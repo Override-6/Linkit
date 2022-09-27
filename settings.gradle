@@ -15,7 +15,6 @@ include 'API'
 include 'Engine'
 include 'Client'
 include 'Server'
-include 'SPI'
 include 'Tests'
 
 include 'Examples:RemoteAPIImplementationControl:ServerSide'

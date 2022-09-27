@@ -26,7 +26,7 @@ object RFSCClient {
 
         listenDistantDir(serverStatics)
         sendFile(serverStatics)
-        
+
         println("Done.")
     }
 
@@ -58,7 +58,7 @@ object RFSCClient {
     }
 
     private def sendFile(serverStatics: StaticAccess): Unit = {
-        val srcPath = Path.of("C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Client\\test.txt")
+        val srcPath = Path.of("Examples/RemoteFileSystemControl/ClientSide/src/main/resources/pomme.txt")
         if (Files.notExists(srcPath)) {
             Files.createDirectories(srcPath.getParent)
             Files.createFile(srcPath)
@@ -77,19 +77,19 @@ object RFSCClient {
     private def launchConnection(identifier0: String): ExternalConnection = {
         println(s"Using identifier $identifier0")
         val config = new ClientApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = "~/dev/Linkit/Home"
             logfilename = Some(s"examples/rfsc client $identifier0")
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {
-                    override val identifier    = identifier0
-                    override val remoteAddress = new InetSocketAddress("localhost", 48489)
+                    override val identifier: String = identifier0
+                    override val remoteAddress      = new InetSocketAddress("localhost", 48489)
                     defaultPersistenceConfigScript = Some(getClass.getResource("/FS_persistence.sc"))
                 }
             }
         }
         ClientApplication.launch(config, getClass)
-                .findConnection(identifier0)
-                .get
+                         .findConnection(identifier0)
+                         .get
     }
 
 }
