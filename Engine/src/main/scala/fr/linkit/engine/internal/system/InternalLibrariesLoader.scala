@@ -47,7 +47,7 @@ private[linkit] object InternalLibrariesLoader {
         val fileUrl        = classOf[LinkitApplication].getResource(ResourceMark)
         val path           = {
             val s = fileUrl.toString
-            s.drop(s.indexOf("file:") + "file:".length + 1)
+            s.drop(s.indexOf("file:") + "file:".length)
         } //Removes "file:\" char header
         val zipMarkerIndex = path.lastIndexOf("!")
         if (zipMarkerIndex > 0) {
@@ -94,6 +94,7 @@ private[linkit] object InternalLibrariesLoader {
         Files.createDirectories(root)
         libs.foreach { lib =>
             val entry = zipFile.getEntry("natives/" + lib)
+            val entries = zipFile.entries()
             exportDirEntry(zipFile, entry, root)
         }
     }

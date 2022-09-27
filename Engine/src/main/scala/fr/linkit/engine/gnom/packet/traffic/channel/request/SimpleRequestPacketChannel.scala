@@ -20,8 +20,8 @@ import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, RequestPa
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.engine.internal.util.ConsumerContainer
-import fr.linkit.spi.gnom.packet.traffic.AbstractPacketChannel
 
 import java.util
 import java.util.concurrent.LinkedBlockingQueue

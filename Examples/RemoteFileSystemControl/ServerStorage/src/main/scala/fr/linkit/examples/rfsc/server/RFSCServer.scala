@@ -22,7 +22,7 @@ object RFSCServer {
         println("Server launched !")
         val network = server.network
         network.onNewEngine { client => {
-            val path = Path.of(s"C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\StaticsFTPTests\\Server\\${client.identifier}\\")
+            val path = Path.of(s"~/dev/linkit/rfs tests/${client.identifier}/")
             Files.createDirectories(path)
             clientsHomes.put(client, path)
             watchServiceWorkers.setThreadCount(clientsHomes.size)
@@ -35,7 +35,7 @@ object RFSCServer {
     
     private def createConnection(identifier0: String): CentralConnection = {
         val config = new ServerApplicationConfigBuilder {
-            val resourcesFolder: String = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            val resourcesFolder: String = "~/dev/linkit/home"
             logfilename = Some("examples/rfsc server")
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {

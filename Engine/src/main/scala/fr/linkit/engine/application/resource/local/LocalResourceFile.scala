@@ -16,7 +16,7 @@ package fr.linkit.engine.application.resource.local
 import fr.linkit.api.application.resource.local._
 import fr.linkit.api.application.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
 import fr.linkit.api.application.resource.{ResourceListener, ResourcesMaintainer}
-import fr.linkit.spi.application.resource.base.AbstractResource
+import fr.linkit.engine.application.resource.AbstractResource
 import org.jetbrains.annotations.NotNull
 
 import java.nio.file.{FileSystemException, Files, Path}

@@ -20,7 +20,6 @@ import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.Reason
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
-import fr.linkit.spi.gnom.packet.traffic.AbstractPacketChannel
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag

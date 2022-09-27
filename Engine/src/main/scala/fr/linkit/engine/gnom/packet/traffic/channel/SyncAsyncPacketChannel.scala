@@ -22,7 +22,6 @@ import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
 import fr.linkit.engine.internal.util.ConsumerContainer
 import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
-import fr.linkit.spi.gnom.packet.traffic.AbstractPacketChannel
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag

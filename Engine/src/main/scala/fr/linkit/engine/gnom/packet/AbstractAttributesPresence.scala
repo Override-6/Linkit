@@ -11,10 +11,9 @@
  * questions.
  */
 
-package fr.linkit.spi.gnom.packet
+package fr.linkit.engine.gnom.packet
 
 import fr.linkit.api.gnom.packet.{PacketAttributes, PacketAttributesPresence}
-import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 
 abstract class AbstractAttributesPresence extends PacketAttributesPresence {
 

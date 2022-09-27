@@ -16,7 +16,7 @@ package fr.linkit.test.cache
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.{CacheNotAcceptedException, SharedCacheFactory}
-import fr.linkit.spi.gnom.cache.AbstractSharedCache
+import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import org.junit.jupiter.api.{Assertions, Test}
 
 class SharedCacheTest {

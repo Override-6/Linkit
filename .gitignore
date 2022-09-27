@@ -6,7 +6,7 @@
 */out/
 .gradle
 .idea
-/Engine/src/main/resources/natives/
+/Engine/src/main/resources/natives/*
 /Natives/cmake-build-debug/
 /logs
 */.vs

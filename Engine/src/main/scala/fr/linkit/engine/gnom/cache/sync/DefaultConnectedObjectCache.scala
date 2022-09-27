@@ -34,6 +34,7 @@ import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
+import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, EmptyContractDescriptorData}
@@ -49,7 +50,6 @@ import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{AnyRefPacket, ObjectP
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, ChannelScopes}
 import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
-import fr.linkit.spi.gnom.cache.AbstractSharedCache
 
 import java.lang.ref.WeakReference
 import java.util.concurrent.locks.ReentrantLock
