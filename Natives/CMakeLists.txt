@@ -17,7 +17,7 @@ if (UNIX)
 elseif (APPLE)
     target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/macos ${JNI_INCLUDE}/macos/bridge ${SRC})
 elseif(WIN32)
-    target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/windows ${JNI_INCLUDE}/windows/bridge ${SRC})
+    target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/win32 ${JNI_INCLUDE}/win32/bridge ${SRC})
 endif()
 
 target_sources(LinkitNatives PRIVATE ${SRC})
