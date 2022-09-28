@@ -18,8 +18,7 @@ jobs:
       - name: x64
         run: |
           cd Natives
-          mkdir build
-          cd build && cmake .. && cmake --build . --config Release 
+          mkdir build && cd build && cmake .. && cmake --build . --config Release
   MacOS:
     name: Macos x64
     runs-on: macos-latest
@@ -33,10 +32,7 @@ jobs:
           echo ""
           ls /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.345-1/x64/Contents/Home/include/darwin
           echo ""
-          ls -r /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.345-1/x64/Contents/Home/include/
-          tree /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.345-1/x64/Contents/Home/include/
-          mkdir build
-          cd build && cmake .. && cmake --build . --config Release 
+          mkdir build && cd build && cmake .. && cmake --build . --config Release 
 
   Unix:
     name: Unix x64
@@ -47,6 +43,5 @@ jobs:
         run: |
           pwd
           cd Natives
-          mkdir build
-          cd build && cmake .. && cmake --build . --config Release 
+          mkdir build && cd build && cmake .. && cmake --build . --config Release 
          

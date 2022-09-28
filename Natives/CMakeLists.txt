@@ -14,11 +14,11 @@ add_library(LinkitNatives SHARED
 
 if (UNIX)
     target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/linux ${SRC})
-elseif (APPLE)
-    target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/darwin/ ${SRC})
 elseif(WIN32)
     target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/win32 ${JNI_INCLUDE}/win32/bridge ${SRC})
+else()
+    target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/darwin/ ${SRC})
 endif()
 
-target_sources(LinkitNatives PRIVATE ${SRC})
+    target_sources(LinkitNatives PRIVATE ${SRC})
 set_target_properties(LinkitNatives PROPERTIES PREFIX "")
