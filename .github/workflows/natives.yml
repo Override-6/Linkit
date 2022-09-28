@@ -8,6 +8,7 @@ on:
 env:
   LIB_NAME: LinkitNatives
 
+
 jobs:
   Windows:
     name: Windows x32 / x64
