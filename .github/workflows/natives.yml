@@ -29,6 +29,7 @@ jobs:
         run: |
           pwd
           cd Natives
+          ls /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.345-1/x64/Contents/Home/include/
           mkdir build
           cd build && cmake .. && cmake --build . --config Release 
 
