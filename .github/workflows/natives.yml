@@ -20,6 +20,25 @@ jobs:
           cd D:\a\Linkit\Linkit\Natives
           mkdir build
           cd build && cmake .. && cmake --build . --config Release 
-          dir
-          
-          
+  MacOS:
+    name: Macos x64
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: x64
+        run: |
+          cd D:\a\Linkit\Linkit\Natives
+          mkdir build
+          cd build && cmake .. && cmake --build . --config Release 
+
+  Unix:
+    name: Unix x64
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: x64
+        run: |
+          cd D:\a\Linkit\Linkit\Natives
+          mkdir build
+          cd build && cmake .. && cmake --build . --config Release 
+         
