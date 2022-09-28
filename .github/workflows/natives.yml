@@ -2,8 +2,12 @@ name: compile for Windows, Linux, OSX (x64/x32)
 on:
   workflow_dispatch:
   push:
-    branches:
-      - dev
+    branches: ["dev"]
+    paths: ["Natives/**"]
+
+env:
+  LIB_NAME: LinkitNatives
+
 jobs:
   Windows:
     name: Windows x32 / x64
@@ -15,14 +19,12 @@ jobs:
           cd D:\a\Linkit\Linkit\Natives
           cmake --build . --target ALL_BUILD --config Release
           mkdir Build
-          dir 
-          dir cmake-build-debug
-          move cmake-build-debug/LinkitNativesLibraries.dll Build/LinkitNativesLibraries-x64.dll
+          move cmake-build-debug/%LIB_NAME%.dll Build/%LIB_NAME%-x64.dll
       - name: x32
         run: |
           cd D:\a\Linkit\Linkit\Natives
           cmake --build . --target ALL_BUILD --config Release
-          dir
-          move cmake-build-debug/LinkitNativesLibraries.dll Build/LinkitNativesLibraries-x32.dll
+          dir cmake-build-debug
+          move cmake-build-debug/%LIB_NAME%.dll Build/%LIB_NAME%-x32.dll
           
           
