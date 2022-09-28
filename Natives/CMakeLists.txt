@@ -13,9 +13,9 @@ add_library(LinkitNatives SHARED
         "fr_linkit_engine_internal_manipulation_invokation_ObjectInvocator.cpp")
 
 if (UNIX)
-    target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/linux ${JNI_INCLUDE}/linux/bridge ${SRC})
+    target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/linux ${SRC})
 elseif (APPLE)
-    target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/darwin ${JNI_INCLUDE}/darwin/bridge ${SRC})
+    target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/darwin/ ${SRC})
 elseif(WIN32)
     target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/win32 ${JNI_INCLUDE}/win32/bridge ${SRC})
 endif()
