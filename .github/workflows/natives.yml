@@ -19,7 +19,7 @@ jobs:
         run: |
           cd D:\a\Linkit\Linkit\Natives
           mkdir build
-          cd build && cmake .. && cmake --build .. --config Release 
+          cd build && cmake .. && cmake --build . --config Release 
           dir
           
           
