@@ -1,7 +1,4 @@
-plugins {
-    id 'scala'
-    id 'java'
-}
+
 
 group 'fr.override.linkit'
 version '1.0-SNAPSHOT'

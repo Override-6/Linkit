@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.referencing
 
 class NamedIdentifier(private val name: Option[String], val id: Int) {
     override def equals(id: Any): Boolean = id match {
-        case ni: NamedIdentifier => ni.name == name && ni.id == this.id
+        case ni: NamedIdentifier => ni.id == this.id
         case _                   => false
     }
 
@@ -26,7 +26,7 @@ class NamedIdentifier(private val name: Option[String], val id: Int) {
         else id.toString
     }
 
-    override def hashCode(): Int = Seq(name, id).hashCode()
+    override def hashCode(): Int = id.hashCode()
 }
 
 object NamedIdentifier {

@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.ngc
 
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.referencing.linker.GeneralNetworkObjectLinker
 
 import java.lang.ref.ReferenceQueue
@@ -22,7 +23,7 @@ object NGCThread extends Thread {
 
 
     private val queue      = new ReferenceQueue[DNO]()
-    private val registries = mutable.HashMap.empty[GeneralNetworkObjectLinker, GNOLRegistry]
+    private val registries = mutable.HashMap.empty[Network, GNOLRegistry]
 
 
     override def run(): Unit = {
@@ -32,10 +33,9 @@ object NGCThread extends Thread {
         }
     }
 
-    def test: GNOLRegistry = ???
 
-    def registerObject(gnol: GeneralNetworkObjectLinker, dno: DNO): Unit = {
-        registries.getOrElseUpdate(gnol, new GNOLRegistry(gnol)).registerObject(dno)
+    def registerObject(network: Network, dno: DNO): Unit = {
+        registries.getOrElseUpdate(network, new GNOLRegistry(network)).registerObject(dno)
     }
 
 

@@ -13,8 +13,6 @@ import java.net.InetSocketAddress
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
 import java.util.concurrent.ThreadLocalRandom
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 object RFSCClient {
 
@@ -77,7 +75,7 @@ object RFSCClient {
     private def launchConnection(identifier0: String): ExternalConnection = {
         println(s"Using identifier $identifier0")
         val config = new ClientApplicationConfigBuilder {
-            val resourcesFolder: String = "~/dev/Linkit/Home"
+            val resourcesFolder: String = "/home/maxime/dev/Linkit/Client Home"
             logfilename = Some(s"examples/rfsc client $identifier0")
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {

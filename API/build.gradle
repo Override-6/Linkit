@@ -10,10 +10,7 @@
  * Please contact overridelinkit@gmail.com if you need additional information or have any
  * questions.
  */
-plugins {
-    id 'java-library'
-    id 'scala'
-}
+
 
 apply plugin: 'scala'
 

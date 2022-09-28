@@ -84,8 +84,9 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
     }
     
     private def makeSyncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData, mirror: Boolean): A with SynchronizedObject[A] = {
-        val tree        = createNewTree(id, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], mirror, contracts)
-        val treeProfile = ObjectTreeProfile(id, tree.getRoot.obj, currentIdentifier, mirror, contracts)
+        val treeID = NamedIdentifier(creator.syncClassDef.mainClass.getSimpleName, id)
+        val tree        = createNewTree(treeID, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], mirror, contracts)
+        val treeProfile = ObjectTreeProfile(treeID, tree.getRoot.obj, currentIdentifier, mirror, contracts)
         AppLoggers.ConnObj.debug(s"Notifying other caches located on '$reference' that a new connected object has been added on the cache.")
         channel.makeRequest(ChannelScopes.include(ownerID))
                 .addPacket(ObjectPacket(treeProfile))
@@ -250,7 +251,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         val isSyncOnRefLock = refLock.isHeldByCurrentThread
         val requestLock     = treeRequestsLocks.getOrElseUpdate(id, new ReentrantLock())
         if (requestLock.isLocked) {
-            //a request is already pending from another thread, just wait for it to end the request.
+            //a request for the same object is already pending from another thread, just wait for it to end the request.
             refLock.unlock()
             requestLock.lock() //lock to wait
             requestLock.unlock() //then directly release

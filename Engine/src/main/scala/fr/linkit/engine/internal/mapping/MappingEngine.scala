@@ -62,7 +62,7 @@ object MappingEngine {
     def mapJDK(): Unit = {
         val jdkRoot = System.getProperty("java.home")
         val adapter = Path.of(jdkRoot)
-        AppLoggers.Mappings.info(s"Mapping current JDK ($adapter)...")
+        AppLoggers.Mappings.info(s"Mapping current JDK $adapter ...")
         mapDir(adapter, getClass.getClassLoader, DefaultFilter)
         AppLoggers.Mappings.debug("JDK Mapping done, classes were mapped in packages : ")
         DefaultFilter.filters.foreach(filter => {

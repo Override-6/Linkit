@@ -100,7 +100,7 @@ object LinkitApplication {
 
     private val AppPropertiesName     = "app.properties"
     private val AppDefaultsProperties = "/app_defaults.properties"
-    private val LibrariesNames        = Array("LinkitNativesHelper")
+    private val LibrariesNames        = Array("LinkitNatives")
 
     private val properties          : Properties        = new Properties()
     @volatile private var instance  : LinkitApplication = _

@@ -39,8 +39,8 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def loadLib(path: Path): Unit = {
-        val name = path.getFileName.toString
-        System.load(path.toString + File.separator + name + ".dll")
+        val name = System.mapLibraryName(path.getFileName.toString).drop(3)
+        System.load(path.toAbsolutePath + File.separator + name)
     }
 
     private def extract(resources: ResourceFolder, libs: Array[String]): Unit = {
@@ -94,7 +94,6 @@ private[linkit] object InternalLibrariesLoader {
         Files.createDirectories(root)
         libs.foreach { lib =>
             val entry = zipFile.getEntry("natives/" + lib)
-            val entries = zipFile.entries()
             exportDirEntry(zipFile, entry, root)
         }
     }

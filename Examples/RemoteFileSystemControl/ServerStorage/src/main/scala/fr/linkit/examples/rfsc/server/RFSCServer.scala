@@ -13,29 +13,29 @@ import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
 object RFSCServer {
-    
+
     private val clientsHomes        = new mutable.HashMap[Engine, Path]()
     private val watchServiceWorkers = WorkerPools.newClosedPool("WatchServicesWorkers")
-    
+
     def main(args: Array[String]): Unit = {
         val server = createConnection("RFSCServer")
         println("Server launched !")
         val network = server.network
-        network.onNewEngine { client => {
-            val path = Path.of(s"~/dev/linkit/rfs tests/${client.identifier}/")
+        network.onNewEngine(client => {
+            val path = Path.of(s"/tmp/rfs tests/${client.identifier}/")
             Files.createDirectories(path)
             clientsHomes.put(client, path)
             watchServiceWorkers.setThreadCount(clientsHomes.size)
-        }
-        }
+        })
+
         val prop      = ObjectsProperty("fs")(Map("homes" -> clientsHomes, "watchServiceWorkers" -> watchServiceWorkers))
         val contracts = Contract("FSControl", prop)
         network.newStaticAccess(1, contracts)
     }
-    
+
     private def createConnection(identifier0: String): CentralConnection = {
         val config = new ServerApplicationConfigBuilder {
-            val resourcesFolder: String = "~/dev/linkit/home"
+            val resourcesFolder: String = "/home/maxime/dev/Linkit/Server Home"
             logfilename = Some("examples/rfsc server")
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
@@ -46,8 +46,8 @@ object RFSCServer {
             }
         }.buildConfig()
         ServerApplication.launch(config, getClass)
-                .findConnection(identifier0)
-                .get
+                         .findConnection(identifier0)
+                         .get
     }
-    
+
 }
