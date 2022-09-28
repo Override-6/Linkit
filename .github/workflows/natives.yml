@@ -19,7 +19,8 @@ jobs:
         run: |
           cd D:\a\Linkit\Linkit\Natives
           cmake --build . --target ALL_BUILD --config Release
-          mkdir Build
+          dir
+          dir cmake-build-debug
           move cmake-build-debug/%LIB_NAME%.dll Build/%LIB_NAME%-x64.dll
       - name: x32
         run: |
