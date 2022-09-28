@@ -19,5 +19,6 @@ elseif (APPLE)
 elseif(WIN32)
     target_include_directories(LinkitNatives PRIVATE ${JNI_INCLUDE} ${JNI_INCLUDE}/windows ${JNI_INCLUDE}/windows/bridge ${SRC})
 endif()
+
 target_sources(LinkitNatives PRIVATE ${SRC})
 set_target_properties(LinkitNatives PROPERTIES PREFIX "")

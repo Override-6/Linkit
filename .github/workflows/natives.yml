@@ -19,6 +19,7 @@ jobs:
         run: |
           cd D:\a\Linkit\Linkit\Natives
           mkdir build
+          dir %JAVA_HOME%\include
           cd build && cmake .. && cmake --build . --config Release 
           dir
           
