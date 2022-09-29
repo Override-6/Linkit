@@ -4,6 +4,7 @@
 #include <fstream>
 #include "JValueTranslator.h"
 #include "fr_linkit_engine_internal_manipulation_creation_ObjectCreator.h"
+#include <utility>
 #include <vector>
 
 using namespace std;
@@ -11,7 +12,7 @@ using namespace std;
 
 jobject GetField(JNIEnv* env, jobject target, jobject field, string returnType) {
 	jfieldID fieldID = env->FromReflectedField(field);
-	JValueType tpe = ClassNameToType(returnType);
+	JValueType tpe = ClassNameToType(std::move(returnType));
 	if (tpe == JValueType::OBJECT_FLAG) {
 		return env->GetObjectField(target, fieldID);
 	}

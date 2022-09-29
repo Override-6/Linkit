@@ -24,7 +24,6 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
-          if not exists "Natives/bins" mkdir Natives/bins
           move Natives/build/$LIB_NAME.dll Natives/bins/$LIB_NAME.dll
           
           git config --global user.email maximebatista18@gmail.com
