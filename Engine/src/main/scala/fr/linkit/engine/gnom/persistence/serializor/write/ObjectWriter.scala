@@ -28,13 +28,13 @@ import java.util.ConcurrentModificationException
 import scala.annotation.switch
 
 class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
-    
+
     val buff: ByteBuffer = bundle.buff
     private final val boundClassMappings = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[DefaultEngine].classMappings).orNull
     //private       val config             = bundle.config
     private var packetRefSize            = 1
     private       val pool               = new SerializerObjectPool(bundle)
-    
+
     def addObjects(roots: Array[AnyRef]): Unit = {
         val pool = this.pool
         //Registering all objects, and contained objects in the constant pool.
@@ -42,11 +42,11 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             pool.addObject(o)
         }
     }
-    
+
     override def freeze(): Unit = pool.freeze()
-    
+
     override def isFrozen: Boolean = pool.isFrozen
-    
+
     /**
      * Will writes the chunks contained in the pool
      * This is a terminal action:
@@ -55,14 +55,14 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         if (pool.isFrozen)
             throw new IllegalStateException("Pool is frozen.")
         pool.freeze() //Ensure that the pool is no more susceptible to be updated.
-        
+
         val poolSize = pool.size
         packetRefSize = {
             if (poolSize > (java.lang.Short.MAX_VALUE * 2 + 1)) IntSize
             else if (poolSize > java.lang.Byte.MAX_VALUE * 2 + 1) UShortSize
-            else UByteSize
+                 else UByteSize
         }
-        
+
         //Informs the deserializer if we send a wide packet or not.
         //This means that for wide packets, pool references index are ints, and
         //for "non wide packets", references index are unsigned shorts
@@ -70,21 +70,22 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         //Write the content
         writeChunks()
     }
-    
+
     @inline
     private def writeChunks(): Unit = {
         //println(s"Write chunks : ${buff.array().mkString(", ")}")
         //let a hole for placing in chunk sizes
-        
+
         val chunks    = pool.getChunks
         var totalSize = 0
-        
+
         val announcedChunksPos = buff.position()
         buff.position(announcedChunksPos + 8)
-        
+
         //Announcing what chunk has been used by the packet and writing their sizes in the buff
-        var announcedChunksNumber: Long = 0x0000 //0b00000000
-        var i                           = 0
+        var announcedChunksNumber: Long = 0 //0b00000000
+
+        var i = 0
         while (i < ChunkCount) {
             val chunk = chunks(i)
             val size  = chunk.size
@@ -92,7 +93,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
                 totalSize += size
                 //Tag's announcement mark is appended to the announced chunks number
                 announcedChunksNumber |= (1 << chunk.tag)
-                
+
                 putRef(size) //append the size of the chunk
             }
             i += 1
@@ -113,7 +114,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         if (totalSize > scala.Int.MaxValue)
             throw new PacketPoolTooLongException(s"Packet total items size exceeded integer maximum value (total size: $totalSize)")
     }
-    
+
     private def writeChunk(flag: Byte, chunk: PoolChunk[Any]): Unit = {
         val size = chunk.size
         //Write content
@@ -121,7 +122,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             ArrayPersistence.writePrimitiveArrayContent(this, chunk.array, flag, 0, size)
             return
         }
-        
+
         @inline
         def foreach[T](@inline action: T => Unit): Unit = {
             val items = chunk.array.asInstanceOf[Array[T]]
@@ -134,7 +135,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
                 i += 1
             }
         }
-        
+
         (flag: @switch) match {
             case Class   => foreach[Class[_]](writeClass)
             case SyncDef => foreach[SyncClassDef](writeSyncClassDef)
@@ -145,9 +146,9 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             case RNO     => foreach[ReferencedPoolObject](obj => putRef(obj.referenceIdx))
         }
     }
-    
+
     def getPool: SerializerObjectPool = pool
-    
+
     private def writeSyncClassDef(syncDef: SyncClassDef): Unit = {
         syncDef.ensureOverrideable()
         val (classCount, classes) = syncDef match {
@@ -157,7 +158,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         buff.putChar(classCount.toChar)
         classes.foreach(putTypeRef)
     }
-    
+
     private def writeClass(clazz: Class[_]): Unit = {
         val code = ClassMappings.codeOfClass(clazz)
         buff.putInt(code)
@@ -165,38 +166,38 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             boundClassMappings.addClassToMap(clazz.getName)
         }
     }
-    
+
     private def writeEnum(enum: Enum[_]): Unit = {
         putTypeRef(enum.getClass)
         writeString(enum.name())
     }
-    
+
     private def writeString(str: String): Unit = {
         val bytes = str.getBytes()
         buff.putInt(bytes.length).put(bytes)
     }
-    
+
     private def writeObject(poolObj: SimpleObject): Unit = {
         poolObj.valueClassRef match {
             case Left(clazz)    => writeObject(clazz, poolObj.decomposed)
             case Right(syncDef) => writeObject(syncDef, poolObj.decomposed)
         }
     }
-    
+
     private def writeObject(objectType: Class[_], decomposed: Array[Any]): Unit = {
         //writing object's class
         putTypeRef(objectType)
         //writing object content
         ArrayPersistence.writeArrayContent(this, decomposed)
     }
-    
+
     private def writeObject(objectType: SyncClassDef, decomposed: Array[Any]): Unit = {
         //writing object's class
         putSyncTypeRef(objectType)
         //writing object content
         ArrayPersistence.writeArrayContent(this, decomposed)
     }
-    
+
     @inline
     def putRef(ref: Int): Unit = {
         if (ref < 0)
@@ -207,7 +208,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             case IntSize    => buff.putInt(ref)
         }
     }
-    
+
     @inline
     def putPoolRef(obj: Any): Unit = {
         val idx = pool.globalPosition(obj)
@@ -217,11 +218,11 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         }
         putRef(idx)
     }
-    
+
     def putTypeRef(tpe: Class[_]): Unit = {
         putRef(pool.getChunkFromFlag(Class).indexOf(tpe))
     }
-    
+
     def putSyncTypeRef(syncClassDef: SyncClassDef): Unit = {
         val idx = pool.getChunkFromFlag(SyncDef).indexOf(syncClassDef)
         putRef(pool.getChunkFromFlag(Class).size + idx)

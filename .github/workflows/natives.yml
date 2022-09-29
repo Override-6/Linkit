@@ -2,8 +2,8 @@ name: Natives
 on:
   workflow_dispatch:
   push:
-    branches: ["dev"]
-    paths: ["Natives/**"]
+    branches: [ "dev" ]
+    paths: [ "Natives/**" ]
 
 env:
   LIB_NAME: LinkitNatives
@@ -15,7 +15,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v3
-      - name: x64
+      - name: Compile binaries
         run: |
           cd Natives
           mkdir build && cd build && cmake .. && cmake --build . --config Release
@@ -24,24 +24,21 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - name: x64
+      - name: Compile binaries
         run: |
-          pwd
           cd Natives
-          ls /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.345-1/x64/Contents/Home/include/
-          echo ""
-          ls /Users/runner/hostedtoolcache/Java_Temurin-Hotspot_jdk/8.0.345-1/x64/Contents/Home/include/darwin
-          echo ""
-          mkdir build && cd build && cmake .. && cmake --build . --config Release 
-
+          mkdir build && cd build && cmake .. && cmake --build . --config Release
   Unix:
     name: Unix x64
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: x64
+      - name: Compile binaries
         run: |
-          pwd
           cd Natives
-          mkdir build && cd build && cmake .. && cmake --build . --config Release 
-         
+          mkdir build && cd build && cmake .. && cmake --build . --config Release
+      - name: Generate settings.xml for Maven Builds
+        uses: whelk-io/maven-settings-xml-action@v20
+        with:
+          repositories: '[{"id": "central", "url": "https://repo1.maven.org/maven2"},{"id": "github", "url": "https://maven.pkg.github.com/Override-6/Linkit", "releases": {"enabled": "true"}, "snapshots": {"enabled": "true"}}]'
+          servers: '[{"id": "github", "username": "Override-6", "password": "$PACKAGES_DEPLOY_PAT"}]'

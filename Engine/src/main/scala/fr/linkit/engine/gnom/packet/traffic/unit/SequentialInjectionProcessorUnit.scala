@@ -218,10 +218,8 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                 queue.offer(result)
                 return nextResult()
             }
-            if (currentOrdinal ne result) {
-                currentOrdinal = expectedOrdinal
-                AppLoggers.Traffic.trace(s"(SIPU $reference): current ordinal is now $currentOrdinal.")
-            }
+            currentOrdinal = expectedOrdinal
+            AppLoggers.Traffic.trace(s"(SIPU $reference): current ordinal is now $currentOrdinal.")
             result
         }
 

@@ -14,12 +14,25 @@
 plugins {
     id 'java-library'
     id 'scala'
+    id 'maven-publish'
 }
 
 println("Java JDK: " + System.getProperty("java.version"))
 
 group 'fr.override.linkit'
 version 'Alpha-0.1'
+
+publishing {
+    publications {
+
+    }
+    repositories {
+        maven {
+            name = "Linkit"
+
+        }
+    }
+}
 
 subprojects {
     apply plugin: 'java'
