@@ -24,7 +24,7 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
-          move Natives/build/LinkitNatives.dll Natives/bins/LinkitNatives.dll
+          move Natives\bin\Release\LinkitNatives.dll Natives/bins/LinkitNatives.dll
           
           git config --global user.email maximebatista18@gmail.com
           git config --global user.name "Override-6 [bot]"
