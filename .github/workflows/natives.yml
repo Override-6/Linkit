@@ -24,7 +24,7 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
-          mkdir Natives/bins
+          if not exists "Natives/bins" mkdir Natives/bins
           move Natives/build/$LIB_NAME.dll Natives/bins/$LIB_NAME.dll
           
           git config --global user.email maximebatista18@gmail.com
@@ -32,7 +32,7 @@ jobs:
           
           git add .
           git fetch
-          git commit -m "binaries update for `windows` "
+          git commit -m "binaries update for windows"
           git push
   MacOS:
     name: Macos x64
@@ -53,7 +53,7 @@ jobs:
           
           git add .
           git fetch
-          git commit -m "binaries update for `macos`"
+          git commit -m "binaries update for macos"
           git push
   Unix:
     name: Unix x64
@@ -74,5 +74,5 @@ jobs:
           
           git add .
           git fetch
-          git commit -m "binaries update for `unix`"
+          git commit -m "binaries update for unix"
           git push
