@@ -24,8 +24,8 @@ import fr.linkit.engine.application.LinkitApplication
 
 private[linkit] object InternalLibrariesLoader {
 
-    private       val ResourceMark    = "/mapEngineFilter.txt"
-    private       val LibsDestination = "system.internal.libraries_dir"
+    private val ResourceMark    = "/mapEngineFilter.txt"
+    private val LibsDestination = "system.internal.libraries_dir"
 
     def extractAndLoad(resources: ResourceFolder, libs: Array[String]): Unit = {
         extract(resources, libs)
@@ -35,13 +35,10 @@ private[linkit] object InternalLibrariesLoader {
     private def load(resources: ResourceFolder): Unit = {
         val libsPath = getPathProperty(resources, LibsDestination)
         Files.list(libsPath)
-                .forEach(loadLib)
+             .forEach(loadLib)
     }
 
-    private def loadLib(path: Path): Unit = {
-        val name = System.mapLibraryName(path.getFileName.toString).drop(3)
-        System.load(path.toAbsolutePath + File.separator + name)
-    }
+    private def loadLib(path: Path): Unit = System.load(path.toAbsolutePath.toString)
 
     private def extract(resources: ResourceFolder, libs: Array[String]): Unit = {
         val fileUrl        = classOf[LinkitApplication].getResource(ResourceMark)
@@ -63,37 +60,28 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def extractFolder(resources: ResourceFolder, filePath: String, libs: Array[String]): Unit = {
-        val root               = Path.of(filePath + "/natives/")
+        val root               = Path.of(filePath)
         val extractDestination = getPathProperty(resources, LibsDestination)
         Files.createDirectories(extractDestination)
         Files.list(root)
-                .filter(p => libs.contains(p.getFileName.toString))
-                .forEach { libPath =>
-                    val destination = Path.of(extractDestination + "/" + libPath.getFileName)
-                    copyFolder(libPath, destination)
-                }
+             .filter(p => libs.exists(toNativeLibName(_) == p.getFileName.toString))
+             .forEach { libPath =>
+                 val destination = Path.of(extractDestination + "/" + libPath.getFileName)
+                 if (Files.notExists(destination)) {
+                     Files.createDirectories(extractDestination)
+                     Files.copy(libPath, destination, StandardCopyOption.REPLACE_EXISTING)
+                 }
+             }
     }
 
-    private def copyFolder(from: Path, to: Path): Unit = {
-        Files.list(from)
-                .forEach(child => {
-                    val toChild = Path.of(to + "/" + child.getFileName)
-                    if (Files.isDirectory(child))
-                        copyFolder(child, toChild)
-                    else if (Files.notExists(toChild)) {
-                        Files.createDirectories(to)
-                        Files.createFile(toChild)
-                        Files.copy(child, toChild, StandardCopyOption.REPLACE_EXISTING)
-                    }
-                })
-    }
+    private def toNativeLibName(libName: String): String = System.mapLibraryName(libName).drop(3)
 
     private def extractJar(resources: ResourceFolder, jarPath: String, libs: Array[String]): Unit = {
         val zipFile = new ZipFile(jarPath)
         val root    = getPathProperty(resources, LibsDestination)
         Files.createDirectories(root)
         libs.foreach { lib =>
-            val entry = zipFile.getEntry("natives/" + lib)
+            val entry = zipFile.getEntry(toNativeLibName(lib))
             exportDirEntry(zipFile, entry, root)
         }
     }
@@ -105,7 +93,7 @@ private[linkit] object InternalLibrariesLoader {
             val entry     = entries.nextElement()
             val entryName = entry.getName
             if (entryName.startsWith(dirName)) {
-                val path = Path.of(destination.toString + '/' + entryName.drop("natives/".length))
+                val path = Path.of(destination.toString + '/' + entryName)
                 /*if (entry.isDirectory) {
                     exportDirEntry(file, entry, path)*/
                 if (!entry.isDirectory) {
