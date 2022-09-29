@@ -10,7 +10,7 @@ on:
 
 env:
   LIB_NAME: LinkitNatives
-  PACKAGES_DEPLOY_PAT: {{secrets.PACKAGES_DEPLOY_PAT}}
+  PACKAGES_DEPLOY_PAT: ${{secrets.PACKAGES_DEPLOY_PAT}}
 
 jobs:
   Windows:
