@@ -29,6 +29,8 @@ jobs:
           
           git config --global user.email maximebatista18@gmail.com
           git config --global user.name "Override-6 [bot]"
+          
+          git add .
           git commit -m "binaries update for `windows`"
           git push
   MacOS:
@@ -47,6 +49,8 @@ jobs:
           
           git config --global user.email maximebatista18@gmail.com
           git config --global user.name "Override-6 [bot]"
+          
+          git add .
           git commit -m "binaries update for `macos`"
           git push
   Unix:
@@ -65,5 +69,7 @@ jobs:
           
           git config --global user.email maximebatista18@gmail.com
           git config --global user.name "Override-6 [bot]"
+          
+          git add .
           git commit -m "binaries update for `unix`"
           git push
