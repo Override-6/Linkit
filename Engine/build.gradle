@@ -16,9 +16,6 @@ plugins {
     id 'scala'
 }
 
-group 'fr.linkit'
-version 'Alpha-1.0'
-
 repositories {
     mavenCentral()
 }
@@ -26,6 +23,14 @@ repositories {
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = ["-feature",
                                                 "-language:implicitConversions"]
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs += "Natives/bins"
+        }
+    }
 }
 
 dependencies {

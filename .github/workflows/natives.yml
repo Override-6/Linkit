@@ -24,6 +24,7 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
+          mkdir Natives/bins
           move Natives/build/$LIB_NAME.dll Natives/bins/$LIB_NAME.dll
           git commit -m "binaries update for `windows`"
           git push
@@ -38,6 +39,7 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
+          mkdir Natives/bins
           mv Natives/build/$LIB_NAME.dylib Natives/bins/$LIB_NAME.dylib
           git commit -m "binaries update for `macos`"
           git push
@@ -52,6 +54,7 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
+          mkdir Natives/bins
           mv Natives/build/$LIB_NAME.so Natives/bins/$LIB_NAME.so
           git commit -m "binaries update for `unix`"
           git push
