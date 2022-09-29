@@ -26,6 +26,9 @@ jobs:
         run: |
           mkdir Natives/bins
           move Natives/build/$LIB_NAME.dll Natives/bins/$LIB_NAME.dll
+          
+          git config --global user.email maximebatista18@gmail.com
+          git config --global user.name "Override-6 [bot]"
           git commit -m "binaries update for `windows`"
           git push
   MacOS:
@@ -41,6 +44,9 @@ jobs:
         run: |
           mkdir Natives/bins
           mv Natives/build/$LIB_NAME.dylib Natives/bins/$LIB_NAME.dylib
+          
+          git config --global user.email maximebatista18@gmail.com
+          git config --global user.name "Override-6 [bot]"
           git commit -m "binaries update for `macos`"
           git push
   Unix:
@@ -56,5 +62,8 @@ jobs:
         run: |
           mkdir Natives/bins
           mv Natives/build/$LIB_NAME.so Natives/bins/$LIB_NAME.so
+          
+          git config --global user.email maximebatista18@gmail.com
+          git config --global user.name "Override-6 [bot]"
           git commit -m "binaries update for `unix`"
           git push
