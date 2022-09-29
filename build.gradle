@@ -19,25 +19,36 @@ plugins {
 
 println("Java JDK: " + System.getProperty("java.version"))
 
-group 'fr.override.linkit'
-version 'Alpha-0.1'
-
-publishing {
-    publications {
-
-    }
-    repositories {
-        maven {
-            name = "Linkit"
-
-        }
-    }
-}
+group 'fr.linkit'
+version 'alpha-0.0.0'
 
 subprojects {
-    apply plugin: 'java'
-    apply plugin: 'scala'
+    group = "fr.linkit"
+    version = "alpha-0.0.0"
 
+    apply plugin: 'java-library'
+    apply plugin: 'scala'
+    apply plugin: 'maven-publish'
+
+    publishing {
+        publications {
+            maven(MavenPublication) {
+                afterEvaluate {
+                    artifactId = project.name.toLowerCase()
+                    from project.components.java
+                }
+                repositories {
+                    maven {
+                        url = "https://maven.pkg.github.com/Override-6/Linkit"
+                        credentials {
+                            username = "Override-6"
+                            password = System.getenv("PACKAGES_DEPLOY_PAT")
+                        }
+                    }
+                }
+            }
+        }
+    }
     repositories {
         mavenCentral()
     }
@@ -54,7 +65,7 @@ subprojects {
         from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
-        archiveFileName = "${project.name}-Alpha-1.0.jar"
+        archiveFileName = "${project.name}-$project.version"
     }
 
     tasks.withType(JavaCompile) {
@@ -91,15 +102,15 @@ subprojects {
     }
 }
 
-def docModules = [":Engine", ":API", ":Server", ":Client"]
+def frameworkModules = [":Engine", ":API", ":Server", ":Client"]
 
-task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from all child projects as if it were a single project', group: 'Documentation') {
+task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from listed sub projects as if it were a single project', group: 'Documentation') {
     destinationDir = file("$buildDir/docs/scaladoc")
     title = "$project.name documentation"
     classpath = project.files([])
     scalaClasspath = project.files([])
 
-    docModules.collect{project(it)}.each { proj ->
+    frameworkModules.collect { project(it) }.each { proj ->
         proj.tasks.withType(ScalaDoc).each {
             source proj.sourceSets.main.allJava
             source proj.sourceSets.main.allScala

@@ -7,7 +7,7 @@ on:
 
 env:
   LIB_NAME: LinkitNatives
-
+  PACKAGES_DEPLOY_PAT: {{secrets.PACKAGES_DEPLOY_PAT}}
 
 jobs:
   Windows:
@@ -28,6 +28,7 @@ jobs:
         run: |
           cd Natives
           mkdir build && cd build && cmake .. && cmake --build . --config Release
+
   Unix:
     name: Unix x64
     runs-on: ubuntu-latest
@@ -37,8 +38,5 @@ jobs:
         run: |
           cd Natives
           mkdir build && cd build && cmake .. && cmake --build . --config Release
-      - name: Generate settings.xml for Maven Builds
-        uses: whelk-io/maven-settings-xml-action@v20
-        with:
-          repositories: '[{"id": "central", "url": "https://repo1.maven.org/maven2"},{"id": "github", "url": "https://maven.pkg.github.com/Override-6/Linkit", "releases": {"enabled": "true"}, "snapshots": {"enabled": "true"}}]'
-          servers: '[{"id": "github", "username": "Override-6", "password": "$PACKAGES_DEPLOY_PAT"}]'
+      - name: commit
+          dir

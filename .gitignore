@@ -6,9 +6,8 @@
 */out/
 .gradle
 .idea
-/Engine/src/main/resources/natives/*
-/Natives/cmake-build-debug/
 /logs
+
 */.vs
 /Examples/src
 /Examples/RemoteFileSystemControl/src
@@ -19,3 +18,5 @@ CMakeSettings.json
 *.class
 *.iml
 *.log
+
+secrets.*
