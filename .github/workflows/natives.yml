@@ -43,4 +43,4 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
-          dir
+          tree Natives
