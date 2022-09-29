@@ -70,7 +70,7 @@ JValueType ClassNameToType(std::string name) {
 	}
 }
 
-jobject WrapPrimitive(JNIEnv* env, string className, string paramSignature, double value) {
+jobject WrapPrimitive(JNIEnv* env, string className, const string& paramSignature, double value) {
 	const jvalue val0 = NumberToJValue(ClassNameToType(paramSignature), value);
     const jvalue* val = &val0;
 	replace(className.begin(), className.end(), '.', '/');

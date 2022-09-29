@@ -50,7 +50,7 @@ jobject GetField(JNIEnv* env, jobject target, jobject field, string returnType) 
 		return WrapPrimitive(env, "java.lang.Short", "S", val);
 	}
 	default:
-		return NULL;
+		return nullptr;
 	}
 }
 

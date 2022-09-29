@@ -22,4 +22,4 @@ JValueType ClassNameToType(std::string);
 
 double UnwrapPrimitive(JNIEnv*, JValueType, jobject);
 
-jobject WrapPrimitive(JNIEnv*, string, string, double);
+jobject WrapPrimitive(JNIEnv*, string, const string&, double);

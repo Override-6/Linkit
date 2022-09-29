@@ -8,8 +8,6 @@ using namespace std;
 using namespace std::literals;
 
 
-
-
 std::vector<jvalue> GetJObjects(JNIEnv* env, jbyte* types, jobjectArray array) {
 	const int len = env->GetArrayLength(array);
 	std::vector<jvalue> vec(len);
@@ -67,7 +65,7 @@ JNIEXPORT jobject JNICALL Java_fr_linkit_engine_internal_manipulation_invokation
 		val = env->CallShortMethodA(target, methodID, valuesArray);
 		return WrapPrimitive(env, "java.lang.Short", "S", val);
 	default:
-		return NULL;
+		return nullptr;
 	}
 
 }
