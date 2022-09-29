@@ -1,4 +1,7 @@
+
+
 name: Natives
+
 on:
   workflow_dispatch:
   push:
@@ -39,4 +42,5 @@ jobs:
           cd Natives
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
+        run: |
           dir
