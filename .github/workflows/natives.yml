@@ -24,13 +24,13 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
-          move Natives/build/%LIB_NAME%.dll Natives/bins/%LIB_NAME%.dll
+          move Natives/build/LinkitNatives.dll Natives/bins/LinkitNatives.dll
           
           git config --global user.email maximebatista18@gmail.com
           git config --global user.name "Override-6 [bot]"
           
           git add .
-          git fetch && git pull
+          git fetch && git pull && git merge
           git commit -m "binaries update for windows"
           git push
   MacOS:
@@ -51,7 +51,7 @@ jobs:
           git config --global user.name "Override-6 [bot]"
           
           git add .
-          git fetch && git pull
+          git fetch && git pull && git merge
           git commit -m "binaries update for macos"
           git push
   Unix:
@@ -72,6 +72,6 @@ jobs:
           git config --global user.name "Override-6 [bot]"
           
           git add .
-          git fetch && git pull
+          git fetch && git pull && git merge
           git commit -m "binaries update for unix"
           git push
