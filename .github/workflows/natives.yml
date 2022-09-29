@@ -32,7 +32,7 @@ jobs:
           
           git add .
           git fetch
-          git commit -m "binaries update for `windows`"
+          git commit -m "binaries update for `windows` "
           git push
   MacOS:
     name: Macos x64
@@ -45,7 +45,7 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
-          mkdir Natives/bins
+          mkdir -p Natives/bins
           mv Natives/build/$LIB_NAME.dylib Natives/bins/$LIB_NAME.dylib
           
           git config --global user.email maximebatista18@gmail.com
@@ -66,7 +66,7 @@ jobs:
           mkdir build && cd build && cmake .. && cmake --build . --config Release
       - name: commit
         run: |
-          mkdir Natives/bins
+          mkdir -p Natives/bins
           mv Natives/build/$LIB_NAME.so Natives/bins/$LIB_NAME.so
           
           git config --global user.email maximebatista18@gmail.com
