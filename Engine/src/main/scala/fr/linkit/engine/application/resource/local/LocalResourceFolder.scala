@@ -24,9 +24,9 @@ class LocalResourceFolder protected(adapter: Path,
                                     listener: ResourceListener,
                                     parent: Option[ResourceFolder]) extends BaseResourceFolder(parent, listener, adapter) with LocalFolder {
     
-    protected val entry = new DefaultResourceEntry[LocalFolder](this)
+    protected val entry = new DefaultResourceEntry[LocalResourceFolder](this)
     
-    override def getEntry: ResourceEntry[LocalFolder] = entry
+    override def getEntry: ResourceEntry[LocalResourceFolder] = entry
     
     override def createOnDisk(): Unit = Files.createDirectories(getPath)
     
@@ -50,7 +50,9 @@ class LocalResourceFolder protected(adapter: Path,
 }
 
 object LocalResourceFolder extends ResourceFactory[LocalFolder] {
-    
+
+    implicit val factory: ResourceFactory[LocalFolder] = this
+
     override def apply(path: Path,
                        listener: ResourceListener,
                        parent: Option[ResourceFolder]): LocalResourceFolder = {

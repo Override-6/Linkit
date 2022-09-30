@@ -32,11 +32,13 @@ object TestEngine {
     launchMockingNetwork()
 
     def launchMockingNetwork(): Unit = {
+        if (application != null) //already loaded
+            return
         application = LinkitApplicationMock.launch(new ApplicationConfiguration {
             override val logfilename    : Option[String]             = None
             override val securityManager: ApplicationSecurityManager = ApplicationSecurityManager.None
             override val resourceFolder : String                     = {
-                val envValue = System.getenv("LinkitHome")
+                val envValue = System.getenv("LINKIT_HOME")
                 if (envValue == null)
                     throw new NoSuchElementException("LinkitHome property not set. Please set a path in LinkitHome property to start testing.")
                 envValue

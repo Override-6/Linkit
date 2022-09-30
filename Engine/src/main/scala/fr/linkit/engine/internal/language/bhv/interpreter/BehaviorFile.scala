@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDefUnique, SyncStructureDescription, FieldDescription => SFieldDescription, MethodDescription => SMethodDescription}
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
+import fr.linkit.api.internal.compilation.CompilerCenter
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.integration.FileIntegratedLambdas

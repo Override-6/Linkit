@@ -13,8 +13,7 @@
 
 package fr.linkit.api.internal.script
 
-import fr.linkit.api.internal.generation.resource.ClassFolderResource
-
+import fr.linkit.api.internal.compilation.ClassFolderResource
 import java.io.InputStream
 
 trait ScriptHandler[S <: ScriptFile] {

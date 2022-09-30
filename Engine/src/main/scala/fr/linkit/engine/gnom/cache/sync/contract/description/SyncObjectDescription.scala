@@ -23,6 +23,7 @@ import fr.linkit.engine.gnom.cache.sync.generation.SyncClassRectifier.JavaKeywor
 
 import java.lang.reflect.{Executable, Method, Modifier}
 import scala.collection.mutable
+import scala.reflect.ClassTag
 
 class SyncObjectDescription[A <: AnyRef] @Persist() protected(private val clazz: SyncClassDef) extends AbstractSyncStructureDescription[A](clazz) with Deconstructible {
     
@@ -98,7 +99,8 @@ object SyncObjectDescription {
             throw new IllegalArgumentException(s"Provided class definition contains classes that extends ${classOf[SynchronizedObject[_]]} ($specs)")
         new SyncObjectDescription[A](specs)
     }).asInstanceOf[SyncObjectDescription[A]]
-    
+
+
     //implicit def fromTag[A <: AnyRef : ClassTag]: SyncObjectDescription[A] = apply[A](classTag[A].runtimeClass)
     
     def isNotOverrideable(mods: Int): Boolean = {

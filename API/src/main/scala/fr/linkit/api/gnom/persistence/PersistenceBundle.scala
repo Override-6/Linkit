@@ -22,6 +22,7 @@ import java.nio.ByteBuffer
 
 trait PersistenceBundle {
 
+    val packetID  : String
     val network   : Network
     val buff      : ByteBuffer
     val boundId   : String

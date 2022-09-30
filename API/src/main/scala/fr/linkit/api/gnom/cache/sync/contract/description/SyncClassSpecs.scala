@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.cache.sync.InvalidSyncClassDefinitionException
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef.check
 
 import java.util
+import scala.reflect.{ClassTag, classTag}
 
 sealed trait SyncClassDef {
     
@@ -85,7 +86,9 @@ final class SyncClassDefMultiple private[description](val mainClass: Class[_], v
 }
 
 object SyncClassDef {
-    
+
+    def apply[C: ClassTag]: SyncClassDef = apply(classTag[C].runtimeClass)
+
     def apply(superClass: Class[_]): SyncClassDef = {
         new SyncClassDefUnique(superClass)
     }

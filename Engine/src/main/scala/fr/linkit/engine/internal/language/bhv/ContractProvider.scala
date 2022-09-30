@@ -5,7 +5,7 @@ import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, ObjectsProperty}
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
+import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileInterpreter, BehaviorFileLambdaExtractor, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser

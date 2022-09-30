@@ -18,16 +18,17 @@ import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, SynchronizedObject}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.referencing.NetworkObject
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
+import fr.linkit.api.internal.compilation.CompilerCenter
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.description.{AbstractSyncStructureDescription, SyncObjectDescription, SyncStaticsCallerDescription}
+import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import scala.util.Try
 
-class DefaultSyncClassCenter(center: CompilerCenter, storage: SyncClassStorageResource) extends SyncClassCenter {
+class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: CompilerCenter = DefaultCompilerCenter) extends SyncClassCenter {
     
-    private val requestFactory = new SyncClassCompilationRequestFactory()
+    private val requestFactory = SyncClassCompilationRequestFactory
     
     override def getSyncClass[S <: AnyRef](clazz: SyncClassDef): Class[S with SynchronizedObject[S]] = {
         if (classOf[StaticsCaller].isAssignableFrom(clazz.mainClass)) {
@@ -72,12 +73,12 @@ class DefaultSyncClassCenter(center: CompilerCenter, storage: SyncClassStorageRe
                 case _                              =>
                     AppLoggers.Compilation.info(s"Compiling Sync class for ${classDef.mainClass.getName}...")
             }
-            requestFactory.makeRequest(desc)
+            requestFactory.makeRequest(desc, storage.resource.getPath)
         }
         AppLoggers.Compilation.info(s"Compilation done. (${result.getCompileTime} ms).")
-        val syncClass = result.getValue
-                .get
-                .asInstanceOf[Class[S with SynchronizedObject[S]]]
+        val syncClass = result.getClasses
+                              .head
+                              .asInstanceOf[Class[S with SynchronizedObject[S]]]
         ClassMappings.putClass(syncClass)
         syncClass
     }
@@ -136,7 +137,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, storage: SyncClassStorageRe
             AppLoggers.Compilation.info(s"Compiling Sync Classes for ${toCompile.map(_.mainClass.getName).mkString(", ")}...")
             requestFactory.makeMultiRequest(toCompile.map(SyncObjectDescription(_)))
         }
-        result.getValue.get.foreach(ClassMappings.putClass)
+        result.getClasses.get.foreach(ClassMappings.putClass)
         val ct = result.getCompileTime
         AppLoggers.Compilation.info(s"Compilation done in $ct ms.")
     }

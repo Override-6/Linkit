@@ -45,7 +45,7 @@ object ClientSideMain {
 
     private def launchApp(identifier0: String): ExternalConnection = {
         val config = new ClientApplicationConfigBuilder {
-            val resourcesFolder: String = System.getenv("LinkitHome")
+            val resourcesFolder: String = System.getenv("LINKIT_HOME")
             logfilename = Some(s"examples/bank client $identifier0")
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {

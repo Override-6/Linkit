@@ -69,8 +69,8 @@ private[linkit] object InternalLibrariesLoader {
                  val destination = Path.of(extractDestination + "/" + libPath.getFileName)
                  if (Files.notExists(destination)) {
                      Files.createDirectories(extractDestination)
-                     Files.copy(libPath, destination, StandardCopyOption.REPLACE_EXISTING)
                  }
+                 Files.copy(libPath, destination, StandardCopyOption.REPLACE_EXISTING)
              }
     }
 

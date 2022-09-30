@@ -14,10 +14,11 @@
 package fr.linkit.api.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
-import fr.linkit.api.internal.generation.compilation.CompilationContext
+import fr.linkit.api.internal.compilation.CompilationContext
 
 /**
  * The description of the super class of a generated [[fr.linkit.api.gnom.cache.sync.SynchronizedObject]] class.
+ *
  * @see [[fr.linkit.api.gnom.cache.sync.SynchronizedObject]]
  * @see [[fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter]]
  * @see [[SyncInstanceInstantiator]]

@@ -20,6 +20,7 @@ import fr.linkit.api.internal.system.{Version, Versions}
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfiguration}
 import fr.linkit.engine.application.LinkitApplication
+import fr.linkit.engine.application.resource.local.LocalResourceFolder
 import fr.linkit.engine.internal.concurrency.pool.{AbstractWorkerPool, SimpleClosedWorkerPool}
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfiguration}
@@ -30,13 +31,14 @@ import scala.util.{Failure, Success}
 
 class LinkitApplicationMock private(configuration: ApplicationConfiguration,
                                     appResources: ResourceFolder) extends LinkitApplication(configuration, appResources) {
-    
+
+    import LocalResourceFolder.factory
     private val clientSideApp = new ClientApplication(new ClientApplicationConfigBuilder {
         override val resourcesFolder: String = appResources.getLocation
-    }.buildConfig(), appResources)
+    }.buildConfig(), appResources.getOrOpen[ResourceFolder]("ClientTests"))
     private val serverSideApp = new ServerApplication(new ServerApplicationConfigBuilder {
         override val resourcesFolder: String = appResources.getLocation
-    }.buildConfig(), appResources)
+    }.buildConfig(), appResources.getOrOpen[ResourceFolder]("ServerTests"))
     
     override protected val appPool : AbstractWorkerPool = new SimpleClosedWorkerPool(5, "Test Pool")
     override           val versions: Versions           = Versions.Unknown

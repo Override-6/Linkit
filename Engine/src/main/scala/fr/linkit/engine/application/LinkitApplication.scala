@@ -16,16 +16,16 @@ package fr.linkit.engine.application
 import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.application.resource.local.{LocalFolder, ResourceFolder}
 import fr.linkit.api.application.{ApplicationContext, ApplicationReference}
+import fr.linkit.api.internal.compilation.CompilerCenter
 import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{ApiConstants, AppException, Version}
 import fr.linkit.engine.application.LinkitApplication.setInstance
 import fr.linkit.engine.application.resource.local.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
 import fr.linkit.engine.gnom.persistence.ConstantProtocol
+import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
-import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.ContractProvider
 import fr.linkit.engine.internal.mapping.{ClassMappings, MappingEngine}
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}

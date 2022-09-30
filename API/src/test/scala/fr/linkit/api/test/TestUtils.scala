@@ -20,7 +20,7 @@ import java.util.Scanner
 
 object TestUtils {
 
-    val HomeProperty   : String = "LinkitHome"
+    val HomeProperty   : String = "LINKIT_HOME"
     val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
 
     implicit def toThrowingSupplier[T](action: => T): ThrowingSupplier[T] = () => action
