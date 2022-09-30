@@ -25,7 +25,7 @@ import java.util.Scanner
 object ServerLauncher {
 
     private val DefaultServerID = "TestServer1"
-    final val HomeProperty   : String = "LinkitHome"
+    final val HomeProperty   : String = LINKIT_HOME
     final val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
     final val Port = 48484
 

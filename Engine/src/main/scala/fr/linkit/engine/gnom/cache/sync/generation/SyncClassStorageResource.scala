@@ -18,7 +18,7 @@ import fr.linkit.api.application.resource.representation.ResourceRepresentationF
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import SyncClassStorageResource.{GeneratedClassesPackage, SyncSuffixName}
-import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
+import fr.linkit.engine.internal.compilation.resource.CachedClassFolderResource
 
 class SyncClassStorageResource(resource: ResourceFolder) extends CachedClassFolderResource[SynchronizedObject[AnyRef]](resource) {
 

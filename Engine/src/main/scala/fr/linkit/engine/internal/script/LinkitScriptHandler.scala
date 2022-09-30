@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.script
 
-import fr.linkit.api.internal.generation.resource.ClassFolderResource
+import fr.linkit.api.internal.compilation.ClassFolderResource
 import fr.linkit.api.internal.script.{ScriptFile, ScriptHandler, ScriptInstantiator}
 import java.io.InputStream
 

@@ -13,7 +13,7 @@
 
 package fr.linkit.api.internal.script
 
-import fr.linkit.api.internal.generation.compilation.CompilationContext
+import fr.linkit.api.internal.compilation.CompilationContext
 
 trait ScriptContext extends CompilationContext {
 

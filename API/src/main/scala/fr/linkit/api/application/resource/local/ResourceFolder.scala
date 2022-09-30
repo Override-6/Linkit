@@ -37,7 +37,9 @@ trait ResourceFolder extends Resource {
      * @return The resources maintainer that handles this resources folder.
      * */
     def getMaintainer: ResourcesMaintainer
-    
+
+    override def getEntry: ResourceEntry[ResourceFolder]
+
     /**
      * @return the location from the root [[ResourceFolder]]
      * */

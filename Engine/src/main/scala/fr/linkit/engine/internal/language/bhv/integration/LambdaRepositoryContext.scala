@@ -13,8 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.integration
 
-import fr.linkit.api.internal.generation.compilation.CompilationContext
-
+import fr.linkit.api.internal.compilation.CompilationContext
 import java.io.File
 
 case class LambdaRepositoryContext(fileName: String,

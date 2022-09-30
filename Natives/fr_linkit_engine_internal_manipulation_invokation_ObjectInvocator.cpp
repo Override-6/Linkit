@@ -1,7 +1,7 @@
 #include <jni.h>
 #include <vector>
 #include "JValueTranslator.h"
-#include <string>
+
 #include <algorithm>
 #include "fr_linkit_engine_internal_manipulation_invokation_ObjectInvocator.h"
 using namespace std;

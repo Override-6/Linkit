@@ -34,11 +34,15 @@ class RemoteClassMappings(val ownerId: String) extends ClassMappingsListener {
         }
     }
     
-    //called on owner engine
+    //called onto owner engine
     def requestClassName(code: Int): String = {
         val opt = ClassMappings.findClass(code)
         if (opt.isEmpty) null
         else opt.get.getName
+    }
+
+    def requestGenerationInstructions(classname: String): Unit = {
+
     }
     
     //called on current engine to check if this owner mappings contains the class code

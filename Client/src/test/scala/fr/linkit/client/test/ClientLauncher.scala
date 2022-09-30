@@ -28,7 +28,7 @@ object ClientLauncher {
     val Port           : Int               = 48484
     val ServerAddress  : InetSocketAddress = new InetSocketAddress("192.168.1.19", Port)
     val Localhost      : InetSocketAddress = new InetSocketAddress("localhost", Port)
-    val HomeProperty   : String            = "LinkitHome"
+    val HomeProperty   : String            = "LINKIT_HOME"
     val DefaultHomePath: String            = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
 
     def main(args: Array[String]): Unit = launch(args)

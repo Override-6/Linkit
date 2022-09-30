@@ -17,23 +17,22 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.resource.local.LocalFolder
 import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-import fr.linkit.api.internal.generation.compilation.CompilerCenter
+import fr.linkit.api.internal.compilation.CompilerCenter
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.application.resource.local.LocalResourceFolder
-import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
-import fr.linkit.engine.internal.generation.compilation.resource.CachedClassFolderResource
+import fr.linkit.engine.internal.compilation.factories.ClassCompilationRequestFactory
+import fr.linkit.engine.internal.compilation.resource.CachedClassFolderResource
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
 
 import scala.collection.mutable
 
 class FileIntegratedLambdas(center: CompilerCenter,
-                            ast: BehaviorFileAST) {
+                            ast   : BehaviorFileAST) {
 
     private val imports     = mutable.HashSet.empty[Class[_]]
     private val classBlocks = ast.codeBlocks.map(_.sourceCode)
     private val expressions = mutable.HashMap.empty[String, LambdaExpressionInfo]
-    private val fileName = ast.fileName
+    private val fileName    = ast.fileName
 
     def addImportedClass(clazz: Class[_]): Unit = imports += clazz
 
@@ -50,15 +49,15 @@ class FileIntegratedLambdas(center: CompilerCenter,
 
         val name    = fileName.reverse.takeWhile(_ != '/').reverse.takeWhile(_ != '.')
         val context = LambdaRepositoryContext(name,
-            expressions.values.toArray,
-            classBlocks.toArray,
-            Thread.currentThread().getContextClassLoader,
-            imports.toSeq)
+                                              expressions.values.toArray,
+                                              classBlocks.toArray,
+                                              Thread.currentThread().getContextClassLoader,
+                                              imports.toSeq)
 
         val resource = app.getAppResources
-            .getOrOpen[LocalFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
-            .getEntry
-            .getOrAttachRepresentation[CachedClassFolderResource[MethodCaller]]("lambdas")
+                          .getOrOpen[LocalFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
+                          .getEntry
+                          .getOrAttachRepresentation[CachedClassFolderResource[MethodCaller]]("lambdas")
 
         val clazz       = resource
             .findClass(context.classPackage + "." + context.className, context.parentLoader)
@@ -74,7 +73,7 @@ class FileIntegratedLambdas(center: CompilerCenter,
                 FileIntegratedLambdas.CompilationRequestFactory.makeRequest(context)
             }
         AppLoggers.Compilation.info(s"Compilation done in ${result.getCompileTime} ms.")
-        result.getValue.get
+        result.getClasses.get.head
     }
 
 }

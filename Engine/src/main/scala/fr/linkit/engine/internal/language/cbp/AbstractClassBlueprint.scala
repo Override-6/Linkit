@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.cbp
 
-import fr.linkit.api.internal.generation.compilation.CompilationContext
+import fr.linkit.api.internal.compilation.CompilationContext
 import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint.removeBPComments
 

@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, ReferencedPoolObject}
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.network.DefaultEngine
 import fr.linkit.engine.gnom.persistence.MalFormedPacketException
 import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
@@ -135,9 +136,13 @@ class ObjectReader(bundle: PersistenceBundle,
         val clazz = ClassMappings.getClass(code)
         if (clazz == null) InvocationChoreographer.ensinv {
             val name = boundMappings.requestClassName(code)
-            if (name != null)
+            if (name != null) try {
                 return ClassMappings.putClass(name)
-            
+            } catch {
+                case e: ClassNotMappedException =>
+                    AppLoggers.Persistence.warn(s"Could not map class '$name' received from packet '${bundle.packetID}': class is not present in classpath. Will now determine if this class name corresponds to a generated class.")
+                    boundMappings.requestGenerationInstructions(name)
+            }
             throw new ClassNotMappedException(s"No class is bound to code $code")
         }
         clazz

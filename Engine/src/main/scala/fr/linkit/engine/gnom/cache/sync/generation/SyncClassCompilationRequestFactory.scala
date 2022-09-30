@@ -14,23 +14,22 @@
 package fr.linkit.engine.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
-import fr.linkit.api.internal.generation.compilation.{CompilationRequest, CompilerCenter}
+import fr.linkit.api.internal.compilation.CompilationRequest
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import SyncClassCompilationRequestFactory.ClassBlueprint
-import fr.linkit.engine.internal.generation.compilation.RuntimeClassOperations
-import fr.linkit.engine.internal.generation.compilation.factories.ClassCompilationRequestFactory
+import fr.linkit.engine.gnom.cache.sync.generation.SyncClassCompilationRequestFactory.getClass
+import fr.linkit.engine.internal.compilation.RuntimeClassOperations
+import fr.linkit.engine.internal.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.io.File
 import java.nio.file.{Files, NoSuchFileException}
 
-class SyncClassCompilationRequestFactory()
-        extends ClassCompilationRequestFactory[SyncObjectDescription[_], SynchronizedObject[_]](ClassBlueprint) {
+object SyncClassCompilationRequestFactory
+        extends ClassCompilationRequestFactory[SyncObjectDescription[_], SynchronizedObject[_]](new SyncClassBlueprint(getClass.getResourceAsStream("/generation/sync_object.scbp"))) {
 
-    override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]],
+    override def loadClass(req: CompilationRequest[_ <: SynchronizedObject[_]],
                            context: SyncObjectDescription[_],
                            className: String,
                            loader: GeneratedClassLoader): Class[_] = {
@@ -45,9 +44,4 @@ class SyncClassCompilationRequestFactory()
         ClassMappings.putClass(syncClass)
         syncClass
     }
-}
-
-object SyncClassCompilationRequestFactory {
-
-    private val ClassBlueprint = new SyncClassBlueprint(getClass.getResourceAsStream("/generation/sync_object.scbp"))
 }

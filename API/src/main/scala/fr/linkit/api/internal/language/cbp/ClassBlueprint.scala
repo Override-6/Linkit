@@ -13,8 +13,8 @@
 
 package fr.linkit.api.internal.language.cbp
 
-import fr.linkit.api.internal.generation.compilation.CompilationContext
-import fr.linkit.api.internal.generation.compilation.access.CompilerType
+import fr.linkit.api.internal.compilation.CompilationContext
+import fr.linkit.api.internal.compilation.access.CompilerType
 
 trait ClassBlueprint[V <: CompilationContext] {
 

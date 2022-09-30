@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.internal.script
 
-import fr.linkit.api.internal.generation.compilation.access.CompilerType
+import fr.linkit.api.internal.compilation.access.CompilerType
 import fr.linkit.api.internal.script.ScriptContext
-import fr.linkit.engine.internal.generation.compilation.access.CommonCompilerType
+import fr.linkit.engine.internal.compilation.access.CommonCompilerType
 import fr.linkit.engine.internal.language.cbp.AbstractClassBlueprint
 
 import java.io.InputStream

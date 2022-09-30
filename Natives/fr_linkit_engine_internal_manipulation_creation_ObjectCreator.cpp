@@ -1,18 +1,15 @@
 #include <jni.h>
 #include <string>
 #include <algorithm>
-#include <fstream>
 #include "JValueTranslator.h"
 #include "fr_linkit_engine_internal_manipulation_creation_ObjectCreator.h"
-#include <utility>
-#include <vector>
 
 using namespace std;
 
 
-jobject GetField(JNIEnv* env, jobject target, jobject field, string returnType) {
+jobject GetField(JNIEnv* env, jobject target, jobject field, const string& returnType) {
 	jfieldID fieldID = env->FromReflectedField(field);
-	JValueType tpe = ClassNameToType(std::move(returnType));
+	JValueType tpe = ClassNameToType(returnType);
 	if (tpe == JValueType::OBJECT_FLAG) {
 		return env->GetObjectField(target, fieldID);
 	}
@@ -54,7 +51,7 @@ jobject GetField(JNIEnv* env, jobject target, jobject field, string returnType) 
 	}
 }
 
-void PutField(JNIEnv* env, jobject target, jobject field, string returnType, jobject data) {
+void PutField(JNIEnv* env, jobject target, jobject field, const string& returnType, jobject data) {
 	jfieldID fieldID = env->FromReflectedField(field);
 	JValueType tpe = ClassNameToType(returnType);
 	if (tpe == JValueType::OBJECT_FLAG) {
