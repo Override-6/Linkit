@@ -37,38 +37,52 @@ jvalue NumberToJValue(JValueType type, double n) {
 	return val;
 }
 
-JValueType ClassNameToType(std::string name) {
-	if (name == "java.lang.Boolean" || name == "boolean" || name == "Z") {
-		return JValueType::BOOLEAN_FLAG;
-	}
-	else if (name == "java.lang.Byte" || name == "byte" || name == "B") {
-		return JValueType::BYTE_FLAG;
-	}
-	else if (name == "java.lang.Character" || name == "char" || name == "C") {
-		return JValueType::CHAR_FLAG;
-	}
-	else if (name == "java.lang.Short" || name == "short" || name == "S") {
-		return JValueType::SHORT_FLAG;
-	}
-	else if (name == "java.lang.Integer" || name == "int" || name == "I") {
-		return JValueType::INT_FLAG;
-	}
-	else if (name == "java.lang.Long" || name == "long" || name == "J") {
-		return JValueType::LONG_FLAG;
-	}
-	else if (name == "java.lang.Float" || name == "float" || name == "F") {
-		return JValueType::FLOAT_FLAG;
-	}
-	else if (name == "java.lang.Double" || name == "double" || name == "D") {
-		return JValueType::DOUBLE_FLAG;
-	}
-	else if (name == "void" || name == "V") {
-		return JValueType::VOID_FLAG;
-	}
-	else {
-		return JValueType::OBJECT_FLAG;
-	}
+constexpr unsigned int str2int(const char* str, int h = 0) {
+    return !str[h] ? 5381 : (str2int(str, h+1) * 33) ^ str[h];
 }
+JValueType ClassNameToType(const std::string& name) {
+    switch(str2int(name.c_str())) {
+        case str2int("java.lang.Boolean"):
+        case str2int("boolean"):
+        case str2int("Z"):
+            return JValueType::BOOLEAN_FLAG;
+        case str2int("java.lang.Byte"):
+        case str2int("byte"):
+        case str2int("B"):
+            return JValueType::BYTE_FLAG;
+        case str2int("java.lang.Character"):
+        case str2int("char"):
+        case str2int("C"):
+            return JValueType::CHAR_FLAG;
+        case str2int("java.lang.Short"):
+        case str2int("short"):
+        case str2int("S"):
+            return JValueType::SHORT_FLAG;
+        case str2int("java.lang.Integer"):
+        case str2int("int"):
+        case str2int("I"):
+            return JValueType::INT_FLAG;
+        case str2int("java.lang.Long"):
+        case str2int("long"):
+        case str2int("j"):
+            return JValueType::LONG_FLAG;
+        case str2int("java.lang.Float"):
+        case str2int("float"):
+        case str2int("F"):
+            return JValueType::FLOAT_FLAG;
+        case str2int("java.lang.Double"):
+        case str2int("double"):
+        case str2int("D"):
+            return JValueType::DOUBLE_FLAG;
+        case str2int("void"):
+        case str2int("V"):
+            return JValueType::VOID_FLAG;
+        default:
+            return JValueType::OBJECT_FLAG;
+    }
+}
+
+
 
 jobject WrapPrimitive(JNIEnv* env, string className, const string& paramSignature, double value) {
 	const jvalue val0 = NumberToJValue(ClassNameToType(paramSignature), value);
@@ -113,6 +127,8 @@ double UnwrapPrimitive(JNIEnv* env, JValueType objectType, jobject object) {
 	default: return 0.0;
 	}
 }
+
+
 
 const char* GetJClassName(JNIEnv* env, jclass clazz) {
 	jclass classClass = env->FindClass("java/lang/Class");

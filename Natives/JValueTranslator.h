@@ -18,7 +18,7 @@ jvalue NumberToJValue(JValueType type, double n);
 
 jvalue JObjectToJValue(JNIEnv*, JValueType, jobject);
 
-JValueType ClassNameToType(std::string);
+JValueType ClassNameToType(const std::string&);
 
 double UnwrapPrimitive(JNIEnv*, JValueType, jobject);
 

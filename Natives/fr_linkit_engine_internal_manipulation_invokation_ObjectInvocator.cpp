@@ -8,11 +8,11 @@ using namespace std;
 using namespace std::literals;
 
 
-std::vector<jvalue> GetJObjects(JNIEnv* env, jbyte* types, jobjectArray array) {
+std::vector<jvalue> GetJObjects(JNIEnv* env, const jbyte* types, jobjectArray array) {
 	const int len = env->GetArrayLength(array);
 	std::vector<jvalue> vec(len);
 	for (int i = 0; i < len; i++) {
-		JValueType type = static_cast<JValueType>(types[i]);
+		auto type = static_cast<JValueType>(types[i]);
 		jvalue val = JObjectToJValue(env, type, env->GetObjectArrayElement(array, i));
 		vec[i] = val;
 	}
