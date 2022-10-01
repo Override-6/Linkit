@@ -23,11 +23,15 @@ import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescrip
 
 class StaticAccesses(network: Network) {
 
-    private val cacheManager   = network.attachToCacheManager("StaticAccesses")
+    private val cacheManager   = network.findCacheManager("StaticAccesses").getOrElse {
+        throw new NoSuchElementException("Could not find cache manager for static accesses")
+    }
     //static accesses cache
     private val staCache = cacheManager.attachToCache(-1, DefaultConnectedObjectCache[StaticAccess])
 
-    def getStaticAccess(id: Int): StaticAccess = staCache.findObject(id).get
+    def getStaticAccess(id: Int): StaticAccess = {
+        staCache.findObject(id).get
+    }
 
     def newStaticAccess(id: Int, contract: ContractDescriptorData = EmptyContractDescriptorData): StaticAccess = {
         if (id == -1)

@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
 import fr.linkit.api.internal.compilation.CompilerCenter
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.internal.compilation.factories.ClassCompilationRequestFactory
+import fr.linkit.engine.internal.compilation.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.compilation.resource.CachedClassFolderResource
 import fr.linkit.engine.internal.language.bhv.ast.BehaviorFileAST
 
@@ -55,7 +55,7 @@ class FileIntegratedLambdas(center: CompilerCenter,
                                               imports.toSeq)
 
         val resource = app.getAppResources
-                          .getOrOpen[LocalFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
+                          .getOrOpen[LocalFolder](LinkitApplication.getProperty("compilation.working_dir") + "/Classes")
                           .getEntry
                           .getOrAttachRepresentation[CachedClassFolderResource[MethodCaller]]("lambdas")
 
@@ -73,7 +73,7 @@ class FileIntegratedLambdas(center: CompilerCenter,
                 FileIntegratedLambdas.CompilationRequestFactory.makeRequest(context)
             }
         AppLoggers.Compilation.info(s"Compilation done in ${result.getCompileTime} ms.")
-        result.getClasses.get.head
+        result.getClasses.head
     }
 
 }

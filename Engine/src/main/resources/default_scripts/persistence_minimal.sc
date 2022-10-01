@@ -1,4 +1,3 @@
-import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataBundle, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.persistence.config.PersistenceConfigBuilder
@@ -23,7 +22,6 @@ putContextReference(3, None)
 setTConverter[Path, String](_.toString)(Path.of(_))
 setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.fromData)
 setTConverter[LangContractDescriptorData, (String, String)](d => (d.fileName, d.propertiesName)) { case (name, propName) => ContractProvider(name, propName) }
-setTConverter[SharedCacheOriginManager, SharedCacheDistantManager](o => o.network.asInstanceOf[AbstractNetwork].transformToDistant(o))(null)
 
 
 //putPersistence(new ScalaIterableTypePersistence)

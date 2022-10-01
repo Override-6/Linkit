@@ -57,12 +57,12 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketChannel,
-                                                         classCenter: SyncClassCenter,
+class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                      : CachePacketChannel,
+                                                         classCenter                  : SyncClassCenter,
                                                          override val defaultContracts: ContractDescriptorData,
-                                                         override val network: Network)
-        extends AbstractSharedCache(channel) with InternalConnectedObjectCache[A] {
-    
+                                                         override val network         : Network)
+    extends AbstractSharedCache(channel) with InternalConnectedObjectCache[A] {
+
     private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
     override val forest           : DefaultSyncObjectForest[A] = {
         val omc = network.connection.traffic match {
@@ -72,30 +72,30 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         new DefaultSyncObjectForest[A](this, channel.manager.getCachesLinker, omc)
     }
     channel.setHandler(CacheCenterHandler)
-    
+
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A] = {
         AppLoggers.ConnObj.debug(s"Creating connected object at $reference with id $id.")
         makeSyncObject(id, creator, contracts, false)
     }
-    
+
     override def mirrorObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A] = {
         AppLoggers.ConnObj.debug(s"Creating mirrored object at $reference with id $id.")
         makeSyncObject(id, creator, contracts, true)
     }
-    
+
     private def makeSyncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData, mirror: Boolean): A with SynchronizedObject[A] = {
-        val treeID = NamedIdentifier(creator.syncClassDef.mainClass.getSimpleName, id)
+        val treeID      = NamedIdentifier(creator.syncClassDef.mainClass.getSimpleName, id)
         val tree        = createNewTree(treeID, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], mirror, contracts)
         val treeProfile = ObjectTreeProfile(treeID, tree.getRoot.obj, currentIdentifier, mirror, contracts)
         AppLoggers.ConnObj.debug(s"Notifying other caches located on '$reference' that a new connected object has been added on the cache.")
         channel.makeRequest(ChannelScopes.include(ownerID))
-                .addPacket(ObjectPacket(treeProfile))
-                .submit()
+               .addPacket(ObjectPacket(treeProfile))
+               .submit()
         //Indicate that a new object has been posted.
         val node = tree.getRoot
         node.obj
     }
-    
+
     private def newChippedObjectData[B <: AnyRef](level: SyncLevel, req: ChippedObjectNodeDataRequest[B]): ChippedObjectNodeData[B] = {
         import req._
         val tree            = parent.tree.asInstanceOf[DefaultConnectedObjectTree[B]]
@@ -112,14 +112,14 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
             network, chip, contract, choreographer, chippedObject,
             )(new NodeData[B](reference, presence, tree, currentIdentifier, req.ownerID, Some(parent)))
     }
-    
+
     private def newSyncObjectData[B <: AnyRef](req: SyncNodeDataRequest[B]): SyncObjectNodeData[B] = {
         val chippedData = newChippedObjectData[B](req.syncLevel, req)
         val puppeteer   = new ObjectPuppeteer[B](channel, this, chippedData.reference)
         val originRef   = req.origin.map(new WeakReference[B](_))
         new SyncObjectNodeData[B](puppeteer, req.syncObject, req.syncLevel, originRef)(chippedData)
     }
-    
+
     private def newRegularNodeData[B <: AnyRef](req: NormalNodeDataRequest[B]): NodeData[B] = {
         import req._
         val reference = new ConnectedObjectReference(family, cacheID, req.ownerID, path)
@@ -127,44 +127,44 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         val tree      = parent.tree.asInstanceOf[DefaultConnectedObjectTree[_]] //TODO REMOVE THIS CAST
         new NodeData[B](reference, presence, tree, currentIdentifier, req.ownerID, Some(parent))
     }
-    
+
     override def newNodeData[B <: AnyRef, N <: NodeData[B]](req: NodeDataRequest[B, N]): N = {
         implicit def cast[X](a: Any) = a.asInstanceOf[X]
-        
+
         req match {
             case req: NormalNodeDataRequest[B]        => newRegularNodeData[B](req)
             case req: SyncNodeDataRequest[B]          => newSyncObjectData[B](req)
             case req: ChippedObjectNodeDataRequest[B] => newChippedObjectData[B](SyncLevel.Chipped, req)
         }
     }
-    
+
     override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
         forest.findTree(id).map(_.rootNode.obj)
     }
-    
+
     private def precompileClasses(data: ContractDescriptorData): Unit = data match {
         case data: ContractDescriptorDataImpl if !data.isPrecompiled =>
             data.precompile(classCenter)
         case _                                                       =>
     }
-    
+
     protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[A],
                                                                       context: ConnectedObjectContext): StructureContract[A] = {
         factory.getContract[A](creator.syncClassDef.mainClass.asInstanceOf[Class[A]], context)
     }
-    
-    private def createNewTree(id: NamedIdentifier,
+
+    private def createNewTree(id             : NamedIdentifier,
                               rootObjectOwner: String,
-                              creator: SyncInstanceCreator[A],
-                              mirror: Boolean,
-                              contracts: ContractDescriptorData = defaultContracts): DefaultConnectedObjectTree[A] = {
+                              creator        : SyncInstanceCreator[A],
+                              mirror         : Boolean,
+                              contracts      : ContractDescriptorData = defaultContracts): DefaultConnectedObjectTree[A] = {
         precompileClasses(contracts)
-        
+
         if (forest.findTreeLocal(id).isDefined)
             throw new ObjectTreeAlreadyRegisteredException(s"Tree '$id' already registered.")
-        
+
         val nodeReference = ConnectedObjectReference(family, cacheID, rootObjectOwner, Array(id))
-        
+
         val lock = NetworkObjectReferencesLocks.getLock(nodeReference)
         lock.lock()
         try {
@@ -176,10 +176,10 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
                 creator.syncClassDef, syncLevel,
                 choreographer)
             val factory       = SyncObjectContractFactory(contracts)
-            
+
             val rootContract = getRootContract(factory)(creator, context)
             val root         = DefaultInstantiator.newSynchronizedInstance[A](creator)
-            
+
             val chip      = ObjectChip[A](rootContract, network, root)
             val puppeteer = ObjectPuppeteer[A](channel, this, nodeReference)
             val presence  = forest.getPresence(nodeReference)
@@ -190,27 +190,27 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
                 val syncData = new SyncObjectNodeData[A](puppeteer, root, syncLevel, origin)(chipData)
                 new RootObjectNodeImpl[A](syncData)
             }
-            
+
             val tree = new DefaultConnectedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNode)
             forest.addTree(id, tree)
             if (forest.isRegisteredAsUnknown(id)) {
                 forest.transferUnknownTree(id)
             }
-            
+
             tree
         } finally lock.unlock()
     }
-    
+
     private def handleInvocationPacket(ip: InvocationPacket, bundle: RequestPacketBundle): Unit = {
         val ref = ip.objRef
         if (ref.family != family || ref.cacheID != cacheID)
             throw new IllegalArgumentException(s"Invocation Packet's targeted object reference is not contained in this cache. (targeted: $ref, current cache location is $reference)")
         val path = ref.nodePath
         val lock = NetworkObjectReferencesLocks.getLock(ref)
-        
+
         lock.lock()
         val node = try findNode(path) finally lock.unlock()
-        
+
         val senderID = bundle.coords.senderID
         AppLoggers.COInv.trace(s"Handling invocation packet over object ${ip.objRef}. For method with id '${ip.methodID}', expected engine identifier return : '${ip.expectedEngineIDReturn}'")
         node.fold(AppLoggers.ConnObj.error(s"Could not find sync object node for connected object located at $ref")) {
@@ -219,34 +219,34 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
                 throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedNode[_]].getSimpleName} in order to handle a member rmi request.")
         }
     }
-    
+
     private def findNode(path: Array[NamedIdentifier]): Option[ConnectedObjectNode[A]] = {
         forest
-                .findTree(path.head)
-                .flatMap(tree => {
-                    if (path.length == 1)
-                        Some(tree.rootNode)
-                    else
-                        tree.findNode[A](path)
-                })
+            .findTree(path.head)
+            .flatMap(tree => {
+                if (path.length == 1)
+                    Some(tree.rootNode)
+                else
+                    tree.findNode[A](path)
+            })
     }
-    
+
     private def handleNewTree(profile: ObjectTreeProfile[A]): Unit = if (forest.findTreeLocal(profile.treeID).isEmpty) {
         import profile._
         createNewTree(treeID, treeOwner, new InstanceWrapper[A](rootObject), mirror, contracts)
     }
-    
+
     override def isRegistered(id: NamedIdentifier): Boolean = {
         forest.findTreeLocal(id).isDefined || {
             forest.isPresentOnEngine(ownerID, ConnectedObjectReference(family, cacheID, ownerID, Array(id)))
         }
     }
-    
+
     private final val treeRequestsLocks = mutable.HashMap.empty[NamedIdentifier, ReentrantLock]
-    
+
     override def requestTree(id: NamedIdentifier): Unit = {
         val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
-        
+
         val refLock         = NetworkObjectReferencesLocks.getLock(treeRef)
         val isSyncOnRefLock = refLock.isHeldByCurrentThread
         val requestLock     = treeRequestsLocks.getOrElseUpdate(id, new ReentrantLock())
@@ -264,14 +264,14 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
         requestLock.lock()
         forest.putUnknownTree(id)
         AppLoggers.ConnObj.trace(s" Requesting root object $treeRef.")
-        
+
         if (isSyncOnRefLock) refLock.unlock()
         try {
             channel.makeRequest(ChannelScopes.include(ownerID))
-                    .addPacket(AnyRefPacket(id))
-                    .submit()
-                    .nextResponse
-                    .nextPacket[Packet] match {
+                   .addPacket(AnyRefPacket(id))
+                   .submit()
+                   .nextResponse
+                   .nextPacket[Packet] match {
                 case ObjectPacket(profile: ObjectTreeProfile[A]) =>
                     handleNewTree(profile)
                 case EmptyPacket                                 => //the tree does not exists, do nothing.
@@ -283,7 +283,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
                 refLock.lock() //go back to initial state for the reference's lock
         }
     }
-    
+
     private def handleTreeRetrieval(id: NamedIdentifier, response: Submitter[Unit]): Unit = {
         forest.findTreeInternal(id) match {
             case Some(tree) =>
@@ -294,9 +294,9 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
                 response.addPacket(EmptyPacket).submit()
         }
     }
-    
+
     private object DefaultInstantiator extends SyncInstanceInstantiator {
-        
+
         override def newSynchronizedInstance[B <: AnyRef](creator: SyncInstanceCreator[B]): B with SynchronizedObject[B] = {
             val syncClass = classCenter.getSyncClass[B](creator.syncClassDef)
             try {
@@ -304,27 +304,27 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
             } catch {
                 case NonFatal(e) =>
                     throw new SyncObjectInstantiationException(e.getMessage +
-                                                                       s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
-                                                                          | Try to regenerate the sync class of ${creator.syncClassDef.mainClass}.
-                                                                          | """.stripMargin, e)
+                                                                   s"""\nMaybe the origin class of generated sync class '${syncClass.getName}' has been modified ?
+                                                                      | Try to regenerate the sync class of ${creator.syncClassDef.mainClass}.
+                                                                      | """.stripMargin, e)
             }
         }
-        
+
     }
-    
+
     private object CacheCenterHandler extends CacheContentHandler[CacheRepoContent[A]] with CacheAttachHandler {
-        
+
         override val lazyContentHandling: Boolean = true
-        
+
         override def getInitialContent: CacheRepoContent[A] = CacheRepoContent(Array())
-        
+
         override def getContent: CacheRepoContent[A] = forest.snapshotContent
-        
+
         override def initializeContent(content: CacheRepoContent[A]): Unit = {
             val array = content.array
             if (array.isEmpty)
                 return
-            
+
             array.foreach(profile => {
                 val rootObject = profile.rootObject
                 val owner      = profile.treeOwner
@@ -339,77 +339,77 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel: CachePacketCha
                 }
                 //it's an object that must be remotely controlled because it is chipped by another objects cache.
                 createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), mirror, contracts)
-                
+
             })
         }
-        
+
         override def handleBundle(bundle: RequestPacketBundle): Unit = {
             //AppLogger.debug(s"Processing bundle : ${bundle}")
             val response = bundle.packet
             response.nextPacket[Packet] match {
                 case ip: InvocationPacket                        =>
                     handleInvocationPacket(ip, bundle)
-                case AnyRefPacket(id: NamedIdentifier)                               =>
+                case AnyRefPacket(id: NamedIdentifier)           =>
                     handleTreeRetrieval(id, bundle.responseSubmitter)
                 case ObjectPacket(profile: ObjectTreeProfile[A]) =>
                     handleNewTree(profile)
             }
         }
-        
+
         override def onEngineAttached(engine: Engine): Unit = {
             AppLoggers.ConnObj.debug(s"Engine ${engine} attached to this synchronized object cache")
         }
-        
+
         override def onEngineDetached(engine: Engine): Unit = {
             AppLoggers.ConnObj.debug(s"Engine ${engine} detached to this synchronized object cache")
         }
-        
+
         override val objectLinker: Option[NetworkObjectLinker[_ <: SharedCacheReference] with TrafficInterestedNPH] = Some(forest)
     }
-    
+
 }
 
 object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
-    
+
     import SharedCacheFactory.lambdaToFactory
-    
+
     //value does not have any meaning
-    
-    private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
-    
+
+    private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir") + "/Classes"
+
     override def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = {
         apply[A](EmptyContractDescriptorData)
     }
-    
+
     override def apply[A <: AnyRef : ClassTag](contract: ContractDescriptorData): SharedCacheFactory[ConnectedObjectCache[A]] = {
         lambdaToFactory(classOf[DefaultConnectedObjectCache[A]])(channel => {
             apply[A](channel, contract, channel.traffic.connection.network)
         })
     }
-    
+
     private[linkit] def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
         apply[A](null, network)
     }
-    
+
     private[linkit] def apply[A <: AnyRef : ClassTag](contract: ContractDescriptorData, network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
         lambdaToFactory(classOf[DefaultConnectedObjectCache[A]])(channel => {
             apply[A](channel, contract, network)
         })
     }
-    
+
     private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): ConnectedObjectCache[A] = {
-        val context   = channel.manager.network.connection.getApp
-        val resources = context.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
-                .getEntry
-                .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
-        val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
-        
+        val app   = channel.manager.network.connection.getApp
+        val resources = app.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
+                               .getEntry
+                               .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
+        val generator = new DefaultSyncClassCenter(resources, app.compilerCenter)
+
         new DefaultConnectedObjectCache[A](channel, generator, contracts, network)
     }
-    
-    case class ObjectTreeProfile[A <: AnyRef](treeID: NamedIdentifier,
+
+    case class ObjectTreeProfile[A <: AnyRef](treeID    : NamedIdentifier,
                                               rootObject: A with SynchronizedObject[A],
-                                              treeOwner: String,
-                                              mirror: Boolean,
-                                              contracts: ContractDescriptorData) extends Serializable
+                                              treeOwner : String,
+                                              mirror    : Boolean,
+                                              contracts : ContractDescriptorData) extends Serializable
 }

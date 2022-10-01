@@ -36,11 +36,7 @@ trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] {
      * where the family string value is equals to the engine's identifier.
      * */
     val family : String
-    /**
-     * The [[fr.linkit.api.gnom.network.Engine]] identifier that owns this cache.
-     * The engine owner controls who can attach to a [[SharedCache]] and who can create a [[SharedCache]]
-     * */
-    val ownerID: String
+
     /**
      * The network that hosts this cache
      * */

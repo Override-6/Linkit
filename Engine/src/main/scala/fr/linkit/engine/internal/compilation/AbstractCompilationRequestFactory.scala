@@ -28,7 +28,7 @@ abstract class AbstractCompilationRequestFactory[I, O] extends CompilationReques
         new SourceCodeCompilationRequest.Delegated[O](req) {
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[O] = {
                 new AbstractCompilationResult[O](outs, compilationTime, req) {
-                    override def getClasses: Option[Seq[Class[_ <: O]]] = {
+                    override def getClasses: Seq[Class[_ <: O]] = {
                         req.conclude(outs, compilationTime)
                            .getClasses
                     }

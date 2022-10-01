@@ -32,9 +32,9 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
     
     private lazy val currentIdentifier = channel.traffic.currentIdentifier
-    //What other engines thinks about current engine references states
+    //What other engines thinks about current engine presences states
     private      val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
-    //What current engine thinks about other engines references states
+    //What current engine thinks about other engines presences states
     private      val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
     
     @inline

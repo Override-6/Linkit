@@ -13,19 +13,42 @@
 
 package fr.linkit.server.network
 
-import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.cache.sync.instantiation.New
-import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
+import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
-import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.internal.language.bhv.ContractProvider
+import fr.linkit.server.cache.ServerSharedCacheManager
 
 class ServerSideNetwork(traffic: AbstractPacketTraffic)
         extends AbstractNetwork(traffic) {
 
+    override protected def createNewCache0(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {
+        new ServerSharedCacheManager(family, this, objectManagementChannel, getStore(managerChannelPath))
+    }
+
+    def attachToCacheManager(family: String): SharedCacheManager = {
+        findCacheManager(family).getOrElse(declareNewCacheManager(family))
+    }
+
+    def declareNewCacheManager(family: String): SharedCacheManager = {
+        if (isTrunkInitializing)
+            throw new UnsupportedOperationException("Trunk is initializing.")
+        if (trunk.findCache(family).isDefined)
+            throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
+        newCacheManager(family)
+    }
+
+    private[network] def newCacheManager(family: String): SharedCacheManager = {
+        val store       = networkStore.createStore(family.hashCode)
+        val manager     = new ServerSharedCacheManager(family, this, objectManagementChannel, store)
+        val trafficPath = store.trafficPath
+        registerSCMReference(manager.reference)
+        addCacheManager(manager, trafficPath)
+        manager
+    }
 
     override def serverIdentifier: String = traffic.currentIdentifier
 
@@ -35,15 +58,12 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
                 .syncObject(0, New[NetworkDataTrunk](this), contracts)
     }
 
-    override protected def createGlobalCache: SharedCacheManager = {
-        new SharedCacheOriginManager(GlobalCacheID, this, objectManagementChannel, networkStore.createStore(GlobalCacheID.hashCode))
-    }
-
     def removeEngine(identifier: String): Unit = {
         findEngine(identifier).foreach(trunk.removeEngine)
     }
     
     override def initialize(): this.type = {
+        declareNewCacheManager("StaticAccesses")
         super.initialize()
         addCacheManager(globalCaches, networkStore.trafficPath :+ globalCaches.family.hashCode)
         this

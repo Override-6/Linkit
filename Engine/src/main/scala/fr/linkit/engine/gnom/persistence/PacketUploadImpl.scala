@@ -41,7 +41,6 @@ abstract class PacketUploadImpl(info: TransferInfo,
         buff.putShort(TrafficProtocol.ProtocolVersion)
         buff.position(buff.position() + HoleLength)
         
-        //buff.limit(buff.capacity())
         writeCoords(buff)
         info.makeSerial(serializer, buff)
         buff.putInt(TrafficProtocol.PacketLengthIndex, buff.position() - HoleLength - 2) //write the packet's length

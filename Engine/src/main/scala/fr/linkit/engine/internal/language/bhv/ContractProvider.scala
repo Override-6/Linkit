@@ -18,7 +18,7 @@ object ContractProvider extends Contract.Provider {
     private val properties   = mutable.HashMap.empty[String, BHVProperties]
     private val contracts    = mutable.HashMap.empty[String, ContractHandler]
     private val toPrecompute = mutable.HashSet.empty[(String, String)]
-    private val center       = new DefaultCompilerCenter
+    private val center       = DefaultCompilerCenter
 
     private lazy val app = LinkitApplication.getApplication
 

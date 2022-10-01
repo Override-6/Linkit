@@ -16,7 +16,7 @@ package fr.linkit.engine.internal.compilation.access.common
 import fr.linkit.api.internal.compilation.access.CompilerType
 import fr.linkit.engine.internal.compilation.access.{AbstractCompilerAccess, CommonCompilerType}
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import scala.tools.nsc.{Global, Settings}
 
 object ScalacCompilerAccess extends AbstractCompilerAccess {
@@ -25,6 +25,8 @@ object ScalacCompilerAccess extends AbstractCompilerAccess {
     val ScalaFileExtension                   = ".scala"
 
     override def compile(sourceFiles: Seq[Path], destination: Path, classPaths: Seq[Path], additionalArguments: Seq[String]): Seq[Path] = {
+        if (Files.notExists(destination))
+            Files.createDirectories(destination)
         val settings = new Settings()
         val arguments = ScalacDefaultArguments ++ Seq("-d", destination.toString) ++ additionalArguments
         settings.processArguments(arguments, true)

@@ -65,7 +65,7 @@ class SyncClassRectifier(desc: SyncObjectDescription[_],
                 ctClass.addInterface(ctClass0)
             else if (ctClass.getSuperclass.getName == "java.lang.Object")
                 ctClass.setSuperclass(ctClass0)
-            else throw new UnsupportedOperationException(s"Could not set super class $ctClass0, generated class already extends ${ctClass.getSuperclass.getName}")
+            else throw new UnsupportedOperationException(s"Could not set super class ${ctClass0.getName}, generated class already extends ${ctClass.getSuperclass.getName}")
         }
 
         extendClass(mainClass)

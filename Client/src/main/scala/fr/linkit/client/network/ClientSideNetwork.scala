@@ -14,13 +14,21 @@
 package fr.linkit.client.network
 
 import fr.linkit.api.gnom.cache.{CacheSearchMethod, SharedCacheManager}
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.client.cache.ClientSharedCacheManager
 import fr.linkit.client.connection.traffic.ClientPacketTraffic
-import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
+import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 
-class ClientSideNetwork(traffic: ClientPacketTraffic) extends AbstractNetwork(traffic) {
+class ClientSideNetwork(traffic: AbstractPacketTraffic) extends AbstractNetwork(traffic) {
+
+
+    override protected def createNewCache0(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {
+        val store = getStore(managerChannelPath)
+        new ClientSharedCacheManager(family, this, objectManagementChannel, store)
+    }
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
         val trunk = globalCaches.attachToCache(0, DefaultConnectedObjectCache[NetworkDataTrunk](this), CacheSearchMethod.GET_OR_CRASH)
@@ -30,12 +38,6 @@ class ClientSideNetwork(traffic: ClientPacketTraffic) extends AbstractNetwork(tr
                 }
         trunk
     }
-
-    override protected def createGlobalCache: SharedCacheManager = {
-        traffic.setNetwork(this)
-        new SharedCacheDistantManager(GlobalCacheID, serverIdentifier, this, objectManagementChannel, networkStore.createStore(GlobalCacheID.hashCode))
-    }
-
     override def serverIdentifier: String = traffic.serverIdentifier
 
 }

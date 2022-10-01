@@ -132,12 +132,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     def findTrafficObject(reference: TrafficObjectReference): Option[TrafficObject[TrafficReference]] = {
         rootStore.findNode(reference.trafficPath).map(_.injectable)
     }
-    
-    protected def ensureOpen(): Unit = {
-        if (closed)
-            throw new ClosedException("This Traffic handler is closed")
-    }
-    
+
     private def createObjectManagementChannel(): TrafficNode[ObjectManagementChannel] = {
         val objectChannelConfig = {
             val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)

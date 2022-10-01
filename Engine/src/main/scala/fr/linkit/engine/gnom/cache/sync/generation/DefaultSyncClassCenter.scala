@@ -137,7 +137,7 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
             AppLoggers.Compilation.info(s"Compiling Sync Classes for ${toCompile.map(_.mainClass.getName).mkString(", ")}...")
             requestFactory.makeMultiRequest(toCompile.map(SyncObjectDescription(_)))
         }
-        result.getClasses.get.foreach(ClassMappings.putClass)
+        result.getClasses.foreach(ClassMappings.putClass)
         val ct = result.getCompileTime
         AppLoggers.Compilation.info(s"Compilation done in $ct ms.")
     }

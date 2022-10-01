@@ -29,18 +29,18 @@ import java.nio.ByteBuffer
 import scala.annotation.switch
 
 class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator {
-    
+
     private val serializer = {
         import SyncClassStorageResource._
-        val prop           = LinkitApplication.getProperty("compilation.working_dir.classes")
+        val prop           = LinkitApplication.getProperty("compilation.working_dir") + "/Classes"
         val resources      = app.getAppResources.getOrOpen[LocalFolder](prop)
-                .getEntry
-                .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
+                                .getEntry
+                                .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
         val compilerCenter = app.compilerCenter
-        val center         = new DefaultSyncClassCenter(compilerCenter, resources)
+        val center         = new DefaultSyncClassCenter(resources, compilerCenter)
         new DefaultObjectPersistence(center)
     }
-    
+
     override def translate(packetInfo: TransferInfo): PacketUpload = {
         new PacketUploadImpl(packetInfo, serializer) {
             override def writeCoords(buff: ByteBuffer): Unit = coords match {
@@ -48,7 +48,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
                 // <------------------------ MAINTAINED ------------------------>
                 case BroadcastPacketCoordinates(_, _, _, _) =>
                     throw new UnsupportedOperationException("Can't send broadcast packets.")
-                
+
                 case DedicatedPacketCoordinates(path, targetID, senderID) =>
                     buff.put(DedicatedFlag) //set the dedicated flag
                     buff.putInt(path.length) //path length
@@ -60,7 +60,7 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
             }
         }
     }
-    
+
     private def readCoordinates(buff: ByteBuffer): DedicatedPacketCoordinates = {
         (buff.get(): @switch) match {
             //TODO Better broadcasted packet persistence handling
@@ -85,22 +85,23 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
                 throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'.")
         }
     }
-    
+
     private def putString(str: String, buff: ByteBuffer): Unit = {
         buff.putInt(str.length).put(str.getBytes())
     }
-    
+
     private def getString(buff: ByteBuffer): String = {
         val size  = buff.getInt()
         val array = new Array[Byte](size)
         buff.get(array)
         new String(array)
     }
-    
+
     override def translate(traffic: PacketTraffic, buffer: ByteBuffer, ordinal: Int): PacketDownload = {
         val coords = readCoordinates(buffer)
         val conf   = traffic.getPersistenceConfig(coords.path)
         val bundle = new PersistenceBundle {
+            override val packetID  : String            = s"@${coords.path.mkString("/")}$$${coords.senderID}:${ordinal}"
             override val network   : Network           = traffic.connection.network
             override val buff      : ByteBuffer        = buffer
             override val boundId   : String            = coords.senderID
@@ -109,11 +110,11 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         }
         new PacketDownloadImpl(buffer, coords, ordinal)(serializer.deserializeObjects(bundle))
     }
-    
+
 }
 
 object DefaultObjectTranslator {
-    
+
     private final val DedicatedFlag  : Byte = -20
     private final val BroadcastedFlag: Byte = -21
 }

@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache
+package fr.linkit.server.cache
 
 import fr.linkit.api.gnom.cache.CacheSearchMethod._
 import fr.linkit.api.gnom.cache.traffic.handler.{CacheAttachHandler, CacheContentHandler}
@@ -24,6 +24,7 @@ import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.cache.AbstractSharedCacheManager
 import fr.linkit.engine.gnom.cache.AbstractSharedCacheManager.SystemCacheRange
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
@@ -32,13 +33,12 @@ import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
 
 import scala.util.control.Breaks.{break, breakable}
 
-final class SharedCacheOriginManager @Persist()(family: String,
+final class ServerSharedCacheManager @Persist()(family : String,
                                                 network: Network,
-                                                omc: ObjectManagementChannel,
-                                                store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, omc, store) with Deconstructible {
+                                                omc    : ObjectManagementChannel,
+                                                store  : PacketInjectableStore) extends AbstractSharedCacheManager(family, network, omc, store) with Deconstructible {
     
-    override val ownerID: String = network.connection.currentIdentifier
-    
+
     override def deconstruct(): Array[Any] = Array(family, network, store)
     
     override def handleRequest(requestBundle: RequestPacketBundle): Unit = {
@@ -129,12 +129,12 @@ final class SharedCacheOriginManager @Persist()(family: String,
             case GET_OR_CRASH =>
                 failRequest(s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
             case GET_OR_WAIT  =>
-                //If the requester is not the owner, wait the owner to open the cache.
-                if (senderID != ownerID) {
+                //If the requester is not the server, wait the server to open the cache.
+                if (senderID != network.serverIdentifier) {
                     channel.storeBundle(requestBundle)
                     return
                 }
-                //The sender is the owner : this class must create the cache content.
+                //The sender is the server : this class must create the cache content.
                 sendContent(None)
             case GET_OR_OPEN  =>
                 sendContent(None)

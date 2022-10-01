@@ -13,20 +13,14 @@
 
 package fr.linkit.test.packet
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.packet.Packet
-import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
-import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncClassCompilationRequestFactory, SyncClassStorageResource}
-import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{AnyRefPacket, StringPacket}
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket.StringPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.SyncPacketChannel
-import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
 import fr.linkit.test.TestEngine
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions._
+import org.junit.jupiter.api.Test
 
-import java.nio.file.Path
 import java.util.concurrent.ThreadLocalRandom
 import scala.reflect.ClassTag
 

@@ -49,9 +49,7 @@ class LocalResourceFolder protected(adapter: Path,
     
 }
 
-object LocalResourceFolder extends ResourceFactory[LocalFolder] {
-
-    implicit val factory: ResourceFactory[LocalFolder] = this
+object LocalResourceFolder extends ResourceFactory[LocalResourceFolder] {
 
     override def apply(path: Path,
                        listener: ResourceListener,

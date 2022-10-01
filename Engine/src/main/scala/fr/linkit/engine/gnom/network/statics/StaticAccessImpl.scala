@@ -25,7 +25,7 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.application.resource.local.LocalResourceFolder._
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncStaticsDescription
 import fr.linkit.engine.gnom.network.statics.StaticAccessImpl.CompilationRequestFactory
-import fr.linkit.engine.internal.compilation.factories.ClassCompilationRequestFactory
+import fr.linkit.engine.internal.compilation.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.compilation.resource.CachedClassFolderResource
 
 import scala.reflect.{ClassTag, classTag}
@@ -36,14 +36,15 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
     private val app      = cache.network.connection.getApp
     private val center   = app.compilerCenter
     private val resource = {
-        val prop     = LinkitApplication.getProperty("compilation.working_dir.classes")
+        val prop     = LinkitApplication.getProperty("compilation.working_dir") + "/Classes"
         val resource = app.getAppResources.getOrOpen[LocalFolder](prop)
         type R = CachedClassFolderResource[StaticsCaller]
-        val entry = resource.getEntry.asInstanceOf[ResourceEntry[ResourceFolder]]
+        val entry = resource.getEntry
+        import CachedClassFolderResource._
         entry
             .findRepresentation[R]()
             .getOrElse {
-                entry.attachRepresentation[R]()(classTag[R], CachedClassFolderResource[StaticsCaller])
+                entry.attachRepresentation[R]()
                 entry.getRepresentation[R]()
             }
     }
@@ -72,9 +73,9 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
         }
         AppLoggers.Compilation.info(s"Compilation done in ${result.getCompileTime} ms.")
         result.getClasses match {
-            case Some(clazz :: Nil) => clazz
-            case Some(_ :: _ :: _)   => throw new RuntimeCompilationException("Compiler center returned multiple classes.")
-            case None => throw new RuntimeCompilationException("Compiler center returned no result.")
+            case clazz :: Nil => clazz
+            case _ :: _ :: _  => throw new RuntimeCompilationException("Compiler center returned multiple classes.")
+            case Nil          => throw new RuntimeCompilationException("Compiler center returned no result.")
         }
     }
 

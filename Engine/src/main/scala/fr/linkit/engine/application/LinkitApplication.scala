@@ -37,7 +37,7 @@ import scala.util.{Failure, Success}
 
 abstract class LinkitApplication(configuration: ApplicationConfiguration, appResources: ResourceFolder) extends ApplicationContext {
 
-    override val compilerCenter: CompilerCenter = new DefaultCompilerCenter
+    override val compilerCenter: CompilerCenter = DefaultCompilerCenter
     protected val appPool: AbstractWorkerPool
     @volatile protected var alive: Boolean = false
     override val reference                 = ApplicationReference

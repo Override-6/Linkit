@@ -49,6 +49,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(session.traffic)
     override val network          : Network           = sideNetwork
     @volatile private var alive                       = true
+
+    session.traffic.setNetwork(sideNetwork)
     sideNetwork.initialize()
 
     override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
@@ -102,7 +104,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             } catch {
                 case NonFatal(e) =>
                     val coords = result.coords
-                    val errMsg = s"Could not deserialize packet @${coords.path.mkString("/")}$$${coords.senderID}:${result.ordinal}."
+                    val errMsg = s"Could not deserialize packet ${coords.path.mkString("/")}$$${coords.senderID}:${result.ordinal}."
                     if (AppLoggers.Persistence.isDebugEnabled) {
                         AppLoggers.Persistence.error(errMsg)
                         e.printStackTrace()

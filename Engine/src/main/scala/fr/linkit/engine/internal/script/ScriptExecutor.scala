@@ -20,7 +20,7 @@ import fr.linkit.api.internal.language.cbp.ClassBlueprint
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile, ScriptHandler, ScriptInstantiator}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.internal.compilation.factories.ClassCompilationRequestFactory
+import fr.linkit.engine.internal.compilation.ClassCompilationRequestFactory
 import fr.linkit.engine.internal.compilation.resource.CachedClassFolderResource
 
 import java.net.URL
@@ -49,10 +49,10 @@ object ScriptExecutor {
                 .makeRequest(scriptHandler.newScriptContext(scriptCode, scriptName, additionalArguments, classLoader))
         }
         AppLoggers.Compilation.info(s"Script '$scriptName' class generation ended in ${result.getCompileTime} ms.")
-        val clazz = result.getClasses.get.head
-        if (clazz == null)
+        val classes = result.getClasses
+        if (classes.isEmpty)
             throw new ScriptCompileException(s"Some exception occurred during class compilation of script '$scriptName'. See above messages for further details.")
-        scriptHandler.newScript(clazz, _: _*)
+        scriptHandler.newScript(classes.head, _: _*)
     }
 
     private def toScriptName(scriptUrl: URL): String = {
@@ -88,7 +88,7 @@ object ScriptExecutor {
 
     def findScript[S <: ScriptFile](name: String, app: ApplicationContext)(implicit handler: ScriptHandler[S]): Option[ScriptInstantiator[S]] = {
         val resources = app.getAppResources
-                           .getOrOpen[LocalFolder](LinkitApplication.getProperty("compilation.working_dir.classes"))
+                           .getOrOpen[LocalFolder](LinkitApplication.getProperty("compilation.working_dir") + "/Classes")
                            .getEntry
                            .getOrAttachRepresentation[CachedClassFolderResource[ScriptFile]]("script")
         handler.findScript(name, resources)

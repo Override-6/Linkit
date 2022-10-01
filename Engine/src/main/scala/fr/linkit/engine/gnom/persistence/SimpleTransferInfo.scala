@@ -36,6 +36,7 @@ case class SimpleTransferInfo(override val coords: DedicatedPacketCoordinates,
             packetBuff += packet
         val content = packetBuff.toArray[AnyRef]
         serializer.serializeObjects(content)(new PersistenceBundle {
+            override val packetID  : String = s"@${coords.path.mkString("/")}$$${coords.senderID}:??" //ordinal can't be known at serialisation
             override val network   : Network           = SimpleTransferInfo.this.network
             override val buff      : ByteBuffer        = buffer
             override val boundId   : String            = coords.targetID

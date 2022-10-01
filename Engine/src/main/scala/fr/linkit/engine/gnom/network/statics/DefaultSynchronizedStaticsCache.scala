@@ -76,7 +76,7 @@ object DefaultSynchronizedStaticsCache {
     
     import SharedCacheFactory.lambdaToFactory
     
-    private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
+    private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir") + "/Classes"
     
     def apply(contracts: ContractDescriptorData): SharedCacheFactory[SynchronizedStaticsCache] = {
         lambdaToFactory(classOf[DefaultSynchronizedStaticsCache])(channel => {
@@ -91,11 +91,11 @@ object DefaultSynchronizedStaticsCache {
     }
     
     private def apply(channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): SynchronizedStaticsCache = {
-        val context   = channel.manager.network.connection.getApp
-        val resources = context.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
+        val app   = channel.manager.network.connection.getApp
+        val resources = app.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
                 .getEntry
                 .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
-        val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
+        val generator = new DefaultSyncClassCenter(resources, app.compilerCenter)
         
         new DefaultSynchronizedStaticsCache(channel, generator, contracts, network)
     }

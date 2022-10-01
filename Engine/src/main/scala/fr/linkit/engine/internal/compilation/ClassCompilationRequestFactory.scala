@@ -11,21 +11,17 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.compilation.factories
+package fr.linkit.engine.internal.compilation
 
 import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
-import fr.linkit.api.internal.compilation.{CompilationContext, CompilationRequest, CompilationResult}
 import fr.linkit.api.internal.compilation.access.CompilerType
+import fr.linkit.api.internal.compilation.{CompilationContext, CompilationRequest, CompilationResult}
 import fr.linkit.api.internal.language.cbp.ClassBlueprint
-import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.compilation.SourceCodeCompilationRequest.SourceCode
+import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.nio.file.Path
-import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.internal.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
-import fr.linkit.engine.internal.compilation.SourceCodeCompilationRequest.SourceCode
-import fr.linkit.engine.internal.compilation.access.CommonCompilerType
-import fr.linkit.engine.internal.mapping.ClassMappings
 
 class ClassCompilationRequestFactory[I <: CompilationContext, C](blueprint: ClassBlueprint[I]) extends AbstractCompilationRequestFactory[I, C] {
 
