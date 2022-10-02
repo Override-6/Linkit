@@ -27,6 +27,7 @@ import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationSendAction, RequestAction}
 import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import org.jetbrains.annotations.Nullable
 
@@ -162,7 +163,6 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {
-
         val currentIdentifier = puppeteer.currentIdentifier
         val objectNode        = localInvocation.objectNode
         val obj               = objectNode.obj
@@ -182,7 +182,8 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             } else v
         }
 
-        val currentMustReturn = agreement.getAppointedEngineReturn == currentIdentifier
+        val appointedEngine = agreement.getAppointedEngineReturn
+        val currentMustReturn = appointedEngine == currentIdentifier
         if (!mayPerformRMI) {
             return (if (currentMustReturn) syncValue(localResult) else null).asInstanceOf[R]
         }
@@ -195,14 +196,17 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             }
         }
         if (currentMustReturn) {
+            Debugger.push(MethodInvocationSendAction(agreement, description, null))
             AppLoggers.COInv.debug(debugMsg(null, localInvocation))
             puppeteer.sendInvoke(remoteInvocation)
             result = localResult
         } else {
-            AppLoggers.COInv.debug(debugMsg(remoteInvocation.agreement.getAppointedEngineReturn, localInvocation))
+            Debugger.push(MethodInvocationSendAction(agreement, description, appointedEngine))
+            AppLoggers.COInv.debug(debugMsg(appointedEngine, localInvocation))
+
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
         }
-
+        Debugger.pop()
         syncValue(result).asInstanceOf[R]
     }
 
@@ -215,7 +219,10 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         val className = obj.getClassDef.mainClass.getName
         val params    = invocation.methodArguments.map(i => if (i == null) "null" else i.getClass.getSimpleName).mkString(", ")
 
-        val expectedEngineReturn = if (appointed == null) " - no remote return value is expected, the RMI is performed asynchronously." else " - expected return value from " + appointed + "."
+        val expectedEngineReturn = {
+            if (appointed == null) " - no remote return value is expected, the RMI is performed asynchronously."
+            else " - expected return value from " + appointed + "."
+        }
         s"Sending method invocation ($methodID) $className.$name($params) (on object: ${obj.reference}) " + expectedEngineReturn
     }
 

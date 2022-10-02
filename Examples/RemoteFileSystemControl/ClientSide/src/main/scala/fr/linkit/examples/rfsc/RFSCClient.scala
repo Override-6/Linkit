@@ -75,7 +75,7 @@ object RFSCClient {
     private def launchConnection(identifier0: String): ExternalConnection = {
         println(s"Using identifier $identifier0")
         val config = new ClientApplicationConfigBuilder {
-            val resourcesFolder: String = "/home/maxime/dev/Linkit/Default Home"
+            val resourcesFolder: String = "/home/maxime/dev/Linkit/Default_Home"
             logfilename = Some(s"examples/rfsc client $identifier0")
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {

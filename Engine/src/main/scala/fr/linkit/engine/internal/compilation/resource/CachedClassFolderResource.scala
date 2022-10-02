@@ -31,8 +31,8 @@ class CachedClassFolderResource[C](override val resource: ResourceFolder) extend
     
     override def findClass[S <: AnyRef](className: String, loader: ClassLoader): Option[Class[S with C]] = {
         generatedClasses.getOrElse(className, {
-            val wrapperClassPath = folderPath.resolve(className.replace('.', File.separatorChar) + ".class")
-            if (Files.notExists(wrapperClassPath))
+            val generatedClassPath = folderPath.resolve(className.replace('.', File.separatorChar) + ".class")
+            if (Files.notExists(generatedClassPath))
                 null
             else {
                 val classLoader = new GeneratedClassLoader(folderPath, loader, Seq(classOf[LinkitApplication].getClassLoader))

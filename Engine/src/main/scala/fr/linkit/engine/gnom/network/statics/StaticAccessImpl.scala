@@ -32,7 +32,7 @@ import scala.reflect.{ClassTag, classTag}
 
 class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, contract: ContractDescriptorData) extends StaticAccess with Deconstructible {
 
-    private val cache    = manager.attachToCache(cacheId, DefaultSynchronizedStaticsCache.apply(contract))
+    private val cache    = manager.attachToCache(cacheId, DefaultConnectedStaticsCache.apply(contract))
     private val app      = cache.network.connection.getApp
     private val center   = app.compilerCenter
     private val resource = {

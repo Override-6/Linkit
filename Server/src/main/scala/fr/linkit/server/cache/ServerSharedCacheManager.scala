@@ -30,6 +30,7 @@ import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
+import fr.linkit.engine.internal.debug.{Debugger, ResponseAction}
 
 import scala.util.control.Breaks.{break, breakable}
 
@@ -69,41 +70,46 @@ final class ServerSharedCacheManager @Persist()(family : String,
         LocalCachesStore.getContent(cacheID)
     }
     
-    private def handlePreCacheOpeningRequest(cacheID: Int, cacheType: Class[_], senderID: String, response: Submitter[_]): Unit = breakable {
-        def acceptRequest: Nothing = {
-            response.addPacket(EmptyPacket).submit()
-            break
+    private def handlePreCacheOpeningRequest(cacheID: Int, cacheType: Class[_], senderID: String, response: Submitter[_]): Unit = {
+        Debugger.push(ResponseAction("check if cache can open", senderID, channel.reference))
+        breakable {
+            def acceptRequest: Nothing = {
+                response.addPacket(EmptyPacket).submit()
+                break
+            }
+
+            def failRequest(msg: String): Nothing = {
+                response.addPacket(StringPacket(msg)).submit()
+                break
+            }
+
+            LocalCachesStore.findCache(cacheID) match {
+                case None                  =>
+                    //The cache is accepted because it is not yet opened.
+                    //TODO Make a "blacklist" or a "whitelist" of caches types that can or cannot be opened on a SharedCacheManager
+                    acceptRequest
+                case Some(registeredCache) =>
+                    val cacheClass = registeredCache.cache.getClass
+                    if (!cacheType.isAssignableFrom(cacheClass))
+                        failRequest(s"For cache identifier $cacheID: Shared cache of type '${cacheClass.getName}', contained in local storage is not assignable to requested cache '${cacheType.getName}'.")
+
+                    val isSystemCache = SystemCacheRange contains cacheID
+                    registeredCache.channel.getHandler match {
+                        case None                            => acceptRequest //There is no attach handler set, the cache is free to accept any thing
+                        case Some(_) if isSystemCache        => acceptRequest //System Caches are free to access caches content.
+                        case Some(value: CacheAttachHandler) =>
+                            val engine = network.findEngine(senderID).getOrElse {
+                                failRequest(s"Unknown engine '$senderID'.")
+                            }
+                            value.inspect(engine, registeredCache.cache.getClass, cacheType).fold(acceptRequest)(failRequest)
+                    }
+            }
         }
-        
-        def failRequest(msg: String): Nothing = {
-            response.addPacket(StringPacket(msg)).submit()
-            break
-        }
-        
-        LocalCachesStore.findCache(cacheID) match {
-            case None                  =>
-                //The cache is accepted because it is not yet opened.
-                //TODO Make a "blacklist" or a "whitelist" of caches types that can or cannot be opened on a SharedCacheManager
-                acceptRequest
-            case Some(registeredCache) =>
-                val cacheClass = registeredCache.cache.getClass
-                if (!cacheType.isAssignableFrom(cacheClass))
-                    failRequest(s"For cache identifier $cacheID: Shared cache of type '${cacheClass.getName}', contained in local storage is not assignable to requested cache '${cacheType.getName}'.")
-                
-                val isSystemCache = SystemCacheRange contains cacheID
-                registeredCache.channel.getHandler match {
-                    case None                            => acceptRequest //There is no attach handler set, the cache is free to accept any thing
-                    case Some(_) if isSystemCache        => acceptRequest //System Caches are free to access caches content.
-                    case Some(value: CacheAttachHandler) =>
-                        val engine = network.findEngine(senderID).getOrElse {
-                            failRequest(s"Unknown engine '$senderID'.")
-                        }
-                        value.inspect(engine, registeredCache.cache.getClass, cacheType).fold(acceptRequest)(failRequest)
-                }
-        }
+        Debugger.pop()
     }
     
     private def handleContentRetrievalRequest(requestBundle: RequestPacketBundle, cacheID: Int): Unit = breakable {
+        Debugger.push(ResponseAction(""))
         AppLoggers.GNOM.trace(s"handling content retrieval request (cacheID: $cacheID, family: $family)")
         val coords   = requestBundle.coords
         val request  = requestBundle.packet

@@ -33,22 +33,22 @@ import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 
 //this class is used by the statics synchronization side.
 //It is not directly used by the user and must uses a specific sync instance creator.
-class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
-                                                 classCenter: SyncClassCenter,
-                                                 override val defaultContracts: ContractDescriptorData,
-                                                 override val network: Network) extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
-    
+class DefaultConnectedStaticsCache @Persist()(channel                      : CachePacketChannel,
+                                              classCenter                  : SyncClassCenter,
+                                              override val defaultContracts: ContractDescriptorData,
+                                              override val network         : Network) extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
+
     //ensuring that the creator is of the right type
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {
         checkCreator(creator)
         super.syncObject(id, creator)
     }
-    
+
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller], contracts: ContractDescriptorData): StaticsCaller with SynchronizedObject[StaticsCaller] = {
         checkCreator(creator)
         super.syncObject(id, creator, contracts)
     }
-    
+
     override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator     =>
@@ -60,44 +60,44 @@ class DefaultSynchronizedStaticsCache @Persist()(channel: CachePacketChannel,
                 throwUOE()
         }
     }
-    
+
     private def checkCreator(creator: SyncInstanceCreator[_ <: StaticsCaller]): Unit = {
         if (!creator.isInstanceOf[SyncStaticAccessInstanceCreator])
             throwUOE()
     }
-    
+
     private def throwUOE(): Nothing = {
         throw new UnsupportedOperationException(s"Can only accept Sync Instance Creator of type '${classOf[SyncStaticAccessInstanceCreator].getSimpleName}'.")
     }
-    
+
 }
 
-object DefaultSynchronizedStaticsCache {
-    
+object DefaultConnectedStaticsCache {
+
     import SharedCacheFactory.lambdaToFactory
-    
+
     private final val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir") + "/Classes"
-    
+
     def apply(contracts: ContractDescriptorData): SharedCacheFactory[SynchronizedStaticsCache] = {
-        lambdaToFactory(classOf[DefaultSynchronizedStaticsCache])(channel => {
+        lambdaToFactory(classOf[DefaultConnectedStaticsCache])(channel => {
             apply(channel, contracts, channel.traffic.connection.network)
         })
     }
-    
+
     private[linkit] def apply(contracts: ContractDescriptorData, network: Network): SharedCacheFactory[SynchronizedStaticsCache] = {
-        lambdaToFactory(classOf[DefaultSynchronizedStaticsCache])(channel => {
+        lambdaToFactory(classOf[DefaultConnectedStaticsCache])(channel => {
             apply(channel, contracts, network)
         })
     }
-    
+
     private def apply(channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): SynchronizedStaticsCache = {
         val app   = channel.manager.network.connection.getApp
         val resources = app.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
                 .getEntry
                 .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
         val generator = new DefaultSyncClassCenter(resources, app.compilerCenter)
-        
-        new DefaultSynchronizedStaticsCache(channel, generator, contracts, network)
+
+        new DefaultConnectedStaticsCache(channel, generator, contracts, network)
     }
     
 }

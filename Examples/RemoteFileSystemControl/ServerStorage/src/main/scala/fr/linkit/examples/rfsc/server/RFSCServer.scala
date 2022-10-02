@@ -35,7 +35,7 @@ object RFSCServer {
 
     private def createConnection(identifier0: String): CentralConnection = {
         val config = new ServerApplicationConfigBuilder {
-            val resourcesFolder: String = "/home/maxime/dev/Linkit/Default Home"
+            val resourcesFolder: String = "/home/maxime/dev/Linkit/Default_Home"
             logfilename = Some("examples/rfsc server")
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {

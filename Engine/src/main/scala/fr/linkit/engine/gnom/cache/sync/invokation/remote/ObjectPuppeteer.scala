@@ -25,6 +25,7 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
+import fr.linkit.engine.internal.debug.{Debugger, RequestAction}
 import fr.linkit.engine.internal.util.JavaUtils
 import org.jetbrains.annotations.Nullable
 
@@ -49,29 +50,31 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val agreement = invocation.agreement
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("the agreement states that the method should not be called on a remote engine")
-        val desiredEngineReturn = agreement.getAppointedEngineReturn
+        val appointedEngineReturn = agreement.getAppointedEngineReturn
         
-        if (desiredEngineReturn == currentIdentifier)
+        if (appointedEngineReturn == currentIdentifier)
             throw new UnsupportedOperationException("invocation's desired engine return is this engine.")
         
         val methodId         = invocation.methodID
         val scope            = new AgreementScope(writer, network, agreement)
         var requestResult: R = JavaUtils.nl()
         var isResultSet      = false
-        val dispatcher       = new ObjectRMIDispatcher(scope, methodId, desiredEngineReturn) {
+        val dispatcher       = new ObjectRMIDispatcher(scope, methodId, appointedEngineReturn) {
             override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
                 holder
                         .nextResponse
                         .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
-                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeReference, executed on engine '$desiredEngineReturn' failed :\n$exceptionString")
+                        throw new InvocationFailedException(s"Remote Method Invocation for method with id $methodId on object $nodeReference, executed on engine '$appointedEngineReturn' failed :\n$exceptionString")
                     case p: RefPacket[R]                     =>
                         requestResult = p.value
                         isResultSet = true
                 }
             }
         }
+        Debugger.push(RequestAction("rmi", s"perform remote method invocation on engine $appointedEngineReturn and wait for result or throw.", appointedEngineReturn, channel.reference))
         invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
+        Debugger.pop()
         if (!isResultSet)
             throw new IllegalStateException("RMI dispatch has been processed asynchronously.")
         requestResult match {
@@ -87,7 +90,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         
         val methodId = invocation.methodID
         
-        runLaterIfPerformantChannelElseRun {
+        runOnContext {
             val scope      = new AgreementScope(writer, network, agreement)
             val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
             invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
@@ -109,7 +112,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
         
         override def foreachEngines(action: String => Array[Any]): Unit = {
-            scope.foreachAcceptedEngines(engineID => runLaterIfPerformantChannelElseRun {
+            scope.foreachAcceptedEngines(engineID => runOnContext {
                 //return engine is processed at last, don't send a request to the current engine
                 if (engineID != returnEngine && engineID != currentIdentifier)
                     makeRequest(ChannelScopes.include(engineID)(writer), action(engineID))
@@ -121,7 +124,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     
     private val procrastinator: Procrastinator = network.connection
     
-    private def runLaterIfPerformantChannelElseRun(action: => Unit): Unit = {
+    private def runOnContext(action: => Unit): Unit = {
         if (isPerformant) procrastinator.runLater(action)
         else action
     }

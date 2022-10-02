@@ -20,16 +20,16 @@ import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.api.internal.compilation.CompilerCenter
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.cache.sync.contract.description.{AbstractSyncStructureDescription, SyncObjectDescription, SyncStaticsCallerDescription}
+import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsCallerDescription}
 import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import scala.util.Try
 
 class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: CompilerCenter = DefaultCompilerCenter) extends SyncClassCenter {
-    
+
     private val requestFactory = SyncClassCompilationRequestFactory
-    
+
     override def getSyncClass[S <: AnyRef](clazz: SyncClassDef): Class[S with SynchronizedObject[S]] = {
         if (classOf[StaticsCaller].isAssignableFrom(clazz.mainClass)) {
             if (clazz.isInstanceOf[SyncClassDefMultiple])
@@ -37,17 +37,17 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
             getSyncClassFromDesc[S](SyncStaticsCallerDescription[S with StaticsCaller](clazz.mainClass).asInstanceOf[SyncStructureDescription[S]])
         } else getSyncClassFromDesc[S](SyncObjectDescription[S](clazz))
     }
-    
+
     override def getSyncClassFromDesc[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]] = {
         desc match {
             case desc: SyncObjectDescription[S] =>
                 getOrGenClass[S](desc)
-            case _ =>
+            case _                              =>
                 throw new IllegalArgumentException("desc is not an object structure description.")
-            
+
         }
     }
-    
+
     private def getOrGenClass[S <: AnyRef](desc: SyncObjectDescription[S]): Class[S with SynchronizedObject[S]] = desc.specs.synchronized {
         val classDef = desc.specs
         classDef.ensureOverrideable()
@@ -56,13 +56,13 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
         else {
             val genClassFullName = desc.classPackage + '.' + desc.className
             val result           = Try(classDef.mainClass.getClassLoader.loadClass(genClassFullName)).getOrElse(genClass[S](desc))
-                    .asInstanceOf[Class[S with SynchronizedObject[S]]]
+                                                                                                     .asInstanceOf[Class[S with SynchronizedObject[S]]]
             if (result == null)
                 throw new ClassNotFoundException(s"Could not load generated class '$genClassFullName'")
             result
         }
     }
-    
+
     private def genClass[S <: AnyRef](desc: SyncObjectDescription[S]): Class[S with SynchronizedObject[S]] = {
         val classDef = desc.specs
         checkClassDefValidity(classDef)
@@ -73,7 +73,8 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
                 case _                              =>
                     AppLoggers.Compilation.info(s"Compiling Sync class for ${classDef.mainClass.getName}...")
             }
-            requestFactory.makeRequest(desc, storage.resource.getPath)
+            val workingDir = storage.resource.getPath.getParent
+            requestFactory.makeRequest(desc, workingDir)
         }
         AppLoggers.Compilation.info(s"Compilation done. (${result.getCompileTime} ms).")
         val syncClass = result.getClasses
@@ -82,13 +83,13 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
         ClassMappings.putClass(syncClass)
         syncClass
     }
-    
+
     /**
      * Ensures that, if the class extends [[NetworkObject]],
      * it explicitly defines the `reference: T` method of the interface.
+     *
      * @param clazz
      */
-    //TODO explain the error further
     private def checkClassDefValidity(specs: SyncClassDef): Unit = {
         checkClassValidity(specs.mainClass)
         specs match {
@@ -97,13 +98,13 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
             case _                              =>
         }
     }
-    
+
     private def checkClassValidity(clazz: Class[_]): Unit = {
         if (!classOf[NetworkObject[_]].isAssignableFrom(clazz))
             return
-        
+
         ensureClassValidity(clazz, Array())
-        
+
         def ensureClassValidity(cl: Class[_], path: Array[Class[_]]): Unit = {
             val interfaces = cl.getInterfaces
             if (!interfaces.contains(classOf[NetworkObject[_]]))
@@ -116,8 +117,8 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
                     throw new InvalidClassDefinitionError(
                         s"""
                            |
-                           |Error: $cl does not defines method `T reference()`.
-                           |It turns out that the Linkit object synchronization class generator met a class that cannot be handled...
+                           |Error: $cl does not explicitely defines method `T reference()`.
+                           |It turns out that the proxy class generator met a class that cannot be handled...
                            |What turned wrong ?
                            |$clazz extends $cl ($classHierarchyPath):
                            |$cl is directly implementing ${classOf[NetworkObject[_]]}, but does not explicitly defines method `T reference()`.
@@ -127,7 +128,7 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
             }
         }
     }
-    
+
     override def preGenerateClasses(classes: Seq[SyncClassDef]): Unit = {
         val toCompile = classes.filterNot(isClassGenerated)
         if (toCompile.isEmpty)
@@ -141,9 +142,9 @@ class DefaultSyncClassCenter(storage: SyncClassStorageResource, center: Compiler
         val ct = result.getCompileTime
         AppLoggers.Compilation.info(s"Compilation done in $ct ms.")
     }
-    
+
     override def isClassGenerated(classDef: SyncClassDef): Boolean = {
         storage.findClass[AnyRef](classDef).isDefined
     }
-    
+
 }

@@ -22,11 +22,13 @@ import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.cache.sync.tree.DefaultConnectedObjectTree
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeAction, ResponseAction}
 
 import java.lang.reflect.InvocationTargetException
 import scala.collection.mutable
@@ -116,14 +118,16 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
     private def makeMemberInvocation(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
         val executor = data.network.findEngine(senderID).orNull
         val params   = packet.params
+        val expectedEngineIDReturn = packet.expectedEngineIDReturn
         scanParams(params)
 
         def handleException(e: Throwable): Unit = {
             e.printStackTrace()
             val ex = if (e.isInstanceOf[InvocationTargetException]) e.getCause else e
-            if (packet.expectedEngineIDReturn == currentIdentifier)
+            if (expectedEngineIDReturn == currentIdentifier)
                 handleRemoteInvocationException(response, ex)
         }
+        Debugger.push(MethodInvocationComputeAction(packet.methodID, senderID, expectedEngineIDReturn == currentIdentifier))
 
         chip.callMethod(packet.methodID, params, executor)(handleException, result => try {
             handleInvocationResult(result.asInstanceOf[AnyRef], executor, packet, response)

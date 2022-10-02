@@ -63,18 +63,11 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
 
     private def readCoordinates(buff: ByteBuffer): DedicatedPacketCoordinates = {
         (buff.get(): @switch) match {
-            //TODO Better broadcasted packet persistence handling
-            // <------------------------ MAINTAINED ------------------------>
+            //TODO Better broadcast packet persistence handling
+            // <-------------------------- MAINTAINED -------------------------->
             case BroadcastedFlag =>
                 throw new UnsupportedOperationException("Can't read broadcast packet.")
-            /*
-            val path = new Array[Int](buff.getInt) //init path array
-            for (i <- path.indices) path(i) = buff.getInt() //fill path content
-            val senderId       = getString(buff) //senderID string
-            val discardTargets = buff.get == 1 //discardTargets boolean
-            val targetIds      = new Array[String](buff.getInt) //init targetIds array
-            for (i <- targetIds.indices) targetIds(i) = getString(buff) //fill path content
-            BroadcastPacketCoordinates(path, senderId, discardTargets, targetIds)*/
+
             case DedicatedFlag =>
                 val path = new Array[Int](buff.getInt) //init path array
                 for (i <- path.indices) path(i) = buff.getInt() //fill path array

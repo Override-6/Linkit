@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{ResponseHolder, Submitter}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
+import fr.linkit.engine.internal.debug.{Debugger, RequestAction}
 
 import java.util.concurrent.BlockingQueue
 import scala.collection.mutable.ListBuffer
@@ -69,6 +70,7 @@ class ResponseSubmitter(id: Int, scope: ChannelScope) extends AbstractSubmitter[
 class RequestSubmitter(id: Int, scope: ChannelScope, blockingQueue: BlockingQueue[AbstractSubmitterPacket], handler: SimpleRequestPacketChannel) extends AbstractSubmitter[ResponseHolder](id, scope) {
 
     override protected def makeSubmit(): SimpleResponseHolder = {
+
         val holder  = SimpleResponseHolder(id, blockingQueue, handler)
         val request = RequestPacket(id, packets.toArray)
 

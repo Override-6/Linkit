@@ -36,6 +36,9 @@ case class MethodDescription(javaMethod: Method,
     def getName: String = javaMethod.getName
 
     val params  : Array[Parameter] = javaMethod.getParameters
+
+    override def toString: String = s"(id $methodId): " + javaMethod.getName
+
 }
 
 object MethodDescription {

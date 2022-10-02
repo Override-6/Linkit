@@ -89,7 +89,7 @@ object SyncClassDef {
 
     def apply[C: ClassTag]: SyncClassDef = apply(classTag[C].runtimeClass)
 
-    def apply(superClass: Class[_]): SyncClassDef = {
+    def apply(superClass: Class[_]): SyncClassDefUnique = {
         new SyncClassDefUnique(superClass)
     }
     

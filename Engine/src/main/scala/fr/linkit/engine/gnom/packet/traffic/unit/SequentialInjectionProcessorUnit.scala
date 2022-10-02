@@ -22,6 +22,7 @@ import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
+import fr.linkit.engine.internal.debug.{Debugger, SIPURectifyAction}
 
 import java.lang.Thread.State._
 import java.util.{Comparator, PriorityQueue}
@@ -209,9 +210,11 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
                     return nextResult()
                 }
                 if (waitingForRefocus) {
+                    Debugger.push(SIPURectifyAction(reference, currentOrdinal, expectedOrdinal))
                     AppLoggers.Traffic.debug(s"(SIPU $reference): Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
                     refocusingLocker.pauseTask()
                     waitingForRefocus = false
+                    Debugger.pop()
                 }
                 if (queue.peek().ordinal == resultOrd)
                     throw UnexpectedPacketException(s"in channel ${injectable.reference}: received packet with same ordinal after refocus.")

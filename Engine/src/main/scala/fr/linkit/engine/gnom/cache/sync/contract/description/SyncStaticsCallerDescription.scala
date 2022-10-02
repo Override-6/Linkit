@@ -13,19 +13,17 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
-import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
+import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 
 import java.lang.reflect.Method
 import scala.collection.mutable
 
-class SyncStaticsCallerDescription[A <: StaticsCaller](override val specs: SyncClassDef) extends SyncObjectDescription[A](specs) {
+class SyncStaticsCallerDescription[A <: StaticsCaller](override val specs: SyncClassDefUnique) extends SyncObjectDescription[A](specs) {
 
-    private lazy val callerTargetDesc = {
-        if (specs.isInstanceOf[SyncClassDefMultiple])
-            throw new IllegalArgumentException("class def can't be multiple")
-        SyncStaticsDescription(specs.mainClass)
-    }
+    override def classPackage: String = specs.mainClass.getPackageName
+
+    private lazy val callerTargetDesc = SyncStaticsDescription(specs.mainClass)
 
     override protected def toMethodDesc(method: Method): MethodDescription = {
         try {

@@ -15,9 +15,9 @@ package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 
-class UsageRMIRulesAgreement(currentID: String, ownerID: String,
-                             desiredEngineReturn: String, acceptAll: Boolean,
-                             accepted: Array[String], excluded: Array[String]) extends RMIRulesAgreement {
+class UsageRMIRulesAgreement(currentID            : String, ownerID: String,
+                             appointedEngineReturn: String, acceptAll: Boolean,
+                             accepted             : Array[String], excluded: Array[String]) extends RMIRulesAgreement {
     private val currentIsOwner = currentID == ownerID
 
     override val acceptedEngines: Array[String] = accepted
@@ -26,7 +26,7 @@ class UsageRMIRulesAgreement(currentID: String, ownerID: String,
 
     override def isAcceptAll: Boolean = acceptAll
 
-    override def getAppointedEngineReturn: String = desiredEngineReturn
+    override def getAppointedEngineReturn: String = appointedEngineReturn
 
     override def mayCallSuper: Boolean = {
         if (acceptAll)
@@ -37,6 +37,14 @@ class UsageRMIRulesAgreement(currentID: String, ownerID: String,
 
     override val mayPerformRemoteInvocation: Boolean = {
         acceptAll || (accepted.nonEmpty && !(accepted.length == 1 && accepted.head == currentID))
+    }
+
+    override def toString: String = {
+        (if (acceptAll) {
+            s"accept * -> discard ${excluded.mkString("and")}"
+        } else {
+            s"discard * -> accept ${accepted.mkString("and")}"
+        }) + s" -> appoint $appointedEngineReturn"
     }
 
 }
