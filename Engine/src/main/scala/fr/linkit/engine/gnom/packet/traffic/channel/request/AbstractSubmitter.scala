@@ -61,20 +61,21 @@ sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends
 
 class ResponseSubmitter(id: Int, scope: ChannelScope) extends AbstractSubmitter[Unit](id, scope) with Submitter[Unit] {
 
+
     override protected def makeSubmit(): Unit = {
         val response = ResponsePacket(id, packets.toArray)
         scope.sendToAll(response, SimplePacketAttributes(this))
     }
 }
 
-class RequestSubmitter(id: Int, scope: ChannelScope, blockingQueue: BlockingQueue[AbstractSubmitterPacket], handler: SimpleRequestPacketChannel) extends AbstractSubmitter[ResponseHolder](id, scope) {
+class RequestSubmitter(id: Int, scope: ChannelScope, blockingQueue: BlockingQueue[AbstractSubmitterPacket], channel: SimpleRequestPacketChannel) extends AbstractSubmitter[ResponseHolder](id, scope) {
 
     override protected def makeSubmit(): SimpleResponseHolder = {
 
-        val holder  = SimpleResponseHolder(id, blockingQueue, handler)
+        val holder  = SimpleResponseHolder(id, blockingQueue, channel)
         val request = RequestPacket(id, packets.toArray)
 
-        handler.addRequestHolder(holder)
+        channel.addRequestHolder(holder)
         scope.sendToAll(request, SimplePacketAttributes(this))
 
         holder

@@ -15,12 +15,11 @@ package fr.linkit.engine.gnom.packet.traffic.unit
 
 import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
-import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.Worker
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.packet.UnexpectedPacketException
+import fr.linkit.engine.gnom.packet.{SimplePacketBundle, UnexpectedPacketException}
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
 import fr.linkit.engine.internal.debug.{Debugger, SIPURectifyAction}
 
@@ -165,11 +164,7 @@ class SequentialInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
         if (result == null) return
         AppLoggers.Traffic.trace(s"(SIPU $reference): handling packet deserialization and injection (ord: ${result.ordinal})")
         result.makeDeserialization()
-        val bundle = new PacketBundle {
-            override val packet    : Packet            = result.packet
-            override val attributes: PacketAttributes  = result.attributes
-            override val coords    : PacketCoordinates = result.coords
-        }
+        val bundle = SimplePacketBundle(result)
         injectable.inject(bundle)
     }
 

@@ -15,13 +15,19 @@ package fr.linkit.engine.gnom.packet.traffic.channel.request
 
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, RequestPacketChannel, Submitter, SubmitterPacket}
 import fr.linkit.api.gnom.packet.{PacketAttributes, PacketCoordinates}
-import fr.linkit.engine.gnom.packet.AbstractChannelPacketBundle
+import fr.linkit.engine.gnom.packet.AbstractPacketChannelBundle
 
-case class DefaultRequestBundle(channel: RequestPacketChannel,
-                                override val packet: SubmitterPacket,
-                                override val coords: PacketCoordinates,
-                                override val responseSubmitter: Submitter[Unit]) extends AbstractChannelPacketBundle(channel) with RequestPacketBundle {
+case class DefaultRequestPacketChannelBundle(channel          : RequestPacketChannel,
+                                             packet           : SubmitterPacket,
+                                             coords           : PacketCoordinates,
+                                             responseSubmitter: Submitter[Unit],
+                                             ordinal          : Option[Int]) extends AbstractPacketChannelBundle(channel) with RequestPacketBundle {
 
+    def this(channel: RequestPacketChannel, bundle: RequestPacketBundle) {
+        this(channel, bundle.packet, bundle.coords, bundle.responseSubmitter, bundle.ordinal)
+    }
+
+    override val packetID  : String           = s"@${coords.path.mkString("/")}$$${coords.senderID}:${ordinal.getOrElse("??")}"
     override val attributes: PacketAttributes = packet.getAttributes
 
     override def getChannel: RequestPacketChannel = channel

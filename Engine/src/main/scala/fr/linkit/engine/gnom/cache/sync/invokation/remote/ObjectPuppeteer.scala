@@ -72,7 +72,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                 }
             }
         }
-        Debugger.push(RequestAction("rmi", s"perform remote method invocation on engine $appointedEngineReturn and wait for result or throw.", appointedEngineReturn, channel.reference))
+        Debugger.push(RequestAction("rmi", s"perform remote method invocation on engine $appointedEngineReturn and wait for result or throw", appointedEngineReturn, channel.reference))
         invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         Debugger.pop()
         if (!isResultSet)

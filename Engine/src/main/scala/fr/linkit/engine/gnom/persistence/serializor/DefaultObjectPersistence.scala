@@ -26,19 +26,20 @@ import fr.linkit.engine.internal.debug.{Debugger, PacketDeserializationAction, P
 import java.nio.ByteBuffer
 
 class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistence {
-    
+
     override val signature: Seq[Byte] = Seq(12)
-    
+
     override def isSameSignature(buffer: ByteBuffer): Boolean = {
         val pos    = buffer.position()
         val result = signature.forall(buffer.get.equals)
         buffer.position(pos)
         result
     }
-    
+
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disinv {
         AppLoggers.Persistence.debug("Starting Serializing objects...")
         Debugger.push(PacketSerializationAction(bundle.packetID, bundle.boundId))
+        Debugger.dumpWorkers()
         val t0     = System.currentTimeMillis()
         val buffer = bundle.buff
         buffer.put(signature.toArray)
@@ -53,9 +54,9 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         Debugger.pop()
         AppLoggers.Persistence.debug(s"Objects serialized (took ${t1 - t0} ms) - resulting buff length = ${buffer.position()}.")
     }
-    
+
     private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,
-                             pool: SerializerObjectPool): Unit = {
+                             pool   : SerializerObjectPool): Unit = {
         //Write the number of root objects
         writer.putRef(objects.length)
         //Write the content
@@ -64,17 +65,17 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
             writer.putRef(idx)
         }
     }
-    
+
     override def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit = InvocationChoreographer.disinv {
         val buff = bundle.buff
         checkSignatureAndProtocol(buff)
 
-        try {
-            AppLoggers.Persistence.debug(s"Starting Deserializing objects... (from buff length: ${buff.limit()})")
-            Debugger.push(PacketDeserializationAction(bundle.packetID, bundle.boundId))
+        AppLoggers.Persistence.debug(s"Starting Deserializing objects... (from buff length: ${buff.limit()})")
+        Debugger.push(PacketDeserializationAction(bundle.packetID, bundle.boundId))
 
+        try {
             val t0 = System.currentTimeMillis()
-            
+
             val reader = new ObjectReader(bundle, center)
             reader.readAndInit()
             val contentSize = reader.readNextRef
@@ -97,10 +98,11 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         } catch {
             case e =>
                 throw e //here to place a breakpoint if needed.
+        } finally {
+            Debugger.pop()
         }
-        Debugger.pop()
     }
-    
+
     private def checkSignatureAndProtocol(buff: ByteBuffer): Unit = {
         if (!signature.forall(buff.get.equals))
             throw new IllegalArgumentException("Signature mismatches !")
@@ -108,5 +110,5 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         if (protocolVersion != ConstantProtocol.ProtocolVersion)
             throw new IllegalArgumentException(s"Can't handle this packet: protocol signature mismatches ! (received: v$protocolVersion, can only read v${ConstantProtocol.ProtocolVersion}).")
     }
-    
+
 }

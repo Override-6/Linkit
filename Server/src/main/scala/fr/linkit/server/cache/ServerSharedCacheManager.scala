@@ -38,10 +38,10 @@ final class ServerSharedCacheManager @Persist()(family : String,
                                                 network: Network,
                                                 omc    : ObjectManagementChannel,
                                                 store  : PacketInjectableStore) extends AbstractSharedCacheManager(family, network, omc, store) with Deconstructible {
-    
+
 
     override def deconstruct(): Array[Any] = Array(family, network, store)
-    
+
     override def handleRequest(requestBundle: RequestPacketBundle): Unit = {
         val coords        = requestBundle.coords
         val requestPacket = requestBundle.packet
@@ -52,11 +52,11 @@ final class ServerSharedCacheManager @Persist()(family : String,
             case unknown                                      => throw UnexpectedPacketException(s"Unknown packet $unknown.")
         }
     }
-    
+
     override protected def remoteCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
         //DO Nothing, This cache is the origin, it can do whatever he wants, so no checks have to be performed from here.
     }
-    
+
     /**
      * Retrieves the cache content of a given cache identifier.
      *
@@ -69,7 +69,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
         LocalCachesStore.getContent(cacheID)
     }
-    
+
     private def handlePreCacheOpeningRequest(cacheID: Int, cacheType: Class[_], senderID: String, response: Submitter[_]): Unit = {
         Debugger.push(ResponseAction("check if cache can open", senderID, channel.reference))
         breakable {
@@ -107,37 +107,37 @@ final class ServerSharedCacheManager @Persist()(family : String,
         }
         Debugger.pop()
     }
-    
-    private def handleContentRetrievalRequest(requestBundle: RequestPacketBundle, cacheID: Int): Unit = breakable {
-        Debugger.push(ResponseAction(""))
+
+    private def handleContentRetrievalRequest(bundle: RequestPacketBundle, cacheID: Int): Unit = {
         AppLoggers.GNOM.trace(s"handling content retrieval request (cacheID: $cacheID, family: $family)")
-        val coords   = requestBundle.coords
-        val request  = requestBundle.packet
-        val response = requestBundle.responseSubmitter
-        
+        val coords   = bundle.coords
+        val request  = bundle.packet
+        val response = bundle.responseSubmitter
+
         val senderID: String = coords.senderID
         val behavior         = request.getAttribute[CacheSearchMethod]("behavior").get //TODO orElse throw an exception
-        
+
+
         def failRequest(msg: String): Nothing = {
             AppLoggers.GNOM.error(s"Could not send cache content to $senderID: $msg")
             response.addPacket(StringPacket(msg))
                     .submit()
             break
         }
-        
+
         def sendContent(content: Option[CacheContent]): Unit = {
             AppLoggers.GNOM.trace(s"sending cache content (cacheID: $cacheID, family: $family)")
             response.addPacket(RefPacket[Option[CacheContent]](content))
                     .submit()
         }
-        
+
         def handleContentNotAvailable(): Unit = behavior match {
             case GET_OR_CRASH =>
                 failRequest(s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
             case GET_OR_WAIT  =>
                 //If the requester is not the server, wait the server to open the cache.
                 if (senderID != network.serverIdentifier) {
-                    channel.storeBundle(requestBundle)
+                    channel.storeBundle(bundle)
                     return
                 }
                 //The sender is the server : this class must create the cache content.
@@ -145,24 +145,28 @@ final class ServerSharedCacheManager @Persist()(family : String,
             case GET_OR_OPEN  =>
                 sendContent(None)
         }
-        
-        LocalCachesStore.findCache(cacheID)
-                .fold(handleContentNotAvailable()) { storedCache =>
-                    val content       = storedCache.getContent
-                    val isSystemCache = SystemCacheRange contains cacheID
-                    storedCache.channel.getHandler match {
-                        case Some(_) if isSystemCache                         => sendContent(content)
-                        case None                                             => sendContent(content) //There is no handler, the engine is by default accepted.
-                        case Some(handler: CacheContentHandler[CacheContent]) =>
-                            val engine = network.findEngine(senderID).getOrElse {
-                                failRequest(s"Engine not found: $senderID. (shared cache manager engine: $currentIdentifier)")
-                            }
-                            if (handler.canAccessToContent(engine)) {
-                                sendContent(content)
-                            } else {
-                                failRequest(s"Engine $engine can't access to content of cache '$cacheID'.")
-                            }
-                    }
+
+        Debugger.push(ResponseAction("cache content retrieval", bundle.coords.senderID, channel.reference))
+        breakable {
+
+            LocalCachesStore.findCache(cacheID).fold(handleContentNotAvailable()) { storedCache =>
+                val content       = storedCache.getContent
+                val isSystemCache = SystemCacheRange contains cacheID
+                storedCache.channel.getHandler match {
+                    case Some(_) if isSystemCache                         => sendContent(content)
+                    case None                                             => sendContent(content) //There is no handler, the engine is by default accepted.
+                    case Some(handler: CacheContentHandler[CacheContent]) =>
+                        val engine = network.findEngine(senderID).getOrElse {
+                            failRequest(s"Engine not found: $senderID. (shared cache manager engine: $currentIdentifier)")
+                        }
+                        if (handler.canAccessToContent(engine)) {
+                            sendContent(content)
+                        } else {
+                            failRequest(s"Engine $engine can't access to content of cache '$cacheID'.")
+                        }
                 }
+            }
+        }
+        Debugger.pop()
     }
 }

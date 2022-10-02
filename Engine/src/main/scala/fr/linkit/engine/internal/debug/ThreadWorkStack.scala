@@ -14,10 +14,16 @@ class ThreadWorkStack(val thread: Thread) {
 
     def printStack(out: PrintStream): Unit = {
         out.print(s"\t- thread ${thread.getName}:")
-        if (actionStack.isEmpty) out.println(" <not performing any actions>")
-        else out.println("")
+        if (actionStack.isEmpty) {
+            out.println(" <not performing any actions>")
+            return
+        } else out.println("")
         //print from oldest to newest
-        actionStack.reverse.foreach(action => out.println("\t\t- " + action.actionType + ": " + action.insights))
+        val maxActionTypeStrLength = actionStack.map(_.actionType.length).max
+        actionStack.reverse.foreach(action => {
+            val actionType = action.actionType
+            out.println("\t\t- " + actionType + (" " * (maxActionTypeStrLength - actionType.length)) + ": " + action.insights)
+        })
     }
 
 }

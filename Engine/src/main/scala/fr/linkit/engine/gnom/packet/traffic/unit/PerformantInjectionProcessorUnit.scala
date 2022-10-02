@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.{PacketDownload, PacketUpload}
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.gnom.packet.SimplePacketBundle
 
 //performance is simplicity
 class PerformantInjectionProcessorUnit(injectable: PacketInjectable) extends InjectionProcessorUnit {
@@ -26,11 +27,7 @@ class PerformantInjectionProcessorUnit(injectable: PacketInjectable) extends Inj
         AppLoggers.GNOM.trace(s"PIPU: adding packet injection for channel '${injectable.reference}'.")
         
         result.makeDeserialization()
-        val bundle = new PacketBundle {
-            override val packet    : Packet            = result.packet
-            override val attributes: PacketAttributes  = result.attributes
-            override val coords    : PacketCoordinates = result.coords
-        }
+        val bundle = SimplePacketBundle(result)
         injectable.inject(bundle)
     }
 }

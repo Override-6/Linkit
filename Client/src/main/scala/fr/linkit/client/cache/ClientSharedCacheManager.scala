@@ -41,7 +41,7 @@ final class ClientSharedCacheManager @Persist()(family : String,
 
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
         AppLoggers.GNOM.trace(s"retrieve cache content id $cacheID ($family)")
-        Debugger.push(RequestAction("retrieve cache content", s"retrieve cache content of cache $cacheID of cache family $family", serverIdentifier, channel.reference))
+        Debugger.push(RequestAction("cache content retrieval", s"retrieve cache content of cache $cacheID of cache family $family", serverIdentifier, channel.reference))
         val request = channel
             .makeRequest(ownerScope)
             .putAttribute("behavior", behavior)
@@ -75,6 +75,7 @@ final class ClientSharedCacheManager @Persist()(family : String,
                 // or because the AttachHandler of the cache refused the connection.)
                 throw new CacheNotAcceptedException(s"server refused cache connection: " + msg)
         }
+        Debugger.pop()
     }
 
     override def handleRequest(requestBundle: RequestPacketBundle): Unit = {

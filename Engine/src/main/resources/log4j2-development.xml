@@ -65,6 +65,11 @@
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
+        <Logger name="Watchdog"  additivity="false" includeLocation="false">
+            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="LogFile" level="ALL"/>
+        </Logger>
+
         <Root level="ALL" includeLocation="false">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="LogFile"/>

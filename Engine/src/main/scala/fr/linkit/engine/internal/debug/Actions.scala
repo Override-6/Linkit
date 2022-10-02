@@ -13,7 +13,7 @@ sealed trait Action {
 sealed abstract class AbstractAction(val actionType: String) extends Action
 
 case class RequestAction(requestType: String, goal: String, targetEngine: String, channel: TrafficReference) extends AbstractAction("request") {
-    override def insights: String = s"Performing request '$requestType' in channel $channel for goal: $goal. waiting $targetEngine to answer..."
+    override def insights: String = s"Performing request '$requestType' in channel $channel with goal: $goal. waiting $targetEngine to answer..."
 }
 
 case class ResponseAction(requestType: String, senderEngine: String, channel: TrafficReference) extends AbstractAction("response") {

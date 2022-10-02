@@ -37,6 +37,8 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     protected def setWorker(worker: Worker): Unit = {
         if (this.worker != null)
             throw new IllegalStateException("worker already set!")
+        if (worker == null)
+            throw new NullPointerException()
         this.worker = worker
     }
     

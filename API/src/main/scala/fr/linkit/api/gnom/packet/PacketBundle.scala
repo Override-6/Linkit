@@ -21,10 +21,14 @@ package fr.linkit.api.gnom.packet
  * */
 trait PacketBundle {
 
-    val packet: Packet
+    def packetID: String
 
-    val attributes: PacketAttributes
+    def ordinal: Option[Int]
 
-    val coords: PacketCoordinates
+    def packet: Packet
+
+    def attributes: PacketAttributes
+
+    def coords: PacketCoordinates
 
 }

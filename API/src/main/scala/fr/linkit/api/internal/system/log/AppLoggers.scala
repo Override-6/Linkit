@@ -35,7 +35,8 @@ object AppLoggers {
     final val Compilation = logger("Compilation")
     final val Worker      = logger("Worker")
     final val Connection  = logger("Connection")
-    
+    final val Watchdog  = logger("Watchdog")
+
     private var init = false
     
     private def logger(name: String): Logger = {

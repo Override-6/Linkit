@@ -22,7 +22,7 @@ import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.Reason
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
-import fr.linkit.engine.gnom.packet.traffic.DefaultChannelPacketBundle
+import fr.linkit.engine.gnom.packet.traffic.DefaultPacketChannelBundle
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -51,7 +51,7 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
     final override def inject(bundle: PacketBundle): Unit = {
         val coordinates = bundle.coords
         scope.assertAuthorised(Array(coordinates.senderID))
-        handleBundle(DefaultChannelPacketBundle(this, bundle))
+        handleBundle(DefaultPacketChannelBundle(this, bundle))
     }
 
     override def canInjectFrom(identifier: String): Boolean = scope.areAuthorised(Array(identifier))

@@ -20,9 +20,9 @@ import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeEx
 import fr.linkit.api.gnom.cache.sync.{CannotConnectException, ChippedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.channel.request.Submitter
+import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
-import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.cache.sync.tree.DefaultConnectedObjectTree
@@ -135,6 +135,8 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
             case NonFatal(e) => handleException(e)
         })
 
+        Debugger.pop()
+
     }
 
     private def scanParams(params: Array[Any]): Unit = {
@@ -168,9 +170,11 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
             })
         }
         if (packet.expectedEngineIDReturn == currentIdentifier) {
+            Debugger.push(ResponseAction("rmi", currentIdentifier, null)) //TODO replace null by the channel's reference
             response
                     .addPacket(RefPacket[Any](result))
                     .submit()
+            Debugger.pop()
         }
     }
 

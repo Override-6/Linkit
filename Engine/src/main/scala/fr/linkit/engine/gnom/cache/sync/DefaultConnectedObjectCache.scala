@@ -250,7 +250,6 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
     override def requestTree(id: NamedIdentifier): Unit = {
         val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
 
-        Debugger.push(ConnectedObjectTreeRetrievalAction(treeRef))
 
         val refLock         = NetworkObjectReferencesLocks.getLock(treeRef)
         val isSyncOnRefLock = refLock.isHeldByCurrentThread
@@ -264,10 +263,13 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
                 refLock.lock()
             return //directly return : the request was already done by another thread
         }
-        if (!forest.isPresentOnEngine(ownerID, treeRef))
+        if (!forest.isPresentOnEngine(ownerID, treeRef)) {
             return
+        }
         requestLock.lock()
         forest.putUnknownTree(id)
+
+        Debugger.push(ConnectedObjectTreeRetrievalAction(treeRef))
         AppLoggers.ConnObj.trace(s" Requesting root object $treeRef.")
 
         if (isSyncOnRefLock) refLock.unlock()
@@ -284,12 +286,12 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
                 case EmptyPacket                                 => //the tree does not exists, do nothing.
             }
         } finally {
+            Debugger.pop()
             treeRequestsLocks -= id
             requestLock.unlock()
             if (isSyncOnRefLock)
                 refLock.lock() //go back to initial state for the reference's lock
         }
-        Debugger.pop()
     }
 
     private def handleTreeRetrieval(id: NamedIdentifier, response: Submitter[Unit]): Unit = {

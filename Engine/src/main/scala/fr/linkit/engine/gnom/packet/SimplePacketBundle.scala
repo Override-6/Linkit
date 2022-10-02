@@ -13,10 +13,19 @@
 
 package fr.linkit.engine.gnom.packet
 
-import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
+import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketBundle, PacketCoordinates}
+import fr.linkit.api.gnom.persistence.PacketDownload
 
-case class SimplePacketBundle(override val packet: Packet,
-                              override val attributes: PacketAttributes,
-                              override val coords: DedicatedPacketCoordinates) extends PacketBundle {
+case class SimplePacketBundle(packet    : Packet,
+                              attributes: PacketAttributes,
+                              coords    : PacketCoordinates,
+                              ordinal   : Option[Int]) extends PacketBundle {
+    override val packetID: String = s"@${coords.path.mkString("/")}$$${coords.senderID}:${ordinal.getOrElse("??")}"
 
+}
+
+object SimplePacketBundle {
+    def apply(download: PacketDownload): PacketBundle = {
+        new SimplePacketBundle(download.packet, download.attributes, download.coords, Some(download.ordinal))
+    }
 }
