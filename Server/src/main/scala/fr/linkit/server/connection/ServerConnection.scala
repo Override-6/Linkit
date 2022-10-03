@@ -20,12 +20,13 @@ import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.internal.concurrency.{AsyncTask, workerExecution}
+import fr.linkit.api.internal.concurrency.{WorkerTask, workerExecution}
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.concurrency.pool.SimpleClosedWorkerPool
+import fr.linkit.engine.internal.debug.Debugger
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.util.NumberSerializer.serializeInt
 import fr.linkit.server.config.ServerConnectionConfiguration
@@ -39,7 +40,9 @@ import scala.util.control.NonFatal
 
 class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends CentralConnection {
-    
+
+    Debugger.registerConnection(this)
+
     override val currentIdentifier : String                     = configuration.identifier
     override val translator        : ObjectTranslator           = configuration.translatorFactory(applicationContext)
     override val port              : Int                    = configuration.port
@@ -94,7 +97,7 @@ class ServerConnection(applicationContext: ServerApplication,
     
     override def countConnections: Int = connectionsManager.countConnections
     
-    override def runLaterControl[A](task: => A): AsyncTask[A] = workerPool.runLaterControl(task)
+    override def runLaterControl[A](task: => A): WorkerTask[A] = workerPool.runLaterControl(task)
     
     override def runLater(task: => Unit): Unit = workerPool.runLater(task)
     

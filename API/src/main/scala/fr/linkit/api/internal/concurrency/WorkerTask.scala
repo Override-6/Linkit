@@ -22,7 +22,7 @@ import scala.util.Try
  * This class acts as a Future, and contains some utility method for
  * flow control or information about the task that is being executed.
  * */
-trait AsyncTask[A] extends Future[A] {
+trait WorkerTask[A] extends Future[A] {
     /**
      * The taskID this class
      * */
@@ -45,7 +45,7 @@ trait AsyncTask[A] extends Future[A] {
      * */
     def isRunning: Boolean
 
-    @Nullable val parent: AsyncTask[_]
+    val parent: Option[WorkerTask[_]]
 
     def continue(): Unit
 

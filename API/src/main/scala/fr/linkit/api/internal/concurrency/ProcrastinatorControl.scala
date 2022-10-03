@@ -15,6 +15,6 @@ package fr.linkit.api.internal.concurrency
 
 trait ProcrastinatorControl extends Procrastinator {
 
-    def runLaterControl[A](@workerExecution task: => A): AsyncTask[A]
+    def runLaterControl[A](@workerExecution task: => A): WorkerTask[A]
 
 }

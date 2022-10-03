@@ -27,7 +27,6 @@ class ServerPacketWriter(serverConnection: ServerConnection,
     override val traffic          : PacketTraffic = info.traffic
     override val serverIdentifier : String        = serverConnection.currentIdentifier
     override val currentIdentifier: String        = traffic.currentIdentifier
-    
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)
     }

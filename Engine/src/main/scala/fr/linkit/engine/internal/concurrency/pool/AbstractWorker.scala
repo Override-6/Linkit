@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{AsyncTask, AsyncTaskController, IllegalThreadException, InternalWorkerThread, Worker, _}
+import fr.linkit.api.internal.concurrency._
 import fr.linkit.api.internal.concurrency.pool.WorkerPool
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.SimpleAsyncTask
@@ -116,7 +116,7 @@ private[concurrency] trait AbstractWorker
         currentLock = currentTask
     }
     
-    private def removeTask(task: AsyncTask[_]): Unit = {
+    private def removeTask(task: WorkerTask[_]): Unit = {
         val id = task.taskID
         workingTasks.remove(id)
         currentTask = workingTasks
@@ -130,7 +130,7 @@ private[concurrency] trait AbstractWorker
         if (!isSleeping)
             throw new IllegalThreadStateException("Thread isn't sleeping.")
         currentLock.synchronized {
-            forcedTasks += new SimpleAsyncTask(nextPoolTaskCount, currentTask, () => Try(task))
+            forcedTasks += new SimpleAsyncTask(nextPoolTaskCount, Option(currentTask), () => Try(task))
         }
         if (currentTask != null)
             wakeup(currentTask)
@@ -152,7 +152,7 @@ private[concurrency] trait AbstractWorker
 
 object AbstractWorker {
     
-    case class TaskProfile(task: AsyncTask[_] with AsyncTaskController) {
+    case class TaskProfile(task: WorkerTask[_] with AsyncTaskController) {
         
         val taskID: Int = task.taskID
         

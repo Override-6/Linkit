@@ -23,6 +23,8 @@ import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.JustifiedCloseable
 
+import java.io.PrintStream
+
 trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
     
     val currentIdentifier: String
@@ -51,7 +53,8 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
     def getPersistenceConfig(path: Array[Int]): PersistenceConfig
     
     def findNode(path: Array[Int]): Option[TrafficNode[PacketInjectable]]
-    
+
+
 }
 
 object PacketTraffic {

@@ -19,28 +19,30 @@ import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.engine.gnom.packet.traffic.unit.{PerformantInjectionProcessorUnit, SequentialInjectionProcessorUnit}
 
-case class PacketInjectableTrafficNode[+C <: PacketInjectable](override val injectable: C,
+import java.io.PrintStream
+
+case class PacketInjectableTrafficNode[+C <: PacketInjectable](override val injectable       : C,
                                                                override val persistenceConfig: PersistenceConfig,
-                                                               traffic: PacketTraffic) extends InjectableTrafficNode[C] {
-    
+                                                               private val traffic           : PacketTraffic) extends InjectableTrafficNode[C] {
+
     private final val sipu = new SequentialInjectionProcessorUnit(injectable)
     private final val pipu = new PerformantInjectionProcessorUnit(injectable)
     chainIPU(ObjectManagementChannelReference) //Chain with the OMC when sequential is used
-    
+
     private var preferPerformances0 = false
-    
+
     override def setPerformantInjection(): this.type = {
         preferPerformances0 = true
         this
     }
-    
+
     override def setSequentialInjection(): this.type = {
         preferPerformances0 = false
         this
     }
-    
+
     override def preferPerformances(): Boolean = preferPerformances0
-    
+
     override def chainTo(path: Array[Int]): this.type = {
         traffic.findNode(path).get match {
             case node: InjectableTrafficNode[_] => node.unit() match {
@@ -52,6 +54,16 @@ case class PacketInjectableTrafficNode[+C <: PacketInjectable](override val inje
         }
         this
     }
-    
+
     override def unit(): InjectionProcessorUnit = if (preferPerformances0) pipu else sipu
+
+    private[traffic] def dump(out: PrintStream): Unit = {
+        val unit = this.unit()
+        out.print(injectable.trafficPath.mkString("/", "/", ""))
+        out.println(": <unit: " + unit.shortname + s"> (of channel ${injectable.reference})")
+        unit match {
+            case sipu: SequentialInjectionProcessorUnit => sipu.dump(out, 6)
+            case _                                      =>
+        }
+    }
 }

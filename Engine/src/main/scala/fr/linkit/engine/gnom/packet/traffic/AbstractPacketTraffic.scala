@@ -27,13 +27,14 @@ import fr.linkit.api.internal.system.Reason
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.SystemObjectManagementChannel
-import fr.linkit.engine.gnom.packet.traffic.unit.SequentialInjectionProcessorUnit
+import fr.linkit.engine.gnom.packet.traffic.unit.{PerformantInjectionProcessorUnit, SequentialInjectionProcessorUnit}
 import fr.linkit.engine.gnom.persistence.config.{PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.referencing.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 import fr.linkit.engine.internal.debug.{Debugger, PacketInjectionAction}
 import fr.linkit.engine.internal.util.ClassMap
 
+import java.io.PrintStream
 import java.net.URL
 import scala.reflect.ClassTag
 
@@ -133,7 +134,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         rootStore.findNode(reference.trafficPath).map(_.injectable)
     }
 
-    private def createObjectManagementChannel(): TrafficNode[ObjectManagementChannel] = {
+    private def createObjectManagementChannel(): InjectableTrafficNode[ObjectManagementChannel] = {
         val objectChannelConfig = {
             val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
             new SimplePersistenceConfig(new ClassMap(), linker)
@@ -155,6 +156,17 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
 
             override def chainTo(path: Array[Int]): this.type = throw new UnsupportedOperationException
         }
+    }
+
+    /**
+     * dumps this traffic.
+     * Do not use this method directly, use [[Debugger.dumpConnectionTraffic()]] instead.
+     * */
+    private[linkit] def dump(out: PrintStream): Unit = {
+        out.println("/ (ObjectManagementChannel):")
+        omcNode.unit().asInstanceOf[SequentialInjectionProcessorUnit] //OMC's unit IS a SIPU
+               .dump(out, 6)
+        rootStore.dump(out)
     }
 
 }

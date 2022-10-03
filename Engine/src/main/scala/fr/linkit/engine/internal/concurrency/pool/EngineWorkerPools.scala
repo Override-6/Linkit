@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.internal.concurrency.pool.{ClosedWorkerPool, HiringWorkerPool, WorkerPool, WorkerPools}
-import fr.linkit.api.internal.concurrency.{AsyncTask, AsyncTaskController, IllegalThreadException, Worker, workerExecution}
+import fr.linkit.api.internal.concurrency.{WorkerTask, AsyncTaskController, IllegalThreadException, Worker, workerExecution}
 
 import java.lang.Thread.currentThread
 import scala.collection.mutable
@@ -128,7 +128,7 @@ object EngineWorkerPools extends WorkerPools.Provider {
     }
 
     @workerExecution
-    override def currentTask: Option[AsyncTask[_]] = {
+    override def currentTask: Option[WorkerTask[_]] = {
         currentWorkerOpt.flatMap(_.getCurrentTask)
     }
 
@@ -152,7 +152,7 @@ object EngineWorkerPools extends WorkerPools.Provider {
     }
 
     @workerExecution
-    override def currentTaskWithController: Option[AsyncTask[_] with AsyncTaskController] = {
+    override def currentTaskWithController: Option[WorkerTask[_] with AsyncTaskController] = {
         if (!isCurrentThreadWorker)
             return None
         currentWorker.getController.getCurrentTask

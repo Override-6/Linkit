@@ -10,6 +10,8 @@ class ThreadWorkStack(val thread: Thread) {
         actionStack.push(actionItem)
     }
 
+    def isEmpty: Boolean = actionStack.isEmpty
+
     def pop(): Action = actionStack.pop()
 
     def printStack(out: PrintStream): Unit = {
@@ -20,9 +22,14 @@ class ThreadWorkStack(val thread: Thread) {
         } else out.println("")
         //print from oldest to newest
         val maxActionTypeStrLength = actionStack.map(_.actionType.length).max
+        val maxTaskPathStrLength   = actionStack.map(_.taskPath.mkString(">").length).max
         actionStack.reverse.foreach(action => {
+            val taskPath   = action.taskPath.mkString(">")
             val actionType = action.actionType
-            out.println("\t\t- " + actionType + (" " * (maxActionTypeStrLength - actionType.length)) + ": " + action.insights)
+            out.println("\t\t- " + taskPath + (" " * (maxTaskPathStrLength - taskPath.length - 1)) +
+                            " " + actionType +
+                            (" " * (maxActionTypeStrLength - actionType.length)) +
+                            ": " + action.insights)
         })
     }
 

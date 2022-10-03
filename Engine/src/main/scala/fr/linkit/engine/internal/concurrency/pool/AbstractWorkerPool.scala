@@ -15,7 +15,7 @@ package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.gnom.network.ExecutorEngine
 import fr.linkit.api.internal.concurrency.pool.WorkerPool
-import fr.linkit.api.internal.concurrency.{AsyncTask, IllegalThreadException, Worker, workerExecution}
+import fr.linkit.api.internal.concurrency.{WorkerTask, IllegalThreadException, Worker, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.EngineWorkerPools._
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
@@ -109,7 +109,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
      * @throws IllegalStateException if the pool is closed
      * @param task the task to execute in the thread pool
      * */
-    override def runLaterControl[A](@workerExecution task: => A): AsyncTask[A] = {
+    override def runLaterControl[A](@workerExecution task: => A): WorkerTask[A] = {
         if (closed)
             throw new IllegalStateException("Attempted to submit a task in a closed thread pool !")
 

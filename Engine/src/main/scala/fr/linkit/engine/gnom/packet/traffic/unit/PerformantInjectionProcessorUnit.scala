@@ -22,7 +22,13 @@ import fr.linkit.engine.gnom.packet.SimplePacketBundle
 
 //performance is simplicity
 class PerformantInjectionProcessorUnit(injectable: PacketInjectable) extends InjectionProcessorUnit {
-    
+
+
+    /**
+     * a short name for this type of unit
+     * */
+    override val shortname: String = "PIPU"
+
     override def post(result: PacketDownload): Unit = {
         AppLoggers.GNOM.trace(s"PIPU: adding packet injection for channel '${injectable.reference}'.")
         

@@ -16,7 +16,13 @@ package fr.linkit.api.gnom.packet.traffic.unit
 import fr.linkit.api.gnom.persistence.PacketDownload
 
 trait InjectionProcessorUnit {
-    
+
+    /**
+     * a short name for this type of unit
+     * */
+    val shortname: String
+
     def post(result: PacketDownload): Unit
-    
+
+
 }

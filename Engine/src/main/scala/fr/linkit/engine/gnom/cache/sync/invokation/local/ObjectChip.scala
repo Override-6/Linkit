@@ -21,13 +21,14 @@ import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeAction, MethodInvocationExecutionAction}
 import fr.linkit.engine.internal.util.ScalaUtils
 
 import scala.annotation.switch
 import scala.util.control.NonFatal
 
 class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
-                                      network: Network, chippedObject: ChippedObject[A]) extends Chip[A] {
+                                      network : Network, chippedObject: ChippedObject[A]) extends Chip[A] {
 
     private val chipped   = chippedObject.connected
     private val isDistant = contract.mirroringInfo.isDefined
@@ -37,9 +38,12 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         ScalaUtils.pasteAllFields(chipped, obj)
     }
 
-    override def callMethod(methodID: Int, params: Array[Any], caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit = {
+    override def callMethod(methodID: Int, params: Array[Any], caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit = try {
+        val callerID = caller.identifier
+        Debugger.push(MethodInvocationComputeAction(methodID, callerID, callerID == currentIdentifier))
+
         val methodContract = contract.findMethodContract[Any](methodID).getOrElse {
-             throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${chippedObject.getClassDef}.")
+            throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${chippedObject.getClassDef}.")
         }
         val hideMsg        = methodContract.hideMessage
         if (hideMsg.isDefined)
@@ -56,7 +60,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         } else {
             onResult(callMethod(methodContract, params, caller)(onException))
         }
-    }
+    } finally Debugger.pop()
 
     @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], caller: Engine)(onException: Throwable => Unit): Any = {
         val invKind = contract.invocationHandlingMethod
@@ -68,7 +72,10 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
                 override val arguments: Array[Any]       = params
             }
             val result = try {
+                val callerID = caller.identifier
+                Debugger.push(MethodInvocationExecutionAction(contract.description.methodId, callerID, callerID == currentIdentifier))
                 contract.executeMethodInvocation(caller, data)
+                Debugger.pop()
             } catch {
                 case NonFatal(e) => onException(e)
             }
@@ -84,6 +91,8 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
             case Inherit               => call()
         }
     }
+
+    private def currentIdentifier = network.currentEngine.identifier
 
 }
 

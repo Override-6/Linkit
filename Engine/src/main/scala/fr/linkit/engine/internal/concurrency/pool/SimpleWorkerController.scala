@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerController, workerExecution}
+import fr.linkit.api.internal.concurrency.{WorkerTask, WorkerController, workerExecution}
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController.ControlTicket
 
 import scala.collection.mutable
@@ -87,7 +87,7 @@ class SimpleWorkerController extends WorkerController {
     }
     
     @workerExecution
-    override def wakeupWorkerTask(task: AsyncTask[_]): Unit = this.synchronized {
+    override def wakeupWorkerTask(task: WorkerTask[_]): Unit = this.synchronized {
         val taskID = task.taskID
         if ((pausedTasks remove taskID).isEmpty)
             throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorker.thread.getName})")
@@ -110,7 +110,7 @@ class SimpleWorkerController extends WorkerController {
 
 object SimpleWorkerController {
     
-    protected class ControlTicket(val task: AsyncTask[_], condition: => Boolean) {
+    protected class ControlTicket(val task: WorkerTask[_], condition: => Boolean) {
         
         def shouldWakeup: Boolean = !condition
         

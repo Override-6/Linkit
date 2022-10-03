@@ -127,15 +127,12 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
             if (expectedEngineIDReturn == currentIdentifier)
                 handleRemoteInvocationException(response, ex)
         }
-        Debugger.push(MethodInvocationComputeAction(packet.methodID, senderID, expectedEngineIDReturn == currentIdentifier))
 
         chip.callMethod(packet.methodID, params, executor)(handleException, result => try {
             handleInvocationResult(result.asInstanceOf[AnyRef], executor, packet, response)
         } catch {
             case NonFatal(e) => handleException(e)
         })
-
-        Debugger.pop()
 
     }
 

@@ -39,7 +39,6 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disinv {
         AppLoggers.Persistence.debug("Starting Serializing objects...")
         Debugger.push(PacketSerializationAction(bundle.packetID, bundle.boundId))
-        Debugger.dumpWorkers()
         val t0     = System.currentTimeMillis()
         val buffer = bundle.buff
         buffer.put(signature.toArray)

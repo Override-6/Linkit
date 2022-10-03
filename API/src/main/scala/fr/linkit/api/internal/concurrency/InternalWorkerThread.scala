@@ -15,7 +15,7 @@ package fr.linkit.api.internal.concurrency
 
 trait InternalWorkerThread {
 
-    protected type ThreadTask = AsyncTaskController with AsyncTask[_]
+    protected type ThreadTask = AsyncTaskController with WorkerTask[_]
 
     def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit
 

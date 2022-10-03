@@ -6,6 +6,7 @@ import java.nio.file.Path
 import java.net.URI
 
 agreement current_and_origin = discard * -> accept current and owner -> appoint current
+agreement broadcast_appoint_owner = accept * -> appoint owner
 
 describe DefaultEngine {
     updateState(ExternalConnectionState) following current_and_origin
@@ -14,8 +15,8 @@ describe NetworkDataTrunk {
     staticAccesses() {
         sync returnvalue
     }
-    newEngine(String) following broadcast
-    addEngine(sync DefaultEngine)
+    newEngine(String) following broadcast_appoint_owner
+    addEngine(sync DefaultEngine) //protected method
 }
 
 describe StaticAccesses {

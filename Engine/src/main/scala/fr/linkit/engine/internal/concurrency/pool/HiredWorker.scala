@@ -24,7 +24,7 @@ class HiredWorker(override val thread: Thread, override val pool: SimpleHiringWo
     
     override protected def nextPoolTaskCount: Int = pool.nextTaskCount
     
-    private final val rootTask = new SimpleAsyncTask[Nothing](-1, null, () => Failure[Nothing](null)) {
+    private final val rootTask = new SimpleAsyncTask[Nothing](-1, None, () => Failure[Nothing](null)) {
         setWorker(that)
     }
 

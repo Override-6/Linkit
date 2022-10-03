@@ -36,5 +36,5 @@ trait WorkerController {
     def wakeupTasks(taskIds: Seq[Int]): Unit
 
     @workerExecution
-    def wakeupWorkerTask(task: AsyncTask[_]): Unit
+    def wakeupWorkerTask(task: WorkerTask[_]): Unit
 }

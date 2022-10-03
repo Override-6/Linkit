@@ -13,7 +13,7 @@
 
 package fr.linkit.api.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{AsyncTask, AsyncTaskController, IllegalThreadException, Worker, workerExecution}
+import fr.linkit.api.internal.concurrency.{WorkerTask, AsyncTaskController, IllegalThreadException, Worker, workerExecution}
 import fr.linkit.api.internal.system.delegate.DelegateFactory
 
 import scala.concurrent.ExecutionContext
@@ -23,7 +23,7 @@ object WorkerPools {
 
     def newHiringPool(name: String): HiringWorkerPool = delegate.newHiringPool(name)
 
-    def currentTaskWithController: Option[AsyncTask[_] with AsyncTaskController] = delegate.currentTaskWithController
+    def currentTaskWithController: Option[WorkerTask[_] with AsyncTaskController] = delegate.currentTaskWithController
 
     def currentWorker: Worker = delegate.currentWorker
 
@@ -31,7 +31,7 @@ object WorkerPools {
 
     implicit def currentExecutionContext: ExecutionContext = delegate.currentExecutionContext
 
-    def currentTask: Option[AsyncTask[_]] = delegate.currentTask
+    def currentTask: Option[WorkerTask[_]] = delegate.currentTask
 
     /**
      * @return Some if the current thread is a member of a [[WorkerPool]], None instead
@@ -94,7 +94,7 @@ object WorkerPools {
         def newHiringPool(name: String): HiringWorkerPool
 
         @workerExecution
-        def currentTaskWithController: Option[AsyncTask[_] with AsyncTaskController]
+        def currentTaskWithController: Option[WorkerTask[_] with AsyncTaskController]
 
         @workerExecution
         def currentWorker: Worker
@@ -104,7 +104,7 @@ object WorkerPools {
         implicit def currentExecutionContext: ExecutionContext
 
         @workerExecution
-        def currentTask: Option[AsyncTask[_]]
+        def currentTask: Option[WorkerTask[_]]
 
         implicit def currentPool: Option[WorkerPool]
 

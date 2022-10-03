@@ -28,20 +28,22 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
-                                     scope: ChannelScope) extends AbstractAttributesPresence with PacketChannel with PacketInjectable {
+                                     scope             : ChannelScope) extends AbstractAttributesPresence with PacketChannel with PacketInjectable {
 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
-    protected     val writer       : PacketWriter                     = scope.writer
-    override      val ownerID      : String                           = writer.serverIdentifier
-    override      val trafficPath  : Array[Int]                       = writer.path
-    override      val traffic      : PacketTraffic                    = writer.traffic
-    private       val storedBundles: mutable.Set[ChannelPacketBundle] = mutable.HashSet.empty[ChannelPacketBundle]
-    override      val reference    : TrafficObjectReference           = new TrafficObjectReference(trafficPath)
-    override lazy val presence     : NetworkObjectPresence            = traffic.getTrafficObjectLinker.getPresence(reference)
+    protected      val writer       : PacketWriter                     = scope.writer
+    override       val ownerID      : String                           = writer.serverIdentifier
+    override       val trafficPath  : Array[Int]                       = writer.path
+    override       val traffic      : PacketTraffic                    = writer.traffic
+    private        val storedBundles: mutable.Set[ChannelPacketBundle] = mutable.HashSet.empty[ChannelPacketBundle]
+    override final val reference    : TrafficObjectReference           = makeReference
+    override lazy  val presence     : NetworkObjectPresence            = traffic.getTrafficObjectLinker.getPresence(reference)
 
 
     @volatile private var closed = true
+
+    protected def makeReference: TrafficObjectReference = new TrafficObjectReference(trafficPath)
 
     override def close(reason: Reason): Unit = closed = true
 

@@ -16,7 +16,7 @@
         </Logger>
 
         <Logger name="GNOM"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="DEBUG"/>
+            <AppenderRef ref="Console" level="TRACE"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 

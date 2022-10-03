@@ -14,7 +14,9 @@
 package fr.linkit.api.gnom.referencing.traffic
 
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
+import fr.linkit.api.gnom.persistence.obj.TrafficReference
+import fr.linkit.api.gnom.referencing.StaticNetworkObject
 
-trait ObjectManagementChannel extends RequestPacketChannel {
+trait ObjectManagementChannel extends RequestPacketChannel with StaticNetworkObject[TrafficReference] {
 
 }

@@ -25,7 +25,7 @@ trait Worker {
 
     def isSleeping: Boolean
 
-    def getCurrentTask: Option[AsyncTask[_]]
+    def getCurrentTask: Option[WorkerTask[_]]
     
     def getTaskStack: Array[Int]
 
