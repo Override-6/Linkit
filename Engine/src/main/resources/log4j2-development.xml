@@ -11,22 +11,22 @@
     </Appenders>
     <Loggers>
         <Logger name="Application" additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
         <Logger name="GNOM"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
         <Logger name="GNOM.ConnObj"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
         <Logger name="GNOM.CO.Inv"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
@@ -36,12 +36,12 @@
         </Logger>
 
         <Logger name="Persistence"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="DEBUG"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
         <Logger name="Traffic" additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
@@ -56,17 +56,22 @@
         </Logger>
 
         <Logger name="Worker"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
         <Logger name="Connection"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
         <Logger name="Watchdog"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
+            <AppenderRef ref="LogFile" level="ALL"/>
+        </Logger>
+
+        <Logger name="Debug"  additivity="false" includeLocation="false">
+            <AppenderRef ref="Console" level="ALL"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 

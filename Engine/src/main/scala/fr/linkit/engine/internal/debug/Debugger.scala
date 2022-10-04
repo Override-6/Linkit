@@ -15,6 +15,7 @@ object Debugger {
     private val threadStates = mutable.HashMap.empty[Thread, ThreadWorkStack]
 
     private def callerTrace = Thread.currentThread().getStackTrace.drop(3).head
+
     private val connections = mutable.Set.empty[ConnectionContext]
 
     //FIXME find a better way
@@ -50,8 +51,10 @@ object Debugger {
             out.println(s"worker pool '${pool.name}': ")
             poolWorkers.toArray.sortBy(_.getName).foreach(threadStates(_).printStack(out))
         }
-        out.println("other threads:")
-        others.toArray.sortBy(_.getName).foreach(threadStates(_).printStack(out))
+        if (others.nonEmpty) {
+            out.println("other threads:")
+            others.toArray.sortBy(_.getName).foreach(threadStates(_).printStack(out))
+        }
     }
 
     def dumpTraffic(out: PrintStream = System.out): Unit = connections.foreach(dumpConnectionTraffic(_, out))
@@ -92,7 +95,7 @@ object Debugger {
                         AppLoggers.Watchdog.warn("------------------------------------------------------")
 
                         val watchdogPrintStream = new PrintStream(new LoggerOutputStream(AppLoggers.Watchdog, Level.WARN))
-                        watchdogPrintStream.println("Worker dump: ")
+                        watchdogPrintStream.println("worker dump: ")
                         Debugger.dumpWorkers(watchdogPrintStream)
                         watchdogPrintStream.println("\nTraffic dump: ")
                         Debugger.dumpTraffic(watchdogPrintStream)

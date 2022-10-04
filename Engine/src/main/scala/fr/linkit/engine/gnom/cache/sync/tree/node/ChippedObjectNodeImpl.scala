@@ -145,7 +145,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
 
     private def handleRemoteInvocationException(response: Submitter[Unit], t: Throwable): Unit = {
         var ex = t
-        val sb = new mutable.StringBuilder(ex.toString).append("\n")
+        val sb = new java.lang.StringBuilder(ex.toString).append("\n")
         while (ex != null && (ex.getCause ne ex)) {
             sb.append("caused by: ")
                     .append(ex.toString)

@@ -58,8 +58,8 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
 
         queues.synchronized {
             val senderId = result.coords.senderID
-            queues.getOrElseUpdate(senderId, new OrdinalQueue).offer(result)
             packetCount += 1
+            queues.getOrElseUpdate(senderId, new OrdinalQueue).offer(result)
             if (refocusShift > 0) {
                 refocusingLocker.wakeupAnyTask()
                 refocusShift = 0
@@ -92,8 +92,8 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                         //This operation has been made up in order to avoid possible deadlocks in local, or through the network.
                         //If the initial executor is notified or unparked, it will simply give up this SIPU.
                         AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that this unit's executor is blocked. All injections of the executor (${executor.thread.getName}) are being transferred to this thread.")
-                    //do not returns which will let the current thread enter in the deserialization process,
-                    //when the initial executor will get unblocked, it'll detect that his work has been transferred to current thread and so will exit this unit.
+                        //do not returns which will let the current thread enter in the deserialization process,
+                        //when the initial executor will get unblocked, it'll detect that his work has been transferred to current thread and so will exit this unit.
 
                     case other =>
                         throw new IllegalThreadStateException(s"Could not inject packet into SIPU: unit's executor is in a dead state (${other.name().toLowerCase()}).")
@@ -121,8 +121,9 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                 }
             }
         }
-        packetCount -= 1
-        minQueue.remove()
+        val result = minQueue.remove()
+        if (result != null) queues.synchronized(packetCount -= 1)
+        result
     }
 
     private def deserializeAll(duringSleep: Boolean): Unit = {
@@ -140,7 +141,7 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
         while (packetCount > 0) {
             if (executor ne currentWorker)
                 return
-            deserializeNextResult()
+            deserializeAndInjectNextResult()
         }
         if (executor ne currentWorker)
             return
@@ -168,14 +169,13 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             joiningThreads -= currentThread
         } else if (executor != null) {
             AppLoggers.Traffic.trace(s"Pausing task, waiting for '${executor.thread.getName}' to finish.")
-            currentTask.synchronized {}
             joiningThreads += currentThread
             joinLocker.pauseTask()
             joiningThreads -= currentThread
         }
     }
 
-    private def deserializeNextResult(): Unit = {
+    private def deserializeAndInjectNextResult(): Unit = {
         val result = nextResult()
         if (result == null) return
         AppLoggers.Traffic.trace(s"(SIPU $reference): handling packet deserialization and injection (ord: ${result.ordinal})")
@@ -255,7 +255,8 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                     refocusShift = 0
                     Debugger.pop()
                 }
-                if (queue.peek().ordinal == resultOrd)
+                val peek = queue.peek()
+                if ((peek ne null) && peek.ordinal == resultOrd)
                     throw UnexpectedPacketException(s"in channel ${injectable.reference}: received packet with same ordinal after refocus.")
                 queue.offer(result)
                 return nextResult()

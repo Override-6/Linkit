@@ -37,6 +37,7 @@ object AppLoggers {
     final val Connection  = logger("Connection")
     final val Watchdog  = logger("Watchdog")
 
+
     private var init = false
     
     private def logger(name: String): Logger = {

@@ -38,15 +38,18 @@ object RFSCClient {
             val key = watcher.take()
             key.pollEvents().forEach {
                 event => {
-                    val path: Path = serverStatics[Path].of(event.context().toString)
+                    val path  : Path    = serverStatics[Path].of(event.context().toString)
+                    val exists: Boolean = true/*serverStatics[Files].exists(path)*/
+                    println(s"path $path exists: $exists")
                     event.kind() match {
                         case ENTRY_DELETE => println(s"Deleted file '$path'")
                         case ENTRY_CREATE => println(s"Created file '$path'")
-                        case ENTRY_MODIFY =>
+                        case ENTRY_MODIFY => if (exists) {
                             val content = serverStatics[Files].readString(path): String
                             println(s"Modified file '$path'")
                             println(s"content is now:")
                             println(content)
+                        }
                     }
                 }
             }

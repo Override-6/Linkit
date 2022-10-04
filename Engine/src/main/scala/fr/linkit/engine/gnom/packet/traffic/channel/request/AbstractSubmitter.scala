@@ -18,7 +18,6 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{ResponseHolder, Submitter}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
-import fr.linkit.engine.internal.debug.{Debugger, RequestAction}
 
 import java.util.concurrent.BlockingQueue
 import scala.collection.mutable.ListBuffer
@@ -27,6 +26,8 @@ sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends
 
     protected val packets: ListBuffer[Packet] = ListBuffer.empty[Packet]
     @volatile private var isSubmit            = false
+
+    private var submitStackTrace: Exception = _
 
     override def addPacket(packet: Packet): this.type = {
         ensureNotSubmit()
@@ -40,19 +41,22 @@ sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends
         this
     }
 
-    override def submit(): P = {
+    override def submit(): P = this.synchronized {
         ensureNotSubmit()
         AppLoggers.GNOM.trace(s"Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
         val result = makeSubmit()
+        submitStackTrace = new Exception("stack trace")
         isSubmit = true
         result
     }
 
     protected def makeSubmit(): P
 
-    private def ensureNotSubmit(): Unit = {
-        if (isSubmit)
-            throw new IllegalStateException("Response was already sent " + this)
+    private def ensureNotSubmit(): Unit = this.synchronized {
+        if (isSubmit) {
+            submitStackTrace.printStackTrace()
+            throw new IllegalStateException("Response already set and submit !")
+        }
     }
 
     override def toString: String = s"${getClass.getSimpleName}(id: $id, packets: $packets, isSubmit: $isSubmit)"

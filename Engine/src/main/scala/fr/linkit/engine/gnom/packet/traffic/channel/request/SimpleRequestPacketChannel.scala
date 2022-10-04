@@ -59,7 +59,8 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                         request.pushResponse(response)
                     case None if responseID > requestCount =>
                         throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
-                    case None                              => requestHolders remove responseID
+                    case None                              =>
+                        requestHolders remove responseID
                 }
         }
     }

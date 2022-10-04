@@ -39,7 +39,9 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
     private      val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
     
     @inline
-    def getPresence(ref: R): NetworkObjectPresence = {
+    def getPresence(ref: R): NetworkObjectPresence = getPresence0(ref)
+
+    private def getPresence0(ref: R): ExternalNetworkObjectPresence[R] = {
         if (ref eq null)
             throw new NullPointerException()
         externalPresences.getOrElseUpdate(ref, {
@@ -142,7 +144,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
                 AppLoggers.GNOM.trace(s"presence information sent and modified for '$senderId' to ${if (isPresent) PRESENT else NOT_PRESENT}")
             
             case AnyRefPacket(presenceType: ObjectPresenceState) =>
-                val presence = externalPresences(reference)
+                val presence = getPresence0(reference)
                 presenceType match {
                     case NOT_PRESENT => presence.setToNotPresent(senderId)
                     case PRESENT     =>
