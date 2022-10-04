@@ -43,8 +43,8 @@ case class MethodInvocationComputeAction(methodID: Int, triggerEngine: String, i
     }
 }
 
-case class MethodInvocationExecutionAction(methodID: Int, triggerEngine: String, isWaiting: Boolean) extends AbstractAction("rmi - execute") {
-    override def insights: String = s"Executing method (id $methodID) triggered by $triggerEngine." + {
+case class MethodInvocationExecutionAction(method: MethodDescription, triggerEngine: String, isWaiting: Boolean) extends AbstractAction("rmi - execute") {
+    override def insights: String = s"Executing method $method triggered by $triggerEngine." + {
         if (!isWaiting) "" else s" remote is waiting this method to return or throw."
     }
 }

@@ -18,9 +18,8 @@ import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.EngineWorkerPools.{currentTask, currentWorker}
 import fr.linkit.engine.internal.util.ConsumerContainer
-import org.jetbrains.annotations.Nullable
 
-import java.util.concurrent.locks.LockSupport
+import java.util.concurrent.locks.{Lock, LockSupport, ReentrantLock}
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{CanAwait, ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -33,6 +32,8 @@ class SimpleAsyncTask[A](override val taskID: Int, override val parent: Option[W
     private val onCompleteConsumers       = new ConsumerContainer[Try[A]]
     private val onThrowConsumers          = new ConsumerContainer[Option[Throwable]]
     private final     var worker : Worker = _
+
+    override val lock: Lock = new ReentrantLock()
 
     protected def setWorker(worker: Worker): Unit = {
         if (this.worker != null)
@@ -162,7 +163,6 @@ class SimpleAsyncTask[A](override val taskID: Int, override val parent: Option[W
             })
         }
         makeWait
-        setContinue()
         Option(attempt)
     }
 
@@ -187,7 +187,6 @@ class SimpleAsyncTask[A](override val taskID: Int, override val parent: Option[W
             wakeupAction.apply()
         })
         waitAction.apply()
-        setContinue()
         if (exception.isDefined) {
             throw exception.get
         }
@@ -204,22 +203,28 @@ class SimpleAsyncTask[A](override val taskID: Int, override val parent: Option[W
         stack.nonEmpty && stack.last == taskID
     }
 
-    override def continue(): Unit = this.synchronized {
+
+    override def continue(): Unit = {
+        lock.lock()
         setContinue()
         if (isExecuting && worker.isSleeping) {
             worker.getController.wakeup(this)
         } else if (worker.thread != Thread.currentThread()) {
             AppLoggers.Worker.error(s"Could not wakeup task $this (worker state = ${worker.thread.getState})")
         }
+        lock.unlock()
     }
 
     override def setPaused(): Unit = {
+        if (paused)
+            ""
         paused = true
-        //Thread.dumpStack()
         AppLoggers.Worker.debug(s"task $this marked as paused")
     }
 
     override def setContinue(): Unit = {
+        if (!paused)
+            ""
         paused = false
         AppLoggers.Worker.debug(s"task $this marked as continue")
     }

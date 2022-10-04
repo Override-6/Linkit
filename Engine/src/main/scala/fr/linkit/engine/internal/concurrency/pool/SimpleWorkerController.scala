@@ -13,15 +13,18 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{WorkerTask, WorkerController, workerExecution}
+import fr.linkit.api.internal.concurrency.{WorkerController, WorkerTask, workerExecution}
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController.ControlTicket
 
+import java.util.concurrent.locks.ReentrantLock
 import scala.collection.mutable
 
 class SimpleWorkerController extends WorkerController {
-    
+
     private val pausedTasks = new mutable.HashMap[Int, ControlTicket]()
-    
+    private val lock        = new ReentrantLock()
+
     protected def tickets: mutable.HashMap[Int, ControlTicket] = {
         if (pausedTasks.nonEmpty) {
             pausedTasks.filterInPlace((_, tick) => tick.task.isExecuting)
@@ -29,93 +32,107 @@ class SimpleWorkerController extends WorkerController {
         }
         pausedTasks
     }
-    
+
     @workerExecution
     override def pauseTask(): Unit = {
         //unlock condition as false means that we can be unlocked at any time.
         createControlTicket(false)
     }
-    
+
     @workerExecution
     override def pauseTaskWhile(condition: => Boolean): Unit = {
         if (!condition)
             return
         createControlTicket(condition)
     }
-    
+
     @workerExecution
     override def pauseTaskForAtLeast(millis: Long): Unit = {
         val lockDate = System.currentTimeMillis()
         createControlTicket(System.currentTimeMillis() - lockDate <= millis)
         pauseCurrentTask(millis)
     }
-    
-    override def wakeupNTask(n: Int): Unit = this.synchronized {
+
+    override def wakeupNTask(n: Int): Unit = {
+        lock.lock()
         val count = pausedTasks.size
         val x     = if (n > count || n < 0) count else n
+        AppLoggers.Worker.trace(s"Waking up $count tasks...")
         for (_ <- 0 to x) {
             wakeupAnyTask()
         }
+        lock.unlock()
     }
-    
+
     override def toString: String = pausedTasks.mkString("SimpleWorkerController(", ",", ")")
-    
+
     @workerExecution
-    override def wakeupAnyTask(): Unit = this.synchronized {
+    override def wakeupAnyTask(): Unit = {
+        lock.lock()
         val opt = tickets.find(entry => entry._2.shouldWakeup)
         //AppLogger.debug(s"wakeupAnyTask $this (${System.identityHashCode(this)})")
         if (opt.isEmpty) {
+            lock.unlock()
             return
         }
-        
+
         val entry  = opt.get
         val ticket = entry._2
-        
+
         wakeupWorkerTask(ticket.task)
+        lock.unlock()
     }
-    
+
     @workerExecution
-    override def wakeupTasks(taskIds: Seq[Int]): Unit = this.synchronized {
-        if (pausedTasks.isEmpty)
+    override def wakeupTasks(taskIds: Seq[Int]): Unit = {
+        lock.lock()
+        if (pausedTasks.isEmpty) {
+            lock.unlock()
             return
-        
-        for ((taskID, ticket) <- pausedTasks.clone()) {
+        }
+        val clone = pausedTasks.clone()
+        for ((taskID, ticket) <- clone) {
             if (taskIds.contains(taskID)) {
                 wakeupWorkerTask(ticket.task)
             }
         }
+        lock.unlock()
     }
-    
+
     @workerExecution
-    override def wakeupWorkerTask(task: WorkerTask[_]): Unit = this.synchronized {
+    override def wakeupWorkerTask(task: WorkerTask[_]): Unit = {
+        lock.lock()
         val taskID = task.taskID
-        if ((pausedTasks remove taskID).isEmpty)
+        if ((pausedTasks remove taskID).isEmpty) {
+            lock.unlock()
             throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorker.thread.getName})")
+        }
         if (task.isPaused)
             task.continue()
+        lock.unlock()
     }
-    
+
 
     private def pauseCurrentTask(millis: Long): Unit = EngineWorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
-    
+
     protected def createControlTicket(pauseCondition: => Boolean): Unit = {
-        this.synchronized {
-            val currentTask = EngineWorkerPools.currentTask.get
-            pausedTasks.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
-        }
-        EngineWorkerPools.ensureCurrentIsWorker().pauseCurrentTask()
+        lock.lock()
+        val currentTask = EngineWorkerPools.currentTask.get
+        pausedTasks.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
+        lock.unlock()
+        EngineWorkerPools.ensureCurrentIsWorker().pauseCurrentTask(lock)
     }
-    
+
 }
 
 object SimpleWorkerController {
-    
+
     protected class ControlTicket(val task: WorkerTask[_], condition: => Boolean) {
-        
+
         def shouldWakeup: Boolean = !condition
-        
+
         override def toString: String = s"task: $task"
-        
+
     }
-    
+
 }

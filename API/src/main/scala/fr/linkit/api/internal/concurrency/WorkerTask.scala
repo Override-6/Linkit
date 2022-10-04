@@ -15,6 +15,7 @@ package fr.linkit.api.internal.concurrency
 
 import org.jetbrains.annotations.Nullable
 
+import java.util.concurrent.locks.Lock
 import scala.concurrent.Future
 import scala.util.Try
 
@@ -48,6 +49,8 @@ trait WorkerTask[A] extends Future[A] {
     val parent: Option[WorkerTask[_]]
 
     def continue(): Unit
+
+    def lock: Lock
 
     def join(): Try[A]
 

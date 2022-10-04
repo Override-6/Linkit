@@ -22,7 +22,7 @@ object Debugger {
 
     def push(action: => Action): Unit = {
         val act = action
-        AppLoggers.Watchdog.debug("push - " + callerTrace + s"($act)")
+        //AppLoggers.Watchdog.debug("push - " + callerTrace + s"($act)")
         currentStack.push(act)
         act match {
             case _: RequestAction => DeadlockWatchdog.notifyNewRequestPending()
@@ -32,7 +32,7 @@ object Debugger {
 
     def pop(): Action = {
         val popped = currentStack.pop()
-        AppLoggers.Watchdog.debug("pop - " + callerTrace + " (" + popped + ")")
+        //AppLoggers.Watchdog.debug("pop - " + callerTrace + " (" + popped + ")")
         popped
     }
 

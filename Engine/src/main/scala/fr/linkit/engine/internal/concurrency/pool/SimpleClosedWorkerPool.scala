@@ -17,6 +17,7 @@ import fr.linkit.api.internal.concurrency.Worker
 import fr.linkit.api.internal.concurrency.pool.ClosedWorkerPool
 
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.locks.ReentrantLock
 
 class SimpleClosedWorkerPool(initialThreadCount: Int, name: String) extends AbstractWorkerPool(name) with ClosedWorkerPool {
     

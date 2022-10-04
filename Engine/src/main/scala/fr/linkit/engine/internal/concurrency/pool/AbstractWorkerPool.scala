@@ -15,7 +15,7 @@ package fr.linkit.engine.internal.concurrency.pool
 
 import fr.linkit.api.gnom.network.ExecutorEngine
 import fr.linkit.api.internal.concurrency.pool.WorkerPool
-import fr.linkit.api.internal.concurrency.{WorkerTask, IllegalThreadException, Worker, workerExecution}
+import fr.linkit.api.internal.concurrency.{IllegalThreadException, Worker, WorkerTask, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.EngineWorkerPools._
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
@@ -23,7 +23,7 @@ import fr.linkit.engine.internal.debug.{Debugger, TaskPausedAction}
 
 import java.io.Closeable
 import java.util.concurrent._
-import java.util.concurrent.locks.LockSupport
+import java.util.concurrent.locks.{Lock, LockSupport, ReentrantLock}
 import scala.collection.mutable.ListBuffer
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -191,24 +191,28 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
             .notifyNestThrow(cause)
     }
 
+
+    override def pauseCurrentTask(): Unit = pauseCurrentTask(new ReentrantLock())
+
     /**
-     * Keep executing tasks contained in the workQueue while
-     * the current task needs to wait
+     * pauses the current task and look for executing other pending tasks while this task is paused
      *
-     * in plain language, this method will make the thread execute tasks
-     * as long as it is not stopped by an auxiliary thread.
-     * However, if the thread can't process other tasks, and still not stopped, it will wait until a task get submitted.
+     * @param lock a lock to acquire until the current task is marked as paused.
      *
      * @throws IllegalThreadException if the current thread is not a [[Worker]]
      * */
     @workerExecution
-    override def pauseCurrentTask(): Unit = {
+    override def pauseCurrentTask(lock: Lock): Unit = {
+        lock.lock()
         ensureCurrentThreadOwned()
-
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
+        val taskLock = currentTask.lock
+        taskLock.lock()
         Debugger.push(TaskPausedAction(currentTask.taskID))
         currentTask.setPaused()
+        lock.unlock()
+        taskLock.unlock()
         executeRemainingTasksWhilePaused()
         if (!currentTask.isPaused) return
 

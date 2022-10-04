@@ -144,18 +144,18 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     def initialize(): this.type = {
         //init those lazy vals, do not change the order!
-        AppLoggers.GNOM.info("Initialising Network.")
+        AppLoggers.Connection.info("Initialising Network.")
         ContractProvider.registerProperties(ObjectsProperty.defaults(this))
-        AppLoggers.GNOM.debug("Initialising GNOL and Global Cache.")
+        AppLoggers.Connection.debug("Initialising GNOL and Global Cache.")
         gnol
 
-        AppLoggers.GNOM.debug("Finalizing Network Initialisation.")
+        AppLoggers.Connection.debug("Finalizing Network Initialisation.")
         engine0 = trunk.newEngine(currentIdentifier)
         trunk.reinjectEngines()
         staticAccesses = trunk.staticAccesses
 
         ExecutorEngine.initDefaultEngine(currentEngine)
-        AppLoggers.GNOM.debug("Network Initialised.")
+        AppLoggers.Connection.debug("Network Initialised.")
         this
     }
 

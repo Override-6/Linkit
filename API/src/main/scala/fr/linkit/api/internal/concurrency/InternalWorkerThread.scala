@@ -13,6 +13,8 @@
 
 package fr.linkit.api.internal.concurrency
 
+import java.util.concurrent.locks.Lock
+
 trait InternalWorkerThread {
 
     protected type ThreadTask = AsyncTaskController with WorkerTask[_]

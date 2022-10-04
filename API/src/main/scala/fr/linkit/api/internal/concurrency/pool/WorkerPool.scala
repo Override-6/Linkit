@@ -13,8 +13,10 @@
 
 package fr.linkit.api.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.ProcrastinatorControl
+import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
+
 import java.util.concurrent.BlockingQueue
+import java.util.concurrent.locks.{Lock, ReentrantLock}
 import scala.concurrent.ExecutionContext
 
 trait WorkerPool extends ProcrastinatorControl with ExecutionContext {
@@ -28,7 +30,12 @@ trait WorkerPool extends ProcrastinatorControl with ExecutionContext {
 
     def pauseCurrentTask(): Unit
 
+    @workerExecution
+    def pauseCurrentTask(lock: Lock): Unit
+
     def pauseCurrentTaskForAtLeast(millis: Long): Unit
 
     def newBusyQueue[A]: BlockingQueue[A]
+
+
 }

@@ -146,7 +146,7 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             return
         //everything deserialized, now realising this deserialization unit.
         currentTask.synchronized {
-            AppLoggers.Traffic.trace(s"Releasing current unit...")
+            AppLoggers.Traffic.trace(s"Releasing current unit ${injectable.trafficPath.mkString("/", "/", "")}...")
             if (!duringSleep) executor = null
             joinLocker.wakeupAllTasks()
             joiningThreads.foreach(LockSupport.unpark)

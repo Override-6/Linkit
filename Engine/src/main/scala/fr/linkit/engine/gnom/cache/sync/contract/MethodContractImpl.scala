@@ -27,7 +27,7 @@ import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
-import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationSendAction, RequestAction}
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationExecutionAction, MethodInvocationSendAction, RequestAction}
 import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import org.jetbrains.annotations.Nullable
 
@@ -114,7 +114,9 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         handleRMI(data.puppeteer, localInvocation)
     }
 
-    override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Any = {
+    override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Any = try {
+        val callerID = if (origin == null) null else origin.identifier
+        Debugger.push(MethodInvocationExecutionAction(description, callerID, origin != null && (origin eq origin.network.currentEngine)))
         val args = data.arguments
         val obj  = data.obj
         if (hideMessage.isDefined)
@@ -137,7 +139,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             //TODO can be optimised (cache the MethodInvoker)
             new MethodInvoker(method).invoke(target, args)
         }
-    }
+    } finally Debugger.pop()
 
     private def isMirroring(obj: ChippedObject[_]): Boolean = obj match {
         case s: SynchronizedObject[_] => s.isMirroring
@@ -200,13 +202,13 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             AppLoggers.COInv.debug(debugMsg(null, localInvocation))
             puppeteer.sendInvoke(remoteInvocation)
             result = localResult
+            Debugger.pop()
         } else {
             Debugger.push(MethodInvocationSendAction(agreement, description, appointedEngine))
             AppLoggers.COInv.debug(debugMsg(appointedEngine, localInvocation))
-
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
+            Debugger.pop()
         }
-        Debugger.pop()
         syncValue(result).asInstanceOf[R]
     }
 

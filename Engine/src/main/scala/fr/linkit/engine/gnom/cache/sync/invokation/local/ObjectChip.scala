@@ -23,6 +23,7 @@ import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeAction, MethodInvocationExecutionAction}
 import fr.linkit.engine.internal.util.ScalaUtils
+import org.jetbrains.annotations.Nullable
 
 import scala.annotation.switch
 import scala.util.control.NonFatal
@@ -38,8 +39,8 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         ScalaUtils.pasteAllFields(chipped, obj)
     }
 
-    override def callMethod(methodID: Int, params: Array[Any], caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit = try {
-        val callerID = caller.identifier
+    override def callMethod(methodID: Int, params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit = try {
+        val callerID = if (caller == null) null else caller.identifier
         Debugger.push(MethodInvocationComputeAction(methodID, callerID, callerID == currentIdentifier))
 
         val methodContract = contract.findMethodContract[Any](methodID).getOrElse {
@@ -62,7 +63,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         }
     } finally Debugger.pop()
 
-    @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], caller: Engine)(onException: Throwable => Unit): Any = {
+    @inline private def callMethod(contract: MethodContract[Any], params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit): Any = {
         val invKind = contract.invocationHandlingMethod
 
         def call() = contract.choreographer.disinv {
@@ -72,10 +73,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
                 override val arguments: Array[Any]       = params
             }
             val result = try {
-                val callerID = caller.identifier
-                Debugger.push(MethodInvocationExecutionAction(contract.description.methodId, callerID, callerID == currentIdentifier))
                 contract.executeMethodInvocation(caller, data)
-                Debugger.pop()
             } catch {
                 case NonFatal(e) => onException(e)
             }
