@@ -18,8 +18,8 @@ import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjecta
 import fr.linkit.api.internal.system.Reason
 import fr.linkit.engine.gnom.packet.traffic.channel.SyncPacketChannel
 
-class SystemPacketChannel(store: PacketInjectableStore, scope: ChannelScope)
-    extends SyncPacketChannel(store, scope) {
+class SystemPacketChannel(scope: ChannelScope)
+    extends SyncPacketChannel(scope) {
 
  
 
@@ -27,7 +27,5 @@ class SystemPacketChannel(store: PacketInjectableStore, scope: ChannelScope)
 
 object SystemPacketChannel extends PacketInjectableFactory[SystemPacketChannel] {
 
-    override def createNew(store: PacketInjectableStore, scope: ChannelScope): SystemPacketChannel = {
-        new SystemPacketChannel(store, scope)
-    }
+    override def createNew(scope: ChannelScope): SystemPacketChannel = new SystemPacketChannel(scope)
 }

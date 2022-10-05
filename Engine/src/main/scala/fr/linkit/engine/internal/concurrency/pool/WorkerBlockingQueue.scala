@@ -30,13 +30,13 @@ import scala.collection.mutable.ListBuffer
 class WorkerBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) extends BlockingQueue[A] {
     
     private val content    = new util.LinkedList[A]()
-    private val controller = new SimpleWorkerController()
+    private val controller = new SimpleTaskController()
     
     override def add(e: A): Boolean = {
         if (e == null)
             throw new NullPointerException("attempted to add a null item.")
         content.synchronized {
-            //AppLoggers.Worker.trace(s"Add content in $this (${System.identityHashCode(this)})")
+            AppLoggers.Worker.trace(s"Add content in $this (${System.identityHashCode(this)})")
             content.add(e)
         }
         controller.wakeupAnyTask()

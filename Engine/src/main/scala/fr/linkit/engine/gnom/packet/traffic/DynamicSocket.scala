@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.network.ExternalConnectionState
 import fr.linkit.api.internal.concurrency.packetWorkerExecution
 import fr.linkit.api.internal.system._
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
+import fr.linkit.engine.internal.concurrency.pool.SimpleTaskController
 import fr.linkit.engine.internal.util.{ConsumerContainer, NumberSerializer}
 
 import java.io.{BufferedOutputStream, IOException, InputStream}
@@ -193,7 +193,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         @volatile var isWriting                      = false
         @volatile var state: ExternalConnectionState = DISCONNECTED
         private val writeLock      = new Object
-        private val disconnectLock = new SimpleWorkerController()
+        private val disconnectLock = new SimpleTaskController()
 
         def markAsWriting(): Unit = {
             isWriting = true

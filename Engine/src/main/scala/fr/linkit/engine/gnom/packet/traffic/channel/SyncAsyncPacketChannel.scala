@@ -26,9 +26,8 @@ import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag
 
-class SyncAsyncPacketChannel(store: PacketInjectableStore,
-                             scope: ChannelScope)
-        extends AbstractPacketChannel(store, scope) {
+class SyncAsyncPacketChannel(scope: ChannelScope)
+        extends AbstractPacketChannel(scope) {
 
     private val sync: BlockingQueue[Packet] = WorkerPools.ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
 
@@ -93,8 +92,8 @@ object SyncAsyncPacketChannel extends PacketInjectableFactory[SyncAsyncPacketCha
 
     val Attribute: Int = 5
 
-    override def createNew(store: PacketInjectableStore, scope: ChannelScope): SyncAsyncPacketChannel = {
-        new SyncAsyncPacketChannel(store, scope)
+    override def createNew(scope: ChannelScope): SyncAsyncPacketChannel = {
+        new SyncAsyncPacketChannel(scope)
     }
 
 }

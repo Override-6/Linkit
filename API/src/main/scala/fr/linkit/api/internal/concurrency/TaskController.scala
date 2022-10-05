@@ -13,7 +13,7 @@
 
 package fr.linkit.api.internal.concurrency
 
-trait WorkerController {
+trait TaskController {
 
     @workerExecution
     def pauseTask(): Unit

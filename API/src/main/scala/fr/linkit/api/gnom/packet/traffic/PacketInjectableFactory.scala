@@ -18,6 +18,6 @@ import org.jetbrains.annotations.NotNull
 
 trait PacketInjectableFactory[C <: PacketInjectable] {
 
-    def createNew(@NotNull store: PacketInjectableStore, @NotNull scope: ChannelScope): C
+    def createNew(@NotNull scope: ChannelScope): C
 
 }

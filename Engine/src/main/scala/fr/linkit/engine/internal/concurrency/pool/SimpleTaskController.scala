@@ -13,14 +13,14 @@
 
 package fr.linkit.engine.internal.concurrency.pool
 
-import fr.linkit.api.internal.concurrency.{WorkerController, WorkerTask, workerExecution}
+import fr.linkit.api.internal.concurrency.{TaskController, WorkerTask, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController.ControlTicket
+import fr.linkit.engine.internal.concurrency.pool.SimpleTaskController.ControlTicket
 
 import java.util.concurrent.locks.ReentrantLock
 import scala.collection.mutable
 
-class SimpleWorkerController extends WorkerController {
+class SimpleTaskController extends TaskController {
 
     private val pausedTasks = new mutable.HashMap[Int, ControlTicket]()
     private val lock        = new ReentrantLock()
@@ -70,7 +70,7 @@ class SimpleWorkerController extends WorkerController {
     override def wakeupAnyTask(): Unit = {
         lock.lock()
         val opt = tickets.find(entry => entry._2.shouldWakeup)
-        //AppLogger.debug(s"wakeupAnyTask $this (${System.identityHashCode(this)})")
+        AppLoggers.Worker.debug(s"wakeupAnyTask $this, $opt (${System.identityHashCode(this)})")
         if (opt.isEmpty) {
             lock.unlock()
             return
@@ -125,11 +125,16 @@ class SimpleWorkerController extends WorkerController {
 
 }
 
-object SimpleWorkerController {
+object SimpleTaskController {
 
     protected class ControlTicket(val task: WorkerTask[_], condition: => Boolean) {
-
-        def shouldWakeup: Boolean = !condition
+        private val lock = task.lock
+        def shouldWakeup: Boolean = {
+            lock.lock()
+            val cond = !condition
+            lock.unlock()
+            cond
+        }
 
         override def toString: String = s"task: $task"
 

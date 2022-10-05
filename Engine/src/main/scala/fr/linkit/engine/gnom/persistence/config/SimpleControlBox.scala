@@ -16,12 +16,12 @@ package fr.linkit.engine.gnom.persistence.config
 import fr.linkit.api.gnom.persistence.context.ControlBox
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
-import fr.linkit.engine.internal.concurrency.pool.SimpleWorkerController
+import fr.linkit.engine.internal.concurrency.pool.SimpleTaskController
 
 class SimpleControlBox extends ControlBox {
 
     private final var asyncTasks = 0
-    private final val locker     = new SimpleWorkerController()
+    private final val locker     = new SimpleTaskController()
 
     /**
      * informs the control box that an async task will be performed.

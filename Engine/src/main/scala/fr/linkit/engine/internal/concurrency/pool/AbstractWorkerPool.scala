@@ -203,12 +203,15 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
      * */
     @workerExecution
     override def pauseCurrentTask(lock: Lock): Unit = {
+        AppLoggers.Worker.trace("Pausing current task ...")
         lock.lock()
+        AppLoggers.Worker.trace("Locked on given lock")
         ensureCurrentThreadOwned()
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
         val taskLock = currentTask.lock
         taskLock.lock()
+        AppLoggers.Worker.trace("Locked on task")
         Debugger.push(TaskPausedAction(currentTask.taskID))
         currentTask.setPaused()
         lock.unlock()

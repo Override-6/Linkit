@@ -126,7 +126,7 @@ private[concurrency] trait AbstractWorker
             .orNull
     }
 
-    override def runWhileSleeping(task: => Unit): Unit = {
+    override def wakeupAndRun(task: => Unit): Unit = {
         if (!isSleeping)
             throw new IllegalThreadStateException("Thread isn't sleeping.")
         forcedTasks += new SimpleAsyncTask(nextPoolTaskCount, Option(currentTask), () => Try(task))

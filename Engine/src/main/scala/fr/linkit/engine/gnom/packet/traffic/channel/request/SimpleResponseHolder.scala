@@ -25,16 +25,10 @@ case class SimpleResponseHolder(override val id: Int,
 
     private val responseConsumer = ConsumerContainer[AbstractSubmitterPacket]()
 
-    private var responseReceivedCount = 0
-    private var responseSetCount = 0
-
     override def nextResponse: SubmitterPacket = {
         val response = queue.take()
         if (response == null)
             throw new NullPointerException("queue returned null response")
-        this.synchronized {
-            responseReceivedCount += 1
-        }
         response
     }
 
@@ -45,9 +39,6 @@ case class SimpleResponseHolder(override val id: Int,
     private[request] def pushResponse(response: AbstractSubmitterPacket): Unit = {
         if (response == null)
             throw new NullPointerException()
-        this.synchronized {
-            responseSetCount += 1
-        }
 
         queue.add(response)
         responseConsumer.applyAll(response)

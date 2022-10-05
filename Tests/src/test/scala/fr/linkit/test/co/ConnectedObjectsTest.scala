@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.test.sync
+package fr.linkit.test.co
 
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
 

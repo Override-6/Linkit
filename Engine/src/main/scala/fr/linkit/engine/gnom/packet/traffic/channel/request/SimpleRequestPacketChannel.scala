@@ -26,7 +26,7 @@ import fr.linkit.engine.internal.util.ConsumerContainer
 import java.util
 import java.util.concurrent.LinkedBlockingQueue
 
-class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) with RequestPacketChannel {
+class SimpleRequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) with RequestPacketChannel {
 
     private val requestHolders         = new util.LinkedHashMap[Int, SimpleResponseHolder]()
     private val requestConsumers       = ConsumerContainer[DefaultRequestPacketChannelBundle]()
@@ -95,5 +95,5 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
 
 object SimpleRequestPacketChannel extends PacketInjectableFactory[SimpleRequestPacketChannel] {
 
-    override def createNew(store: PacketInjectableStore, scope: ChannelScope): SimpleRequestPacketChannel = new SimpleRequestPacketChannel(store, scope)
+    override def createNew(scope: ChannelScope): SimpleRequestPacketChannel = new SimpleRequestPacketChannel(scope)
 }

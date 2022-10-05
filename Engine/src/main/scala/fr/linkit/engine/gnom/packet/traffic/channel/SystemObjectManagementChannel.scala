@@ -20,8 +20,8 @@ import fr.linkit.engine.gnom.packet.traffic.ObjectManagementChannelReference
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 
-class SystemObjectManagementChannel(rootStore: PacketInjectableStore, scope: ChannelScope)
-    extends SimpleRequestPacketChannel(rootStore, scope) with ObjectManagementChannel {
+class SystemObjectManagementChannel(scope: ChannelScope)
+    extends SimpleRequestPacketChannel(scope) with ObjectManagementChannel {
     override lazy val presence = SystemNetworkObjectPresence
 
     override def makeReference = ObjectManagementChannelReference

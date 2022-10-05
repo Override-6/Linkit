@@ -17,14 +17,12 @@ import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.CacheHandler
 import fr.linkit.api.gnom.packet.channel.ChannelScope
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
-import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.api.gnom.packet.traffic.PacketInjectableFactory
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 class DefaultCachePacketChannel(scope: ChannelScope,
-                                store: PacketInjectableStore,
                                 override val manager: SharedCacheManager,
-                                override val cacheID: Int) extends SimpleRequestPacketChannel(store, scope) with CachePacketChannel {
+                                override val cacheID: Int) extends SimpleRequestPacketChannel(scope) with CachePacketChannel {
 
     private var handler: Option[CacheHandler] = None
 
@@ -43,7 +41,7 @@ class DefaultCachePacketChannel(scope: ChannelScope,
 
 object DefaultCachePacketChannel {
 
-    def apply(cacheID: Int, manager: SharedCacheManager): PacketInjectableFactory[CachePacketChannel] = (store: PacketInjectableStore, scope: ChannelScope) => {
-        new DefaultCachePacketChannel(scope, store, manager, cacheID)
+    def apply(cacheID: Int, manager: SharedCacheManager): PacketInjectableFactory[CachePacketChannel] = (scope: ChannelScope) => {
+        new DefaultCachePacketChannel(scope, manager, cacheID)
     }
 }

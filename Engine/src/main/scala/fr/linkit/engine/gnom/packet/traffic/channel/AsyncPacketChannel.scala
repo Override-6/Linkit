@@ -21,8 +21,8 @@ import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.internal.util.ConsumerContainer
 
-class AsyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope)
-    extends AbstractPacketChannel(store, scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {
+class AsyncPacketChannel protected(scope: ChannelScope)
+    extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {
 
     private val packetReceivedContainer: ConsumerContainer[PacketBundle] = ConsumerContainer()
 
@@ -53,8 +53,8 @@ class AsyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelS
 
 object AsyncPacketChannel extends PacketInjectableFactory[AsyncPacketChannel] {
 
-    override def createNew(store: PacketInjectableStore, scope: ChannelScope): AsyncPacketChannel = {
-        new AsyncPacketChannel(store, scope)
+    override def createNew(scope: ChannelScope): AsyncPacketChannel = {
+        new AsyncPacketChannel(scope)
     }
 
 }

@@ -30,7 +30,6 @@ trait PacketInjectable extends TrafficObject[TrafficReference]
      * */
     val traffic: PacketTraffic
 
-    val store: PacketInjectableStore
 
     @workerExecution
     def inject(bundle: PacketBundle): Unit

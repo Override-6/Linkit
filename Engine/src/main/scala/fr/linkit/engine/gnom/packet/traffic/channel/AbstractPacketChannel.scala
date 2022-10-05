@@ -27,8 +27,7 @@ import fr.linkit.engine.gnom.packet.traffic.DefaultPacketChannelBundle
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
-                                     scope             : ChannelScope) extends AbstractAttributesPresence with PacketChannel with PacketInjectable {
+abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttributesPresence with PacketChannel with PacketInjectable {
 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.

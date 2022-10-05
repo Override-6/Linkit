@@ -60,7 +60,7 @@ class SimplePacketInjectableStore(traffic                              : PacketT
 
     @inline
     private def completeCreation[C <: PacketInjectable](id: Int, config: PersistenceConfig, scope: ChannelScope, factory: PacketInjectableFactory[C]): InjectableTrafficNode[C] = {
-        val injectable = factory.createNew(this, scope)
+        val injectable = factory.createNew(scope)
         tnol.registerReference(injectable.reference)
         val node = PacketInjectableTrafficNode(injectable, config, traffic)
         children.put(id, node)

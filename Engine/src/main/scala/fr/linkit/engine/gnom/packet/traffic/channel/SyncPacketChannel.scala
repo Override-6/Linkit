@@ -25,7 +25,7 @@ import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag
 
 //TODO doc
-class SyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope)
+class SyncPacketChannel protected(scope: ChannelScope) extends AbstractPacketChannel(scope)
         with PacketSender with PacketSyncReceiver {
 
     /**
@@ -71,8 +71,6 @@ class SyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelSc
 
 object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {
 
-    override def createNew(store: PacketInjectableStore, scope: ChannelScope): SyncPacketChannel = {
-        new SyncPacketChannel(store, scope)
-    }
+    override def createNew(scope: ChannelScope): SyncPacketChannel = new SyncPacketChannel(scope)
 
 }

@@ -29,7 +29,6 @@ class PersistenceTests {
     private final val clientChannel = TestEngine.clientSideNetwork.connection.traffic.getInjectable(201, SyncPacketChannel, ChannelScopes.broadcast)
     private final val serverChannel = TestEngine.serverSideNetwork.connection.traffic.getInjectable(201, SyncPacketChannel, ChannelScopes.broadcast)
 
-
     private def testPacket[P <: Packet : ClassTag](packet: P, print: Boolean = true)(assertions: ((P, P) => Unit)*): Unit = {
         if (print)
             println(s"Serializing packet '$packet'...")

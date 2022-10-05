@@ -34,7 +34,7 @@ trait Worker {
     def getController: InternalWorkerThread
 
     @throws[IllegalThreadStateException]("if isSleeping = false")
-    def runWhileSleeping(task: => Unit): Unit
+    def wakeupAndRun(task: => Unit): Unit
     
 
 }

@@ -141,7 +141,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         }
         val objectChannel       = {
             val scope = ChannelScopes.BroadcastScope(newWriter(Array.empty, objectChannelConfig), Array.empty)
-            new SystemObjectManagementChannel(null, scope)
+            new SystemObjectManagementChannel(scope)
         }
         new InjectableTrafficNode[ObjectManagementChannel] {
             override val injectable       : ObjectManagementChannel = objectChannel
