@@ -62,14 +62,12 @@ class WorkerBlockingQueue[A] private[concurrency](pool: AbstractWorkerPool) exte
     
     @workerExecution
     override def take(): A = {
-        //AppLoggers.Worker.trace(s"Taking item in $this (${System.identityHashCode(this)})...")
+        AppLoggers.Worker.trace(s"Taking item in $this (${System.identityHashCode(this)})...")
         if (content.isEmpty) {
-            controller.pauseTask() //will be released once the queue isn't empty anymore
+            controller.pauseTaskWhile(isEmpty)
             return poll()
         }
-        //AppLoggers.Worker.trace(s"Something has been added ! $this (${System.identityHashCode(this)})")
-        if (content.isEmpty)
-            throw new Error("Content can't be empty.")
+        AppLoggers.Worker.trace(s"Something has been added ! $this (${System.identityHashCode(this)})")
         poll()
     }
     
