@@ -19,13 +19,13 @@ import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.Worker
 import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.packet.{SimplePacketBundle, UnexpectedPacketException}
+import fr.linkit.engine.gnom.packet.SimplePacketBundle
+import fr.linkit.engine.gnom.packet.traffic.PacketInjectionException
 import fr.linkit.engine.internal.concurrency.pool.SimpleTaskController
 import fr.linkit.engine.internal.debug.{Debugger, SIPURectifyStep}
 
 import java.io.PrintStream
 import java.lang.Thread.State._
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.{LockSupport, ReentrantLock}
 import java.util.{Comparator, PriorityQueue}
 import scala.annotation.switch
@@ -39,10 +39,10 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
 
     private final val queues           = mutable.HashMap.empty[String, OrdinalQueue]
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
-    private final val joiningThreads   = ListBuffer.empty[Thread]
+    private final val waitingThreads   = ListBuffer.empty[Thread]
     private final var executor: Worker = _
 
-    private final val refocusingLocker = new SIPUTaskController()
+    private final val refocusingLocker = new SimpleTaskController()
     private       val reference        = injectable.reference
 
     //if refocusShift is > 0, this means that the executor is waiting for newer packets to come.
@@ -129,8 +129,8 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                  * This operation has been made up in order to avoid possible deadlocks in local, or through the network.
                  * If the initial executor returns on this units, it will simply leave this SIPU.
                  */
-                AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that this unit's executor is blocked. All injections of the executor (${executor.thread.getName}) are being transferred to this thread.")
-                true
+                //AppLoggers.Traffic.info(s"(SIPU $reference): Turns out that this unit's executor is blocked. All injections of the executor (${executor.thread.getName}) are being transferred to this thread.")
+                false //true
             case other                    =>
                 throw new IllegalThreadStateException(s"Could not inject packet into SIPU: unit's executor is in a dead state (${other.name().toLowerCase()}).")
         }
@@ -139,28 +139,35 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
     def getCurrentOrdinal: Int = -1
 
     private def pollNext(): PacketDownload = {
-        val minQueue = unitContentLock.synchronized {
-            val values   = this.queues.values
-            var minQueue = values.head
-            val queues   = values.iterator
-            if (values.size > 1) {
-                minQueue = null
-                var minQueueUpdate = Long.MaxValue
-                while (queues.hasNext) {
-                    val queue = queues.next()
-                    if (queue.nonEmpty) {
-                        val lastUpdate = queue.lastUpdate
-                        if (lastUpdate < minQueueUpdate) {
-                            minQueueUpdate = lastUpdate
-                            minQueue = queue
-                        }
+        while (true) {
+            val minQueue = pollQueue()
+            if (minQueue == null) return null //there are no such elements, return null
+            val result = minQueue.remove()
+            if (result ne null) return result
+        }
+        null
+    }
+
+    private def pollQueue(): OrdinalQueue = unitContentLock.synchronized {
+        val values   = this.queues.values
+        var minQueue = values.head
+        val queues   = values.iterator
+        if (values.size > 1) {
+            minQueue = null
+            var minQueueUpdate = Long.MaxValue
+            while (queues.hasNext) {
+                val queue = queues.next()
+                if (queue.nonEmpty) {
+                    val lastUpdate = queue.lastUpdate
+                    if (lastUpdate < minQueueUpdate) {
+                        minQueueUpdate = lastUpdate
+                        minQueue = queue
                     }
                 }
             }
-            minQueue
         }
-        if (minQueue == null) return null //there are no such elements, return null
-        minQueue.poll()
+        if (minQueue.size == 0) return null //if queue is empty there is no queue ready
+        minQueue
     }
 
     private def injectAll(duringSleep: Boolean): Unit = {
@@ -190,8 +197,8 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             AppLoggers.Traffic.trace(s"Releasing current unit ${injectable.trafficPath.mkString("/", "/", "")}...")
             if (!duringSleep) executor = null
             joinTaskController.wakeupAllTasks()
-            joiningThreads.foreach(LockSupport.unpark)
-            joiningThreads.clear()
+            waitingThreads.foreach(LockSupport.unpark)
+            waitingThreads.clear()
         } finally accessLock.unlock()
     }
 
@@ -205,18 +212,18 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
         val currentThread = Thread.currentThread()
         val currentTask   = WorkerPools.currentTask.orNull
         if (currentTask == null && executor != null) {
-            joiningThreads += currentThread
+            waitingThreads += currentThread
             accessLock.unlock()
             LockSupport.park()
             accessLock.lock()
-            joiningThreads -= currentThread
+            waitingThreads -= currentThread
         } else {
             AppLoggers.Traffic.trace(s"Pausing task, waiting for '${executor.thread.getName}' to finish.")
-            joiningThreads += currentThread
+            waitingThreads += currentThread
             accessLock.unlock()
             joinTaskController.pauseTask()
             accessLock.lock()
-            joiningThreads -= currentThread
+            waitingThreads -= currentThread
         }
     } finally accessLock.unlock()
 
@@ -242,9 +249,9 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             out.print(indentStr)
             out.println("- chained units: " + chain.map(x => x.injectable.trafficPath.mkString("/", "/", "")).mkString("", "; ", ";"))
         }
-        if (joiningThreads.nonEmpty) {
+        if (waitingThreads.nonEmpty) {
             out.print(indentStr)
-            out.println(s"- threads waiting this unit: ${joiningThreads.map(_.getName).mkString(", ")}")
+            out.println(s"- threads waiting this unit: ${waitingThreads.map(_.getName).mkString(", ")}")
         }
         val pendingPackets = queues.values.map(_.size).sum
         out.print(indentStr)
@@ -276,10 +283,9 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             queueContentLock.unlock()
         }
 
-        def poll(): PacketDownload = try {
+        def remove(): PacketDownload = try {
             queueContentLock.lock()
-            val result = queue.poll()
-            if (result == null) return null
+            val result = queue.remove()
 
             val queueLength     = queue.size
             val resultOrd       = result.ordinal
@@ -287,14 +293,14 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             if (resultOrd != expectedOrdinal) {
                 val diff = resultOrd - expectedOrdinal
                 if (diff < 0) {
-                    throw UnexpectedPacketException(s"in channel ${injectable.reference}: Received packet with ordinal '$resultOrd', while current ordinal is $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
+                    throw new PacketInjectionException(s"in channel ${injectable.reference}: Received packet with ordinal $resultOrd, but expected was $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
                 }
                 refocusShift = diff
                 if (queueLength != queue.size) { //the queue was updated, maybe the remaining packets has been added
                     refocusShift = 0
                     queue.offer(result)
                     queueContentLock.unlock()
-                    return pollNext()
+                    return null
                 }
                 if (refocusShift > 0) {
                     Debugger.push(SIPURectifyStep(reference, currentOrdinal, expectedOrdinal))
@@ -307,10 +313,10 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                 }
                 val peek = queue.peek()
                 if ((peek ne null) && peek.ordinal == resultOrd)
-                    throw UnexpectedPacketException(s"in channel ${injectable.reference}: received packet with same ordinal after refocus.")
+                    throw new PacketInjectionException(s"in channel ${injectable.reference}: received packet with same ordinal after refocus.")
                 queue.offer(result)
                 queueContentLock.unlock()
-                return pollNext()
+                return null
             }
             currentOrdinal = expectedOrdinal
             AppLoggers.Traffic.trace(s"(SIPU $reference): current ordinal is now $currentOrdinal.")
@@ -319,11 +325,5 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
 
     }
 
-    class SIPUTaskController extends SimpleTaskController {
-        override protected def createControlTicket(pauseCondition: => Boolean): Unit = {
-            if (!pauseCondition) return
-            super.createControlTicket(pauseCondition)
-        }
-    }
 
 }

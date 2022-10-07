@@ -108,7 +108,7 @@ private[concurrency] trait AbstractWorker
         if (blocker == null || (blocker eq task)) {
             LockSupport.unpark(thread)
         } else if (task.taskID != -1) { //-1 task identifier is for mocked tasks
-            throw new WorkerException(s"Could not wakeup task ${task.taskID}. ($blocker, $this)")
+            throw new WorkerException(s"Could not wakeup task ${task.taskID}. ($blocker, $this, ${thread.getState})")
         }
     }
 

@@ -66,8 +66,6 @@ class ConsumerContainer[A]@Persist()() extends Deconstructible {
         if (consumers.isEmpty)
             return this
         val pool = WorkerPools.ensureCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
-        //AppLogger.debug(s"RunLater... ${hashCode}")
-//        Thread.dumpStack()
         pool.runLater {
             applyAll(t, onException)
         }
@@ -77,12 +75,9 @@ class ConsumerContainer[A]@Persist()() extends Deconstructible {
     def applyAll(t: A, onException: Throwable => Unit = throw _): this.type = {
         if (consumers.isEmpty)
             return this
-        //AppLogger.debug(s"$hashCode - Apply all for ${consumers.size} consumers.")
         Array.from(consumers).foreach(consumer => {
             try {
-                //AppLogger.vTrace(s"EXECUTING $consumer")
                 consumer.execute(t)
-                //AppLogger.vTrace(s"Consumer $consumer executed !")
             } catch {
                 case NonFatal(e) =>
                     onException(e)
@@ -97,7 +92,7 @@ class ConsumerContainer[A]@Persist()() extends Deconstructible {
 
         def execute(t: A): Unit = {
             if (executeOnce) consumer.synchronized {
-                //synchronise in order to be sure that another thread would not start to execute the
+                //synchronize in order to be sure that another thread would not start to execute the
                 //consumer again when the first thread is removing it from the queue.
                 consumer(t)
                 consumers -= this

@@ -149,9 +149,9 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
     private def postTask(runnable: Runnable): Unit = {
         post(runnable)
         val count = countRemainingTasks
-        if (count > 5) {
+        /*if (count > 250) {
             AppLoggers.Worker.warn(s"Worker Pool '$name' is suffocating! there are $count tasks remaining to execute.")
-        }
+        }*/
     }
 
     protected def addWorker(worker: Worker): Unit = {
@@ -181,15 +181,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
         runLaterControl(runnable.run())
     }
 
-    override def reportFailure(cause: Throwable): Unit = {
-        if (!isCurrentThreadWorker)
-            return
-        currentWorker
-            .getController
-            .getCurrentTask
-            .get
-            .notifyNestThrow(cause)
-    }
+    override def reportFailure(cause: Throwable): Unit = ()
 
 
     override def pauseCurrentTask(): Unit = pauseCurrentTask(new ReentrantLock())

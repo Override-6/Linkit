@@ -17,9 +17,8 @@ import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.internal.system.security.ApplicationSecurityManager
 import fr.linkit.client.config.ClientConnectionConfigBuilder
-import fr.linkit.mock.application.LinkitApplicationMock
+import fr.linkit.mock.LinkitApplicationMock
 import fr.linkit.server.config.ServerConnectionConfigBuilder
-
 
 import java.net.InetSocketAddress
 

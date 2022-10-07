@@ -22,15 +22,16 @@ import scala.collection.mutable
 
 class SimpleTaskController extends TaskController {
 
-    private val pausedTasks = new mutable.HashMap[Int, ControlTicket]()
-    private val lock        = new ReentrantLock()
+    private val pausedTasksMap   = new mutable.HashMap[Int, ControlTicket]()
+    private val pausedTasksQueue = mutable.PriorityQueue.empty[ControlTicket]((a, b) => a.task.taskID - b.task.taskID)
+    private val lock             = new ReentrantLock()
 
-    protected def tickets: mutable.HashMap[Int, ControlTicket] = {
-        if (pausedTasks.nonEmpty) {
-            pausedTasks.filterInPlace((_, tick) => tick.task.isExecuting)
-            return pausedTasks.filter(_._2.task.isPaused)
+    protected def tickets: mutable.PriorityQueue[ControlTicket] = {
+        if (pausedTasksQueue.nonEmpty) {
+            pausedTasksMap.filterInPlace((_, tick) => tick.task.isExecuting)
+            return pausedTasksQueue.filter(_.task.isPaused)
         }
-        pausedTasks
+        pausedTasksQueue
     }
 
     @workerExecution
@@ -55,7 +56,7 @@ class SimpleTaskController extends TaskController {
 
     override def wakeupNTask(n: Int): Unit = {
         lock.lock()
-        val count = pausedTasks.size
+        val count = pausedTasksMap.size
         val x     = if (n > count || n < 0) count else n
         AppLoggers.Worker.trace(s"Waking up $count tasks...")
         for (_ <- 0 to x) {
@@ -64,21 +65,21 @@ class SimpleTaskController extends TaskController {
         lock.unlock()
     }
 
-    override def toString: String = pausedTasks.mkString("SimpleWorkerController(", ",", ")")
+    override def toString: String = pausedTasksMap.mkString("SimpleWorkerController(", ",", ")")
 
     @workerExecution
     override def wakeupAnyTask(): Unit = {
         lock.lock()
-        val opt = tickets.find(entry => entry._2.shouldWakeup)
+        val tickets = this.tickets
+        println(tickets)
+        val opt     = tickets.find(_.shouldWakeup)
         AppLoggers.Worker.debug(s"wakeupAnyTask $this, $opt (${System.identityHashCode(this)})")
         if (opt.isEmpty) {
             lock.unlock()
             return
         }
 
-        val entry  = opt.get
-        val ticket = entry._2
-
+        val ticket = opt.get
         wakeupWorkerTask(ticket.task)
         lock.unlock()
     }
@@ -86,14 +87,15 @@ class SimpleTaskController extends TaskController {
     @workerExecution
     override def wakeupTasks(taskIds: Seq[Int]): Unit = {
         lock.lock()
-        if (pausedTasks.isEmpty) {
+        val tickets = this.tickets
+        if (tickets.isEmpty) {
             lock.unlock()
             return
         }
-        val clone = pausedTasks.clone()
-        for ((taskID, ticket) <- clone) {
-            if (taskIds.contains(taskID)) {
-                wakeupWorkerTask(ticket.task)
+        for (ticket <- tickets) {
+            val task = ticket.task
+            if (taskIds.contains(task.taskID)) {
+                wakeupWorkerTask(task)
             }
         }
         lock.unlock()
@@ -102,8 +104,7 @@ class SimpleTaskController extends TaskController {
     @workerExecution
     override def wakeupWorkerTask(task: WorkerTask[_]): Unit = {
         lock.lock()
-        val taskID = task.taskID
-        if ((pausedTasks remove taskID).isEmpty) {
+        if ((pausedTasksMap remove task.taskID).isEmpty) {
             lock.unlock()
             throw new NoSuchElementException(s"Provided thread is not handled by this controller ! (${task.getWorker.thread.getName})")
         }
@@ -116,9 +117,11 @@ class SimpleTaskController extends TaskController {
     private def pauseCurrentTask(millis: Long): Unit = EngineWorkerPools.ensureCurrentIsWorker().pauseCurrentTaskForAtLeast(millis)
 
     protected def createControlTicket(pauseCondition: => Boolean): Unit = {
-        lock.lock()
         val currentTask = EngineWorkerPools.currentTask.get
-        pausedTasks.put(currentTask.taskID, new ControlTicket(currentTask, pauseCondition))
+        val ticket = new ControlTicket(currentTask, pauseCondition)
+        lock.lock()
+        pausedTasksMap.put(currentTask.taskID, ticket)
+        pausedTasksQueue += ticket
         lock.unlock()
         EngineWorkerPools.ensureCurrentIsWorker().pauseCurrentTask(lock)
     }
@@ -129,6 +132,7 @@ object SimpleTaskController {
 
     protected class ControlTicket(val task: WorkerTask[_], condition: => Boolean) {
         private val lock = task.lock
+
         def shouldWakeup: Boolean = {
             lock.lock()
             val cond = !condition

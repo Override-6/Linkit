@@ -22,7 +22,7 @@ import org.junit.jupiter.api.{Assertions, Test}
 class SharedCacheTest {
 
     import fr.linkit.test.TestEngine._
-
+/*
     private val cacheManagerClient = serverSideNetwork.attachToCacheManager("test")
     private val cacheManagerServer = serverSideNetwork.attachToCacheManager("test")
 
@@ -70,5 +70,5 @@ class SharedCacheTest {
 
         override def createNew(channel: CachePacketChannel): MySuperCache = new MySuperCache(channel)
     }
-
+*/
 }

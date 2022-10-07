@@ -15,8 +15,6 @@ package fr.linkit.api.internal.concurrency
 
 trait AsyncTaskController {
 
-    def notifyNestThrow(threw: Throwable): Unit
-
     def runTask(): Unit
 
     def setPaused(): Unit

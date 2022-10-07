@@ -22,6 +22,27 @@ println("Java JDK: " + System.getProperty("java.version"))
 group 'fr.linkit'
 version 'alpha-0.0.0'
 
+def frameworkModules = [":Engine", ":API", ":Server", ":Client"]
+
+task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from listed sub projects as if it were a single project', group: 'Documentation') {
+    destinationDir = file("$buildDir/docs/scaladoc")
+    title = "$project.name documentation"
+    classpath = project.files([])
+    scalaClasspath = project.files([])
+
+    frameworkModules.collect { project(it) }.each { proj ->
+        proj.tasks.withType(ScalaDoc).each {
+            source proj.sourceSets.main.allJava
+            source proj.sourceSets.main.allScala
+            classpath += proj.scaladoc.classpath
+            scalaClasspath += proj.scaladoc.scalaClasspath
+            exclude proj.scaladoc.excludes
+            include proj.scaladoc.includes
+        }
+    }
+}
+
+
 subprojects {
     group = "fr.linkit"
     version = "alpha-0.0.0"
@@ -68,11 +89,6 @@ subprojects {
         archiveFileName = "${project.name}-$project.version"
     }
 
-    tasks.withType(JavaCompile) {
-        sourceCompatibility = '16'
-        targetCompatibility = '16'
-    }
-
     task sourcesJar(type: Jar, dependsOn: classes) {
         classifier = 'sources'
         from sourceSets.main.allSource
@@ -100,30 +116,16 @@ subprojects {
                 "-language:experimental.macros"
         ]
     }
-}
 
-def frameworkModules = [":Engine", ":API", ":Server", ":Client"]
-
-task generateScaladocs(type: ScalaDoc, description: 'Generate scaladocs from listed sub projects as if it were a single project', group: 'Documentation') {
-    destinationDir = file("$buildDir/docs/scaladoc")
-    title = "$project.name documentation"
-    classpath = project.files([])
-    scalaClasspath = project.files([])
-
-    frameworkModules.collect { project(it) }.each { proj ->
-        proj.tasks.withType(ScalaDoc).each {
-            source proj.sourceSets.main.allJava
-            source proj.sourceSets.main.allScala
-            classpath += proj.scaladoc.classpath
-            scalaClasspath += proj.scaladoc.scalaClasspath
-            exclude proj.scaladoc.excludes
-            include proj.scaladoc.includes
-        }
+    tasks.withType(JavaCompile) {
+        sourceCompatibility = '19'
+        targetCompatibility = '19'
     }
 }
 
 
+
 wrapper {
-    gradleVersion = "7.2"
+    gradleVersion = "7.5.1"
     distributionType = Wrapper.DistributionType.ALL
 }

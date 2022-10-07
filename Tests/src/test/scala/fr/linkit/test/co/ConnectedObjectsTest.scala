@@ -18,11 +18,11 @@ import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
 class ConnectedObjectsTest {
 
     import fr.linkit.test.TestEngine._
-
+/*
     private val cacheManagerServer = serverSideNetwork.attachToCacheManager("test")
     private val cacheManagerClient = serverSideNetwork.attachToCacheManager("test")
     private val serverCache        = cacheManagerServer.attachToCache[ConnectedObjectCache[Object]](150)
     private val clientCache        = cacheManagerClient.attachToCache[ConnectedObjectCache[Object]](150)
-
+*/
 
 }

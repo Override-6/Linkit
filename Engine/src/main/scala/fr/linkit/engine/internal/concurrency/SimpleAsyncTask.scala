@@ -90,11 +90,10 @@ class SimpleAsyncTask[A](override val taskID: Int, override val parent: Option[W
         }
         val opt: Option[Throwable] = attempt match {
             case Failure(exception) =>
-                if (AppLoggers.Worker.isWarnEnabled) {
+                if (!notifyNestThrow(exception) && AppLoggers.Worker.isWarnEnabled) {
                     AppLoggers.Worker.warn(s"exception occurred in task $taskID: ")
                     exception.printStackTrace()
                 }
-                notifyNestThrow(exception)
                 Option(exception)
             case Success(_)         => None
         }
@@ -102,11 +101,9 @@ class SimpleAsyncTask[A](override val taskID: Int, override val parent: Option[W
         worker = null
     }
 
-    override def notifyNestThrow(threw: Throwable): Unit = {
-        val consumersEmpty = onThrowConsumers.isEmpty
+    private def notifyNestThrow(threw: Throwable): Boolean = {
         onThrowConsumers.applyAll(Option(threw))
-        if (parent.nonEmpty && consumersEmpty)
-            parent.get.notifyNestThrow(threw)
+        onThrowConsumers.isEmpty
     }
 
     override def onComplete[U](f: Try[A] => U)(implicit executor: ExecutionContext): Unit = {
