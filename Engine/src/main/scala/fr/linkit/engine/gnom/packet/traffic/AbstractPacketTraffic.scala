@@ -31,7 +31,7 @@ import fr.linkit.engine.gnom.packet.traffic.unit.{PerformantInjectionProcessorUn
 import fr.linkit.engine.gnom.persistence.config.{PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.referencing.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
-import fr.linkit.engine.internal.debug.{Debugger, PacketInjectionState}
+import fr.linkit.engine.internal.debug.{Debugger, PacketInjectionStep}
 import fr.linkit.engine.internal.util.ClassMap
 
 import java.io.PrintStream
@@ -88,7 +88,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         val node             = findNode(path).get
         val channelReference = node.reference
         AppLoggers.GNOM.trace(s"Injecting packet bundle ($bundle) into channel $channelReference")
-        Debugger.push(PacketInjectionState(bundle.packetID, channelReference))
+        Debugger.push(PacketInjectionStep(bundle.packetID, channelReference))
         node.injectable.inject(bundle)
         Debugger.pop()
     }

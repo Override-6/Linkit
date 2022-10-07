@@ -1,7 +1,6 @@
 package fr.linkit.engine.internal.debug
 
 import fr.linkit.api.application.connection.ConnectionContext
-import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.concurrency.Worker
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 
@@ -17,16 +16,16 @@ object Debugger {
     private[linkit] def registerConnection(connectionContext: ConnectionContext): Unit = {
         connections += connectionContext
     }
-    def push(action: => State): Unit = {
-        val act = action
-        currentStack.push(act)
-        act match {
-            case _: RequestState => DeadlockWatchdog.notifyNewRequestPending()
-            case _               =>
+    def push(step: => Step): Unit = {
+        val stp = step
+        currentStack.push(stp)
+        stp match {
+            case _: RequestStep => DeadlockWatchdog.notifyNewRequestPending()
+            case _              =>
         }
     }
 
-    def pop(): State = currentStack.pop()
+    def pop(): Step = currentStack.pop()
 
     private def currentStack: ThreadWorkStack = {
         val currentThread = Thread.currentThread()

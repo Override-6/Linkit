@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeState, MethodInvocationExecutionState}
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeStep, MethodInvocationExecutionStep}
 import fr.linkit.engine.internal.util.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
@@ -41,7 +41,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
 
     override def callMethod(methodID: Int, params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit = try {
         val callerID = if (caller == null) null else caller.identifier
-        Debugger.push(MethodInvocationComputeState(methodID, callerID, callerID == currentIdentifier))
+        Debugger.push(MethodInvocationComputeStep(methodID, callerID, callerID == currentIdentifier))
 
         val methodContract = contract.findMethodContract[Any](methodID).getOrElse {
             throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${chippedObject.getClassDef}.")

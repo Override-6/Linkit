@@ -27,7 +27,7 @@ import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringP
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
-import fr.linkit.engine.internal.debug.{Debugger, RequestState, ResponseState}
+import fr.linkit.engine.internal.debug.{Debugger, RequestStep, ResponseStep}
 
 final class ClientSharedCacheManager @Persist()(family : String,
                                                 network: Network,
@@ -41,7 +41,7 @@ final class ClientSharedCacheManager @Persist()(family : String,
 
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
         AppLoggers.GNOM.trace(s"retrieve cache content id $cacheID ($family)")
-        Debugger.push(RequestState("cache content retrieval", s"retrieve cache content of cache $cacheID of cache family $family", serverIdentifier, channel.reference))
+        Debugger.push(RequestStep("cache content retrieval", s"retrieve cache content of cache $cacheID of cache family $family", serverIdentifier, channel.reference))
         val request = channel
             .makeRequest(ownerScope)
             .putAttribute("behavior", behavior)
@@ -59,7 +59,7 @@ final class ClientSharedCacheManager @Persist()(family : String,
     }
 
     override protected def remoteCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
-        Debugger.push(RequestState("check if cache can open", s"ensure that cache $family/$cacheID of type '${cacheType.getSimpleName}' is accepted by server.", serverIdentifier, channel.reference))
+        Debugger.push(RequestStep("check if cache can open", s"ensure that cache $family/$cacheID of type '${cacheType.getSimpleName}' is accepted by server.", serverIdentifier, channel.reference))
 
         channel.makeRequest(ownerScope)
                .addPacket(ObjectPacket((cacheID, cacheType)))

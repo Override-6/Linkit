@@ -30,7 +30,7 @@ import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
-import fr.linkit.engine.internal.debug.{Debugger, ResponseState}
+import fr.linkit.engine.internal.debug.{Debugger, ResponseStep}
 
 import scala.util.control.Breaks.{break, breakable}
 
@@ -71,7 +71,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
     }
 
     private def handlePreCacheOpeningRequest(cacheID: Int, cacheType: Class[_], senderID: String, response: Submitter[_]): Unit = {
-        Debugger.push(ResponseState("check if cache can open", senderID, channel.reference))
+        Debugger.push(ResponseStep("check if cache can open", senderID, channel.reference))
         breakable {
             def acceptRequest: Nothing = {
                 response.addPacket(EmptyPacket).submit()
@@ -146,7 +146,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
                 sendContent(None)
         }
 
-        Debugger.push(ResponseState("cache content retrieval", bundle.coords.senderID, channel.reference))
+        Debugger.push(ResponseStep("cache content retrieval", bundle.coords.senderID, channel.reference))
         breakable {
 
             LocalCachesStore.findCache(cacheID).fold(handleContentNotAvailable()) { storedCache =>
