@@ -15,8 +15,8 @@ package fr.linkit.engine.internal.util
 
 import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
-import fr.linkit.api.internal.concurrency.workerExecution
+import fr.linkit.api.internal.concurrency.Procrastinator
+import fr.linkit.engine.internal.concurrency.IllegalThreadException
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
@@ -61,11 +61,10 @@ class ConsumerContainer[A]@Persist()() extends Deconstructible {
      * */
     def +:+=(consumer: A => Unit): this.type = addOnce(consumer)
 
-    @workerExecution
     def applyAllLater(t: A, onException: Throwable => Unit = throw _): this.type = {
         if (consumers.isEmpty)
             return this
-        val pool = WorkerPools.ensureCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
+        val pool = Procrastinator.current.getOrElse(throw new IllegalThreadException("Async execution is impossible for this consumer container in a non worker execution thread."))
         pool.runLater {
             applyAll(t, onException)
         }

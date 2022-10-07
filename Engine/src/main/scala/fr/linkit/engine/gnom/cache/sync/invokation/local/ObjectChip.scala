@@ -19,9 +19,8 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
-import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeStep, MethodInvocationExecutionStep}
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeStep}
 import fr.linkit.engine.internal.util.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
@@ -39,7 +38,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         ScalaUtils.pasteAllFields(chipped, obj)
     }
 
-    override def callMethod(methodID: Int, params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit = try {
+    override def callMethod(methodID: Int, params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit, onResult: Any => Unit): Unit = try {
         val callerID = if (caller == null) null else caller.identifier
         Debugger.push(MethodInvocationComputeStep(methodID, callerID, callerID == currentIdentifier))
 

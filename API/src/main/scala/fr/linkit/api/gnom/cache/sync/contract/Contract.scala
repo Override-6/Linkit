@@ -15,10 +15,10 @@ package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.BHVProperties
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.api.internal.system.delegate.DelegateFactory
+import fr.linkit.api.internal.system.delegate.ImplementationDelegates
 
 object Contract {
-    private final val delegate: Provider = DelegateFactory.contracts
+    private final val delegate: Provider = ImplementationDelegates.contracts
 
     def registerProperties(properties: BHVProperties): Unit = delegate.registerProperties(properties)
 

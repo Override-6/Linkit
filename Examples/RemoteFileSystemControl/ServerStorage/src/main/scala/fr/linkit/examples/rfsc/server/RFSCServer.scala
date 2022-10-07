@@ -4,7 +4,7 @@ import fr.linkit.api.application.connection.CentralConnection
 import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
@@ -15,7 +15,7 @@ import scala.collection.mutable
 object RFSCServer {
 
     private val clientsHomes        = new mutable.HashMap[Engine, Path]()
-    private val watchServiceWorkers = WorkerPools.newClosedPool("WatchServicesWorkers")
+    private val watchServiceWorkers = Procrastinator("WatchServicesWorkers")
 
     def main(args: Array[String]): Unit = {
         val server = createConnection("RFSCServer")
@@ -25,7 +25,6 @@ object RFSCServer {
             val path = Path.of(s"/tmp/rfs tests/${client.identifier}/")
             Files.createDirectories(path)
             clientsHomes.put(client, path)
-            watchServiceWorkers.setThreadCount(clientsHomes.size)
         })
 
         val prop      = ObjectsProperty("fs")(Map("homes" -> clientsHomes, "watchServiceWorkers" -> watchServiceWorkers))

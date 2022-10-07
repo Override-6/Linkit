@@ -16,6 +16,7 @@ object Debugger {
     private[linkit] def registerConnection(connectionContext: ConnectionContext): Unit = {
         connections += connectionContext
     }
+
     def push(step: => Step): Unit = {
         val stp = step
         currentStack.push(stp)
@@ -25,11 +26,17 @@ object Debugger {
         }
     }
 
-    def pop(): Step = currentStack.pop()
+    def pop(): Step = {
+        val stack = currentStack
+        val step  = stack.pop()
+        if (stack.isEmpty)
+            threadStates.remove(stack.thread)
+        step
+    }
 
     private def currentStack: ThreadWorkStack = {
         val currentThread = Thread.currentThread()
-        threadStates.getOrElseUpdate(currentThread, new ThreadWorkStack(currentThread.getName))
+        threadStates.getOrElseUpdate(currentThread, new ThreadWorkStack(currentThread))
     }
 
     def dumpWorkers(out: PrintStream = System.out): Unit = {

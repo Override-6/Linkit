@@ -15,29 +15,28 @@ package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.packet.traffic.{PacketReader, PacketTraffic}
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload}
-import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.util.NumberSerializer
 import org.jetbrains.annotations.Nullable
 
 import java.nio.ByteBuffer
 
-class DefaultPacketReader(socket: DynamicSocket,
-                          procrastinator: ProcrastinatorControl,
-                          traffic: PacketTraffic,
-                          translator: ObjectTranslator) extends PacketReader {
+class DefaultPacketReader(socket        : DynamicSocket,
+                          procrastinator: Procrastinator,
+                          traffic       : PacketTraffic,
+                          translator    : ObjectTranslator) extends PacketReader {
 
-    
+
     /**
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
-    override def nextPacket(@workerExecution callback: PacketDownload => Unit): Unit = {
+    override def nextPacket(callback: PacketDownload => Unit): Unit = {
         nextPacketSync(result => procrastinator.runLater {
             AppLoggers.Traffic.trace(s"Thread is handling packet injection with ordinal number ${result.ordinal}")
             callback(result)
         })
     }
-    
+
     private def nextPacketSync(callback: PacketDownload => Unit): Unit = {
         val protocol = socket.readShort()
         if (protocol != TrafficProtocol.ProtocolVersion) {
@@ -45,28 +44,28 @@ class DefaultPacketReader(socket: DynamicSocket,
             socket.close() //TODO close the connection instead of its socket.
             throw new UnsupportedPacketStreamException(s"Received packet packet with unknown protocol '$protocol'")
         }
-        
+
         val ordinal = socket.readInt()
-        val length = socket.readInt()
+        val length  = socket.readInt()
         if (length == -1 || socket.isClosed) {
             AppLoggers.Traffic.error(s"PACKET READ ABORTED : packet length: $length | socket.isOpen = ${socket.isOpen}")
             return
         }
         val bytes = socket.read(length)
         //NETWORK-DEBUG-MARK
-        
+
         logDownload(socket.boundIdentifier, ordinal, length, bytes)
-        val buff = ByteBuffer.wrap(bytes)
+        val buff   = ByteBuffer.wrap(bytes)
         //buff.position(0)
         val result = translator.translate(traffic, buff, ordinal)
         callback(result)
     }
-    
+
     private def logDownload(@Nullable target: String, ordinal: Int, length: Int, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
         var preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
         if (bytes.length > 1000) preview += "..."
         val finalTarget = if (target == null) "" else target
         AppLoggers.Traffic.trace(s"${Console.CYAN}Received: ↓ $finalTarget ↓ (len: $length, ord: $ordinal) $preview")
     }
-    
+
 }

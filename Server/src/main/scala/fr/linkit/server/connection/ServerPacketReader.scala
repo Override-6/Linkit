@@ -16,7 +16,6 @@ package fr.linkit.server.connection
 import fr.linkit.api.gnom.packet.traffic.PacketReader
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.gnom.persistence.PacketDownload
-import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.{DefaultPacketReader, DynamicSocket, SocketClosedException}
 import fr.linkit.server.connection.traffic.DeflectedPacket
@@ -32,7 +31,7 @@ class ServerPacketReader(socket: DynamicSocket,
     private val simpleReader     = new DefaultPacketReader(socket, server, server.traffic, server.translator)
     private val serverIdentifier = server.currentIdentifier
     
-    override def nextPacket(@workerExecution callback: PacketDownload => Unit): Unit = {
+    override def nextPacket(callback: PacketDownload => Unit): Unit = {
         try {
             nextConcernedPacket(callback)
         } catch {

@@ -14,7 +14,7 @@
 package fr.linkit.api.application.resource.local
 
 import fr.linkit.api.application.resource.ResourceListener
-import fr.linkit.api.internal.system.delegate.DelegateFactory
+import fr.linkit.api.internal.system.delegate.ImplementationDelegates
 
 import java.nio.file.Path
 
@@ -24,7 +24,7 @@ trait LocalFile extends ResourceFile with LocalResource {
 
 object LocalFile extends ResourceFactory[LocalFile] {
     
-    private val factories = DelegateFactory.resourceFactories
+    private val factories = ImplementationDelegates.resourceFactories
     
     implicit def factory: ResourceFactory[LocalFile] = factories.localFileFactory
     

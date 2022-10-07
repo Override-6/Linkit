@@ -14,9 +14,9 @@
 package fr.linkit.client
 
 import fr.linkit.api.application.config.ApplicationInstantiationException
-import fr.linkit.api.application.connection.{ConnectionContext, ConnectionInitialisationException, ExternalConnection}
+import fr.linkit.api.application.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.application.resource.local.ResourceFolder
-import fr.linkit.api.internal.concurrency.workerExecution
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system
 import fr.linkit.api.internal.system._
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -24,16 +24,17 @@ import fr.linkit.client.ClientApplication.Version
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.internal.concurrency.pool.SimpleClosedWorkerPool
 import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
 
 import scala.collection.mutable
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class ClientApplication(configuration: ClientApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ClientApplicationContext {
     
-    override protected val appPool             = new SimpleClosedWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
+    override protected val appPool             = Procrastinator("Application")
     private            val connectionCache     = mutable.HashMap.empty[Any, ExternalConnection]
     @volatile private var connectionCount: Int = 0
     
@@ -41,9 +42,7 @@ class ClientApplication(configuration: ClientApplicationConfiguration, resources
     
     override val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, Version)
     
-    @workerExecution
     override def shutdown(): Unit = {
-        appPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
         AppLoggers.App.info("Client application is shutting down...")
         
@@ -69,17 +68,14 @@ class ClientApplication(configuration: ClientApplicationConfiguration, resources
     }
     
     @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
-    @workerExecution
     override def openConnection(config: ClientConnectionConfiguration): ExternalConnection = {
-        appPool.ensureCurrentThreadOwned("Connection creation must be executed by the client application's thread pool")
-        
+
         val identifier = config.identifier
         if (!Rules.IdentifierPattern.matcher(identifier).matches())
             throw new ConnectionInitialisationException("Provided identifier does not matches Client's rules.")
         
         connectionCount += 1
-        appPool.setThreadCount(configuration.nWorkerThreadFunction(connectionCount)) //expand the pool for the new connection that will be opened
-        
+
         AppLoggers.App.info(s"Creating connection to address '${config.remoteAddress}'...")
         val address       = config.remoteAddress
         val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
@@ -136,14 +132,14 @@ object ClientApplication {
                 throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)
         }
         
-        clientApp.runLaterControl {
+        Await.ready(clientApp.runLater {
             AppLoggers.App.info("Starting Client Application...")
             clientApp.start()
             val loadSchematic = config.loadSchematic
             AppLoggers.App.debug(s"Applying schematic '${loadSchematic.name}'...")
             loadSchematic.setup(clientApp)
             AppLoggers.App.trace("Schematic applied successfully.")
-        }.join() match {
+        }, Duration.Inf).value.get match {
             case Failure(e) =>
                 throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)
             case Success(_) =>

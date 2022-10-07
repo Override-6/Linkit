@@ -20,10 +20,7 @@ import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
-import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.JustifiedCloseable
-
-import java.io.PrintStream
 
 trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
     
@@ -37,11 +34,9 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
     
     def getTrafficObjectLinker: NetworkObjectLinker[TrafficReference]
     
-    @workerExecution
     @inline
     def processInjection(packet: Packet, attr: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit
     
-    @workerExecution
     def processInjection(bundle: PacketBundle): Unit
     
     def processInjection(result: PacketDownload): Unit

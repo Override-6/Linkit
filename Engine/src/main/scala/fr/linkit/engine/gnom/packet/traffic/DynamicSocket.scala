@@ -14,10 +14,8 @@
 package fr.linkit.engine.gnom.packet.traffic
 
 import fr.linkit.api.gnom.network.ExternalConnectionState
-import fr.linkit.api.internal.concurrency.packetWorkerExecution
 import fr.linkit.api.internal.system._
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.internal.concurrency.pool.SimpleTaskController
 import fr.linkit.engine.internal.util.{ConsumerContainer, NumberSerializer}
 
 import java.io.{BufferedOutputStream, IOException, InputStream}
@@ -150,7 +148,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         -1
     }
 
-    def addConnectionStateListener(@packetWorkerExecution callback: ExternalConnectionState => Unit): Unit = {
+    def addConnectionStateListener(callback: ExternalConnectionState => Unit): Unit = {
         listeners += callback
     }
 
@@ -193,7 +191,6 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         @volatile var isWriting                      = false
         @volatile var state: ExternalConnectionState = DISCONNECTED
         private val writeLock      = new Object
-        private val disconnectLock = new SimpleTaskController()
 
         def markAsWriting(): Unit = {
             isWriting = true
@@ -213,10 +210,10 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             updateState(DISCONNECTED)
         }
 
-        def markAsConnected(): Unit = {
+        def markAsConnected(): Unit = writeLock.synchronized {
             updateState(CONNECTED)
 
-            disconnectLock.wakeupAllTasks()
+            writeLock.notifyAll()
         }
 
         def markAsConnecting(): Unit = {
@@ -239,7 +236,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
                 throw new IllegalCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
             if (state != CONNECTED) try {
                 AppLoggers.Traffic.trace(s"The socket is currently waited by thread '${Thread.currentThread()}' because the connection with $boundIdentifier isn't ready or is disconnected.")
-                disconnectLock.pauseTask()
+                writeLock.notifyAll()
                 AppLoggers.Traffic.trace(s"The connection with $boundIdentifier is now ready.")
             } catch {
                 case _: InterruptedException =>
@@ -250,7 +247,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             writeLock.synchronized {
                 writeLock.notifyAll()
             }
-            disconnectLock.wakeupAllTasks()
+            writeLock.notifyAll()
         }
 
         def markAsClosed(): Unit = {

@@ -14,14 +14,12 @@
 package fr.linkit.client
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.application.connection.{ConnectionContext, ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.internal.concurrency.workerExecution
+import fr.linkit.api.application.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.client.config.ClientConnectionConfiguration
 
 trait ClientApplicationContext extends ApplicationContext {
 
     @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
-    @workerExecution
     def openConnection(config: ClientConnectionConfiguration): ExternalConnection
 
     @throws[NoSuchElementException]("If no connection is found into the application's cache.")

@@ -20,13 +20,12 @@ import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketTransfer, PacketUpload}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
-import fr.linkit.api.internal.concurrency.{WorkerTask, workerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
+import scala.concurrent.Future
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
 
@@ -42,7 +41,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     private  val tnol                                = network.gnol.trafficNOL
 
     override def shutdown(): Unit = {
-        WorkerPools.ensureCurrentIsWorker()
         alive = false
 
         readThread.close()
@@ -56,11 +54,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     override def getState: ExternalConnectionState = session.getSocketState
 
-    override def runLaterControl[A](@workerExecution task: => A): WorkerTask[A] = {
-        server.runLaterControl(task)
-    }
 
-    override def runLater(task: => Unit): Unit = server.runLater(task)
+    override def runLater[A](f: => A): Future[A] = server.runLater(f)
+
 
     def start(): Unit = {
         if (alive) {
@@ -84,7 +80,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override def isConnected: Boolean = getState == ExternalConnectionState.CONNECTED
 
     private[connection] def updateSocket(socket: Socket): Unit = {
-        WorkerPools.ensureCurrentIsWorker()
         session.updateSocket(socket)
     }
 

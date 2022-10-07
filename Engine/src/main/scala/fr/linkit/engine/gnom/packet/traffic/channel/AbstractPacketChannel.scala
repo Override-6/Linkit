@@ -18,7 +18,6 @@ import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.obj.TrafficObjectReference
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
-import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.Reason
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
@@ -48,7 +47,6 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
 
     override def isClosed: Boolean = closed
 
-    @workerExecution
     final override def inject(bundle: PacketBundle): Unit = {
         val coordinates = bundle.coords
         scope.assertAuthorised(Array(coordinates.senderID))
@@ -89,7 +87,6 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
         })
     }
 
-    @workerExecution
     def handleBundle(injection: ChannelPacketBundle): Unit
 
 }

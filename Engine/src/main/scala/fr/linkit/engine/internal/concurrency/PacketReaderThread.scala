@@ -15,7 +15,6 @@ package fr.linkit.engine.internal.concurrency
 
 import fr.linkit.api.gnom.packet.traffic.PacketReader
 import fr.linkit.api.gnom.persistence.PacketDownload
-import fr.linkit.api.internal.concurrency.{IllegalThreadException, packetWorkerExecution}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread.packetReaderThreadGroup
@@ -65,7 +64,6 @@ class PacketReaderThread(reader: PacketReader,
      * The method may not throw any exception. if it is, this packet worker thread will
      * stop !
      * */
-    @packetWorkerExecution
     private def refresh(): Unit = {
         try {
             readNextPacket()
@@ -109,7 +107,7 @@ object PacketReaderThread {
      * */
     def checkCurrent(): Unit = {
         if (!isCurrentWorkerThread)
-            throw IllegalThreadException("This action must be performed by a Packet Reader thread !")
+            throw new IllegalThreadException("This action must be performed by a Packet Reader thread !")
     }
 
     /**

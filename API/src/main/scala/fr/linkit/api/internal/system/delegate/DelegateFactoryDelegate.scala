@@ -16,16 +16,15 @@ package fr.linkit.api.internal.system.delegate
 import fr.linkit.api.application.resource.ResourceInternFactories
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCacheFactories
 import fr.linkit.api.gnom.cache.sync.contract.Contract
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
+import fr.linkit.api.internal.concurrency.Procrastinator
 
 trait DelegateFactoryDelegate {
 
     def resourceFactories: ResourceInternFactories
-    
-    def workerPools: WorkerPools.Provider
 
     def defaultCOCFactories: ConnectedObjectCacheFactories
 
     def contracts: Contract.Provider
 
+    def defaultProcrastinatorSupplier: Procrastinator.Supplier
 }

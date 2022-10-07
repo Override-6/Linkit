@@ -17,8 +17,8 @@ import fr.linkit.api.gnom.packet.ChannelPacketBundle
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, RequestPacketChannel, ResponseHolder, Submitter}
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
+import fr.linkit.api.gnom.packet.traffic.PacketInjectableFactory
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.engine.internal.util.ConsumerContainer
@@ -43,7 +43,7 @@ class SimpleRequestPacketChannel(scope: ChannelScope) extends AbstractPacketChan
                 val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
                 val submitter      = new ResponseSubmitter(request.id, submitterScope)
                 val channelBundle  = DefaultRequestPacketChannelBundle(this, request, coords, submitter, bundle.ordinal)
-                WorkerPools.currentWorkerOpt match {
+                Procrastinator.current match {
                     case Some(_) =>
                         requestConsumers.applyAllLater(channelBundle)
                     case None    =>
@@ -77,8 +77,7 @@ class SimpleRequestPacketChannel(scope: ChannelScope) extends AbstractPacketChan
         if (!(scope.writer.path sameElements trafficPath))
             throw new IllegalArgumentException("Scope is not set on the same injectable id of this packet channel.")
         val requestID = nextRequestID
-        //TODO Make an adaptive queue that make non WorkerPool threads wait and worker pools change task when polling.
-        val queue     = WorkerPools.currentPool.map(_.newBusyQueue[AbstractSubmitterPacket]).getOrElse(new LinkedBlockingQueue[AbstractSubmitterPacket]())
+        val queue     = new LinkedBlockingQueue[AbstractSubmitterPacket]()
         new RequestSubmitter(requestID, scope, queue, this)
     }
 

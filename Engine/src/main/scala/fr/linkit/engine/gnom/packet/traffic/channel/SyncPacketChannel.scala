@@ -14,9 +14,8 @@
 package fr.linkit.engine.gnom.packet.traffic.channel
 
 import fr.linkit.api.gnom.packet.channel.ChannelScope
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore, PacketSender, PacketSyncReceiver}
+import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketSender, PacketSyncReceiver}
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.Reason
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
@@ -26,12 +25,12 @@ import scala.reflect.ClassTag
 
 //TODO doc
 class SyncPacketChannel protected(scope: ChannelScope) extends AbstractPacketChannel(scope)
-        with PacketSender with PacketSyncReceiver {
+    with PacketSender with PacketSyncReceiver {
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
-    private val queue: BlockingQueue[Packet] = WorkerPools.ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
+    private val queue: BlockingQueue[Packet] = new LinkedBlockingQueue[Packet]()
 
     override def handleBundle(bundle: ChannelPacketBundle): Unit = {
         queue.add(bundle.packet)

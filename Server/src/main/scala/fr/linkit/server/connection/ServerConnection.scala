@@ -20,12 +20,11 @@ import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.internal.concurrency.{WorkerTask, workerExecution}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
+import fr.linkit.api.internal.concurrency.WorkerPool
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
-import fr.linkit.engine.internal.concurrency.pool.SimpleClosedWorkerPool
+import fr.linkit.engine.internal.concurrency.VirtualProcrastinator
 import fr.linkit.engine.internal.debug.Debugger
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.util.NumberSerializer.serializeInt
@@ -36,6 +35,7 @@ import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
 
 import java.net.{ServerSocket, SocketException}
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class ServerConnection(applicationContext: ServerApplication,
@@ -46,7 +46,7 @@ class ServerConnection(applicationContext: ServerApplication,
     override val currentIdentifier : String                     = configuration.identifier
     override val translator        : ObjectTranslator           = configuration.translatorFactory(applicationContext)
     override val port              : Int                        = configuration.port
-    private  val workerPool        : SimpleClosedWorkerPool     = new SimpleClosedWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
+    private  val workerPool        : WorkerPool                 = VirtualProcrastinator(currentIdentifier)
     private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     private  val serverTraffic     : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
@@ -57,9 +57,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def getApp: ApplicationContext = applicationContext
 
-    @workerExecution
     override def shutdown(): Unit = {
-        WorkerPools.ensureCurrentIsWorker("Must shutdown server connection in a worker thread.")
         if (!alive)
             return
         alive = false
@@ -73,9 +71,7 @@ class ServerConnection(applicationContext: ServerApplication,
         AppLoggers.Connection.info(s"Server '$currentIdentifier' shutdown.")
     }
 
-    @workerExecution
     def start(): Unit = {
-        WorkerPools.ensureCurrentIsWorker("Must start server connection in a worker thread.")
         if (alive)
             throw new ServerException(this, "Server is already started.")
         AppLoggers.Connection.info(s"Server '$currentIdentifier' starts on port ${configuration.port}")
@@ -97,9 +93,8 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def countConnections: Int = connectionsManager.countConnections
 
-    override def runLaterControl[A](task: => A): WorkerTask[A] = workerPool.runLaterControl(task)
 
-    override def runLater(task: => Unit): Unit = workerPool.runLater(task)
+    override def runLater[A](f: => A): Future[A] = workerPool.runLater(f)
 
     //TODO write an object for this method entry
     def broadcastPacket(packet: Packet, attributes: PacketAttributes,
@@ -161,10 +156,6 @@ class ServerConnection(applicationContext: ServerApplication,
             AppLoggers.Connection.debug(s"Handling client socket ${socketContainer.getCurrent}...")
             val count = connectionsManager.countConnections
             handleSocket(socketContainer)
-            val newCount = connectionsManager.countConnections
-            if (count != newCount) {
-                workerPool.setThreadCount(configuration.nWorkerThreadFunction(newCount))
-            }
         }
 
         def onException(e: Throwable): Unit = runLater {

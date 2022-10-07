@@ -3,7 +3,7 @@ package fr.linkit.engine.internal.debug
 import java.io.PrintStream
 import scala.collection.mutable
 
-class ThreadWorkStack(val threadName: String) {
+class ThreadWorkStack(val thread: Thread) {
     private val stepStack = mutable.Stack.empty[Step]
 
     def push(step: Step): Unit = {
@@ -15,18 +15,18 @@ class ThreadWorkStack(val threadName: String) {
     def pop(): Step = stepStack.pop()
 
     def printStack(out: PrintStream): Unit = {
-        out.print(s"\t- thread $threadName:")
+        out.print(s"\t- thread ${thread.getName}:")
         if (stepStack.isEmpty) {
             out.println(" <not performing any work>")
             return
         } else out.println("")
         //print from oldest to newest
         val maxActionTypeStrLength = stepStack.map(_.actionType.length).max
-        val maxTaskPathStrLength   = stepStack.map(_.taskPath.mkString(">").length).max
+        val maxTaskPathStrLength   = stepStack.map(_.taskID.toString.length).max
         stepStack.reverse.foreach(action => {
-            val taskPath   = action.taskPath.mkString(">")
+            val taskID     = action.taskID
             val actionType = action.actionType
-            out.println("\t\t- " + taskPath + (" " * (maxTaskPathStrLength - taskPath.length - 1)) +
+            out.println("\t\t- " + taskID + (" " * (maxTaskPathStrLength - taskID.toString.length - 1)) +
                             " " + actionType +
                             (" " * (maxActionTypeStrLength - actionType.length)) +
                             ": " + action.insights)

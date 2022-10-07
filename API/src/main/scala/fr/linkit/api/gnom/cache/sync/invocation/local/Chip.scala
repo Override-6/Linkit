@@ -14,7 +14,6 @@
 package fr.linkit.api.gnom.cache.sync.invocation.local
 
 import fr.linkit.api.gnom.network.Engine
-import fr.linkit.api.internal.concurrency.workerExecution
 import org.jetbrains.annotations.Nullable
 
 /**
@@ -33,7 +32,7 @@ trait Chip[S] {
      * @param caller the engine that is calling the method
      * @see [[fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription]]
      * */
-    def callMethod(methodID: Int, params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit, @workerExecution onResult: Any => Unit): Unit
+    def callMethod(methodID: Int, params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit, onResult: Any => Unit): Unit
     /**
      * this method will transfer to the chipped object every fields
      * values of the given object.

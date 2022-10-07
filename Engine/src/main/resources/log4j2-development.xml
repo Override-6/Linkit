@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="WARN" packages="fr.linkit.engine.internal.system.log">
+<Configuration status="WARN">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout disableAnsi="false"
-                           pattern="%style{[%d{HH:mm:ss,SSS}]}{magenta} [%-28.28t] [%highlight{%-5p}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank} _ %-12logger] %stack{>,?} %style{-}{blank} %highlight{%m%n}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank}"/>
+                           pattern="%style{[%d{HH:mm:ss,SSS}]}{magenta} [%-28.28t] [%highlight{%-5p}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank} _ %-12logger] %style{-}{blank} %highlight{%m%n}{FATAL=red, ERROR=red, WARN=light yellow, INFO=light blue, DEBUG=green, TRACE=blank}"/>
         </Console>
         <File name="LogFile" fileName="logs/${sys:logfilename:-null}.log" append="false">
-            <PatternLayout pattern="[%d{HH:mm:ss,SSS}] [%-28.28t] [%-5p _ %-12logger] %stack{>,?,nocolor} - %m%n"/>
+            <PatternLayout pattern="[%d{HH:mm:ss,SSS}] [%-28.28t] [%-5p _ %-12logger] - %m%n"/>
         </File>
     </Appenders>
     <Loggers>
@@ -31,7 +31,7 @@
         </Logger>
 
         <Logger name="Mappings"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="DEBUG"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
@@ -41,7 +41,7 @@
         </Logger>
 
         <Logger name="Traffic" additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="TRACE"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 

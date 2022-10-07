@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectForest
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.PacketAttributesPresence
 import fr.linkit.api.gnom.referencing.NamedIdentifier
-import fr.linkit.api.internal.system.delegate.DelegateFactory
+import fr.linkit.api.internal.system.delegate.ImplementationDelegates
 
 import scala.reflect.ClassTag
 
@@ -116,7 +116,7 @@ trait ConnectedObjectCache[A <: AnyRef] extends SharedCache with PacketAttribute
 }
 
 object ConnectedObjectCache extends ConnectedObjectCacheFactories {
-    private val delegate = DelegateFactory.defaultCOCFactories
+    private val delegate = ImplementationDelegates.defaultCOCFactories
 
     implicit override def apply[A <: AnyRef : ClassTag]: SharedCacheFactory[ConnectedObjectCache[A]] = delegate.apply
 

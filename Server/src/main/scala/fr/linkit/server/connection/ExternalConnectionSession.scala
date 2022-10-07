@@ -16,7 +16,6 @@ package fr.linkit.server.connection
 import fr.linkit.api.gnom.network.{Engine, ExternalConnectionState}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.PacketUpload
-import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.engine.internal.util.OrdinalCounter
@@ -36,7 +35,6 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     private[connection] val traffic          : PacketTraffic              = server.traffic
     private[server]     val ordinalsMap                                   = mutable.HashMap.empty[Int, OrdinalCounter] //key is injectables path hash
 
-    @workerExecution
     override def close(reason: Reason): Unit = {
         socket.close(reason)
         network.removeEngine(boundIdentifier)

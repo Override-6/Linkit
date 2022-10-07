@@ -5,22 +5,19 @@ import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheReference}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
-import fr.linkit.api.internal.concurrency.Worker
+import fr.linkit.api.internal.concurrency.Procrastinator
 
 sealed trait Step {
     def actionType: String
 
     def insights: String
 
-    def taskPath: Array[Int]
+    def taskID: Int
 
 }
 
 sealed abstract class AbstractStep(val actionType: String) extends Step {
-    override val taskPath = Thread.currentThread() match {
-        case w: Worker => w.getTaskStack
-        case _         => Array()
-    }
+    override val taskID = Procrastinator.currentWorker.map(_.taskID).getOrElse(-1)
 }
 
 case class RequestStep(requestType: String, goal: String, targetEngine: String, channel: TrafficReference) extends AbstractStep("request") {
@@ -51,10 +48,6 @@ case class MethodInvocationExecutionStep(method: MethodDescription, triggerEngin
 
 case class PacketInjectionStep(packetID: String, channel: TrafficReference) extends AbstractStep("injection") {
     override def insights: String = s"Injecting packet $packetID into channel $channel."
-}
-
-case class TaskPausedStep(taskID: Int, timeout: Long = 0) extends AbstractStep("task pause") {
-    override def insights: String = s"Task $taskID is paused." + (if (timeout > 0) " timeout = " + timeout else "")
 }
 
 case class SIPURectifyStep(channel: TrafficReference, currentOrdinal: Int, expectedOrdinal: Int) extends AbstractStep("SIPU - rectify") {

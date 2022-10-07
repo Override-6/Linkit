@@ -15,13 +15,10 @@ package fr.linkit.engine.gnom.persistence.config
 
 import fr.linkit.api.gnom.persistence.context.ControlBox
 import fr.linkit.api.internal.concurrency.Procrastinator
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
-import fr.linkit.engine.internal.concurrency.pool.SimpleTaskController
 
 class SimpleControlBox extends ControlBox {
 
     private final var asyncTasks = 0
-    private final val locker     = new SimpleTaskController()
 
     /**
      * informs the control box that an async task will be performed.
@@ -36,7 +33,6 @@ class SimpleControlBox extends ControlBox {
     private def releaseTask(): Unit = this.synchronized {
         asyncTasks -= 1
         if (asyncTasks == 0) {
-            locker.wakeupAllTasks()
             this.notifyAll()
         }
     }
@@ -50,13 +46,8 @@ class SimpleControlBox extends ControlBox {
         }
     }
 
-    override def join(): Unit = {
-        val currentTask = this.synchronized {
-            if (asyncTasks == 0)
-                return
-            WorkerPools.currentTask.orNull
-        }
-        if (currentTask == null) this.wait()
-        else locker.pauseTask()
+    override def join(): Unit = this.synchronized {
+        if (asyncTasks != 0)
+            wait()
     }
 }

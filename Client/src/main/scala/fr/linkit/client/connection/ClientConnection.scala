@@ -19,8 +19,6 @@ import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload}
-import fr.linkit.api.internal.concurrency.{WorkerTask, packetWorkerExecution, workerExecution}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
@@ -33,6 +31,7 @@ import fr.linkit.engine.internal.util.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
 
 import java.nio.ByteBuffer
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends ExternalConnection {
@@ -55,9 +54,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     session.traffic.setNetwork(sideNetwork)
     sideNetwork.initialize()
 
-    override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
 
-    override def runLaterControl[A](task: => A): WorkerTask[A] = appContext.runLaterControl(task)
+    override def runLater[A](f: => A): Future[A] = session.appContext.runLater(f)
 
     override def getState: ExternalConnectionState = socket.getState
 
@@ -65,9 +63,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     override def isConnected: Boolean = getState == ExternalConnectionState.CONNECTED
 
-    @workerExecution
     override def shutdown(): Unit = {
-        WorkerPools.ensureCurrentIsWorker("Shutdown must be performed in a worker thread pool.")
         if (!alive)
             return //already shutdown
 
@@ -80,15 +76,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         alive = false
     }
 
-    @workerExecution
     private def initTraffic(): Unit = {
         session.traffic.setConnection(this)
         initPacketReader()
     }
 
-    @workerExecution
     private def initPacketReader(): Unit = {
-        WorkerPools.ensureCurrentIsWorker("Can't start in a non worker pool !")
         if (alive)
             throw new IllegalStateException(s"Connection already started ! ($currentIdentifier)")
         alive = true
@@ -111,7 +104,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                         AppLoggers.Persistence.error(errMsg)
                         e.printStackTrace()
                     } else {
-                        val st = e.getStackTrace
+                        val st                         = e.getStackTrace
                         val firstInterestingStackTrace = st.find(el => Class.forName(el.getClassName).getClassLoader != null).getOrElse(st.head)
                         AppLoggers.Persistence.error(s"$errMsg $e ($firstInterestingStackTrace)")
                     }
@@ -121,7 +114,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         readThread.start()
     }
 
-    @packetWorkerExecution //So the runLater must be specified in order to perform network operations
     private def tryReconnect(state: ExternalConnectionState): Unit = {
         val bytes         = currentIdentifier.getBytes()
         val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
@@ -137,14 +129,21 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     private def handlePacket(result: PacketDownload, coordinates: DedicatedPacketCoordinates): Unit = {
         //FIXME Ugly
         val rectifiedResult = new PacketDownload {
-            override val ordinal: Int = result.ordinal
-            override val buff: ByteBuffer = result.buff
+            override val ordinal: Int        = result.ordinal
+            override val buff   : ByteBuffer = result.buff
+
             override def makeDeserialization(): Unit = result.makeDeserialization()
+
             override def isDeserialized: Boolean = result.isDeserialized
+
             override def coords: PacketCoordinates = coordinates
+
             override def attributes: PacketAttributes = result.attributes
+
             override def packet: Packet = result.packet
+
             override def isInjected: Boolean = result.isInjected
+
             override def informInjected: Unit = result.informInjected
         }
         traffic.processInjection(rectifiedResult)
@@ -158,8 +157,8 @@ object ClientConnection {
 
     @throws[ConnectionInitialisationException]("If Something went wrong during the initialization.")
     @NotNull
-    def open(socket: ClientDynamicSocket,
-             context: ClientApplication,
+    def open(socket       : ClientDynamicSocket,
+             context      : ClientApplication,
              configuration: ClientConnectionConfiguration): ClientConnection = {
 
         //Initializing values that will be used for packet transactions during the initialization.

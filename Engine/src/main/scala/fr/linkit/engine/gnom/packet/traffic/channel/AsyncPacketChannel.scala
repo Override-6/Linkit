@@ -16,8 +16,7 @@ package fr.linkit.engine.gnom.packet.traffic.channel
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
-import fr.linkit.api.internal.concurrency.workerExecution
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.internal.util.ConsumerContainer
 
@@ -26,9 +25,8 @@ class AsyncPacketChannel protected(scope: ChannelScope)
 
     private val packetReceivedContainer: ConsumerContainer[PacketBundle] = ConsumerContainer()
 
-    @workerExecution
     override def handleBundle(bundle: ChannelPacketBundle): Unit = {
-        val pool = WorkerPools.currentPool.get
+        val pool = Procrastinator.current.get
         pool.runLater {
             packetReceivedContainer.applyAll(bundle)
         }

@@ -18,9 +18,9 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.referencing.StaticNetworkObject
-import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}
+import fr.linkit.api.internal.concurrency.Procrastinator
 
-trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference.type] with ProcrastinatorControl {
+trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference.type] with Procrastinator {
     
     override val reference = NetworkConnectionReference
     
@@ -36,7 +36,6 @@ trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference.t
     
     def network: Network
     
-    @workerExecution
     def shutdown(): Unit
     
     def isAlive: Boolean

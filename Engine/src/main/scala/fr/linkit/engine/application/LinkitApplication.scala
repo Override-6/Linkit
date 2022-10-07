@@ -17,7 +17,7 @@ import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.application.resource.local.{LocalFolder, ResourceFolder}
 import fr.linkit.api.application.{ApplicationContext, ApplicationReference}
 import fr.linkit.api.internal.compilation.CompilerCenter
-import fr.linkit.api.internal.concurrency.{WorkerTask, workerExecution}
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{ApiConstants, AppException, Version}
 import fr.linkit.engine.application.LinkitApplication.setInstance
@@ -25,20 +25,20 @@ import fr.linkit.engine.application.resource.local.{LocalResourceFactories, Loca
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
 import fr.linkit.engine.gnom.persistence.ConstantProtocol
 import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.internal.concurrency.pool.AbstractWorkerPool
 import fr.linkit.engine.internal.language.bhv.ContractProvider
 import fr.linkit.engine.internal.mapping.{ClassMappings, MappingEngine}
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
 
 import java.nio.file.{Files, Path}
 import java.util.{Objects, Properties}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 
 abstract class LinkitApplication(configuration: ApplicationConfiguration, appResources: ResourceFolder) extends ApplicationContext {
 
     override val compilerCenter: CompilerCenter = DefaultCompilerCenter
-    protected val appPool: AbstractWorkerPool
+    protected val appPool: Procrastinator
     @volatile protected var alive: Boolean = false
     override val reference                 = ApplicationReference
 
@@ -54,9 +54,8 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             throw new IllegalStateException("Server Application is shutdown.")
     }
 
-    override def runLaterControl[A](task: => A): WorkerTask[A] = appPool.runLaterControl(task)
 
-    override def runLater(task: => Unit): Unit = appPool.runLater(task)
+    override def runLater[A](f: => A): Future[A] = appPool.runLater(f)
 
     override def isAlive: Boolean = alive
 
@@ -83,9 +82,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
         }
     }
 
-    @workerExecution
     protected[linkit] def start(): Unit = {
-        appPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
         if (alive) {
             throw new AppException("Application is already started")
         }
@@ -217,7 +214,6 @@ object LinkitApplication {
         root
     }
 
-    @workerExecution
     def exitApplication(code: Int): Unit = this.synchronized {
         if (instance == null) {
             Runtime.getRuntime.halt(code)
@@ -225,13 +221,11 @@ object LinkitApplication {
         }
 
         AppLoggers.App.info("Exiting application...")
-        instance.runLaterControl {
+        val t = instance.runLater {
             instance.preShutdown()
             instance.shutdown()
-        }.join() match {
-            case Failure(e) => e.printStackTrace()
-            case Success(_) =>
         }
+        Await.ready(t, Duration.Inf)
 
         Runtime.getRuntime.halt(code)
         instance = null

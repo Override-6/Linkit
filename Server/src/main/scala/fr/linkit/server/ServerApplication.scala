@@ -16,25 +16,25 @@ package fr.linkit.server
 import fr.linkit.api.application.config.ApplicationInstantiationException
 import fr.linkit.api.application.connection.{ConnectionInitialisationException, NoSuchConnectionException}
 import fr.linkit.api.application.resource.local.ResourceFolder
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
-import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system
 import fr.linkit.api.internal.system._
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.security.ConnectionSecurityException
 import fr.linkit.engine.application.LinkitApplication
-import fr.linkit.engine.internal.concurrency.pool.SimpleClosedWorkerPool
+import fr.linkit.engine.internal.concurrency.VirtualProcrastinator
 import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
 
 import scala.collection.mutable
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class ServerApplication(configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ServerApplicationContext {
 
-    protected override val appPool            = new SimpleClosedWorkerPool(configuration.mainPoolThreadCount, "Application")
+    protected override val appPool            = VirtualProcrastinator("Application")
     private            val serverCache        = mutable.HashMap.empty[Any, ServerConnection]
     private            val securityManager    = configuration.securityManager
     override           val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, ServerApplication.Version)
@@ -47,31 +47,24 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
         serverCache.size / 2
     }
 
-    @workerExecution
     override def shutdown(): Unit = this.synchronized {
         /*
         * This method is synchronized on the current application's instance
         * in order to ensure that multiple shutdown aren't executed
         * on the same application, wich could occur to some problems.
         * */
-        appPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
         AppLoggers.App.info("Server application is shutting down...")
 
         val totalConnectionCount = countConnections
         var downCount            = 0
-        val shutdownTask         = WorkerPools.currentTask
 
         listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
             wrapCloseAction(s"Server connection ${serverConnection.currentIdentifier}") {
                 serverConnection.shutdown()
             }
             downCount += 1
-            if (downCount == totalConnectionCount)
-                shutdownTask.get.continue()
         })
-        if (countConnections > 0)
-            appPool.pauseCurrentTask()
 
         alive = false
         AppLoggers.App.info("Server application successfully shutdown.")
@@ -81,9 +74,7 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
         serverCache.values.toSet
     }
 
-    @workerExecution
     override def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = /*this.synchronized*/ {
-        appPool.ensureCurrentThreadOwned("Open server connection must be performed into Application's pool.")
 
         ensureAlive()
         if (configuration.identifier.length > Rules.MaxConnectionIDLength)
@@ -93,11 +84,11 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
         AppLoggers.App.debug("Instantiating server connection...")
         val serverConnection = new ServerConnection(this, configuration)
 
-        serverConnection.runLaterControl {
+        Await.ready(serverConnection.runLater {
             AppLoggers.App.debug("Starting server...")
             serverConnection.start()
             AppLoggers.App.debug("Server started !")
-        }.derivate() match {
+        }, Duration.Inf).value.get match {
             case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.identifier} on port ${configuration.port}", e)
             case Success(_) =>
         }
@@ -163,14 +154,14 @@ object ServerApplication {
                 throw new ApplicationInstantiationException("Could not instantiate Server Application.", e)
         }
 
-        serverAppContext.runLaterControl {
+        Await.ready(serverAppContext.runLater {
             AppLoggers.App.info("Starting Server Application...")
             serverAppContext.start()
             val loadSchematic = config.loadSchematic
             AppLoggers.App.debug(s"Applying schematic '${loadSchematic.name}'...")
             loadSchematic.setup(serverAppContext)
             AppLoggers.App.debug("Schematic applied successfully.")
-        }.join() match {
+        }, Duration.Inf).value.get match {
             case Failure(exception) => throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
             case Success(_)         =>
                 initialized = true

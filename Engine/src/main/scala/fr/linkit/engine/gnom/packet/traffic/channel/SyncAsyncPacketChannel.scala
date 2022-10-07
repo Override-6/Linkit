@@ -14,10 +14,8 @@
 package fr.linkit.engine.gnom.packet.traffic.channel
 
 import fr.linkit.api.gnom.packet.channel.ChannelScope
-import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
+import fr.linkit.api.gnom.packet.traffic.PacketInjectableFactory
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
-import fr.linkit.api.internal.concurrency.pool.WorkerPools
-import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
 import fr.linkit.engine.internal.util.ConsumerContainer
@@ -29,11 +27,10 @@ import scala.reflect.ClassTag
 class SyncAsyncPacketChannel(scope: ChannelScope)
         extends AbstractPacketChannel(scope) {
 
-    private val sync: BlockingQueue[Packet] = WorkerPools.ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
+    private val sync: BlockingQueue[Packet] = new LinkedBlockingQueue[Packet]()
 
     private val asyncListeners = new ConsumerContainer[PacketBundle]
 
-    @workerExecution
     override def handleBundle(bundle: ChannelPacketBundle): Unit = {
         val attr   = bundle.attributes
         val packet = bundle.packet

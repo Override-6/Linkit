@@ -16,7 +16,6 @@ package fr.linkit.api.gnom.packet.traffic
 import fr.linkit.api.gnom.packet.{PacketAttributesPresence, PacketBundle}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.DynamicNetworkObject
-import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.JustifiedCloseable
 
 trait PacketInjectable extends TrafficObject[TrafficReference]
@@ -31,7 +30,6 @@ trait PacketInjectable extends TrafficObject[TrafficReference]
     val traffic: PacketTraffic
 
 
-    @workerExecution
     def inject(bundle: PacketBundle): Unit
 
     def canInjectFrom(identifier: String): Boolean

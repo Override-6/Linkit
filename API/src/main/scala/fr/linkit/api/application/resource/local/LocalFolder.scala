@@ -14,7 +14,7 @@
 package fr.linkit.api.application.resource.local
 
 import fr.linkit.api.application.resource.ResourceListener
-import fr.linkit.api.internal.system.delegate.DelegateFactory
+import fr.linkit.api.internal.system.delegate.ImplementationDelegates
 
 import java.nio.file.Path
 
@@ -50,7 +50,7 @@ trait LocalFolder extends LocalResource with ResourceFolder {
 
 object LocalFolder extends ResourceFactory[LocalFolder] {
     
-    private val factories = DelegateFactory.resourceFactories
+    private val factories = ImplementationDelegates.resourceFactories
     
     override def apply(adapter: Path, listener: ResourceListener, parent: Option[ResourceFolder]): LocalFolder = {
         factories.localFolderFactory(adapter, listener, parent)
