@@ -50,7 +50,7 @@ import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{AnyRefPacket, ObjectP
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, ChannelScopes}
 import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
-import fr.linkit.engine.internal.debug.{ConnectedObjectCreationAction, ConnectedObjectTreeRetrievalAction, Debugger, RequestAction}
+import fr.linkit.engine.internal.debug.{ConnectedObjectCreationState, ConnectedObjectTreeRetrievalState, Debugger, RequestState}
 
 import java.lang.ref.WeakReference
 import java.util.concurrent.locks.ReentrantLock
@@ -86,7 +86,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
 
     private def makeSyncObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData, mirror: Boolean): A with SynchronizedObject[A] = {
         val treeID = NamedIdentifier(creator.syncClassDef.mainClass.getSimpleName, id)
-        Debugger.push(ConnectedObjectCreationAction(ConnectedObjectReference(family, cacheID, currentIdentifier, Array(treeID))))
+        Debugger.push(ConnectedObjectCreationState(ConnectedObjectReference(family, cacheID, currentIdentifier, Array(treeID))))
         val tree        = createNewTree(treeID, currentIdentifier, creator.asInstanceOf[SyncInstanceCreator[A]], mirror, contracts)
         val treeProfile = ObjectTreeProfile(treeID, tree.getRoot.obj, currentIdentifier, mirror, contracts)
         AppLoggers.ConnObj.debug(s"Notifying other caches located on '$reference' that a new connected object has been added on the cache.")
@@ -269,12 +269,12 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         requestLock.lock()
         forest.putUnknownTree(id)
 
-        Debugger.push(ConnectedObjectTreeRetrievalAction(treeRef))
+        Debugger.push(ConnectedObjectTreeRetrievalState(treeRef))
         AppLoggers.ConnObj.trace(s" Requesting root object $treeRef.")
 
         if (isSyncOnRefLock) refLock.unlock()
         try {
-            Debugger.push(RequestAction("CO tree retrieval", s"retrieve tree $treeRef", ownerID, channel.reference))
+            Debugger.push(RequestState("CO tree retrieval", s"retrieve tree $treeRef", ownerID, channel.reference))
             val response = channel.makeRequest(ChannelScopes.include(ownerID))
                                   .addPacket(AnyRefPacket(id))
                                   .submit()

@@ -21,7 +21,7 @@ import fr.linkit.api.internal.concurrency.pool.WorkerPools
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.{SimplePacketBundle, UnexpectedPacketException}
 import fr.linkit.engine.internal.concurrency.pool.SimpleTaskController
-import fr.linkit.engine.internal.debug.{Debugger, SIPURectifyAction}
+import fr.linkit.engine.internal.debug.{Debugger, SIPURectifyState}
 
 import java.io.PrintStream
 import java.lang.Thread.State._
@@ -297,7 +297,7 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                     return pollNext()
                 }
                 if (refocusShift > 0) {
-                    Debugger.push(SIPURectifyAction(reference, currentOrdinal, expectedOrdinal))
+                    Debugger.push(SIPURectifyState(reference, currentOrdinal, expectedOrdinal))
                     AppLoggers.Traffic.debug(s"(SIPU $reference): Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
                     queueContentLock.unlock()
                     refocusingLocker.pauseTask()

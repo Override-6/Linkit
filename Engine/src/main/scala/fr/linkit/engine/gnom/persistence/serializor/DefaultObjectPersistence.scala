@@ -21,7 +21,7 @@ import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.ConstantProtocol
 import fr.linkit.engine.gnom.persistence.serializor.read.ObjectReader
 import fr.linkit.engine.gnom.persistence.serializor.write.{ObjectWriter, SerializerObjectPool}
-import fr.linkit.engine.internal.debug.{Debugger, PacketDeserializationAction, PacketSerializationAction}
+import fr.linkit.engine.internal.debug.{Debugger, PacketDeserializationState, PacketSerializationState}
 
 import java.nio.ByteBuffer
 
@@ -38,7 +38,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
 
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disinv {
         AppLoggers.Persistence.debug("Starting Serializing objects...")
-        Debugger.push(PacketSerializationAction(bundle.packetID, bundle.boundId))
+        Debugger.push(PacketSerializationState(bundle.packetID, bundle.boundId))
         val t0     = System.currentTimeMillis()
         val buffer = bundle.buff
         buffer.put(signature.toArray)
@@ -70,7 +70,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         checkSignatureAndProtocol(buff)
 
         AppLoggers.Persistence.debug(s"Starting Deserializing objects... (from buff length: ${buff.limit()})")
-        Debugger.push(PacketDeserializationAction(bundle.packetID, bundle.boundId))
+        Debugger.push(PacketDeserializationState(bundle.packetID, bundle.boundId))
 
         try {
             val t0 = System.currentTimeMillis()

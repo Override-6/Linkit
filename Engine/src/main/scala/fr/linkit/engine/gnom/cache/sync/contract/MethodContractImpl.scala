@@ -27,7 +27,7 @@ import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
-import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationExecutionAction, MethodInvocationSendAction, RequestAction}
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationExecutionState, MethodInvocationSendState, RequestState}
 import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import org.jetbrains.annotations.Nullable
 
@@ -116,7 +116,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
 
     override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Any = try {
         val callerID = if (origin == null) null else origin.identifier
-        Debugger.push(MethodInvocationExecutionAction(description, callerID, origin != null && (origin eq origin.network.currentEngine)))
+        Debugger.push(MethodInvocationExecutionState(description, callerID, origin != null && (origin eq origin.network.currentEngine)))
         val args = data.arguments
         val obj  = data.obj
         if (hideMessage.isDefined)
@@ -198,13 +198,13 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             }
         }
         if (currentMustReturn) {
-            Debugger.push(MethodInvocationSendAction(agreement, description, null))
+            Debugger.push(MethodInvocationSendState(agreement, description, null))
             AppLoggers.COInv.debug(debugMsg(null, localInvocation))
             puppeteer.sendInvoke(remoteInvocation)
             result = localResult
             Debugger.pop()
         } else {
-            Debugger.push(MethodInvocationSendAction(agreement, description, appointedEngine))
+            Debugger.push(MethodInvocationSendState(agreement, description, appointedEngine))
             AppLoggers.COInv.debug(debugMsg(appointedEngine, localInvocation))
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
             Debugger.pop()

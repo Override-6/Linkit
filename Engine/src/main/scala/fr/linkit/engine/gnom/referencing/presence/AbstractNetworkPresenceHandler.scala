@@ -24,7 +24,7 @@ import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
-import fr.linkit.engine.internal.debug.{Debugger, RequestAction}
+import fr.linkit.engine.internal.debug.{Debugger, RequestState}
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -73,7 +73,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         val parentIsPresent = parent == null || location.asSuper.exists(r => parent.isPresentOnEngine(engineId, casted(r)))
         parentIsPresent && {
             AppLoggers.GNOM.debug(s"Asking if $location is present on engine: $engineId")
-            Debugger.push(RequestAction("presence check", s"asking if reference $location is present on engine $engineId", engineId, channel.reference))
+            Debugger.push(RequestState("presence check", s"asking if reference $location is present on engine $engineId", engineId, channel.reference))
             val isPresent = channel
                     .makeRequest(ChannelScopes.include(engineId))
                     .addPacket(EmptyPacket)

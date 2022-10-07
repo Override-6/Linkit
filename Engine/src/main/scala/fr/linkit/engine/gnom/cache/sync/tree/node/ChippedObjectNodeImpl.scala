@@ -28,7 +28,7 @@ import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.cache.sync.tree.DefaultConnectedObjectTree
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
-import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeAction, ResponseAction}
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeState, ResponseState}
 
 import java.lang.reflect.InvocationTargetException
 import scala.collection.mutable
@@ -167,7 +167,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
             })
         }
         if (packet.expectedEngineIDReturn == currentIdentifier) {
-            Debugger.push(ResponseAction("rmi", currentIdentifier, null)) //TODO replace null by the channel's reference
+            Debugger.push(ResponseState("rmi", currentIdentifier, null)) //TODO replace null by the channel's reference
             response
                     .addPacket(RefPacket[Any](result))
                     .submit()

@@ -260,9 +260,10 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     }
 
     private def logUpload(target: String, bytes: Array[Byte]): Unit = if (AppLoggers.Traffic.isTraceEnabled) {
-        val preview       = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
-        val packetOrdinal = if (bytes.length > 10) NumberSerializer.deserializeInt(bytes, 2) else -1
-        val length        = if (bytes.length > 10) NumberSerializer.deserializeInt(bytes, 6) else bytes.length
+        val len = bytes.length
+        val preview       = new String(bytes, 0, 1000 min len).replace('\n', ' ').replace('\r', ' ')
+        val packetOrdinal = if (len > 10) NumberSerializer.deserializeInt(bytes, 2) else -1
+        val length        = if (len > 10) NumberSerializer.deserializeInt(bytes, 6) else len
         AppLoggers.Traffic.trace(s"${Console.MAGENTA}Written : ↑ $target ↑ (len: $length, ord: $packetOrdinal) $preview")
     }
 

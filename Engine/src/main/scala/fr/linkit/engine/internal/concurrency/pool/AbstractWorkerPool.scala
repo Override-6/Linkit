@@ -19,7 +19,7 @@ import fr.linkit.api.internal.concurrency.{IllegalThreadException, Worker, Worke
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.pool.EngineWorkerPools._
 import fr.linkit.engine.internal.concurrency.{SimpleAsyncTask, now, timedPark}
-import fr.linkit.engine.internal.debug.{Debugger, TaskPausedAction}
+import fr.linkit.engine.internal.debug.{Debugger, TaskPausedState}
 
 import java.io.Closeable
 import java.util.concurrent._
@@ -212,7 +212,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
         val taskLock = currentTask.lock
         taskLock.lock()
         AppLoggers.Worker.trace("Locked on task")
-        Debugger.push(TaskPausedAction(currentTask.taskID))
+        Debugger.push(TaskPausedState(currentTask.taskID))
         currentTask.setPaused()
         lock.unlock()
         taskLock.unlock()
@@ -261,7 +261,7 @@ abstract class AbstractWorkerPool(val name: String) extends WorkerPool with Clos
             busiedMillis
         }
 
-        Debugger.push(TaskPausedAction(currentTask.taskID, timeoutMillis))
+        Debugger.push(TaskPausedState(currentTask.taskID, timeoutMillis))
         currentTask.setPaused()
 
         var toWait = timeoutMillis - pauseCurrentTaskTimed()

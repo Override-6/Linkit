@@ -26,7 +26,7 @@ import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
-import fr.linkit.engine.internal.debug.{Debugger, RequestAction}
+import fr.linkit.engine.internal.debug.{Debugger, RequestState}
 import fr.linkit.engine.internal.util.JavaUtils
 import org.jetbrains.annotations.Nullable
 
@@ -73,7 +73,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
                 }
             }
         }
-        Debugger.push(RequestAction("rmi", s"perform remote method invocation on engine $appointedEngineReturn and wait for result or throw", appointedEngineReturn, channel.reference))
+        Debugger.push(RequestState("rmi", s"perform remote method invocation on engine $appointedEngineReturn and wait for result or throw", appointedEngineReturn, channel.reference))
         invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         Debugger.pop()
         if (!isResultSet)

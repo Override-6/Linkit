@@ -31,7 +31,7 @@ import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 import fr.linkit.engine.gnom.referencing.NOLUtils.throwUnknownObject
 import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
-import fr.linkit.engine.internal.debug.{CacheOpenAction, Debugger}
+import fr.linkit.engine.internal.debug.{CacheOpenState, Debugger}
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
@@ -157,7 +157,7 @@ abstract class AbstractSharedCacheManager(override val family : String,
     }
 
     private def createCache[A <: SharedCache](cacheID: Int, factory: SharedCacheFactory[A], method: CacheSearchMethod): A = try {
-        Debugger.push(CacheOpenAction(reference / cacheID, factory.targetClass))
+        Debugger.push(CacheOpenState(reference / cacheID, factory.targetClass))
         AppLoggers.GNOM.debug(s"Creating cache $cacheID in $family.")
         remoteCacheOpenChecks(cacheID, factory.targetClass)
         val channel = store.getInjectable(cacheID, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)

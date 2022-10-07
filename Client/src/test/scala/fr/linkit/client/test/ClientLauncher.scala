@@ -124,7 +124,6 @@ object ClientLauncher {
             loadSchematic = new ScalaClientAppSchematic {
                 for (i <- 1 to raidCount) {
                     clients += new ClientConnectionConfigBuilder {
-                        pluginFolder = None // Some(mainPluginFolder)
                         override val identifier   : String            = identifier0 + i
                         override val remoteAddress: InetSocketAddress = address
                     }
