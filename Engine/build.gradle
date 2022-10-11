@@ -1,28 +1,5 @@
-/*
- * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
- *
- * This code is free software; you can only use it for personal uses, studies or documentation.
- * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
- * For any professional use, please contact me at overridelinkit@gmail.com.
- *
- * Please contact overridelinkit@gmail.com if you need additional information or have any
- * questions.
- */
-
-plugins {
-    id 'java-library'
-    id 'scala'
-}
-
 repositories {
     mavenCentral()
-}
-
-tasks.withType(ScalaCompile) {
-    scalaCompileOptions.additionalParameters = ["-feature",
-                                                "-language:implicitConversions"]
 }
 
 sourceSets {
@@ -34,15 +11,8 @@ sourceSets {
 }
 
 dependencies {
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0-M1'
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0-M1'
-    testImplementation project(':API').sourceSets.test.output
-    testImplementation 'org.mockito:mockito-inline:4.8.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.8.0'
-
     implementation group: 'org.scala-lang', name: 'scala-compiler', version: '2.13.7'
     implementation group: 'org.scala-lang.modules', name: 'scala-parser-combinators_2.13', version: '2.1.0'
-    implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
     implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
     implementation 'com.google.code.gson:gson:2.9.0'
 

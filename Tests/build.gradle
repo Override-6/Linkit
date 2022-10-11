@@ -1,4 +1,3 @@
-
 group 'fr.override.linkit'
 version 'Alpha-0.1'
 
@@ -16,5 +15,6 @@ dependencies {
 }
 
 test {
+    jvmArgs(['--enable-preview'])
     useJUnitPlatform()
 }

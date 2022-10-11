@@ -14,10 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique, SyncStructureDescription}
-
-import scala.reflect.runtime.universe
-import scala.reflect.{ClassTag, classTag}
+import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 
 /**
  * This class generates a class that extends
@@ -26,9 +23,7 @@ trait SyncClassCenter {
 
     def getSyncClass[S <: AnyRef](clazz: SyncClassDef): Class[S with SynchronizedObject[S]]
 
-    def getSyncClassFromDesc[S<: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]]
-
-    def getSyncClassFromTpe[S<: AnyRef: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](SyncClassDef(classTag[S].runtimeClass))
+    def getSyncClassFromDesc[S <: AnyRef](desc: SyncStructureDescription[S]): Class[S with SynchronizedObject[S]]
 
     def preGenerateClasses(classes: Seq[SyncClassDef]): Unit
 

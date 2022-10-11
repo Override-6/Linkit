@@ -11,11 +11,6 @@
  * questions.
  */
 
-plugins {
-    id 'java-library'
-    id 'scala'
-}
-
 group 'fr.linkit'
 version 'Alpha-1.0'
 
@@ -23,43 +18,7 @@ repositories {
     mavenCentral()
 }
 
-tasks.withType(ScalaCompile) {
-    scalaCompileOptions.additionalParameters = ["-feature", "-language:implicitConversions", "-language:postfixOps", "-language:existentials"]
-}
-
-task fatJar(type: Jar) {
-    manifest.from jar.manifest
-    classifier = 'all'
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    } {
-        exclude "META-INF/*.SF"
-        exclude "META-INF/*.DSA"
-        exclude "META-INF/*.RSA"
-    }
-    with jar
-}
-test {
-    useJUnitPlatform()
-}
-
 dependencies {
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0-M1'
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0-M1'
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.8.0-M1'
-    testImplementation group: 'org.junit.platform', name: 'junit-platform-suite-api', version: '1.8.0-M1'
-    testImplementation group: 'org.junit.platform', name: 'junit-platform-runner', version: '1.8.0-M1'
-    testImplementation project(':API').sourceSets.test.output
-    testImplementation project(':Engine').sourceSets.test.output
-    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.22.0'
-
-    implementation group: 'org.scala-lang', name: 'scala-reflect', version: '2.13.7'
-    implementation group: 'log4j', name: 'log4j', version: '1.2.17'
-    implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
-
-    implementation 'org.apache.logging.log4j:log4j-core:2.17.2'
-    implementation 'org.apache.logging.log4j:log4j-api:2.17.2'
-
     api project(':API')
     implementation project(':Engine')
 }

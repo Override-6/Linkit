@@ -59,8 +59,10 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             val senderId = result.coords.senderID
             queues.getOrElseUpdate(senderId, new OrdinalQueue).offer(result)
             if (refocusShift > 0) {
-                if (executor != null) LockSupport.unpark(executor)
+                if (executor eq null)
+                    throw new IllegalStateException("refocusing without any executor.")
                 refocusShift = 0
+                contentLock.notify() //will notify the executor
             }
         }
 
@@ -88,8 +90,6 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
         *     1.1                     1.2            */
         executor == null || (currentWorker eq executor)
     }
-
-    def getCurrentOrdinal: Int = -1
 
     private def pollNext(): PacketDownload = {
         while (true) {
@@ -202,9 +202,8 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
 
     private class OrdinalQueue {
 
-        private val queueContentLock = new ReentrantLock()
-        private val queue            = new PriorityQueue[PacketDownload](((a, b) => a.ordinal - b.ordinal): Comparator[PacketDownload])
-        private var currentOrdinal   = 0
+        private val queue          = new PriorityQueue[PacketDownload](((a, b) => a.ordinal - b.ordinal): Comparator[PacketDownload])
+        private var currentOrdinal = 0
 
         var lastUpdate: Long = 0
 
@@ -212,19 +211,14 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
 
         def size: Int = queue.size()
 
-        def offer(packet: PacketDownload): Unit = {
-            queueContentLock.lock()
+        def offer(packet: PacketDownload): Unit = queue.synchronized {
             queue.offer(packet)
             lastUpdate = System.currentTimeMillis()
-            queueContentLock.unlock()
         }
 
-        def remove(): PacketDownload = try {
-            queueContentLock.lock()
-            val result = queue.remove()
+        def remove(): PacketDownload = {
+            val result = queue.synchronized(queue.remove())
 
-
-            val queueLength     = queue.size
             val resultOrd       = result.ordinal
             val expectedOrdinal = currentOrdinal + 1
             if (resultOrd != expectedOrdinal) {
@@ -232,33 +226,21 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                 if (diff < 0) {
                     throw new PacketInjectionException(s"in channel ${injectable.reference}: Received packet with ordinal $resultOrd, but expected was $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
                 }
-                refocusShift = diff
-                if (queueLength != queue.size) { //the queue was updated, maybe the remaining packets has been added
-                    refocusShift = 0
-                    queue.offer(result)
-                    queueContentLock.unlock()
-                    return null
-                }
-                if (refocusShift > 0) {
+                contentLock.synchronized {
                     Debugger.push(SIPURectifyStep(reference, currentOrdinal, expectedOrdinal))
                     AppLoggers.Traffic.debug(s"(SIPU $reference): Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
-                    queueContentLock.unlock()
-                    LockSupport.park()
-                    queueContentLock.lock()
+                    refocusShift = diff
+                    contentLock.wait()
                     refocusShift = 0
                     Debugger.pop()
                 }
-                val peek = queue.peek()
-                if ((peek ne null) && peek.ordinal == resultOrd)
-                    throw new PacketInjectionException(s"in channel ${injectable.reference}: received packet with same ordinal after refocus.")
-                queue.offer(result)
-                queueContentLock.unlock()
+                queue.synchronized(queue.offer(result))
                 return null
             }
             currentOrdinal = expectedOrdinal
             AppLoggers.Traffic.trace(s"(SIPU $reference): current ordinal is now $currentOrdinal.")
             result
-        } finally if (queueContentLock.isHeldByCurrentThread) queueContentLock.unlock()
+        }
 
     }
 

@@ -13,8 +13,6 @@
 
 package fr.linkit.api.test
 
-import org.junit.jupiter.api.function.{Executable, ThrowingSupplier}
-
 import java.io.File
 import java.util.Scanner
 

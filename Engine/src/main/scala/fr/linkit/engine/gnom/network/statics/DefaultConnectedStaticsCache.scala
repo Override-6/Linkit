@@ -91,7 +91,7 @@ object DefaultConnectedStaticsCache {
     }
 
     private def apply(channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): SynchronizedStaticsCache = {
-        val app   = channel.manager.network.connection.getApp
+        val app       = channel.manager.network.connection.getApp
         val resources = app.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
                 .getEntry
                 .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
@@ -99,5 +99,5 @@ object DefaultConnectedStaticsCache {
 
         new DefaultConnectedStaticsCache(channel, generator, contracts, network)
     }
-    
+
 }

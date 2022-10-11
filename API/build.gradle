@@ -10,10 +10,6 @@
  * Please contact overridelinkit@gmail.com if you need additional information or have any
  * questions.
  */
-
-
-apply plugin: 'scala'
-
 group 'fr.linkit'
 version 'Alpha-1.0'
 
@@ -21,13 +17,7 @@ repositories {
     mavenCentral()
 }
 
-dependencies {
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0-M1'
-
-    implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
-    implementation group: 'org.scala-lang', name: 'scala-reflect', version: '2.13.7'
-    implementation group: 'org.scala-lang', name: 'scala-compiler', version: '2.13.7'
-}
+dependencies {}
 
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = ["-feature", "-language:implicitConversions", "-language:postfixOps", "-language:existentials"]
