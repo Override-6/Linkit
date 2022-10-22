@@ -14,35 +14,20 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
+import fr.linkit.engine.internal.concurrency.ReleasableReentrantLock
 
 import java.util.concurrent.locks.{Condition, ReentrantLock}
 import scala.collection.mutable
 
 object NetworkObjectReferencesLocks {
 
-    private final val lockMap = new mutable.WeakHashMap[NetworkObjectReference, LockHolder]
-
-    private def getLockHolder(reference: NetworkObjectReference): LockHolder = {
-        lockMap.getOrElseUpdate(reference, new LockHolder())
-    }
+    private final val lockMap = new mutable.WeakHashMap[NetworkObjectReference, ReleasableReentrantLock]
 
     /**
      * returns a reentrant lock associated with the given reference
      * @param reference the reference associated with it's reentrant lock.
      * */
-    def getLock(reference: NetworkObjectReference): ReentrantLock = getLockHolder(reference).lock
+    def getLock(reference: NetworkObjectReference): ReleasableReentrantLock = lockMap.getOrElseUpdate(reference, new ReleasableReentrantLock)
 
-    def getCondition(reference: NetworkObjectReference, tag: Int): Condition = {
-        getLockHolder(reference).getCondition(tag)
-    }
-
-    private class LockHolder {
-
-        val lock = new ReentrantLock()
-
-        private val conditions = new mutable.WeakHashMap[Int, Condition]
-
-        def getCondition(tag: Int): Condition = conditions.getOrElseUpdate(tag, lock.newCondition())
-    }
 
 }

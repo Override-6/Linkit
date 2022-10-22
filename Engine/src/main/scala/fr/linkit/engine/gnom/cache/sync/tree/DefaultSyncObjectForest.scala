@@ -106,8 +106,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
     
     def removeLinkedReference(obj: AnyRef): Option[ConnectedObjectReference] = linkedOrigins.remove(obj)
     
-    def isObjectLinked(obj: AnyRef): Boolean = linkedOrigins.contains(obj)
-    
+
     def isRegisteredAsUnknown(id: NamedIdentifier): Boolean = unknownTrees.contains(id)
     
     def transferUnknownTree(id: NamedIdentifier): Unit = {

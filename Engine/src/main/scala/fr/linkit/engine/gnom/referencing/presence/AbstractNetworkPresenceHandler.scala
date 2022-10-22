@@ -168,7 +168,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
             }
             present
         } else {
-            opt.get.isPresent
+            opt.get.isPresentOnCurrent
         }
     }
     

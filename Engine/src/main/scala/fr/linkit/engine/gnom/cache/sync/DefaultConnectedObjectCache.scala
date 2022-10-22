@@ -52,6 +52,7 @@ import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
 import fr.linkit.engine.internal.debug.{ConnectedObjectCreationStep, ConnectedObjectTreeRetrievalStep, Debugger, RequestStep}
 
 import java.lang.ref.WeakReference
+import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -242,37 +243,48 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         }
     }
 
+    private final val requestTreeExecutions = mutable.HashSet.empty[ConnectedObjectReference]
+
     override def requestTree(id: NamedIdentifier): Unit = {
         val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
         val refLock = NetworkObjectReferencesLocks.getLock(treeRef)
+
         refLock.lock()
         if (!forest.isPresentOnEngine(ownerID, treeRef)) {
             refLock.unlock()
             return
         }
+        if (requestTreeExecutions(treeRef)) {
+            //there is already a thread that is performing a request
+            return
+        }
         try {
+            requestTreeExecutions += treeRef
             forest.putUnknownTree(id)
 
             Debugger.push(ConnectedObjectTreeRetrievalStep(treeRef))
-            AppLoggers.ConnObj.trace(s" Requesting root object $treeRef.")
+            AppLoggers.ConnObj.trace(s"Requesting root object $treeRef.")
+            AppLoggers.Debug.info(s"Requesting root object $treeRef.")
 
 
             Debugger.push(RequestStep("CO tree retrieval", s"retrieve tree $treeRef", ownerID, channel.reference))
             val req = channel.makeRequest(ChannelScopes.include(ownerID))
                 .addPacket(AnyRefPacket(id))
                 .submit()
-            refLock.unlock()
+            val depth = refLock.release()
             val response = req.nextResponse
-            refLock.lock()
+            refLock.depthLock(depth)
             Debugger.pop()
             response.nextPacket[Packet] match {
                 case ObjectPacket(profile: ObjectTreeProfile[A]) =>
                     handleNewTree(profile)
                 case EmptyPacket                                 => //the tree does not exists, do nothing.
             }
+            AppLoggers.Debug.info("Ended Tree retrieval execution")
         } finally {
             Debugger.pop()
-            refLock.unlock() //go back to initial state for the reference's lock
+            requestTreeExecutions -= treeRef
+            refLock.unlock()
         }
     }
 

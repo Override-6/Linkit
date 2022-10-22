@@ -25,7 +25,7 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
     private val presences        = mutable.HashMap.empty[String, ObjectPresenceState]
     private var present: Boolean = false
 
-    def isPresent: Boolean = present
+    def isPresentOnCurrent: Boolean = present
     
     override def isPresenceKnownFor(engineId: String): Boolean = presences.synchronized {
         presences.contains(engineId)
