@@ -18,12 +18,12 @@ import org.apache.logging.log4j.{LogManager, Logger}
 import org.apache.logging.log4j.core.config.Configurator
 
 object AppLoggers {
-    
-    
+
+
     Configurator.initialize(null, "log4j2-development.xml")
-    
+
     final val LogFileProperty = "logfilename"
-    
+
     final val App         = logger("Application")
     final val GNOM        = logger("GNOM")
     final val ConnObj     = logger("GNOM.ConnObj")
@@ -35,11 +35,12 @@ object AppLoggers {
     final val Compilation = logger("Compilation")
     final val Worker      = logger("Worker")
     final val Connection  = logger("Connection")
-    final val Watchdog  = logger("Watchdog")
+    final val Watchdog    = logger("Watchdog")
+    final val Debug       = logger("Debug")
 
 
     private var init = false
-    
+
     private def logger(name: String): Logger = {
         if (!init && System.getProperty(LogFileProperty) == null) {
             println(s"Warn: No logfile will be generated because no '$LogFileProperty' system property was found.")

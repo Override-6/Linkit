@@ -71,7 +71,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
             throw ServerException(server, "Maximum connection limit exceeded")
         
         //Opening ClientConnectionSession and finalizing registration...
-        val packetReader = new ServerPacketReader(socket, server, this, identifier)
+        val packetReader = new ServerAsyncPacketReader(socket, server, this, identifier)
         val readerThread = new PacketReaderThread(packetReader, identifier)
         
         val info              = ExternalConnectionSessionInfo(server, this, server.getSideNetwork, readerThread)

@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.packet.traffic
 
 import fr.linkit.api.gnom.persistence.PacketDownload
 
-trait PacketReader {
+trait AsyncPacketReader {
 
     def nextPacket(callback: PacketDownload => Unit): Unit
 }

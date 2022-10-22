@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.concurrency
 
-import fr.linkit.api.gnom.packet.traffic.PacketReader
+import fr.linkit.api.gnom.packet.traffic.AsyncPacketReader
 import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
@@ -25,7 +25,7 @@ import scala.util.control.NonFatal
 /**
  * A simple abstract class to easily handle packet reading.
  * */
-class PacketReaderThread(reader: PacketReader,
+class PacketReaderThread(reader: AsyncPacketReader,
                          bound: String) extends Thread(packetReaderThreadGroup, s"$bound's Read Worker") with JustifiedCloseable {
 
     private var open = true
@@ -41,11 +41,10 @@ class PacketReaderThread(reader: PacketReader,
     override def run(): Unit = {
         try {
             while (open) {
-                //println("Waiting for next packet...")
                 refresh()
             }
         } catch {
-            case NonFatal(e) =>
+            case e: Throwable =>
                 AppLoggers.Traffic.error("Packet reading threw an error")
                 e.printStackTrace()
                 open = false

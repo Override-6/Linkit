@@ -16,9 +16,11 @@ package fr.linkit.engine.internal.debug
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.internal.concurrency.Worker
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
+import fr.linkit.engine.internal.debug.cli.SectionedPrinter
 
 import java.io.PrintStream
 import scala.collection.mutable
+import scala.util.Try
 
 object Debugger {
 
@@ -57,13 +59,14 @@ object Debugger {
             case w: Worker => Left(w)
             case o         => Right(o)
         }
+        val printer = new SectionedPrinter(out)
         workers.groupBy(_.pool).foreach { case (pool, poolWorkers) =>
             out.println(s"worker pool '${pool.name}': ")
-            poolWorkers.toArray.sortBy(_.getName).foreach(threadStates(_).printStack(out))
+            poolWorkers.toArray.sortBy(_.getName).foreach(t => Try(threadStates(t).printStack(printer)))
         }
         if (others.nonEmpty) {
             out.println("other threads:")
-            others.toArray.sortBy(_.getName).foreach(threadStates(_).printStack(out))
+            others.toArray.sortBy(_.getName).foreach(t => Try(threadStates(t).printStack(printer)))
         }
     }
 
@@ -71,10 +74,11 @@ object Debugger {
 
     def dumpConnectionTraffic(connection: ConnectionContext, out: PrintStream = System.out): Unit = {
         val connectionServerID = connection.network.serverIdentifier
+        val printer = new SectionedPrinter(out)
         connection.traffic match {
             case traffic: AbstractPacketTraffic =>
                 out.println(s"Dumping connection '$connectionServerID' traffic:")
-                traffic.dump(out)
+                traffic.dump(printer)
             case _                              =>
                 out.println(s"Could not dump connection '$connectionServerID' traffic.")
         }

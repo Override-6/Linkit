@@ -30,7 +30,7 @@ sealed trait Step {
 }
 
 sealed abstract class AbstractStep(val actionType: String) extends Step {
-    override val taskID = Procrastinator.currentWorker.map(_.taskID).getOrElse(-1)
+    override val taskID: Int = Procrastinator.currentWorker.map(_.taskID).getOrElse(-1)
 }
 
 case class RequestStep(requestType: String, goal: String, targetEngine: String, channel: TrafficReference) extends AbstractStep("request") {
@@ -63,9 +63,9 @@ case class PacketInjectionStep(packetID: String, channel: TrafficReference) exte
     override def insights: String = s"Injecting packet $packetID into channel $channel."
 }
 
-case class SIPURectifyStep(channel: TrafficReference, currentOrdinal: Int, expectedOrdinal: Int) extends AbstractStep("SIPU - rectify") {
+case class SIPURectifyStep(channel: TrafficReference, received: Int, expectedOrdinal: Int) extends AbstractStep("SIPU - rectify") {
     override def insights: String = {
-        val diff = currentOrdinal - expectedOrdinal
+        val diff = received - expectedOrdinal
         s"Waiting remaining packets for channel $channel. SIPU's Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal."
     }
 }

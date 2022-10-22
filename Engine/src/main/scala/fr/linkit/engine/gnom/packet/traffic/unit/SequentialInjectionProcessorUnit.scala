@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.PacketInjectionException
+import fr.linkit.engine.internal.debug.cli.SectionedPrinter
 import fr.linkit.engine.internal.debug.{Debugger, SIPURectifyStep}
 
 import java.io.PrintStream
@@ -62,7 +63,7 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                 if (executor eq null)
                     throw new IllegalStateException("refocusing without any executor.")
                 refocusShift = 0
-                contentLock.notify() //will notify the executor
+                contentLock.notifyAll() //will notify the executor
             }
         }
 
@@ -174,29 +175,34 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
         chain += unit
     }
 
-    private[traffic] def dump(out: PrintStream, indentLevel: Int): Unit = {
+    private[traffic] def appendDump(printer: SectionedPrinter)(sec: printer.Section, indentLevel: Int): Unit = {
+        import printer._
         val indentStr = " " * indentLevel
-
-        out.print(indentStr)
-        if (executor != null) out.println(s"- executor: ${executor.getName} (${executor.getState.name().toLowerCase})")
-        else out.println("- no executor")
+        sec.append(indentStr).append('\n')
+        if (executor != null) {
+            sec.append(s"- executor: ${executor.getName} (${executor.getState.name().toLowerCase})")
+                .enable()
+        } else sec.append("- no executor\n")
 
         if (chain.nonEmpty) {
-            out.print(indentStr)
-            out.println("- chained units: " + chain.map(x => x.injectable.trafficPath.mkString("/", "/", "")).mkString("", "; ", ";"))
+            sec.append(indentStr)
+                .append("- chained units: " + chain.map(x => x.injectable.trafficPath.mkString("/", "/", "")).mkString("", "; ", ";"))
+                .append('\n')
         }
         if (joiningThreads.nonEmpty) {
-            out.print(indentStr)
-            out.println(s"- threads waiting this unit: ${joiningThreads.map(_.getName).mkString(", ")}")
+            sec.append(indentStr)
+                .append(s"- threads waiting this unit: ${joiningThreads.map(_.getName).mkString(", ")}\n")
+                .enable()
         }
         val pendingPackets = queues.values.map(_.size).sum
-        out.print(indentStr)
+        sec.append(indentStr)
         if (pendingPackets == 0) {
-            out.println("- this unit has no pending packets")
+            sec.append("- this unit has no pending packets\n")
         } else {
-            out.print(s"- this unit has $pendingPackets pending packets. ")
-            if (refocusShift > 0) out.println(s"Those packets ordinals are $refocusShift ahead of expected ordinal.")
-            else out.println()
+            sec.enable()
+                .append(s"- this unit has $pendingPackets pending packets. ")
+            if (refocusShift > 0) sec.append(s"Those packets ordinals are $refocusShift ahead of expected ordinal.\n")
+            else sec.append('\n')
         }
     }
 
@@ -227,7 +233,7 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                     throw new PacketInjectionException(s"in channel ${injectable.reference}: Received packet with ordinal $resultOrd, but expected was $expectedOrdinal : a packet has already been handled with ordinal number $resultOrd")
                 }
                 contentLock.synchronized {
-                    Debugger.push(SIPURectifyStep(reference, currentOrdinal, expectedOrdinal))
+                    Debugger.push(SIPURectifyStep(reference, resultOrd, expectedOrdinal))
                     AppLoggers.Traffic.debug(s"(SIPU $reference): Head of queue ordinal is $diff ahead expected ordinal of $expectedOrdinal. This unit will wait for the remaining $diff packets before handling other packets.")
                     refocusShift = diff
                     contentLock.wait()

@@ -45,16 +45,13 @@ import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.{InvocationPacket, ObjectPuppeteer}
 import fr.linkit.engine.gnom.cache.sync.tree._
 import fr.linkit.engine.gnom.cache.sync.tree.node._
-import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
+import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
-import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, ChannelScopes}
 import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
 import fr.linkit.engine.internal.debug.{ConnectedObjectCreationStep, ConnectedObjectTreeRetrievalStep, Debugger, RequestStep}
 
 import java.lang.ref.WeakReference
-import java.util.concurrent.locks.ReentrantLock
-import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -91,8 +88,8 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         val treeProfile = ObjectTreeProfile(treeID, tree.getRoot.obj, currentIdentifier, mirror, contracts)
         AppLoggers.ConnObj.debug(s"Notifying other caches located on '$reference' that a new connected object has been added on the cache.")
         channel.makeRequest(ChannelScopes.include(ownerID))
-               .addPacket(ObjectPacket(treeProfile))
-               .submit()
+            .addPacket(ObjectPacket(treeProfile))
+            .submit()
         //Indicate that a new object has been posted.
         val node = tree.getRoot
         Debugger.pop()
@@ -245,40 +242,28 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         }
     }
 
-    private final val treeRequestsLocks = mutable.HashMap.empty[NamedIdentifier, ReentrantLock]
-
     override def requestTree(id: NamedIdentifier): Unit = {
         val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
-
-
-        val refLock         = NetworkObjectReferencesLocks.getLock(treeRef)
-        val isSyncOnRefLock = refLock.isHeldByCurrentThread
-        val requestLock     = treeRequestsLocks.getOrElseUpdate(id, new ReentrantLock())
-        if (requestLock.isLocked) {
-            //a request for the same object is already pending from another thread, just wait for it to end the request.
-            refLock.unlock()
-            requestLock.lock() //lock to wait
-            requestLock.unlock() //then directly release
-            if (isSyncOnRefLock)
-                refLock.lock()
-            return //directly return : the request was already done by another thread
-        }
+        val refLock = NetworkObjectReferencesLocks.getLock(treeRef)
+        refLock.lock()
         if (!forest.isPresentOnEngine(ownerID, treeRef)) {
+            refLock.unlock()
             return
         }
-        requestLock.lock()
-        forest.putUnknownTree(id)
-
-        Debugger.push(ConnectedObjectTreeRetrievalStep(treeRef))
-        AppLoggers.ConnObj.trace(s" Requesting root object $treeRef.")
-
-        if (isSyncOnRefLock) refLock.unlock()
         try {
+            forest.putUnknownTree(id)
+
+            Debugger.push(ConnectedObjectTreeRetrievalStep(treeRef))
+            AppLoggers.ConnObj.trace(s" Requesting root object $treeRef.")
+
+
             Debugger.push(RequestStep("CO tree retrieval", s"retrieve tree $treeRef", ownerID, channel.reference))
-            val response = channel.makeRequest(ChannelScopes.include(ownerID))
-                                  .addPacket(AnyRefPacket(id))
-                                  .submit()
-                                  .nextResponse
+            val req = channel.makeRequest(ChannelScopes.include(ownerID))
+                .addPacket(AnyRefPacket(id))
+                .submit()
+            refLock.unlock()
+            val response = req.nextResponse
+            refLock.lock()
             Debugger.pop()
             response.nextPacket[Packet] match {
                 case ObjectPacket(profile: ObjectTreeProfile[A]) =>
@@ -287,10 +272,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
             }
         } finally {
             Debugger.pop()
-            treeRequestsLocks -= id
-            requestLock.unlock()
-            if (isSyncOnRefLock)
-                refLock.lock() //go back to initial state for the reference's lock
+            refLock.unlock() //go back to initial state for the reference's lock
         }
     }
 
@@ -410,8 +392,8 @@ object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
     private def apply[A <: AnyRef : ClassTag](channel: CachePacketChannel, contracts: ContractDescriptorData, network: Network): ConnectedObjectCache[A] = {
         val app       = channel.manager.network.connection.getApp
         val resources = app.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
-                           .getEntry
-                           .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
+            .getEntry
+            .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
         val generator = new DefaultSyncClassCenter(resources, app.compilerCenter)
 
         new DefaultConnectedObjectCache[A](channel, generator, contracts, network)

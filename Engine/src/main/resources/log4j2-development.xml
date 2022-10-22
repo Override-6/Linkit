@@ -71,7 +71,7 @@
         </Logger>
 
         <Logger name="Debug"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="ALL"/>
+            <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 

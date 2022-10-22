@@ -14,26 +14,33 @@
 package fr.linkit.engine.internal.concurrency
 
 import fr.linkit.api.internal.concurrency.{Procrastinator, Worker, WorkerPool}
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.VirtualProcrastinator.workers
 
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
 import scala.util.control.NonFatal
 
 class VirtualProcrastinator(val name: String) extends WorkerPool {
 
-    private val taskCounter = new AtomicInteger()
-    private val context     = ExecutionContext.fromExecutorService(Executors.newThreadPerTaskExecutor(makeVThread(_)), _.printStackTrace())
+    private val taskCounter                                       = new AtomicInteger()
+    private implicit val context: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(Executors.newThreadPerTaskExecutor(makeVThread(_)), _.printStackTrace())
 
-    override def runLater[A](f: => A): Future[A] = Future {
-        try f catch {
-            case t: Throwable =>
-                t.printStackTrace()
-                throw t
+    override def runLater[A](f: => A): Future[A] = {
+        AppLoggers.Debug.trace("in Run Later")
+        Future {
+            AppLoggers.Debug.trace("Executing task...")
+            val v = try f catch {
+                case t: Throwable =>
+                    t.printStackTrace()
+                    throw t
+            }
+            AppLoggers.Debug.trace("Task ended.")
+            v
         }
-    }(context)
+    }
 
     private def makeVThread(target: Runnable): Thread = try {
         val taskID = taskCounter.incrementAndGet()

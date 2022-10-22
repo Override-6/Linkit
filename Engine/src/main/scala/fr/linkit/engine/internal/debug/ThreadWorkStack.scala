@@ -13,7 +13,9 @@
 
 package fr.linkit.engine.internal.debug
 
-import java.io.PrintStream
+import fr.linkit.engine.internal.debug.cli.SectionedPrinter
+
+import scala.Console.out
 import scala.collection.mutable
 
 class ThreadWorkStack(val thread: Thread) {
@@ -27,23 +29,26 @@ class ThreadWorkStack(val thread: Thread) {
 
     def pop(): Step = stepStack.pop()
 
-    def printStack(out: PrintStream): Unit = {
-        out.print(s"\t- thread ${thread.getName}:")
+    def printStack(printer: SectionedPrinter): Unit = {
+        import printer._
+        val section = printer.newSection().enable()
+        section.append(s"\t- thread ${thread.getName}:")
         if (stepStack.isEmpty) {
-            out.println(" <not performing any work>")
+            section.append(" <not performing any work>\n")
             return
-        } else out.println("")
+        } else section.append("\n")
         //print from oldest to newest
         val maxActionTypeStrLength = stepStack.map(_.actionType.length).max
         val maxTaskPathStrLength   = stepStack.map(_.taskID.toString.length).max
         stepStack.reverse.foreach(action => {
             val taskID     = action.taskID
             val actionType = action.actionType
-            out.println("\t\t- " + taskID + (" " * (maxTaskPathStrLength - taskID.toString.length - 1)) +
-                            " " + actionType +
-                            (" " * (maxActionTypeStrLength - actionType.length)) +
-                            ": " + action.insights)
+            section.append("\t\t- " + (if (taskID == -1) "?" else taskID) + (" " * (maxTaskPathStrLength - taskID.toString.length - 1)) +
+                               " " + actionType +
+                               (" " * (maxActionTypeStrLength - actionType.length)) +
+                               ": " + action.insights).append('\n')
         })
+        section.flush()
     }
 
 }

@@ -49,12 +49,9 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         ensureReady()
         SocketLocker.markAsWriting()
         try {
+            logUpload(boundIdentifier, buff)
             currentOutputStream.write(buff)
             currentOutputStream.flush()
-            //val t1 = System.currentTimeMillis()
-            //totalWriteTime += t1 - t0
-            //NETWORK-DEBUG-MARK
-            logUpload(boundIdentifier, buff)
         } catch {
             case e@(_: ConnectException | _: IOException) =>
 

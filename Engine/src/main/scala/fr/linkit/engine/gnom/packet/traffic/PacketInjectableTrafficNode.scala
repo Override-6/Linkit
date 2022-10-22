@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.packet.traffic.{InjectableTrafficNode, PacketInjectabl
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.engine.gnom.packet.traffic.unit.{PerformantInjectionProcessorUnit, SequentialInjectionProcessorUnit}
+import fr.linkit.engine.internal.debug.cli.SectionedPrinter
 
 import java.io.PrintStream
 
@@ -57,13 +58,15 @@ case class PacketInjectableTrafficNode[+C <: PacketInjectable](override val inje
 
     override def unit(): InjectionProcessorUnit = if (preferPerformances0) pipu else sipu
 
-    private[traffic] def dump(out: PrintStream): Unit = {
+    private[traffic] def dump(printer: SectionedPrinter)(section: printer.Section): Unit = {
+        import printer._
         val unit = this.unit()
-        out.print(injectable.trafficPath.mkString("/", "/", ""))
-        out.println(": <unit: " + unit.shortname + s"> (of channel ${injectable.reference})")
+        section.append(injectable.trafficPath.mkString("/", "/", ""))
+        section.append(": <unit: " + unit.shortname + s"> (of channel ${injectable.reference})\n")
         unit match {
-            case sipu: SequentialInjectionProcessorUnit => sipu.dump(out, 6)
+            case sipu: SequentialInjectionProcessorUnit => sipu.appendDump(printer)(section, 6)
             case _                                      =>
         }
+        section.flush()
     }
 }

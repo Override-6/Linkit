@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.gnom.packet.traffic.{PacketReader, PacketTraffic}
+import fr.linkit.api.gnom.packet.traffic.{AsyncPacketReader, PacketTraffic}
 import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -21,10 +21,10 @@ import org.jetbrains.annotations.Nullable
 
 import java.nio.ByteBuffer
 
-class DefaultPacketReader(socket        : DynamicSocket,
-                          procrastinator: Procrastinator,
-                          traffic       : PacketTraffic,
-                          translator    : ObjectTranslator) extends PacketReader {
+class DefaultAsyncPacketReader(socket        : DynamicSocket,
+                               procrastinator: Procrastinator,
+                               traffic       : PacketTraffic,
+                               translator    : ObjectTranslator) extends AsyncPacketReader {
 
 
     /**

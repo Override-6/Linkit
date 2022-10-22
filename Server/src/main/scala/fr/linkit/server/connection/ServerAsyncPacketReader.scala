@@ -13,22 +13,22 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.gnom.packet.traffic.PacketReader
+import fr.linkit.api.gnom.packet.traffic.AsyncPacketReader
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.packet.traffic.{DefaultPacketReader, DynamicSocket, SocketClosedException}
+import fr.linkit.engine.gnom.packet.traffic.{DefaultAsyncPacketReader, DynamicSocket, SocketClosedException}
 import fr.linkit.server.connection.traffic.DeflectedPacket
 
 import java.net.SocketException
 import scala.util.control.NonFatal
 
-class ServerPacketReader(socket: DynamicSocket,
-                         server: ServerConnection,
-                         manager: ExternalConnectionsManager,
-                         boundIdentifier: String) extends PacketReader {
+class ServerAsyncPacketReader(socket         : DynamicSocket,
+                              server         : ServerConnection,
+                              manager        : ExternalConnectionsManager,
+                              boundIdentifier: String) extends AsyncPacketReader {
     
-    private val simpleReader     = new DefaultPacketReader(socket, server, server.traffic, server.translator)
+    private val simpleReader     = new DefaultAsyncPacketReader(socket, server, server.traffic, server.translator)
     private val serverIdentifier = server.currentIdentifier
     
     override def nextPacket(callback: PacketDownload => Unit): Unit = {

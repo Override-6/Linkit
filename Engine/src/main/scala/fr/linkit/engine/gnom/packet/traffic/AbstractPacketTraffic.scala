@@ -31,11 +31,13 @@ import fr.linkit.engine.gnom.packet.traffic.unit.{PerformantInjectionProcessorUn
 import fr.linkit.engine.gnom.persistence.config.{PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.gnom.referencing.linker.ObjectChannelContextObjectLinker
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
+import fr.linkit.engine.internal.debug.cli.SectionedPrinter
 import fr.linkit.engine.internal.debug.{Debugger, PacketInjectionStep}
 import fr.linkit.engine.internal.util.ClassMap
 
 import java.io.PrintStream
 import java.net.URL
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
@@ -162,11 +164,14 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
      * dumps this traffic.
      * Do not use this method directly, use [[Debugger.dumpConnectionTraffic()]] instead.
      * */
-    private[linkit] def dump(out: PrintStream): Unit = {
-        out.println("/ (ObjectManagementChannel):")
+    private[linkit] def dump(printer: SectionedPrinter): Unit = {
+        import printer._
+        val section = printer.newSection()
+        section.append("/ (ObjectManagementChannel):")
         omcNode.unit().asInstanceOf[SequentialInjectionProcessorUnit] //OMC's unit IS a SIPU
-               .dump(out, 6)
-        rootStore.dump(out)
+               .appendDump(printer)(section, 6)
+        rootStore.appendDump(printer)(section)
+        section.flush()
     }
 
 }

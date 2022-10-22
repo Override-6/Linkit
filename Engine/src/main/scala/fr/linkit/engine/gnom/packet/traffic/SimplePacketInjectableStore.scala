@@ -20,9 +20,9 @@ import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficRefere
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.gnom.packet.traffic.SimplePacketInjectableStore.StoreTrafficNode
-import fr.linkit.engine.gnom.packet.traffic.unit.{PerformantInjectionProcessorUnit, SequentialInjectionProcessorUnit}
+import fr.linkit.engine.internal.debug.cli.SectionedPrinter
 
-import java.io.{Closeable, PrintStream}
+import java.io.Closeable
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -140,14 +140,19 @@ class SimplePacketInjectableStore(traffic                              : PacketT
 
     override def isClosed: Boolean = closed
 
-    private[traffic] def dump(out: PrintStream): Unit = {
-        out.print(trafficPath.mkString("/", "/", ""))
-        out.println(":")
+
+    private[traffic] def appendDump(printer: SectionedPrinter)(section: printer.Section): Unit = {
+        import printer._
+        section.append(trafficPath.mkString("/", "/", ""))
+        section.append(":\n")
         children.toArray.sortBy(_._1).foreach {
-            case (_, StoreTrafficNode(store, _))           => store.dump(out)
-            case (_, node: PacketInjectableTrafficNode[_]) => node.dump(out)
+            case (_, StoreTrafficNode(store, _))           => store.dump(printer)
+            case (_, node: PacketInjectableTrafficNode[_]) => node.dump(printer)(section)
         }
+        section.flush()
     }
+
+    private[traffic] def dump(printer: SectionedPrinter): Unit = appendDump(printer)(printer.newSection())
 
 }
 
