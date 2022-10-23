@@ -52,7 +52,6 @@ import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
 import fr.linkit.engine.internal.debug.{ConnectedObjectCreationStep, ConnectedObjectTreeRetrievalStep, Debugger, RequestStep}
 
 import java.lang.ref.WeakReference
-import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -195,7 +194,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
             val tree = new DefaultConnectedObjectTree[A](currentIdentifier, network, forest, id, DefaultInstantiator, this, factory)(rootNodeSupplier)
             forest.addTree(id, tree)
             if (forest.isRegisteredAsUnknown(id)) {
-                forest.transferUnknownTree(id)
+                forest.transferUnknownObjects(id)
             }
 
             tree
@@ -243,23 +242,25 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         }
     }
 
-    private final val requestTreeExecutions = mutable.HashSet.empty[ConnectedObjectReference]
 
     override def requestTree(id: NamedIdentifier): Unit = {
         val treeRef = ConnectedObjectReference(family, cacheID, ownerID, Array(id))
-        val refLock = NetworkObjectReferencesLocks.getLock(treeRef)
 
-        refLock.lock()
-        if (!forest.isPresentOnEngine(ownerID, treeRef)) {
+        val initLock = NetworkObjectReferencesLocks.getInitializationLock(treeRef)
+        val refLock = NetworkObjectReferencesLocks.getLock(treeRef)
+        initLock.lock() //locked only during computation: the lock is released while waiting for the response.
+        refLock.lock() //locked during all the request process
+
+        //if the tree is not present on the owner side, the tree is simply not present so we abort the request
+        //if another thread was already performing this request, the current thread had to wait for the
+        //above locks to get released, which means that the requested three has been added.
+        //We check the second state by checking if the requested tree is finally present on this engine.
+        if (!forest.isPresentOnEngine(ownerID, treeRef) || forest.findTreeLocal(id).isDefined) {
             refLock.unlock()
-            return
-        }
-        if (requestTreeExecutions(treeRef)) {
-            //there is already a thread that is performing a request
+            initLock.unlock()
             return
         }
         try {
-            requestTreeExecutions += treeRef
             forest.putUnknownTree(id)
 
             Debugger.push(ConnectedObjectTreeRetrievalStep(treeRef))
@@ -271,9 +272,9 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
             val req = channel.makeRequest(ChannelScopes.include(ownerID))
                 .addPacket(AnyRefPacket(id))
                 .submit()
-            val depth = refLock.release()
+            val depth = initLock.release()
             val response = req.nextResponse
-            refLock.depthLock(depth)
+            initLock.depthLock(depth)
             Debugger.pop()
             response.nextPacket[Packet] match {
                 case ObjectPacket(profile: ObjectTreeProfile[A]) =>
@@ -283,7 +284,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
             AppLoggers.Debug.info("Ended Tree retrieval execution")
         } finally {
             Debugger.pop()
-            requestTreeExecutions -= treeRef
+            initLock.unlock()
             refLock.unlock()
         }
     }

@@ -1,8 +1,10 @@
 package fr.linkit.examples.rfsc
 
+import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.ExternalConnection
 import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
@@ -13,13 +15,34 @@ import java.net.InetSocketAddress
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
 import java.util.concurrent.ThreadLocalRandom
+import scala.io.StdIn
 
 object RFSCClient {
 
     def main(args: Array[String]): Unit = {
+        print("how many connection ? : ")
+        val int = StdIn.readInt()
+        if (int == 1) launchAlone()
+        else launchXTimes(int)
+    }
+
+    private def launchXTimes(x: Int): Unit = {
+        val connection = launchConnectionMultiple(1, x)
+        Contract.registerProperties(ObjectsProperty.empty("fs"))
+        connection.listConnections.foreach(cc => {
+            remoteFS(cc.network)
+        })
+    }
+
+    private def launchAlone(): Unit = {
         val identifier = "x" + ThreadLocalRandom.current().nextInt(10_000, 100_000)
         val network    = launchConnection(identifier).network
         Contract.registerProperties(ObjectsProperty.empty("fs"))
+
+    }
+
+    private def remoteFS(network: Network): Unit = {
+        println(s"Connecting ${network.currentEngine.identifier}: ")
         val serverStatics = network.getStaticAccess(1)
 
         listenDistantDir(serverStatics)
@@ -27,7 +50,6 @@ object RFSCClient {
 
         println("Done.")
     }
-
 
     private def listenDistantDir(serverStatics: StaticAccess): Unit = {
         val dir: Path = serverStatics[Path].of("/")
@@ -39,7 +61,7 @@ object RFSCClient {
             key.pollEvents().forEach {
                 event => {
                     val path  : Path    = serverStatics[Path].of(event.context().toString)
-                    val exists: Boolean = true/*serverStatics[Files].exists(path)*/
+                    val exists: Boolean = true /*serverStatics[Files].exists(path)*/
                     println(s"path $path exists: $exists")
                     event.kind() match {
                         case ENTRY_DELETE => println(s"Deleted file '$path'")
@@ -75,6 +97,23 @@ object RFSCClient {
         serverStream.close()
     }
 
+    private def launchConnectionMultiple(from: Int, to: Int): ApplicationContext = {
+        val config = new ClientApplicationConfigBuilder {
+            val resourcesFolder: String = "/home/maxime/dev/Linkit/Default_Home"
+            logfilename = Some(s"examples/rfsc client from $from to $to")
+            loadSchematic = new ScalaClientAppSchematic {
+                for (i <- from to to) {
+                    clients += new ClientConnectionConfigBuilder {
+                        override val identifier: String = i.toString
+                        override val remoteAddress      = new InetSocketAddress("localhost", 48489)
+                        defaultPersistenceConfigScript = Some(getClass.getResource("/FS_persistence.sc"))
+                    }
+                }
+            }
+        }
+        ClientApplication.launch(config, getClass)
+    }
+
     private def launchConnection(identifier0: String): ExternalConnection = {
         println(s"Using identifier $identifier0")
         val config = new ClientApplicationConfigBuilder {
@@ -89,8 +128,8 @@ object RFSCClient {
             }
         }
         ClientApplication.launch(config, getClass)
-                         .findConnection(identifier0)
-                         .get
+            .findConnection(identifier0)
+            .get
     }
 
 }

@@ -72,15 +72,13 @@ final class ServerSharedCacheManager @Persist()(family : String,
 
     private def handlePreCacheOpeningRequest(cacheID: Int, cacheType: Class[_], senderID: String, response: Submitter[_]): Unit = {
         Debugger.push(ResponseStep("check if cache can open", senderID, channel.reference))
-        breakable {
-            def acceptRequest: Nothing = {
+        try {
+            def acceptRequest: Unit = {
                 response.addPacket(EmptyPacket).submit()
-                break
             }
 
-            def failRequest(msg: String): Nothing = {
+            def failRequest(msg: String): Unit = {
                 response.addPacket(StringPacket(msg)).submit()
-                break
             }
 
             LocalCachesStore.findCache(cacheID) match {
@@ -90,22 +88,25 @@ final class ServerSharedCacheManager @Persist()(family : String,
                     acceptRequest
                 case Some(registeredCache) =>
                     val cacheClass = registeredCache.cache.getClass
-                    if (!cacheType.isAssignableFrom(cacheClass))
+                    if (!cacheType.isAssignableFrom(cacheClass)) {
                         failRequest(s"For cache identifier $cacheID: Shared cache of type '${cacheClass.getName}', contained in local storage is not assignable to requested cache '${cacheType.getName}'.")
+                        return
+                    }
 
                     val isSystemCache = SystemCacheRange contains cacheID
                     registeredCache.channel.getHandler match {
                         case None                            => acceptRequest //There is no attach handler set, the cache is free to accept any thing
                         case Some(_) if isSystemCache        => acceptRequest //System Caches are free to access caches content.
                         case Some(value: CacheAttachHandler) =>
-                            val engine = network.findEngine(senderID).getOrElse {
-                                failRequest(s"Unknown engine '$senderID'.")
-                            }
-                            value.inspect(engine, registeredCache.cache.getClass, cacheType).fold(acceptRequest)(failRequest)
+                            val engineOpt = network.findEngine(senderID)
+                            if (engineOpt.isDefined)
+                                value.inspect(engineOpt.get, registeredCache.cache.getClass, cacheType).fold(acceptRequest)(failRequest)
+                            else failRequest(s"Unknown engine '$senderID'.")
                     }
             }
+        } finally {
+            Debugger.pop()
         }
-        Debugger.pop()
     }
 
     private def handleContentRetrievalRequest(bundle: RequestPacketBundle, cacheID: Int): Unit = {
@@ -121,14 +122,14 @@ final class ServerSharedCacheManager @Persist()(family : String,
         def failRequest(msg: String): Nothing = {
             AppLoggers.GNOM.error(s"Could not send cache content to $senderID: $msg")
             response.addPacket(StringPacket(msg))
-                    .submit()
+                .submit()
             break
         }
 
         def sendContent(content: Option[CacheContent]): Unit = {
             AppLoggers.GNOM.trace(s"sending cache content (cacheID: $cacheID, family: $family)")
             response.addPacket(RefPacket[Option[CacheContent]](content))
-                    .submit()
+                .submit()
         }
 
         def handleContentNotAvailable(): Unit = behavior match {

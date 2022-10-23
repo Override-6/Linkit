@@ -17,20 +17,21 @@ import fr.linkit.api.internal.concurrency.{Procrastinator, Worker, WorkerPool}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.concurrency.VirtualProcrastinator.workers
 
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, Future}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutorService, Future}
 import scala.util.control.NonFatal
 
 class VirtualProcrastinator(val name: String) extends WorkerPool {
 
-    private val taskCounter                                       = new AtomicInteger()
-    private implicit val context: ExecutionContextExecutorService = ExecutionContext.fromExecutorService(Executors.newThreadPerTaskExecutor(makeVThread(_)), _.printStackTrace())
+    private val taskCounter = new AtomicInteger()
+    private val executor    = {
+        Executors.newThreadPerTaskExecutor(makeVThread(_))
+    }
 
     override def runLater[A](f: => A): Future[A] = {
         AppLoggers.Debug.trace("in Run Later")
-        Future {
+        executor.submit(() => {
             AppLoggers.Debug.trace("Executing task...")
             val v = try f catch {
                 case t: Throwable =>
@@ -39,17 +40,20 @@ class VirtualProcrastinator(val name: String) extends WorkerPool {
             }
             AppLoggers.Debug.trace("Task ended.")
             v
-        }
+        })
     }
 
     private def makeVThread(target: Runnable): Thread = try {
+        AppLoggers.Debug.trace("Making vThread...")
         val taskID = taskCounter.incrementAndGet()
-        val thread = Thread.ofVirtual().name(name + "'s task #" + taskID).unstarted(target)
+        val thread = Thread.ofVirtual()
+            .name(name + "'s task #" + taskID)
+            .unstarted(target)
         val worker = new VirtualWorker(this, thread, taskID)
         workers.put(thread, worker)
         thread
     } catch {
-        case NonFatal(e) =>
+        case e: Throwable =>
             e.printStackTrace()
             null
     }

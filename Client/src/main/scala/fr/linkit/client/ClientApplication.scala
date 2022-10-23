@@ -27,10 +27,8 @@ import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
 
 import scala.collection.mutable
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class ClientApplication(configuration: ClientApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ClientApplicationContext {
     
@@ -131,15 +129,15 @@ object ClientApplication {
             case NonFatal(e) =>
                 throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)
         }
-        
-        Await.ready(clientApp.runLater {
+
+        Try(clientApp.runLater {
             AppLoggers.App.info("Starting Client Application...")
             clientApp.start()
             val loadSchematic = config.loadSchematic
             AppLoggers.App.debug(s"Applying schematic '${loadSchematic.name}'...")
             loadSchematic.setup(clientApp)
             AppLoggers.App.trace("Schematic applied successfully.")
-        }, Duration.Inf).value.get match {
+        }.get) match {
             case Failure(e) =>
                 throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)
             case Success(_) =>

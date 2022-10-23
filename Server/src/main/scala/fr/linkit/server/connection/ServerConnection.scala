@@ -35,7 +35,7 @@ import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
 
 import java.net.{ServerSocket, SocketException}
-import scala.concurrent.Future
+import java.util.concurrent.Future
 import scala.util.control.NonFatal
 
 class ServerConnection(applicationContext: ServerApplication,

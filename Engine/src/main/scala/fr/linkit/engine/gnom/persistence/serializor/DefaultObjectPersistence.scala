@@ -41,17 +41,22 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         Debugger.push(PacketSerializationStep(bundle.packetID, bundle.boundId))
         val t0     = System.currentTimeMillis()
         val buffer = bundle.buff
-        buffer.put(signature.toArray)
-        buffer.putShort(ConstantProtocol.ProtocolVersion)
-        val writer = new ObjectWriter(bundle)
-        writer.addObjects(objects)
-        buffer.limit(buffer.capacity())
-        writer.writePool()
-        val pool = writer.getPool
-        writeEntries(objects, writer, pool)
-        val t1 = System.currentTimeMillis()
-        Debugger.pop()
-        AppLoggers.Persistence.debug(s"Objects serialized (took ${t1 - t0} ms) - resulting buff length = ${buffer.position()}.")
+        try {
+            buffer.put(signature.toArray)
+            buffer.putShort(ConstantProtocol.ProtocolVersion)
+            val writer = new ObjectWriter(bundle)
+            writer.addObjects(objects)
+            buffer.limit(buffer.capacity())
+            writer.writePool()
+            val pool = writer.getPool
+            writeEntries(objects, writer, pool)
+        } catch {
+            case e: Throwable => throw e
+        } finally {
+            val t1 = System.currentTimeMillis()
+            Debugger.pop()
+            AppLoggers.Persistence.debug(s"Objects serialized (took ${t1 - t0} ms) - resulting buff length = ${buffer.position()}.")
+        }
     }
 
     private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,

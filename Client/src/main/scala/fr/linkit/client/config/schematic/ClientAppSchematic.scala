@@ -19,7 +19,7 @@ import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Await
+import scala.concurrent.{Await, ExecutionException}
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
@@ -31,19 +31,16 @@ abstract class ClientAppSchematic extends AppSchematic[ClientApplication] {
 
     @throws[ApplicationInstantiationException]
     override def setup(app: ClientApplication): Unit = {
-        for (configuration <- serverConfigs) {
-            Await.ready(app.runLater {
-                try {
-                    app.openConnection(configuration)
-                } catch {
-                    case NonFatal(e) =>
-                        val name: String = configuration.configName
-                        throw new ApplicationInstantiationException(s"Failed to load configuration '$name'", e)
-                }
-            }, Duration.Inf).value.get match {
-                case Failure(e) => throw e
-                case Success(_) =>
+        for (configuration <- serverConfigs) try app.runLater {
+            try {
+                app.openConnection(configuration)
+            } catch {
+                case NonFatal(e) =>
+                    val name: String = configuration.configName
+                    throw new ApplicationInstantiationException(s"Failed to load configuration '$name'", e)
             }
+        }.get() catch {
+            case NonFatal(e: ExecutionException) => throw e.getCause
         }
     }
 

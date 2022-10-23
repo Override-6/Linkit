@@ -109,10 +109,10 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
 
     def isRegisteredAsUnknown(id: NamedIdentifier): Boolean = unknownTrees.contains(id)
     
-    def transferUnknownTree(id: NamedIdentifier): Unit = {
-        if (findTreeInternal(id).isEmpty)
-            throw new IllegalStateException(s"Can not transfer unknown tree with id $id: a tree with the same id must be created before transfering all UnknownTree objects into its 'Known' tree ")
-        val tree = unknownTrees.remove(id).get
+    def transferUnknownObjects(treeID: NamedIdentifier): Unit = {
+        if (findTreeInternal(treeID).isEmpty)
+            throw new IllegalStateException(s"Can not transfer unknown object for tree with id $treeID: a known tree with the same id must be created before transfering all unknown objects into the known tree ")
+        val tree = unknownTrees.remove(treeID).get
         tree.foreach { obj =>
             if (!obj.isInitialized)
                 initializeSyncObject(obj)

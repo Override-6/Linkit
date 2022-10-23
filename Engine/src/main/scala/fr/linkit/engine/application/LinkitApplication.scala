@@ -30,9 +30,9 @@ import fr.linkit.engine.internal.mapping.{ClassMappings, MappingEngine}
 import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoader}
 
 import java.nio.file.{Files, Path}
+import java.util.concurrent.Future
 import java.util.{Objects, Properties}
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
 import scala.util.control.NonFatal
 
 abstract class LinkitApplication(configuration: ApplicationConfiguration, appResources: ResourceFolder) extends ApplicationContext {
@@ -221,13 +221,11 @@ object LinkitApplication {
         }
 
         AppLoggers.App.info("Exiting application...")
-        val t = instance.runLater {
+        instance.runLater {
             instance.preShutdown()
             instance.shutdown()
-        }
-        Await.ready(t, Duration.Inf)
+        }.get() //get to wait
 
-        Runtime.getRuntime.halt(code)
         instance = null
     }
 

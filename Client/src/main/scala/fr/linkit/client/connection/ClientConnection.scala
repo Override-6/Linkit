@@ -31,7 +31,7 @@ import fr.linkit.engine.internal.util.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
 
 import java.nio.ByteBuffer
-import scala.concurrent.Future
+import java.util.concurrent.Future
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends ExternalConnection {

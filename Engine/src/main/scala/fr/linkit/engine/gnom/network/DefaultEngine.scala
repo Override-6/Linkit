@@ -36,7 +36,7 @@ class DefaultEngine(override val identifier: String,
     private var mappings              : Option[RemoteClassMappings] = None
     private var isMappingsInitializing: Boolean                     = false
     
-    def isCurrentEngine = identifier == network.connection.currentIdentifier
+    def isCurrentEngine: Boolean = identifier == network.connection.currentIdentifier
     
     def classMappings: Option[RemoteClassMappings] = {
         if (mappings.isEmpty && !isMappingsInitializing) {

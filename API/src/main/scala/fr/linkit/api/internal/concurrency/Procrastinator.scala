@@ -15,7 +15,8 @@ package fr.linkit.api.internal.concurrency
 
 import fr.linkit.api.internal.system.delegate.ImplementationDelegates
 
-import scala.concurrent.Future
+import java.util.concurrent.Future
+
 
 trait Procrastinator {
 

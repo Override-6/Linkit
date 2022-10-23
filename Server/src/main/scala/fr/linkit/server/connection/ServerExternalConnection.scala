@@ -25,7 +25,7 @@ import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
-import scala.concurrent.Future
+import java.util.concurrent.Future
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
 

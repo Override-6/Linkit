@@ -132,7 +132,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
 
     def handleObject(obj: NetworkObject[NetworkObjectReference]): Unit = {
         val reference = obj.reference
-        val lock = NetworkObjectReferencesLocks.getLock(reference)
+        val lock = NetworkObjectReferencesLocks.getInitializationLock(reference)
         lock.lock()
         try {
             gnol.findRootLinker(reference) match {

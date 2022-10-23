@@ -27,10 +27,8 @@ import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicatio
 import fr.linkit.server.connection.ServerConnection
 
 import scala.collection.mutable
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class ServerApplication(configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ServerApplicationContext {
 
@@ -84,11 +82,11 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
         AppLoggers.App.debug("Instantiating server connection...")
         val serverConnection = new ServerConnection(this, configuration)
 
-        Await.ready(serverConnection.runLater {
+        Try(serverConnection.runLater {
             AppLoggers.App.debug("Starting server...")
             serverConnection.start()
             AppLoggers.App.debug("Server started !")
-        }, Duration.Inf).value.get match {
+        }.get) match {
             case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.identifier} on port ${configuration.port}", e)
             case Success(_) =>
         }
@@ -154,14 +152,14 @@ object ServerApplication {
                 throw new ApplicationInstantiationException("Could not instantiate Server Application.", e)
         }
 
-        Await.ready(serverAppContext.runLater {
+        Try(serverAppContext.runLater {
             AppLoggers.App.info("Starting Server Application...")
             serverAppContext.start()
             val loadSchematic = config.loadSchematic
             AppLoggers.App.debug(s"Applying schematic '${loadSchematic.name}'...")
             loadSchematic.setup(serverAppContext)
             AppLoggers.App.debug("Schematic applied successfully.")
-        }, Duration.Inf).value.get match {
+        }.get()) match {
             case Failure(exception) => throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
             case Success(_)         =>
                 initialized = true
