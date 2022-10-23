@@ -15,15 +15,14 @@ import java.net.InetSocketAddress
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
 import java.util.concurrent.ThreadLocalRandom
-import scala.io.StdIn
 
 object RFSCClient {
 
     def main(args: Array[String]): Unit = {
-        print("how many connection ? : ")
-        val int = StdIn.readInt()
-        if (int == 1) launchAlone()
-        else launchXTimes(int)
+       // print("how many connection ? : ")
+        /*val int = StdIn.readInt()
+        if (int == 1) */launchAlone()
+        //else launchXTimes(int)
     }
 
     private def launchXTimes(x: Int): Unit = {
@@ -38,7 +37,7 @@ object RFSCClient {
         val identifier = "x" + ThreadLocalRandom.current().nextInt(10_000, 100_000)
         val network    = launchConnection(identifier).network
         Contract.registerProperties(ObjectsProperty.empty("fs"))
-
+        remoteFS(network)
     }
 
     private def remoteFS(network: Network): Unit = {
