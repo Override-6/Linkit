@@ -14,32 +14,36 @@
 package fr.linkit.server.connection.traffic
 
 import fr.linkit.api.application.connection.NoSuchConnectionException
-import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, PacketWriter}
+import fr.linkit.api.gnom.network.{EngineTag, Network}
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.traffic.WriterInfo
+import fr.linkit.engine.gnom.packet.{AbstractPacketWriter, SimplePacketAttributes}
 import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection,
-                         info: WriterInfo) extends PacketWriter {
-    
+                         info: WriterInfo) extends AbstractPacketWriter {
+
     override val path             : Array[Int]    = info.path
     override val traffic          : PacketTraffic = info.traffic
-    override val serverIdentifier : String        = serverConnection.currentIdentifier
-    override val currentIdentifier: String        = traffic.currentIdentifier
-    override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
-        writePacket(packet, SimplePacketAttributes.empty, targetIDs)
+    override val serverName       : String        = serverConnection.currentIdentifier
+    override val currentEngineName: String        = traffic.currentEngineName
+
+    override protected def network: Network = serverConnection.network
+
+    override def writePackets(packet: Packet, targetTags: Array[EngineTag], excludeTargets: Boolean): Unit = {
+        writePackets(packet, SimplePacketAttributes.empty, targetTags, excludeTargets)
     }
-    
-    override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
-        targetIDs.foreach(targetID => {
+
+    override protected def writePacketsInclude(packet: Packet, attributes: PacketAttributes, includedTags: Array[String]): Unit = {
+        includedTags.foreach(targetID => {
             /*
              * If the targetID is the same as the server's identifier, that means that we target ourself,
              * so the packet, as it can't be written to a socket that target the current server, will be directly
              * injected into the traffic.
              * */
-            if (targetID == serverIdentifier) {
-                val coords = DedicatedPacketCoordinates(path, targetID, serverIdentifier)
+            if (targetID == serverName) {
+                val coords = DedicatedPacketCoordinates(path, targetID, serverName)
                 traffic.processInjection(packet, attributes, coords)
                 return
             }
@@ -51,14 +55,10 @@ class ServerPacketWriter(serverConnection: ServerConnection,
             }
         })
     }
-    
-    override def writeBroadcastPacket(packet: Packet, discardedIDs: Array[String]): Unit = {
-        writeBroadcastPacket(packet, SimplePacketAttributes.empty, discardedIDs)
+
+    protected def writePacketsExclude(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
+        serverConnection.broadcastPacket(packet, attributes, currentEngineName, path, info.persistenceConfig, discardedIDs)
     }
-    
-    override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discarded: Array[String]): Unit = {
-        serverConnection.broadcastPacket(packet, attributes, currentIdentifier, path, info.persistenceConfig, discarded)
-    }
-    
+
 }
 

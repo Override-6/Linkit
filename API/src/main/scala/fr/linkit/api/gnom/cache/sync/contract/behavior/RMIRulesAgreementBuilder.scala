@@ -13,6 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
+import fr.linkit.api.gnom.network.EngineTag
+
 trait RMIRulesAgreementBuilder {
 
     type AgreementConditionAction = RMIRulesAgreementBuilder => RMIRulesAgreementBuilder
@@ -29,7 +31,7 @@ trait RMIRulesAgreementBuilder {
 
     def assuming(left: EngineTag): Condition
 
-    def result(context: ConnectedObjectContext): RMIRulesAgreement
+    def result(context: ConnectedObjectContext): RMIDispatchAgreement
 
     trait Condition {
 

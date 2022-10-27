@@ -23,7 +23,7 @@ import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
 
 object ClassParser extends BehaviorLanguageParser {
-    
+
     private val classParser = {
         val syncParser = {
             val options = (Sync ^^^ Synchronized | Chip ^^^ Chipped | BehaviorLanguageKeyword.Mirror ^^^ SyncLevel.Mirror | Regular ^^^ NotRegistered).?
@@ -36,40 +36,48 @@ object ClassParser extends BehaviorLanguageParser {
             val property = SquareBracketLeft ~> (identifier <~ Equal) ~ (At ~> identifier) <~ SquareBracketRight ^^ { case name ~ value => MethodProperty(name, value) }
             repsep(property, Comma.?)
         }
-        
-        val methodModifierParser       = {
+
+        /*MAINTAINED val methodModifierParser       = {
             ((identifier | ReturnValue ^^^ "returnvalue") <~ Arrow) ~ (identifier | modifiers) ^^ {
                 case target ~ (ref: String)                 => ValueModifierReference(target, ref)
                 case target ~ (mods: Seq[LambdaExpression]) => ModifierExpression(target, mods.find(_.kind == ast.In), mods.find(_.kind == ast.Out))
             }
-        }
-        val returnvalueState           = syncParser <~ ReturnValue | success(RegistrationState(false, NotRegistered))
-        val following                  = Following ~> identifier ^^ AgreementReference
-        val invHandlingTypeParser      = (Ensinv ^^^ EnableSubInvocations | Disinv ^^^ DisableSubInvocations) | success(Inherit)
-        val foreachMethodEnable        = {
-            val notModifiers = not(rep1(methodModifierParser)) withFailureMessage "Global method description can't have any modifier"
-            (properties <~ Foreach <~ Method <~ Enable) ~ invHandlingTypeParser ~ following.? ~ (BracketLeft ~> notModifiers ~> returnvalueState <~ notModifiers <~ BracketRight).? ^^ {
-                case properties ~ invMethod ~ agreementRef ~ rvState =>
-                    val state = rvState.getOrElse(RegistrationState(false, NotRegistered))
-                    new EnabledMethodDescription(invMethod, properties, agreementRef, state)
+        }*/
+        val dispatcher              = {
+            // we can either reference an agreement or define one directly into this method declaration.
+            FatArrow ~> (repsep(identifier, And) <~ Comma) ~ ((identifier ^^ AgreementReference) | AgreementBuilderParser.anonymous) ^^ {
+                case targets ~ agreement => DispatchAgreement(identifier.map(EngineTags.OwnerEngine))
             }
         }
-        val foreachMethodDisable       = Foreach ~ Method ~> Disable ^^^ new DisabledMethodDescription()
-        val foreachMethod              = foreachMethodEnable | foreachMethodDisable
-        val foreachFields              = syncParser <~ Star ^^ (new FieldDescription(_))
-        val methodSignature            = {
-            val param  = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case sync ~ name ~ id => MethodParam(sync, name, id) }
-            val params = repsep(param, Comma)
-            
-            (identifier <~ Dot).? ~ identifier ~ (ParenLeft ~> params <~ ParenRight).? ^^ { case targetClass ~ name ~ params => MethodSignature(targetClass, name, params.getOrElse(Seq())) }
+        val invHandlingTypeParser   = (Ensinv ^^^ EnableSubInvocations | Disinv ^^^ DisableSubInvocations) | success(Inherit)
+        val foreachMethodParameters = ParenLeft ~ ParenRight withErrorMessage "generic method definitions cannot contain parameter"
+        val foreachMethodEnable     = {
+            // val notModifiers = not(rep1(methodModifierParser)) withFailureMessage "Global method description can't have any modifier"
+            (properties ~ invHandlingTypeParser <~ Enable <~ Star <~ foreachMethodParameters) ~ (Colon ~> syncParser).? ~ dispatcher.? ^^ {
+                case properties ~ invMethod ~ rvState ~ agreement =>
+                    val state = rvState.getOrElse(RegistrationState(false, NotRegistered))
+                    new EnabledMethodDescription(invMethod, properties, agreement, state)
+            }
         }
-        val enabledMethodCore          = {
-            (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ RegistrationState(false, NotRegistered))
+        val foreachMethodDisable    = Disable ~ Star ~ foreachMethodParameters ^^^ new DisabledMethodDescription()
+        val foreachMethod           = foreachMethodEnable | foreachMethodDisable
+        val foreachFields           = syncParser <~ Star ^^ (new FieldDescription(_))
+        val methodSignature         = {
+            val synchronizedType = syncParser ~ typeParser ^^ { case syncLevel ~ tpe => SynchronizedType(syncLevel, tpe) }
+            val param            = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case syncLevel ~ name ~ tpe => MethodParam(name, SynchronizedType(syncLevel, tpe)) }
+            val params           = repsep(param, Comma)
+
+            (identifier <~ Dot).? ~ identifier ~ (ParenLeft ~> params <~ ParenRight).? ~ (Colon ~> synchronizedType).? ^^ { case targetClass ~ name ~ params ~ rstpe => MethodSignature(targetClass, name, params.getOrElse(Seq()), rstpe) }
         }
+
+
+        /* val enabledMethodCore          = {
+             (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ RegistrationState(false, NotRegistered))
+         }*/
         val enabledMethodParser        = {
-            invHandlingTypeParser ~ properties ~ (Enable.? ~> methodSignature) ~ following.? ~ enabledMethodCore ^^ {
-                case invMethod ~ properties ~ sig ~ referent ~ (modifiers ~ syncRv) =>
-                    EnabledMethodDescription(invMethod, properties, referent, syncRv)(sig, modifiers)
+            invHandlingTypeParser ~ properties ~ (Enable.? ~> methodSignature) ~ dispatcher.? /*~ enabledMethodCore*/ ^^ {
+                case invMethod ~ properties ~ sig ~ agreement =>
+                    EnabledMethodDescription(invMethod, properties, agreement)(sig)
             }
         }
         val disabledMethodParser       = {
@@ -81,7 +89,7 @@ object ClassParser extends BehaviorLanguageParser {
         val methodsParser              = enabledMethodParser | disabledMethodParser | hiddenMethodParser
         val fieldsParser               = (identifier <~ Dot).? ~ syncParser ~ identifier ^^ { case clazz ~ state ~ name => AttributedFieldDescription(clazz, name, state) }
         val targetLevels               = {
-            val stubParser = Stub ~> Colon ~> identifier | (ParenLeft ~> identifier <~ ParenRight) //two syntaxes are valid: "mirror stub: classname" or "mirror(classname)"
+            val stubParser = Stub ~> Colon ~> identifier | (ParenLeft ~> identifier <~ ParenRight) //two syntaxes are valid: "mirror stub: <stubclass>" or "mirror(<stubclass>)"
             val mirroring  = BehaviorLanguageKeyword.Mirror ~> stubParser.? ^^ MirroringLevel
             mirroring | (Sync ^^^ SynchronizeLevel) | (Chip ^^^ ChipLevel)
         }
@@ -102,7 +110,7 @@ object ClassParser extends BehaviorLanguageParser {
             case head ~ None                                                      => ClassDescription(head, None, None, Nil, Nil)
         }
     }
-    
+
     private[parser] val parser: Parser[ClassDescription] = classParser
-    
+
 }

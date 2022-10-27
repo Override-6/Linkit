@@ -22,3 +22,5 @@ dependencies {}
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = ["-feature", "-language:implicitConversions", "-language:postfixOps", "-language:existentials"]
 }
+sourceCompatibility = JavaVersion.VERSION_19
+targetCompatibility = JavaVersion.VERSION_19

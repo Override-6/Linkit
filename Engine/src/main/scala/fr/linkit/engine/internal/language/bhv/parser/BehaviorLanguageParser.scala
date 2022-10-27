@@ -52,7 +52,7 @@ abstract class BehaviorLanguageParser extends Parsers {
         def ~~[B](b: B): A ~ B = new ~(a, b)
     }
     
-    protected def acceptForeign[P](parser: BehaviorLanguageParser#Parser[P]): Parser[P] = Parser { in =>
+    protected implicit def acceptForeign[P](parser: BehaviorLanguageParser#Parser[P]): Parser[P] = Parser { in =>
         parser(in) match {
             case e: BehaviorLanguageParser#Success[P] => Success(e.result, e.next)
             case e: BehaviorLanguageParser#Failure    => Failure(e.msg, e.next)

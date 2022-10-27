@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.debug
 
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheReference}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
@@ -41,7 +41,7 @@ case class ResponseStep(requestType: String, senderEngine: String, channel: Traf
     override def insights: String = s"Performing response to request '$requestType' in channel $channel. engine '$senderEngine' is currently waiting answer..."
 }
 
-case class MethodInvocationSendStep(agreement: RMIRulesAgreement, method: MethodDescription, appointedEngine: String) extends AbstractStep("rmi - send") {
+case class MethodInvocationSendStep(agreement: RMIDispatchAgreement, method: MethodDescription, appointedEngine: String) extends AbstractStep("rmi - send") {
     override def insights: String = s"Performing remote method invocation following agreement $agreement, for method $method." + {
         if (appointedEngine == null) "" else s" waiting for engine '$appointedEngine' to return or throw."
     }

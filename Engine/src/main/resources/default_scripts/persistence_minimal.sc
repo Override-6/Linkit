@@ -1,4 +1,5 @@
-import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataBundle, NetworkDataTrunk}
+import fr.linkit.engine.gnom.network.NetworkDataTrunk
+import fr.linkit.engine.gnom.network.NetworkDataTrunk.NetworkDataBundle
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.persistence.config.PersistenceConfigBuilder
 import fr.linkit.engine.gnom.persistence.defaults._

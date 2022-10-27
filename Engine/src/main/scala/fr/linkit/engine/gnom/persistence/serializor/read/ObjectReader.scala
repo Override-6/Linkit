@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, ReferencedPoolObject}
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.network.DefaultEngine
+import fr.linkit.engine.gnom.network.EngineImpl
 import fr.linkit.engine.gnom.persistence.MalFormedPacketException
 import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
@@ -39,7 +39,7 @@ class ObjectReader(bundle: PersistenceBundle,
     
     final         val buff: ByteBuffer             = bundle.buff
     private final val selector                     = new ObjectSelector(bundle)
-    private lazy val boundMappings                = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[DefaultEngine].classMappings).orNull
+    private lazy val boundMappings                = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
     private final val config                       = bundle.config
     private       val (packetRefSize, sizes, pool) = readPoolStructure()
     private var isInit                             = false

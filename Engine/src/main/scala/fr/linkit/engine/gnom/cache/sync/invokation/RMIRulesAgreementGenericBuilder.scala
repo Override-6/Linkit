@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags._
 import fr.linkit.api.gnom.cache.sync.contract.behavior._
+import fr.linkit.api.gnom.network.EngineTag
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder._
 
 class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineTag],
@@ -77,7 +77,7 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
         }
     }
     
-    override def result(context: ConnectedObjectContext): RMIRulesAgreement = {
+    override def result(context: ConnectedObjectContext): RMIDispatchAgreement = {
         var builder = this
         for (condition <- conditions) {
             builder = condition(context).asInstanceOf[RMIRulesAgreementGenericBuilder]
@@ -85,7 +85,7 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
         val desiredEngineReturnIdentifier = context.translate(builder.desiredEngineReturn)
         val accepted                      = builder.accepted.map(context.translate).toArray
         val discarded                     = builder.discarded.map(context.translate).toArray
-        new UsageRMIRulesAgreement(
+        new UsageRMIDispatchAgreement(
             context.currentID, context.ownerID, desiredEngineReturnIdentifier,
             builder.acceptAllTargets, accepted, discarded)
     }

@@ -20,6 +20,8 @@ public enum BehaviorLanguageSymbol implements BehaviorLanguageToken, Symbol {
     Exclamation("!"),
     Equal("="),
     Arrow("->"),
+
+    FatArrow("=>"),
     Comma(","),
     Dot("."),
     Colon(":"),

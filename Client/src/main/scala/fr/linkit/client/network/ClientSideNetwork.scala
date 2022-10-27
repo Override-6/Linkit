@@ -38,6 +38,6 @@ class ClientSideNetwork(traffic: AbstractPacketTraffic) extends AbstractNetwork(
                 }
         trunk
     }
-    override def serverIdentifier: String = traffic.serverIdentifier
+    override def serverName: String = traffic.serverName
 
 }

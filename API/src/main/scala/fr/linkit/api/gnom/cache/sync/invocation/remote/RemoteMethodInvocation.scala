@@ -13,11 +13,11 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.cache.sync.invocation.MethodInvocation
 
 trait RemoteMethodInvocation[R] extends MethodInvocation[R] {
 
-    val agreement: RMIRulesAgreement
+    val agreement: RMIDispatchAgreement
 
 }

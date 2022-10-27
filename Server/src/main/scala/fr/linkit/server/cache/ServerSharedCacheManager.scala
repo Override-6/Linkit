@@ -137,7 +137,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
                 failRequest(s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
             case GET_OR_WAIT  =>
                 //If the requester is not the server, wait the server to open the cache.
-                if (senderID != network.serverIdentifier) {
+                if (senderID != network.serverName) {
                     channel.storeBundle(bundle)
                     return
                 }

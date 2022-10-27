@@ -20,9 +20,7 @@ import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 case class WriterInfo(traffic: PacketTraffic,
                       persistenceConfig: PersistenceConfig,
                       path: Array[Int],
-                      private val network0: () => Network) {
+                      private val network0: () => Network) { //awful
 
-    lazy val network: Network = {
-        network0.apply()
-    }
+    lazy val network: Network = network0.apply()
 }

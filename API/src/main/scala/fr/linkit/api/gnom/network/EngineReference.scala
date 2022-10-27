@@ -14,18 +14,18 @@
 package fr.linkit.api.gnom.network
 import fr.linkit.api.gnom.referencing.{NetworkObjectReference, SystemObjectReference}
 
-class EngineReference(val identifier: String) extends NetworkReference with SystemObjectReference {
+class EngineReference(val name: String) extends NetworkReference with SystemObjectReference {
 
     override def asSuper: Option[NetworkObjectReference] = Some(NetworkReference)
 
     override def toString: String = {
-        s"@network/$identifier"
+        s"@network/$name"
     }
 
-    override def hashCode(): Int = identifier.hashCode
+    override def hashCode(): Int = name.hashCode
 
     override def equals(obj: Any): Boolean = obj match {
-        case that: EngineReference => that.identifier == identifier
+        case that: EngineReference => that.name == name
         case _ => false
     }
 

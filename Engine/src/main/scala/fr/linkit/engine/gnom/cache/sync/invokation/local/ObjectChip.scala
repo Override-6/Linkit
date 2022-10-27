@@ -39,7 +39,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
     }
 
     override def callMethod(methodID: Int, params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit, onResult: Any => Unit): Unit = try {
-        val callerID = if (caller == null) null else caller.identifier
+        val callerID = if (caller == null) null else caller.name
         Debugger.push(MethodInvocationComputeStep(methodID, callerID, callerID == currentIdentifier))
 
         val methodContract = contract.findMethodContract[Any](methodID).getOrElse {
@@ -89,7 +89,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         }
     }
 
-    private def currentIdentifier = network.currentEngine.identifier
+    private def currentIdentifier = network.currentEngine.name
 
 }
 

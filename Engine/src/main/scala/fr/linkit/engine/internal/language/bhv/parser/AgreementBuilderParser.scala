@@ -13,15 +13,16 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{EngineTag, EngineTags}
+import fr.linkit.api.gnom.network.{EngineTag, IdentifierTag}
 import fr.linkit.engine.internal.language.bhv.ast.Equals.IsBuilder
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
 
 import scala.annotation.switch
+import scala.util.chaining.scalaUtilChainingOps
 
-object AgreementParser extends BehaviorLanguageParser {
+object AgreementBuilderParser extends BehaviorLanguageParser {
 
     private val tag = identifier ^^ getTag
 
@@ -47,12 +48,17 @@ object AgreementParser extends BehaviorLanguageParser {
 
     private def block[P](parser: Parser[P]): Parser[P] = BracketLeft ~> parser <~ BracketRight
 
+    private val instructions = repsep(instruction | ifInstruction, Arrow).pipe(p => block(p) | p)
+
     private val agreementParser = {
-        val instructions = repsep(instruction | ifInstruction, Arrow)
-        Agreement ~> (identifier <~ Equal) ~ (block(instructions) | instructions) ^^ {
-            case name ~ instructions => AgreementBuilder(name, instructions)
+
+        Agreement ~> (identifier <~ Equal) ~ instructions ^^ {
+            case name ~ instructions => AgreementBuilder(Some(name), instructions)
         }
     }
+
+    private[parser] val anonymous  : Parser[AgreementBuilder] = instructions ^^ (AgreementBuilder(None, _))
+    private[parser] val declaration: Parser[AgreementBuilder] = agreementParser
 
     private implicit def toToken(token: Elem): Parser[Elem] = accept(token)
 
@@ -61,7 +67,7 @@ object AgreementParser extends BehaviorLanguageParser {
         case "root_owner"  => EngineTags.RootOwnerEngine
         case "cache_owner" => EngineTags.CacheOwnerEngine
         case "current"     => EngineTags.CurrentEngine
+        case _             => IdentifierTag(name)
     }
 
-    private[parser] val parser: Parser[AgreementBuilder] = agreementParser
 }

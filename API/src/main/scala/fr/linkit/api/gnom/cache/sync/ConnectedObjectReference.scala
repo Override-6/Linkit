@@ -22,7 +22,7 @@ import java.util
  * All the information that allows to retrieve the synchronized object node.
  * @param cacheFamily the cache family of the object cache's manager.
  * @param cacheID the object cache identifier
- * @param ownerID the owner of the object (the engine's identifier that created the object)
+ * @param ownerID the owner of the object (the engine's name that created the object)
  *                NOTE: The value of this field have no influence on the reference location linking, it's just informal.
  * @param nodePath the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectTree]]
  */

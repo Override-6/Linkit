@@ -13,16 +13,14 @@
 
 package fr.linkit.api.gnom.network
 
-import java.sql.Timestamp
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.referencing.StaticNetworkObject
 import fr.linkit.api.gnom.referencing.linker.GeneralNetworkObjectLinker
-import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 
-import scala.reflect.ClassTag
+import java.sql.Timestamp
 
 trait Network extends StaticNetworkObject[NetworkReference.type] {
 
@@ -34,7 +32,7 @@ trait Network extends StaticNetworkObject[NetworkReference.type] {
 
     def globalCaches: SharedCacheManager
 
-    def serverIdentifier: String
+    def serverName: String
 
     def serverEngine: Engine
 
@@ -42,9 +40,9 @@ trait Network extends StaticNetworkObject[NetworkReference.type] {
 
     def listEngines: List[Engine]
 
-    def findEngine(identifier: String): Option[Engine]
+    def findEngine(identifier: IdentifierTag): Option[Engine]
 
-    def isConnected(identifier: String): Boolean
+    def findEngines(group: GroupTag): List[Engine]
 
     def startUpDate: Timestamp
 

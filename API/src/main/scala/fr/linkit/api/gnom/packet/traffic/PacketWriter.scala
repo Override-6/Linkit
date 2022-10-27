@@ -13,21 +13,19 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
+import fr.linkit.api.gnom.network.EngineTag
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 
 trait PacketWriter {
 
-    val serverIdentifier : String
-    val currentIdentifier: String
+    val serverName       : String
+    val currentEngineName: String
     val path             : Array[Int]
     val traffic          : PacketTraffic
 
-    def writePacket(packet: Packet, targetIDs: Array[String]): Unit
+    def writePackets(packet: Packet, targetIDs: Array[EngineTag], excludeTargets: Boolean): Unit
 
-    def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit
+    def writePackets(packet: Packet, attributes: PacketAttributes, targetTags: Array[EngineTag], excludeTargets: Boolean): Unit
 
-    def writeBroadcastPacket(packet: Packet, discardedIDs: Array[String]): Unit
-
-    def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit
 
 }

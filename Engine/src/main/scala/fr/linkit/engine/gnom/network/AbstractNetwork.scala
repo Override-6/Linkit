@@ -18,8 +18,8 @@ import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{SharedCacheManager, SharedCacheManagerReference}
+import fr.linkit.api.gnom.network._
 import fr.linkit.api.gnom.network.statics.StaticAccess
-import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.referencing.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectLinker}
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
@@ -57,7 +57,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override def currentEngine: Engine = engine0
 
-    override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
+    override def serverEngine: Engine = trunk.findEngine(Server).getOrElse {
         throw new NoSuchElementException("Server Engine not found.")
     }
 
@@ -67,18 +67,10 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override def countConnections: Int = trunk.countConnection
 
-    override def findEngine(identifier: String): Option[Engine] = {
+    override def findEngine(identifier: IdentifierTag): Option[Engine] = {
         if (trunkInitializing)
             return None
         trunk.findEngine(identifier)
-    }
-
-    override def isConnected(identifier: String): Boolean = findEngine(identifier).isDefined
-
-    private[network] def newEngineCache(engineIdentifier: String): SharedCacheManager = {
-        if (scnol.isPresentOnEngine(currentIdentifier, new SharedCacheManagerReference(engineIdentifier)))
-            throw new IllegalAccessException(s"engine cache for $engineIdentifier is already present on the network.")
-        createNewCache0(engineIdentifier, Array(0, engineIdentifier.hashCode))
     }
 
     private[network] def createNewCache(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {

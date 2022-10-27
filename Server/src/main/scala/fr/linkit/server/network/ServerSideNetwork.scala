@@ -50,7 +50,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
         manager
     }
 
-    override def serverIdentifier: String = traffic.currentIdentifier
+    override def serverName: String = traffic.currentEngineName
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
         val contracts = ContractProvider("NetworkContract", ObjectsProperty.defaults(this))

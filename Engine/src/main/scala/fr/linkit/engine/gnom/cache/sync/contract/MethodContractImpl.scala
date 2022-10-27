@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef}
 import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
@@ -27,7 +27,7 @@ import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
-import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationExecutionStep, MethodInvocationSendStep, RequestStep}
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationExecutionStep, MethodInvocationSendStep}
 import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import org.jetbrains.annotations.Nullable
 
@@ -35,7 +35,7 @@ import scala.annotation.switch
 
 class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHandlingMethod,
                             parentChoreographer: InvocationChoreographer,
-                            agreement: RMIRulesAgreement,
+                            agreement: RMIDispatchAgreement,
                             parameterContracts: Array[ModifiableValueContract[Any]],
                             returnValueContract: ModifiableValueContract[Any],
                             override val description: MethodDescription,
@@ -115,7 +115,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Any = try {
-        val callerID = if (origin == null) null else origin.identifier
+        val callerID = if (origin == null) null else origin.name
         Debugger.push(MethodInvocationExecutionStep(description, callerID, origin != null && (origin eq origin.network.currentEngine)))
         val args = data.arguments
         val obj  = data.obj
@@ -184,14 +184,14 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             } else v
         }
 
-        val appointedEngine = agreement.getAppointedEngineReturn
+        val appointedEngine   = agreement.getAppointedEngineReturn
         val currentMustReturn = appointedEngine == currentIdentifier
         if (!mayPerformRMI) {
             return (if (currentMustReturn) syncValue(localResult) else null).asInstanceOf[R]
         }
 
         val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with DispatchableRemoteMethodInvocation[R] {
-            override val agreement: RMIRulesAgreement = MethodContractImpl.this.agreement
+            override val agreement: RMIDispatchAgreement = MethodContractImpl.this.agreement
 
             override def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit = {
                 makeDispatch(puppeteer.network, dispatcher, localInvocation)
@@ -204,8 +204,8 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             result = localResult
             Debugger.pop()
         } else {
-            Debugger.push(MethodInvocationSendStep(agreement, description, appointedEngine))
-            AppLoggers.COInv.debug(debugMsg(appointedEngine, localInvocation))
+            Debugger.push(MethodInvocationSendStep(agreement, description, appointedEngine.identifier))
+            AppLoggers.COInv.debug(debugMsg(appointedEngine.identifier, localInvocation))
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
             Debugger.pop()
         }

@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncCla
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
-import fr.linkit.engine.gnom.network.DefaultEngine
+import fr.linkit.engine.gnom.network.EngineImpl
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
@@ -30,7 +30,7 @@ import scala.annotation.switch
 class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     val buff: ByteBuffer = bundle.buff
-    private final val boundClassMappings = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[DefaultEngine].classMappings).orNull
+    private final val boundClassMappings = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
     //private       val config             = bundle.config
     private var packetRefSize            = 1
     private       val pool               = new SerializerObjectPool(bundle)

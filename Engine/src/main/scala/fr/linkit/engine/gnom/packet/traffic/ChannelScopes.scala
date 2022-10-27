@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
+import fr.linkit.api.gnom.network.{EngineTag, Everyone}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
@@ -21,73 +22,34 @@ import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAtt
 
 object ChannelScopes {
 
-    final case class BroadcastScope private(override val writer: PacketWriter, discarded: Array[String])
+    final case class SelectiveScope private(override val writer: PacketWriter, excludeBaseTags: Boolean, baseTags: Array[EngineTag])
             extends AbstractAttributesPresence with ChannelScope {
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
             defaultAttributes.drainAttributes(attributes)
-            writer.writeBroadcastPacket(packet, attributes, discarded)
+            writer.writePackets(packet, attributes, baseTags, excludeBaseTags)
         }
 
-        override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
+        override def sendTo(packet: Packet, attributes: PacketAttributes, targetTags: Array[EngineTag]): Unit = {
+            assertAuthorised(targetTags)
             defaultAttributes.drainAttributes(attributes)
-            writer.writePacket(packet, attributes, targetIDs)
-        }
-
-        override def sendToAll(packet: Packet): Unit = sendToAll(packet, SimplePacketAttributes.empty)
-
-        override def sendTo(packet: Packet, targetIDs: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
-
-        override def areAuthorised(identifiers: Array[String]): Boolean = true //everyone is authorised in a BroadcastScope
-
-        override def canConflictWith(scope: ChannelScope): Boolean = {
-            //As Long As everyone is authorised by a BroadcastScope,
-            //the other scope wouldn't conflict with this scope only if it discards all identifiers.
-            scope.isInstanceOf[BroadcastScope] || scope.canConflictWith(this)
-        }
-
-        override def equals(obj: Any): Boolean = {
-            obj.isInstanceOf[BroadcastScope]
-        }
-
-        override def shareWriter[S <: ChannelScope](factory: ScopeFactory[S]): S = factory(writer)
-
-    }
-
-    final case class RetainerScope private(override val writer: PacketWriter, authorisedIds: Array[String])
-            extends AbstractAttributesPresence with ChannelScope {
-
-        override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
-            defaultAttributes.drainAttributes(attributes)
-            writer.writePacket(packet, attributes, authorisedIds)
-        }
-
-        override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
-            assertAuthorised(targetIDs)
-            defaultAttributes.drainAttributes(attributes)
-            writer.writePacket(packet, attributes, targetIDs)
+            writer.writePackets(packet, attributes, targetTags, excludeBaseTags)
         }
 
         override def sendToAll(packet: Packet): Unit = {
             sendToAll(packet, SimplePacketAttributes.empty)
         }
 
-        override def sendTo(packet: Packet, targetIDs: Array[String]): Unit = {
-            sendTo(packet, SimplePacketAttributes.empty, targetIDs)
+        override def sendTo(packet: Packet, targetTags: Array[EngineTag]): Unit = {
+            sendTo(packet, SimplePacketAttributes.empty, targetTags)
         }
 
-        override def areAuthorised(identifier: Array[String]): Boolean = {
-            authorisedIds.containsSlice(identifier)
-        }
-
-        override def canConflictWith(scope: ChannelScope): Boolean = {
-            scope.areAuthorised(authorisedIds)
-        }
+        override def areAuthorised(tags: Array[EngineTag]): Boolean = excludeBaseTags != baseTags.containsSlice(tags)
 
         override def equals(obj: Any): Boolean = {
             obj match {
-                case s: RetainerScope => s.authorisedIds sameElements this.authorisedIds
-                case _                => false
+                case s: SelectiveScope => s.baseTags sameElements this.baseTags
+                case _                 => false
             }
         }
 
@@ -95,14 +57,14 @@ object ChannelScopes {
 
     }
 
-    def broadcast: ScopeFactory[BroadcastScope] = BroadcastScope(_, Array.empty)
+    def discardCurrent: ScopeFactory[ChannelScope] = writer => SelectiveScope(writer, true, Array(writer.currentEngineName))
 
-    def discardCurrent: ScopeFactory[BroadcastScope] = writer => BroadcastScope(writer, Array(writer.currentIdentifier))
+    def discards(discarded: EngineTag*): ScopeFactory[ChannelScope] = SelectiveScope(_, true, Array(discarded: _*))
 
-    def discards(discarded: String*): ScopeFactory[BroadcastScope] = BroadcastScope(_, Array(discarded: _*))
+    def broadcast: ScopeFactory[ChannelScope] = include(Everyone)
 
-    def include(authorised: String*): ScopeFactory[RetainerScope] = {
-        RetainerScope(_, Array(authorised: _*))
+    def include(authorised: EngineTag*): ScopeFactory[ChannelScope] = {
+        SelectiveScope(_, false, Array(authorised: _*))
     }
 
 }

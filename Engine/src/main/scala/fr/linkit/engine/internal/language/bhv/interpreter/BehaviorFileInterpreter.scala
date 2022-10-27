@@ -15,7 +15,6 @@ package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags.{CacheOwnerEngine, CurrentEngine, OwnerEngine, RootOwnerEngine}
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, RMIRulesAgreementBuilder}
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
@@ -194,7 +193,7 @@ class BehaviorFileInterpreter(file: BehaviorFile,
                         } else None
                     }
 
-                    val agreement      = desc.agreement.map(ag => getAgreement(ag.name)).getOrElse(DefaultBuilder)
+                    val agreement      = desc.dispatch.map(ag => getAgreement(ag.name)).getOrElse(DefaultBuilder)
                     val procrastinator = findProcrastinator(desc.properties)
                     MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, desc.invocationHandlingMethod, agreement)
                 case desc: HiddenMethodDescription  =>
@@ -275,7 +274,7 @@ class BehaviorFileInterpreter(file: BehaviorFile,
                             new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
                     }
                 }
-                val agreement          = desc.agreement
+                val agreement          = desc.dispatch
                         .map(ag => getAgreement(ag.name))
                         .orElse(referent.map(_.agreementBuilder))
                         .getOrElse(DefaultBuilder)

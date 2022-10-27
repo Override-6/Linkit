@@ -40,7 +40,7 @@ import java.net.URL
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-abstract class AbstractPacketTraffic(override val currentIdentifier: String,
+abstract class AbstractPacketTraffic(override val currentEngineName: String,
                                      defaultPersistenceConfigUrl   : Option[URL]) extends PacketTraffic {
 
     private  val minimalConfigBuilder                        = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)

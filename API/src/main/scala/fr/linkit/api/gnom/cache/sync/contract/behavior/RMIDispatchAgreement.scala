@@ -11,10 +11,22 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.network
+package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
+import fr.linkit.api.gnom.network.IdentifierTag
 
-import java.sql.Timestamp
+trait RMIDispatchAgreement {
 
-case class NetworkDataBundle(engines: Array[String], caches: Array[CacheManagerInfo], startUpDate: Timestamp, network: AbstractNetwork)
+    val acceptedEngines: Array[IdentifierTag]
+
+    val discardedEngines: Array[IdentifierTag]
+
+    def isAcceptAll: Boolean
+
+    def getAppointedEngineReturn: IdentifierTag
+
+    def mayCallSuper: Boolean
+
+    def mayPerformRemoteInvocation: Boolean
+
+}

@@ -13,20 +13,21 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
+import fr.linkit.api.gnom.network.IdentifierTag
 
-class UsageRMIRulesAgreement(currentID            : String, ownerID: String,
-                             appointedEngineReturn: String, acceptAll: Boolean,
-                             accepted             : Array[String], excluded: Array[String]) extends RMIRulesAgreement {
+class UsageRMIDispatchAgreement(currentID: IdentifierTag, ownerID: IdentifierTag,
+                                appointedEngineReturn: IdentifierTag, acceptAll: Boolean,
+                                accepted: Array[IdentifierTag], excluded: Array[IdentifierTag]) extends RMIDispatchAgreement {
     private val currentIsOwner = currentID == ownerID
 
-    override val acceptedEngines: Array[String] = accepted
+    override val acceptedEngines: Array[IdentifierTag] = accepted
 
-    override val discardedEngines: Array[String] = excluded
+    override val discardedEngines: Array[IdentifierTag] = excluded
 
     override def isAcceptAll: Boolean = acceptAll
 
-    override def getAppointedEngineReturn: String = appointedEngineReturn
+    override def getAppointedEngineReturn: IdentifierTag = appointedEngineReturn
 
     override def mayCallSuper: Boolean = {
         if (acceptAll)

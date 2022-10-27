@@ -73,7 +73,7 @@ object Debugger {
     def dumpTraffic(out: PrintStream = System.out): Unit = connections.foreach(dumpConnectionTraffic(_, out))
 
     def dumpConnectionTraffic(connection: ConnectionContext, out: PrintStream = System.out): Unit = {
-        val connectionServerID = connection.network.serverIdentifier
+        val connectionServerID = connection.network.serverName
         val printer = new SectionedPrinter(out)
         connection.traffic match {
             case traffic: AbstractPacketTraffic =>

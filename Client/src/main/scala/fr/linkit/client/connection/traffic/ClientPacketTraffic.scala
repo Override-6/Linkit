@@ -29,8 +29,8 @@ class ClientPacketTraffic(socket: DynamicSocket,
                           translator: ObjectTranslator,
                           defaultPersistenceConfigScript: Option[URL],
                           override val application: ApplicationContext,
-                          override val currentIdentifier: String,
-                          override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, defaultPersistenceConfigScript) {
+                          override val currentEngineName: String,
+                          override val serverName: String) extends AbstractPacketTraffic(currentEngineName, defaultPersistenceConfigScript) {
     
     private var connection0: ConnectionContext = _
     private var network    : Network           = _

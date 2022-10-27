@@ -24,9 +24,9 @@ import fr.linkit.api.internal.system.JustifiedCloseable
 
 trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
     
-    val currentIdentifier: String
+    val currentEngineName: String
     
-    val serverIdentifier: String
+    val serverName: String
     
     def application: ApplicationContext
     

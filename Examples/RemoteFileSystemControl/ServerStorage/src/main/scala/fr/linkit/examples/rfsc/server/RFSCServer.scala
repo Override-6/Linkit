@@ -22,7 +22,7 @@ object RFSCServer {
         println("Server launched !")
         val network = server.network
         network.onNewEngine(client => {
-            val path = Path.of(s"/tmp/rfs tests/${client.identifier}/")
+            val path = Path.of(s"/tmp/rfs tests/${client.name}/")
             Files.createDirectories(path)
             clientsHomes.put(client, path)
         })

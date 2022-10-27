@@ -11,3 +11,5 @@ dependencies {
     implementation project(':Server')
     implementation project(':Examples:RemoteAPIImplementationControl:API')
 }
+sourceCompatibility = JavaVersion.VERSION_19
+targetCompatibility = JavaVersion.VERSION_19

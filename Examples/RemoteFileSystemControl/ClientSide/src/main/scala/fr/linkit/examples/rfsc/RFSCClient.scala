@@ -19,10 +19,7 @@ import java.util.concurrent.ThreadLocalRandom
 object RFSCClient {
 
     def main(args: Array[String]): Unit = {
-       // print("how many connection ? : ")
-        /*val int = StdIn.readInt()
-        if (int == 1) */launchAlone()
-        //else launchXTimes(int)
+       launchAlone()
     }
 
     private def launchXTimes(x: Int): Unit = {
@@ -41,7 +38,7 @@ object RFSCClient {
     }
 
     private def remoteFS(network: Network): Unit = {
-        println(s"Connecting ${network.currentEngine.identifier}: ")
+        println(s"Connecting ${network.currentEngine.name}: ")
         val serverStatics = network.getStaticAccess(1)
 
         listenDistantDir(serverStatics)

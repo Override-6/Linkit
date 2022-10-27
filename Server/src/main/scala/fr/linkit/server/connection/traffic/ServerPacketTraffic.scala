@@ -28,8 +28,8 @@ class ServerPacketTraffic(override val connection: ServerConnection,
 
     override def application: ApplicationContext = connection.getApp
 
-    override val currentIdentifier: String = connection.currentIdentifier
-    override val serverIdentifier : String = currentIdentifier
+    override val currentEngineName: String = connection.currentIdentifier
+    override val serverName       : String = currentEngineName
 
     override def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter = {
         new ServerPacketWriter(connection, WriterInfo(this, persistenceConfig, path, () => connection.network))

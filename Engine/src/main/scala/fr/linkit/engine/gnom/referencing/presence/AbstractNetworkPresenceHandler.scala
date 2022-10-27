@@ -32,7 +32,7 @@ import scala.collection.mutable
 abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Nullable parent: NetworkPresenceHandler[_ >: R], channel: ObjectManagementChannel)
         extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
     
-    private lazy val currentIdentifier = channel.traffic.currentIdentifier
+    private lazy val currentIdentifier = channel.traffic.currentEngineName
     //What other engines thinks about current engine presences states
     private      val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
     //What current engine thinks about other engines presences states
@@ -67,7 +67,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
     private[referencing] def askIfPresent(engineId: String, location: R): Boolean = {
         val traffic = channel.traffic
         //fixme quick wobbly fix
-        if (traffic != null && traffic.currentIdentifier == engineId)
+        if (traffic != null && traffic.currentEngineName == engineId)
             return isLocationReferenced(location)
         
         val parentIsPresent = parent == null || location.asSuper.exists(r => parent.isPresentOnEngine(engineId, casted(r)))

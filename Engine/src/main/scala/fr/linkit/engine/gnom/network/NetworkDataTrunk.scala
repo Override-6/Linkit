@@ -14,8 +14,8 @@
 package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.network.Engine
-import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
+import fr.linkit.api.gnom.network.{Engine, GroupTag, IdentifierTag}
+import fr.linkit.engine.gnom.network.NetworkDataTrunk.{CacheManagerInfo, NetworkDataBundle}
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.internal.util.ConsumerContainer
 
@@ -24,7 +24,7 @@ import scala.collection.mutable
 
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
-    private               val engines           = mutable.HashMap.empty[String, DefaultEngine]
+    private               val engines           = mutable.HashMap.empty[String, EngineImpl]
     private               val caches            = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
     private[network] lazy val staticAccesses    = new StaticAccesses(network)
     private               val onNewEngineEvents = ConsumerContainer[Engine]()
@@ -45,11 +45,10 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     def newEngine(engineIdentifier: String): Engine = engines.synchronized {
         if (engines.contains(engineIdentifier))
             throw new IllegalArgumentException("This engine already exists !")
-        val cacheManager = network.newEngineCache(engineIdentifier)
-        addEngine(new DefaultEngine(engineIdentifier, cacheManager, network))
+        addEngine(new EngineImpl(engineIdentifier, network))
     }
 
-    def removeEngine(engine: Engine): Unit = engines -= engine.identifier
+    def removeEngine(engine: Engine): Unit = engines -= engine.name
 
     def findCache(family: String): Option[SharedCacheManager] = {
         caches.get(family).map(_._1)
@@ -67,16 +66,22 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         caches.put(manager.family, (manager, channelPath))
     }
 
-    def findEngine(identifier: String): Option[Engine] = engines.synchronized {
-        engines.get(identifier)
+    def findEngine(identifier: IdentifierTag): Option[Engine] = engines.synchronized {
+        val opt = engines.get(identifier.identifier)
+        if (opt.isDefined) return opt
+        engines.values.find(_.isTagged(identifier))
+    }
+
+    def findEngines(group: GroupTag): List[Engine] = engines.synchronized {
+        engines.values.filter(_.isTagged(group)).toList
     }
 
     def listEngines: List[Engine] = engines.synchronized(engines.values.toList)
 
     def countConnection: Int = engines.size
 
-    protected def addEngine(engine: DefaultEngine): DefaultEngine = {
-        engines.put(engine.identifier, engine) match {
+    protected def addEngine(engine: EngineImpl): EngineImpl = {
+        engines.put(engine.name, engine) match {
             case None    => onNewEngineEvents.applyAll(engine)
             case Some(_) =>
         }
@@ -104,13 +109,15 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
 
 object NetworkDataTrunk {
 
-    case class CacheManagerInfo(family: String,  managerChannelPath: Array[Int])
+    case class CacheManagerInfo(family: String, managerChannelPath: Array[Int])
+
+    case class NetworkDataBundle(engines: Array[String], caches: Array[CacheManagerInfo], startUpDate: Timestamp, network: AbstractNetwork)
 
     def fromData(data: NetworkDataBundle): NetworkDataTrunk = {
         val network = data.network
         val trunk   = new NetworkDataTrunk(network)
         data.engines.foreach { identifier =>
-            trunk.addEngine(new DefaultEngine(identifier, network.newEngineCache(identifier), network))
+            trunk.addEngine(new EngineImpl(identifier, network))
         }
         data.caches.foreach(info => {
             import info._

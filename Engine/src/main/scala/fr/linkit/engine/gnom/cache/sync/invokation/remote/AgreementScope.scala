@@ -13,18 +13,18 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIRulesAgreement
-import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
+import fr.linkit.api.gnom.network.{EngineTag, Network}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
-import fr.linkit.engine.gnom.cache.sync.invokation.UsageRMIRulesAgreement
+import fr.linkit.engine.gnom.cache.sync.invokation.UsageRMIDispatchAgreement
 import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
-class AgreementScope(override val writer: PacketWriter, network: Network, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {
+class AgreementScope(override val writer: PacketWriter, network: Network, agreement: RMIDispatchAgreement) extends AbstractAttributesPresence with ChannelScope {
 
-    private val currentIdentifier = writer.currentIdentifier
+    private val currentIdentifier = writer.currentEngineName
 
     override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
         defaultAttributes.drainAttributes(attributes)
@@ -37,18 +37,14 @@ class AgreementScope(override val writer: PacketWriter, network: Network, agreem
 
     override def sendToAll(packet: Packet): Unit = sendToAll(packet, SimplePacketAttributes.empty)
 
-    override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[EngineTag]): Unit = {
         throw new UnsupportedOperationException("Not supported.")
     }
 
-    override def sendTo(packet: Packet, targetIDs: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
+    override def sendTo(packet: Packet, targetIDs: Array[EngineTag]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
 
-    override def areAuthorised(identifiers: Array[String]): Boolean = {
-        !agreement.discardedEngines.containsSlice(identifiers)
-    }
-
-    override def canConflictWith(scope: ChannelScope): Boolean = {
-        true //This scope may not coexists with another channel on the same injectableID
+    override def areAuthorised(tags: Array[EngineTag]): Boolean = {
+        !agreement.discardedEngines.containsSlice(tags)
     }
 
     override def shareWriter[S <: ChannelScope](factory: ChannelScope.ScopeFactory[S]): S = factory(writer)
@@ -57,7 +53,7 @@ class AgreementScope(override val writer: PacketWriter, network: Network, agreem
         if (agreement.isAcceptAll) {
             val engines = network.listEngines
             engines.foreach { engine =>
-                val id = engine.identifier
+                val id = engine.name
                 if (!agreement.discardedEngines.contains(id))
                     action(id)
             }
@@ -70,7 +66,7 @@ class AgreementScope(override val writer: PacketWriter, network: Network, agreem
 
 object AgreementScope {
 
-    def apply(agreement: UsageRMIRulesAgreement, network: Network): ScopeFactory[AgreementScope] = {
+    def apply(agreement: UsageRMIDispatchAgreement, network: Network): ScopeFactory[AgreementScope] = {
         writer => new AgreementScope(writer, network, agreement)
     }
 }

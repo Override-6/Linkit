@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.invokation.remote
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.{IdentifierTag, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, ResponseHolder}
@@ -36,7 +36,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
 
     override val network          : Network = cache.network
     private  val traffic                    = channel.traffic
-    override val currentIdentifier: String  = traffic.currentIdentifier
+    override val currentIdentifier: String  = traffic.currentEngineName
     private  val writer                     = traffic.newWriter(channel.trafficPath)
 
     override def isCurrentEngineOwner: Boolean = ownerID == currentIdentifier
@@ -112,7 +112,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
 
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
 
-        override def foreachEngines(action: String => Array[Any]): Unit = {
+        override def foreachEngines(action: IdentifierTag => Array[Any]): Unit = {
             scope.foreachAcceptedEngines(engineID => runOnContext {
                 //return engine is processed at last, don't send a request to the current engine
                 if (engineID != returnEngine && engineID != currentIdentifier)

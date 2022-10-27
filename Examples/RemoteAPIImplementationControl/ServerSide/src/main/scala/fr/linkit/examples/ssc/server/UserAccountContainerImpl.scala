@@ -11,7 +11,7 @@ class UserAccountContainerImpl extends UserAccountContainer {
 
     override def getCurrentAccount: CurrentUserAccount = {
         val executor   = ExecutorEngine.currentEngine
-        val identifier = executor.identifier
+        val identifier = executor.name
         accounts.getOrElseUpdate(identifier, openAccount(identifier)).current
     }
 

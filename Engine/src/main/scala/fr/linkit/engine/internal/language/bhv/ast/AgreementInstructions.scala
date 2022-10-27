@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.ast
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTag
+import fr.linkit.api.gnom.network.EngineTag
 
 trait AgreementInstruction
 
@@ -41,6 +41,10 @@ object Equals {
 
 case class Condition(test: Equals, ifTrue: Seq[AgreementInstruction], ifFalse: Seq[AgreementInstruction]) extends AgreementInstruction
 
-case class AgreementBuilder(name: String, instructions: Seq[AgreementInstruction])
+trait AgreementProvider extends Product
 
-case class AgreementReference(name: String)
+case class AgreementBuilder(name: Option[String], instructions: Seq[AgreementInstruction]) extends AgreementProvider
+
+case class AgreementReference(name: String) extends AgreementProvider
+
+case class DispatchAgreement(authorizedEngines: Seq[EngineTag], agreement: AgreementProvider)

@@ -149,7 +149,7 @@ class GeneralNetworkObjectLinkerImpl(omc                    : ObjectManagementCh
                 case NetworkConnectionReference => Some(connection)
                 case NetworkReference           => Some(network)
                 case ApplicationReference       => Some(application)
-                case er: EngineReference        => network.findEngine(er.identifier)
+                case er: EngineReference        => network.findEngine(er.name)
                 case TrafficReference           => Some(connection.traffic.asInstanceOf[NetworkObject[_ <: SystemObjectReference]]) //TODO remove
                 case _                          => None
             }

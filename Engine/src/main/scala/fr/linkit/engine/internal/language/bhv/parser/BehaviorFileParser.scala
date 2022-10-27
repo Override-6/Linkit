@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import fr.linkit.engine.internal.language.bhv.{BHVLanguageException, ast}
+import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
@@ -25,23 +25,22 @@ object BehaviorFileParser extends BehaviorLanguageParser {
     
     private val nameParser          = Name ~> literal ^^ FileName
     private val classParser         = acceptForeign(ClassParser.parser)
-    private val agreementParser     = acceptForeign(AgreementParser.parser)
+    private val agreementParser     = acceptForeign(AgreementBuilderParser.declaration)
     private val optionParser        = acceptForeign(OptionParser.parser)
     private val codeBlockParser     = Code ~> codeBlock
-    private val typeModifierParser  = Modifier ~> identifier ~ modifiers ^^ { case tpe ~ modifiers => TypeModifier(tpe, modifiers.find(_.kind == ast.In), modifiers.find(_.kind == ast.Out)) }
+    //MAINTAINED private val typeModifierParser  = Modifier ~> identifier ~ modifiers ^^ { case tpe ~ modifiers => TypeModifier(tpe, modifiers.find(_.kind == ast.In), modifiers.find(_.kind == ast.Out)) }
     private val importParser        = {
         Import ~> (rep(identifier <~ Dot.?) ^^ (_.mkString("."))) ~ repNM(0, 2, Star) ^^ {
             case id ~ stars => ClassImport(id, stars.length)
         }
     }
-    private val valueModifierParser = {
+    /*MAINTAINED private val valueModifierParser = {
         (identifier <~ Colon) ~ (typeParser <~ Arrow) ~ modifiers ^^ { case name ~ tpe ~ modifiers => ValueModifier(name, tpe, modifiers.find(_.kind == ast.In), modifiers.find(_.kind == ast.Out)) }
-    }
+    }*/
     
     private val fileParser = {
         phrase(rep(nameParser | importParser | classParser |
-                           codeBlockParser | typeModifierParser |
-                           valueModifierParser | agreementParser |
+                           codeBlockParser | agreementParser |
                            optionParser))
     }
     

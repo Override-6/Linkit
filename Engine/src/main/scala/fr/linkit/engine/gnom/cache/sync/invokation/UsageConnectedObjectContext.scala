@@ -14,10 +14,10 @@
 package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
-import fr.linkit.api.gnom.cache.sync.contract.behavior.EngineTags._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, EngineTag, IdentifierTag}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
+import fr.linkit.api.gnom.network.{EngineTag, IdentifierTag}
 
 case class UsageConnectedObjectContext(ownerID: String, rootOwnerID: String,
                                        currentID: String, cacheOwnerID: String,

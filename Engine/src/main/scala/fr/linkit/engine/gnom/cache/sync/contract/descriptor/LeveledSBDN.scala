@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule._
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract._
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIRulesAgreement}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIDispatchAgreement}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureContractDescriptor, UniqueStructureContractDescriptor}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
@@ -28,7 +28,6 @@ import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescript
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{collectInterfaces, findReasonTypeCantBeSync, getSyncableInterface, listMethodIds}
 import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
-import fr.linkit.engine.internal.util.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
 import java.lang.reflect.{Member, Method, Modifier}
@@ -152,7 +151,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         new StructureContractImpl(clazz, mirroringInfo, methodMap.toMap, fieldMap.values.toArray)
     }
     
-    private def verifyAgreement(method: Method, agreement: RMIRulesAgreement, context: ConnectedObjectContext): Unit = {
+    private def verifyAgreement(method: Method, agreement: RMIDispatchAgreement, context: ConnectedObjectContext): Unit = {
         val acceptAll = agreement.isAcceptAll
         if (!acceptAll && agreement.acceptedEngines.isEmpty)
             throw new BadContractException(s"method agreement $method have nowhere to invoke the method.")

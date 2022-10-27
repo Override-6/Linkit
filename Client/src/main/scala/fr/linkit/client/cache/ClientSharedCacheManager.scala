@@ -34,7 +34,7 @@ final class ClientSharedCacheManager @Persist()(family : String,
                                                 omc    : ObjectManagementChannel,
                                                 store  : PacketInjectableStore) extends AbstractSharedCacheManager(family, network, omc, store) with Deconstructible {
 
-    private            val serverIdentifier = network.serverIdentifier
+    private            val serverIdentifier = network.serverName
     @transient private val ownerScope       = prepareScope(ChannelScopes.include(serverIdentifier))
 
     override def deconstruct(): Array[Any] = Array(family, serverIdentifier, network, store)

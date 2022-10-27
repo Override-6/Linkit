@@ -31,7 +31,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
     protected      val writer       : PacketWriter                     = scope.writer
-    override       val ownerID      : String                           = writer.serverIdentifier
+    override       val ownerID      : String                           = writer.serverName
     override       val trafficPath  : Array[Int]                       = writer.path
     override       val traffic      : PacketTraffic                    = writer.traffic
     private        val storedBundles: mutable.Set[ChannelPacketBundle] = mutable.HashSet.empty[ChannelPacketBundle]

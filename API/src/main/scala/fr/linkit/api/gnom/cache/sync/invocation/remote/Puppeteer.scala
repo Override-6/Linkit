@@ -13,9 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation.remote
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
-import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference, ConnectedObjectCache}
-import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.cache.sync.{ConnectedObjectCache, ConnectedObjectReference}
+import fr.linkit.api.gnom.network.{IdentifierTag, Network}
 
 /**
  * The puppeteer of a SynchronizedObject creates all RMI requests and handles the results.
@@ -40,7 +39,8 @@ trait Puppeteer[S <: AnyRef] {
      * The identifier of the current engine.
      * */
     val currentIdentifier: String
-    val network: Network //Keep an access to Network
+    val network          : Network //Keep an access to Network
+
     /**
      * @return true if the current engine have created the synchronized object.
      * */
@@ -66,7 +66,7 @@ trait Puppeteer[S <: AnyRef] {
     trait RMIDispatcher {
         def broadcast(args: Array[Any]): Unit
 
-        def foreachEngines(action: String => Array[Any]): Unit
+        def foreachEngines(action: IdentifierTag => Array[Any]): Unit
     }
 
 }

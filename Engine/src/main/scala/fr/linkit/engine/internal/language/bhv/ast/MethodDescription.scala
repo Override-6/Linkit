@@ -25,7 +25,7 @@ trait AttributedMethodDescription extends MethodDescription {
 
 trait AttributedEnabledMethodDescription extends AttributedMethodDescription {
     
-    val modifiers: List[CompModifier]
+   // val modifiers: List[CompModifier]
 }
 
 class DisabledMethodDescription() extends MethodDescription
@@ -34,19 +34,18 @@ class HiddenMethodDescription(val hideMessage: Option[String]) extends MethodDes
 
 class EnabledMethodDescription(val invocationHandlingMethod: InvocationHandlingMethod,
                                val properties: List[MethodProperty],
-                               val agreement: Option[AgreementReference],
+                               val dispatch: Option[DispatchAgreement],
                                val syncReturnValue: RegistrationState) extends MethodDescription
 
 object EnabledMethodDescription {
     
     def apply(invocationHandlingMethod: InvocationHandlingMethod,
               properties: List[MethodProperty],
-              agreement: Option[AgreementReference],
-              syncReturnValue: RegistrationState)
-             (sig: MethodSignature, mods: List[CompModifier]): EnabledMethodDescription with AttributedMethodDescription = {
-        new EnabledMethodDescription(invocationHandlingMethod, properties, agreement, syncReturnValue) with AttributedEnabledMethodDescription {
+              dispatch: Option[DispatchAgreement])
+             (sig: MethodSignature): EnabledMethodDescription with AttributedMethodDescription = {
+        val rvState = sig.returnType.map(_.syncType).getOrElse(RegistrationState(false, SyncLevel.NotRegistered))
+        new EnabledMethodDescription(invocationHandlingMethod, properties, dispatch, rvState) with AttributedEnabledMethodDescription {
             override val signature = sig
-            override val modifiers = mods
         }
     }
 }
@@ -71,27 +70,30 @@ case object DisabledMethodDescription {
 
 case class MethodProperty(name: String, value: String)
 
-case class MethodParam(syncState: RegistrationState, name: Option[String], tpe: String) {
+case class SynchronizedType(syncType: RegistrationState, tpe: String)
+
+case class MethodParam(name: Option[String], tpe: SynchronizedType) {
     
-    override def toString: String = (syncState.lvl match {
+    override def toString: String = (tpe.syncType.lvl match {
         case SyncLevel.NotRegistered => ""
         case SyncLevel.Chipped       => "chip "
         case SyncLevel.Synchronized  => "sync "
     }) + tpe
 }
 
-case class MethodSignature(target: Option[String], methodName: String, params: Seq[MethodParam]) {
+case class MethodSignature(target: Option[String], methodName: String, params: Seq[MethodParam], returnType: Option[SynchronizedType]) {
     
     override def toString: String = target.map(_ + ".").getOrElse("") + s"$methodName${params.mkString("(", ",", ")")}"
 }
 
-case class MethodComponentsModifier(paramsModifiers: Map[Int, CompModifier], rvModifiers: Seq[CompModifier])
-
+//case class MethodComponentsModifier(paramsModifiers: Map[Int, CompModifier], rvModifiers: Seq[CompModifier])
+/*
 trait CompModifier {
     
     val target: String
 }
-
+*/
+/*
 case class ValueModifierReference(target: String, ref: String) extends CompModifier
 
-case class ModifierExpression(target: String, in: Option[LambdaExpression], out: Option[LambdaExpression]) extends CompModifier with LambdaExpressionHolder
+case class ModifierExpression(target: String, in: Option[LambdaExpression], out: Option[LambdaExpression]) extends CompModifier with LambdaExpressionHolder*/
