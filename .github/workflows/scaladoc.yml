@@ -43,7 +43,8 @@ jobs:
 
       - name: move generated docs in Temp dirs
         run: |
-           mkdir -p /home/runner/work/Temp/ && cp -R /home/runner/work/Linkit/Linkit/build/docs/scaladoc/* $_
+           mkdir -p /home/runner/work/Temp/ 
+           cp -R /home/runner/work/Linkit/Linkit/build/docs/scaladoc/* /home/runner/work/Temp/ 
       - name: checkout to gh-pages and commit
         run: |
            cd /home/runner/work/Linkit/Linkit/
