@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.network.EngineTag
+import fr.linkit.api.gnom.network.{EngineTag, UniqueTag}
 
 trait RMIRulesAgreementBuilder {
 
@@ -27,7 +27,7 @@ trait RMIRulesAgreementBuilder {
 
     def discardAll(): RMIRulesAgreementBuilder
 
-    def appointReturn(target: EngineTag): RMIRulesAgreementBuilder
+    def appointReturn(target: UniqueTag): RMIRulesAgreementBuilder
 
     def assuming(left: EngineTag): Condition
 

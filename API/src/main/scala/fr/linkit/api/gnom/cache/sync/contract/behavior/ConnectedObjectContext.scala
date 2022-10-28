@@ -16,24 +16,17 @@ package fr.linkit.api.gnom.cache.sync.contract.behavior
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.network.EngineTag
+import fr.linkit.api.gnom.network.{EngineTag, IdentifierTag, UniqueTag}
 
 trait ConnectedObjectContext {
 
-    val ownerID      : String
-    val rootOwnerID  : String
-    val currentID    : String
-    val cacheOwnerID : String
+    val currentID    : IdentifierTag
+    val ownerID      : IdentifierTag
     val classDef     : SyncClassDef
     val choreographer: InvocationChoreographer
     val syncLevel    : SyncLevel
 
-    def translate(tag: EngineTag): String
-
-    /**
-     * @return true if a is b depending on this context.
-     * */
-    def areEquals(a: EngineTag, b: EngineTag): Boolean = translate(a) == translate(b)
+    def translate(tag: UniqueTag): IdentifierTag
 
     def withSyncLevel(syncLevel: SyncLevel): ConnectedObjectContext
 }

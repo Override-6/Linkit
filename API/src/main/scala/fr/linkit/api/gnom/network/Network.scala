@@ -40,7 +40,7 @@ trait Network extends StaticNetworkObject[NetworkReference.type] {
 
     def listEngines: List[Engine]
 
-    def findEngine(identifier: IdentifierTag): Option[Engine]
+    def findEngine(identifier: UniqueTag with NetworkFriendlyTag): Option[Engine]
 
     def findEngines(group: GroupTag): List[Engine]
 

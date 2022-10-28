@@ -13,12 +13,19 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIDispatchAgreement}
 import fr.linkit.api.gnom.network.IdentifierTag
 
-class UsageRMIDispatchAgreement(currentID: IdentifierTag, ownerID: IdentifierTag,
-                                appointedEngineReturn: IdentifierTag, acceptAll: Boolean,
-                                accepted: Array[IdentifierTag], excluded: Array[IdentifierTag]) extends RMIDispatchAgreement {
+class UsageRMIDispatchAgreement private(currentID: IdentifierTag, ownerID: IdentifierTag,
+                                        appointedEngineReturn: IdentifierTag, acceptAll: Boolean,
+                                        accepted: Array[IdentifierTag], excluded: Array[IdentifierTag]) extends RMIDispatchAgreement {
+
+    def this(context: ConnectedObjectContext,
+             appointedEngineReturn: IdentifierTag, acceptAll: Boolean,
+             accepted: Array[IdentifierTag], excluded: Array[IdentifierTag]) = {
+        this(context.currentID, context.ownerID, appointedEngineReturn, acceptAll, accepted, excluded)
+    }
+
     private val currentIsOwner = currentID == ownerID
 
     override val acceptedEngines: Array[IdentifierTag] = accepted

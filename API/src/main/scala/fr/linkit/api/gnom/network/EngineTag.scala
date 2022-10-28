@@ -13,6 +13,8 @@
 
 package fr.linkit.api.gnom.network
 
+import fr.linkit.api.gnom.cache.sync.contract.OwnerEngine
+
 /**
  * An Engine tag is a tag that represents an engine or a group of engine
  * over the network.
@@ -20,18 +22,50 @@ package fr.linkit.api.gnom.network
 sealed trait EngineTag
 
 /**
+ * Network Friendly Tags are any engine tag that can be used and interpreted by the [[Network]] trait. <br>
+ * All Group and Identifier tags extends [[NetworkFriendlyTag]] because they are understandable by the [[Network]],
+ * but magic tags, as they are magic, cannot all be understood by the [[Network]].<br>
+ * For example, the [[Current]] magic tag is a network-friendly tag because the network knows how to handle the special case
+ * of the 'Current' tag. <br>
+ * [[OwnerEngine]] is a magic tag coming from the connected objects system,
+ * and thus is not a network-friendly tag because using this tag at the network level means nothing.
+ * */
+sealed trait NetworkFriendlyTag extends EngineTag
+
+/**
+ * a unique tag is a tag that identifies only one engine.
+ * */
+trait UniqueTag extends EngineTag
+/**
  * an identifier tag is a tag that can only be attributed to one engine.
  * Identifier tags are unique and two engine cannot have the same identifier tag.
  * An engine can have multiple identifier tags.
  * */
-case class IdentifierTag(identifier: String) extends EngineTag
+case class IdentifierTag(identifier: String) extends UniqueTag with NetworkFriendlyTag
 
 object Server extends IdentifierTag("server")
 
 /**
+ * A Magic tag is a special type of unique tag where the identified engine may change depending on
+ * where you are present on the network.
+ * Take a look at its implementation to have a better understanding of magic tags.
+ * */
+
+trait MagicTag extends UniqueTag
+
+/**
+ * a Magic tag that identifies the current engine.
+ * */
+object Current extends MagicTag with NetworkFriendlyTag
+
+
+
+/**
  * A Group Tag is a tag that can be attributed to multiple engines in order to define a group, or a set of engine.
  * */
-case class GroupTag(name: String) extends EngineTag
+case class GroupTag(name: String) extends EngineTag with NetworkFriendlyTag
 
 object Everyone extends GroupTag("everyone")
 object Clients extends GroupTag("clients")
+
+

@@ -13,26 +13,26 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.cache.sync.contract.{OwnerEngine, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.network.{EngineTag, IdentifierTag}
+import fr.linkit.api.gnom.network.{Current, IdentifierTag, IllegalTagException, UniqueTag}
 
-case class UsageConnectedObjectContext(ownerID: String, rootOwnerID: String,
-                                       currentID: String, cacheOwnerID: String,
+case class UsageConnectedObjectContext(ownerID: IdentifierTag, currentID: IdentifierTag,
                                        classDef: SyncClassDef, syncLevel: SyncLevel,
                                        choreographer: InvocationChoreographer) extends ConnectedObjectContext {
 
-    override def translate(tag: EngineTag): String = tag match {
-        case IdentifierTag(identifier) => identifier
-        case CurrentEngine             => currentID
-        case OwnerEngine               => ownerID
-        case RootOwnerEngine           => rootOwnerID
-        case CacheOwnerEngine          => cacheOwnerID
+
+    override def translate(tag: UniqueTag): IdentifierTag = tag match {
+        case id: IdentifierTag => id //nothing to translate
+        case OwnerEngine       => ownerID
+        case Current           => currentID
+        case _                 => throw new IllegalTagException(s"Unable to translate unknown tag: $tag")
     }
 
+
     override def withSyncLevel(syncLevel: SyncLevel): ConnectedObjectContext = {
-        UsageConnectedObjectContext(ownerID, rootOwnerID, currentID, cacheOwnerID, classDef, syncLevel, choreographer)
+        UsageConnectedObjectContext(ownerID, classDef, syncLevel, choreographer)
     }
 }

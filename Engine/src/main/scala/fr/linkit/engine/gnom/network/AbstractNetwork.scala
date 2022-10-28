@@ -67,10 +67,16 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override def countConnections: Int = trunk.countConnection
 
-    override def findEngine(identifier: IdentifierTag): Option[Engine] = {
+    override def findEngine(identifier: UniqueTag with NetworkFriendlyTag): Option[Engine] = {
         if (trunkInitializing)
             return None
-        trunk.findEngine(identifier)
+        identifier match {
+            case id: IdentifierTag => trunk.findEngine(id)
+            case magic: MagicTag             =>
+                if (identifier == Current) Some(currentEngine)
+                else throw new IllegalTagException(s"Unknown magic tag '$magic'.")
+        }
+
     }
 
     private[network] def createNewCache(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {
