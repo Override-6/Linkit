@@ -57,7 +57,7 @@ trait Engine extends NetworkObject[EngineReference] {
     /**
      * @return true if this engine is tagged by the given tag
      * */
-    def isTagged(tag: EngineTag): Boolean
+    def isTagged(tag: NetworkFriendlyEngineTag): Boolean
 
     /**
      * Adds a new tag for this engine <br>
@@ -65,14 +65,14 @@ trait Engine extends NetworkObject[EngineReference] {
      * */
     @throws[IllegalTagException]("if this engine is already referenced by the given tag")
     @throws[IllegalTagException]("if given tag is Server")
-    def addTag(tag: EngineTag): Unit
+    def addTag(tag: NetworkFriendlyEngineTag): Unit
 
     /**
      * Removes a previously added tag from this engine <br>
      * You cannot remove a default tag, i.e [[Server]], [[Everyone]], [[Clients]] or this engine's name.
      * */
     @throws[IllegalTagException]("if given tag is a default one")
-    def removeTag(tag: EngineTag): Unit
+    def removeTag(tag: NetworkFriendlyEngineTag): Unit
 
 
     /**
@@ -84,6 +84,8 @@ trait Engine extends NetworkObject[EngineReference] {
      * @return true if this engine is the network's server.
      * */
     def isServer: Boolean = network.serverEngine eq this
+
+    def isCurrentEngine: Boolean = network.currentEngine eq this
 
     /**
      * Connection state of the current engine

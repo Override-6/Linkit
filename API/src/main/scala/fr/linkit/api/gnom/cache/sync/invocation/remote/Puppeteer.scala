@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.invocation.remote
 
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectCache, ConnectedObjectReference}
-import fr.linkit.api.gnom.network.{IdentifierTag, Network}
+import fr.linkit.api.gnom.network.{IdentifierTag, Network, NetworkFriendlyEngineTag, UniqueTag}
 
 /**
  * The puppeteer of a SynchronizedObject creates all RMI requests and handles the results.
@@ -28,7 +28,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The engine's identifier that have created the synchronized object
      * */
-    val ownerID: String = nodeReference.ownerID
+    val ownerTag: UniqueTag with NetworkFriendlyEngineTag = nodeReference.owner
 
     /**
      * The object center that stores the synchronized object.
@@ -38,13 +38,13 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The identifier of the current engine.
      * */
-    val currentIdentifier: String
+    val currentEngineName: String
     val network          : Network //Keep an access to Network
 
     /**
      * @return true if the current engine have created the synchronized object.
      * */
-    def isCurrentEngineOwner: Boolean = currentIdentifier == ownerID
+    def isCurrentEngineOwner: Boolean = network.findEngine(ownerTag).exists(_.isCurrentEngine)
 
     /**
      * Send an RMI invocation based on the given agreement and invocation and waits for any result (return value or exception)

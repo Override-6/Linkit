@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.packet.channel
 
-import fr.linkit.api.gnom.network.EngineTag
+import fr.linkit.api.gnom.network.{EngineTag, NetworkFriendlyEngineTag}
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketAttributesPresence}
@@ -29,14 +29,14 @@ trait ChannelScope extends PacketAttributesPresence {
 
     def sendToAll(packet: Packet): Unit
 
-    def sendTo(packet: Packet, attributes: PacketAttributes, tags: Array[EngineTag]): Unit
+    def sendTo(packet: Packet, attributes: PacketAttributes, tags: Array[NetworkFriendlyEngineTag]): Unit
 
-    def sendTo(packet: Packet, tags: Array[EngineTag]): Unit
+    def sendTo(packet: Packet, tags: Array[NetworkFriendlyEngineTag]): Unit
 
-    def areAuthorised(tags: Array[EngineTag]): Boolean
+    def areAuthorised(tags: Array[NetworkFriendlyEngineTag]): Boolean
 
 
-    def assertAuthorised(identifiers: Array[EngineTag]): Unit = {
+    def assertAuthorised(identifiers: Array[NetworkFriendlyEngineTag]): Unit = {
         if (!areAuthorised(identifiers))
             throw new ForbiddenIdentifierException(s"one of the identifier in '${identifiers.mkString("Array(", ", ", ")")}' is not authorised by this scope.")
     }

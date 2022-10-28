@@ -53,7 +53,6 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
         handleBundle(DefaultPacketChannelBundle(this, bundle))
     }
 
-    override def canInjectFrom(identifier: String): Boolean = scope.areAuthorised(Array(identifier))
 
     override def storeBundle(bundle: ChannelPacketBundle): Unit = {
         AppLoggers.GNOM.trace(s"in packet channel $reference: storing bundle $bundle.")

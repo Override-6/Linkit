@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObje
 import fr.linkit.api.gnom.referencing.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.referencing.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
-import fr.linkit.api.gnom.referencing.{NamedIdentifier, NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.referencing.{NamedIdentifier, NetworkObject}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.gnom.cache.sync.tree.node.{MutableNode, SyncNodeDataRequest, UnknownObjectSyncNode}
@@ -76,7 +76,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
             val node       = tree.rootNode
             val syncObject = node.obj
             val mirror     = syncObject.isMirroring || syncObject.isMirrored
-            ObjectTreeProfile[A](tree.id, syncObject, node.ownerID, mirror, tree.contractFactory.data)
+            ObjectTreeProfile[A](tree.id, syncObject, node.ownerTag, mirror, tree.contractFactory.data)
         }
         
         val array = trees.values.map(toProfile).toArray
@@ -148,7 +148,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
         def castedSync[X <: AnyRef]: X with SynchronizedObject[X] = syncObj.asInstanceOf[X with SynchronizedObject[X]]
         
         if (nodeOpt.isEmpty) {
-            tree.registerSynchronizedObject(parentPath, path.last, castedSync, reference.ownerID, None).obj
+            tree.registerSynchronizedObject(parentPath, path.last, castedSync, reference.owner, None).obj
         } else {
             nodeOpt.get match {
                 case node: ObjectSyncNode[_]     =>
@@ -157,7 +157,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
                 case node: UnknownObjectSyncNode =>
                     val parent = node.parent.asInstanceOf[MutableNode[AnyRef]]
                     val level  = if (syncObj.isMirrored) SyncLevel.Mirror else SyncLevel.Synchronized
-                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync, None, reference.ownerID, level))
+                    val data   = center.newNodeData(new SyncNodeDataRequest[A](parent, node.id, castedSync, None, reference.owner, level))
                     node.setAsKnownObjectNode(data)
             }
         }

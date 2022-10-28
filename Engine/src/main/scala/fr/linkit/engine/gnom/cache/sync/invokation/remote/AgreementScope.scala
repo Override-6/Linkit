@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
-import fr.linkit.api.gnom.network.{EngineTag, Network}
+import fr.linkit.api.gnom.network.{Everyone, IdentifierTag, Network, NetworkFriendlyEngineTag}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
@@ -22,38 +22,37 @@ import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageRMIDispatchAgreement
 import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
-class AgreementScope(override val writer: PacketWriter, network: Network, agreement: RMIDispatchAgreement) extends AbstractAttributesPresence with ChannelScope {
+import scala.util.chaining.scalaUtilChainingOps
 
-    private val currentIdentifier = writer.currentEngineName
+class AgreementScope(override val writer: PacketWriter, network: Network, agreement: RMIDispatchAgreement) extends AbstractAttributesPresence with ChannelScope {
 
     override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
         defaultAttributes.drainAttributes(attributes)
-        if (agreement.isAcceptAll) {
-            writer.writeBroadcastPacket(packet, attributes, agreement.discardedEngines :+ currentIdentifier)
-        } else {
-            writer.writePacket(packet, attributes, agreement.acceptedEngines.filterNot(_.equals(currentIdentifier)))
-        }
+        val included = agreement.acceptedEngines.toSeq.pipe(set => if (agreement.isAcceptAll) set :+ Everyone else set)
+        val excluded = agreement.discardedEngines.toSeq.pipe(set => if (!agreement.isAcceptAll) set :+ Everyone else set)
+        writer.writePackets(packet, attributes, included, excluded)
     }
 
     override def sendToAll(packet: Packet): Unit = sendToAll(packet, SimplePacketAttributes.empty)
 
-    override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[EngineTag]): Unit = {
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[NetworkFriendlyEngineTag]): Unit = {
         throw new UnsupportedOperationException("Not supported.")
     }
 
-    override def sendTo(packet: Packet, targetIDs: Array[EngineTag]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
+    override def sendTo(packet: Packet, targetIDs: Array[NetworkFriendlyEngineTag]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
 
-    override def areAuthorised(tags: Array[EngineTag]): Boolean = {
-        !agreement.discardedEngines.containsSlice(tags)
+    override def areAuthorised(tags: Array[NetworkFriendlyEngineTag]): Boolean = {
+        val subjects = if (agreement.isAcceptAll) agreement.discardedEngines else agreement.acceptedEngines
+        subjects.forall(id => network.findEngine(id).exists(e => tags.exists(e.isTagged)))
     }
 
     override def shareWriter[S <: ChannelScope](factory: ChannelScope.ScopeFactory[S]): S = factory(writer)
 
-    def foreachAcceptedEngines(action: String => Unit): Unit = {
+    def foreachAcceptedEngines(action: IdentifierTag => Unit): Unit = {
         if (agreement.isAcceptAll) {
             val engines = network.listEngines
             engines.foreach { engine =>
-                val id = engine.name
+                val id = IdentifierTag(engine.name)
                 if (!agreement.discardedEngines.contains(id))
                     action(id)
             }

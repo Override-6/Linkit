@@ -67,12 +67,12 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override def countConnections: Int = trunk.countConnection
 
-    override def findEngine(identifier: UniqueTag with NetworkFriendlyTag): Option[Engine] = {
+    override def findEngine(identifier: UniqueTag with NetworkFriendlyEngineTag): Option[Engine] = {
         if (trunkInitializing)
             return None
         identifier match {
             case id: IdentifierTag => trunk.findEngine(id)
-            case magic: MagicTag             =>
+            case magic: MagicTag   =>
                 if (identifier == Current) Some(currentEngine)
                 else throw new IllegalTagException(s"Unknown magic tag '$magic'.")
         }

@@ -32,6 +32,5 @@ trait PacketInjectable extends TrafficObject[TrafficReference]
 
     def inject(bundle: PacketBundle): Unit
 
-    def canInjectFrom(identifier: String): Boolean
 
 }

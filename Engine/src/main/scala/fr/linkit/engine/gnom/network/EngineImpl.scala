@@ -22,7 +22,7 @@ import java.sql.Timestamp
 import scala.collection.mutable
 
 class EngineImpl(override val name: String,
-                 network0: AbstractNetwork) extends Engine {
+                 network0         : AbstractNetwork) extends Engine {
 
 
     private  val identifierSet              = mutable.Set.empty[IdentifierTag]
@@ -46,12 +46,13 @@ class EngineImpl(override val name: String,
 
     override def groups: Set[GroupTag] = groupSet.toSet
 
-    override def isTagged(tag: EngineTag): Boolean = tag match {
+    override def isTagged(tag: NetworkFriendlyEngineTag): Boolean = tag match {
         case id: IdentifierTag => identifierSet(id)
         case g: GroupTag       => groupSet(g)
+        case Current           => isCurrentEngine
     }
 
-    override def addTag(tag: EngineTag): Unit = tag match {
+    override def addTag(tag: NetworkFriendlyEngineTag): Unit = tag match {
         case id@IdentifierTag(identifier) =>
             if (identifierSet(id)) throw new IllegalTagException(s"'$identifier' is already an identifier of this engine.")
             if (id == Server) throw new IllegalTagException("Cannot add 'Server' tag to a client.")
@@ -63,20 +64,20 @@ class EngineImpl(override val name: String,
             groupSet += g
     }
 
-    override def removeTag(tag: EngineTag): Unit = tag match {
+    override def removeTag(tag: NetworkFriendlyEngineTag): Unit = tag match {
         case id@IdentifierTag(identifier) =>
             if (identifier == name) throw new IllegalTagException("Cannot remove engine's name from identifiers")
-            if (id == Server) throw new IllegalTagException("Cannot remove 'Server' identifier from identifiers")
+            if (id == Server && isServer) throw new IllegalTagException("Cannot remove 'Server' identifier from identifiers")
             identifierSet -= id
         case g@GroupTag(name)             =>
-            if (g == Everyone || g == Clients) throw new IllegalTagException(s"Cannot remove '$name' group.")
+            if (g == Everyone || (g == Clients && !isServer)) throw new IllegalTagException(s"Cannot remove '$name' group.")
             groupSet -= g
     }
 
 
-    override def isServer: Boolean = network.serverName eq name
+    override def isServer: Boolean = network.serverName == name
 
-    def isCurrentEngine: Boolean = name == network.connection.currentIdentifier
+    override def isCurrentEngine: Boolean = network.connection.currentIdentifier == name
 
     def classMappings: Option[RemoteClassMappings] = {
         if (mappings.isEmpty && !isMappingsInitializing) {

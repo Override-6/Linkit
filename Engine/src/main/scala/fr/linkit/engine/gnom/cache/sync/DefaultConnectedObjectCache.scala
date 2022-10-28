@@ -105,7 +105,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         val choreographer   = new InvocationChoreographer()
         val reference       = ConnectedObjectReference(family, cacheID, req.ownerID, path)
         val presence        = forest.getPresence(reference)
-        val context         = UsageConnectedObjectContext(req.ownerID, tree.rootNode.ownerID, currentIdentifier, this.ownerID, chippedObject.getClassDef, level, choreographer)
+        val context         = UsageConnectedObjectContext(req.ownerID, tree.rootNode.ownerTag, currentIdentifier, this.ownerID, chippedObject.getClassDef, level, choreographer)
         val contract        = contractFactory.getContract[B](originClass, context)
         val chip            = ObjectChip[B](contract, network, chippedObject)
         new ChippedObjectNodeData[B](

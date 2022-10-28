@@ -122,7 +122,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         if (hideMessage.isDefined)
             throw new HiddenMethodInvocationException(hideMessage.get)
         if (isMirroring(obj))
-            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${obj.reference} on engine ${obj.ownerID}")
+            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${obj.reference} on engine ${obj.owner}")
         modifyArgsIn(origin, args)
         val method = description.javaMethod
         AppLoggers.COInv.debug {
@@ -165,7 +165,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {
-        val currentIdentifier = puppeteer.currentIdentifier
+        val currentIdentifier = puppeteer.currentEngineName
         val objectNode        = localInvocation.objectNode
         val obj               = objectNode.obj
         val mayPerformRMI     = agreement.mayPerformRemoteInvocation
@@ -204,7 +204,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             result = localResult
             Debugger.pop()
         } else {
-            Debugger.push(MethodInvocationSendStep(agreement, description, appointedEngine.identifier))
+            Debugger.push(MethodInvocationSendStep(agreement, description, appointedEngine))
             AppLoggers.COInv.debug(debugMsg(appointedEngine.identifier, localInvocation))
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
             Debugger.pop()

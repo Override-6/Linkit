@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
 import fr.linkit.api.gnom.cache.sync.{CannotConnectException, ChippedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.gnom.network.{Engine, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.NamedIdentifier
@@ -38,27 +38,27 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
 
     //Note: The parent can be of type `UnknownSyncObjectNode`. In this case, this node have an unknown parent
     //and the method `discoverParent(ObjectSyncNodeImpl)` can be called at any time by the system.
-    private var parent0            : ConnectedObjectNode[_]        = data.parent.orNull
-    override  val reference        : ConnectedObjectReference      = data.reference
-    override  val id               : NamedIdentifier               = reference.nodePath.last
-    override  val chip             : Chip[A]                       = data.chip
-    override  val tree             : DefaultConnectedObjectTree[_] = data.tree
-    override  val contract         : StructureContract[A]          = data.contract
-    override  val choreographer    : InvocationChoreographer       = data.choreographer
+    private var parent0            : ConnectedObjectNode[_]                  = data.parent.orNull
+    override  val reference        : ConnectedObjectReference                = data.reference
+    override  val id               : NamedIdentifier                         = reference.nodePath.last
+    override  val chip             : Chip[A]                                 = data.chip
+    override  val tree             : DefaultConnectedObjectTree[_]           = data.tree
+    override  val contract         : StructureContract[A]                    = data.contract
+    override  val choreographer: InvocationChoreographer                 = data.choreographer
     /**
      * The identifier of the engine that posted this object.
      */
-    override  val ownerID          : String                        = data.ownerID
+    override  val ownerTag     : UniqueTag with NetworkFriendlyEngineTag = data.ownerID
     /**
      * This map contains all the synchronized object of the parent object
      * including method return values and parameters and class fields
      * */
-    protected val childs                                           = new mutable.HashMap[NamedIdentifier, MutableNode[_]]
-    private   val currentIdentifier: String                        = data.currentIdentifier
+    protected val childs                                                 = new mutable.HashMap[NamedIdentifier, MutableNode[_]]
+    private   val currentIdentifier: String                                  = data.currentIdentifier
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    override  val objectPresence   : NetworkObjectPresence         = data.presence
+    override  val objectPresence   : NetworkObjectPresence                   = data.presence
 
     override def obj: ChippedObject[A] = data.obj
 
@@ -116,8 +116,8 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
     }
 
     private def makeMemberInvocation(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
-        val executor = data.network.findEngine(senderID).orNull
-        val params   = packet.params
+        val executor               = data.network.findEngine(senderID).orNull
+        val params                 = packet.params
         val expectedEngineIDReturn = packet.expectedEngineIDReturn
         scanParams(params)
 
@@ -163,10 +163,10 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
                 throw new NoSuchElementException(s"Could not find method contract with identifier #$id for ${contract.clazz}.")
             }
             methodContract.handleInvocationResult(initialResult, engine)((ref, registrationLevel) => {
-                tree.insertObject(this, ref.asInstanceOf[AnyRef], ownerID, registrationLevel).obj
+                tree.insertObject(this, ref.asInstanceOf[AnyRef], ownerTag, registrationLevel).obj
             })
         }
-        if (packet.expectedEngineIDReturn == currentIdentifier) {
+        if (packet.expectedEngineReturn == currentIdentifier) {
             Debugger.push(ResponseStep("rmi", currentIdentifier, null)) //TODO replace null by the channel's reference
             response
                     .addPacket(RefPacket[Any](result))

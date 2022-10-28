@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
+import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
-import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.network.{IdentifierTag, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
@@ -23,23 +23,23 @@ import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, Response
 import fr.linkit.api.gnom.packet.traffic.InjectableTrafficNode
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
-import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
+import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.debug.{Debugger, RequestStep}
 import fr.linkit.engine.internal.util.JavaUtils
 import org.jetbrains.annotations.Nullable
 
-class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChannel,
-                                   override val cache        : ConnectedObjectCache[_],
+class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
+                                   override val cache: ConnectedObjectCache[_],
                                    override val nodeReference: ConnectedObjectReference) extends Puppeteer[S] {
 
     override val network          : Network = cache.network
     private  val traffic                    = channel.traffic
-    override val currentIdentifier: String  = traffic.currentEngineName
+    override val currentEngineName: String  = traffic.currentEngineName
     private  val writer                     = traffic.newWriter(channel.trafficPath)
 
-    override def isCurrentEngineOwner: Boolean = ownerID == currentIdentifier
+    override def isCurrentEngineOwner: Boolean = ownerTag == currentEngineName
 
     private lazy val isPerformant: Boolean = traffic.findNode(channel.trafficPath).get match {
         case node: InjectableTrafficNode[_] => node.preferPerformances()
@@ -52,7 +52,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
             throw new IllegalAccessException("the agreement states that the method should not be called on a remote engine")
         val appointedEngineReturn = agreement.getAppointedEngineReturn
 
-        if (appointedEngineReturn == currentIdentifier)
+        if (appointedEngineReturn == currentEngineName)
             throw new UnsupportedOperationException("invocation's desired engine return is this engine.")
 
         val methodId         = invocation.methodID
@@ -62,8 +62,8 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
         val dispatcher       = new ObjectRMIDispatcher(scope, methodId, appointedEngineReturn) {
             override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
                 holder
-                    .nextResponse
-                    .nextPacket[Packet] match {
+                        .nextResponse
+                        .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
                         val method = SyncObjectDescription(invocation.objectNode.obj.getClassDef).findMethodDescription(methodId).getOrElse(s"<unknown method $methodId>")
                         throw new InvocationFailedException(s"Remote Method Invocation for method $method on object $nodeReference, executed on engine '$appointedEngineReturn' failed :\n$exceptionString")
@@ -98,7 +98,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
         }
     }
 
-    class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {
+    class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngineId: IdentifierTag) extends RMIDispatcher {
 
         override def broadcast(args: Array[Any]): Unit = {
             handleResponseHolder(makeRequest(scope, args))
@@ -106,8 +106,8 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)
-                   .addPacket(InvocationPacket(nodeReference, methodID, args, returnEngine))
-                   .submit()
+                    .addPacket(InvocationPacket(nodeReference, methodID, args, returnEngineId))
+                    .submit()
         }
 
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
@@ -115,11 +115,11 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
         override def foreachEngines(action: IdentifierTag => Array[Any]): Unit = {
             scope.foreachAcceptedEngines(engineID => runOnContext {
                 //return engine is processed at last, don't send a request to the current engine
-                if (engineID != returnEngine && engineID != currentIdentifier)
+                if (engineID != returnEngineId && engineID.identifier != currentEngineName)
                     makeRequest(ChannelScopes.include(engineID)(writer), action(engineID))
             })
-            if (returnEngine != null && returnEngine != currentIdentifier)
-                handleResponseHolder(makeRequest(ChannelScopes.include(returnEngine)(writer), action(returnEngine)))
+            if (returnEngineId != null && returnEngineId.identifier != currentEngineName)
+                handleResponseHolder(makeRequest(ChannelScopes.include(returnEngineId)(writer), action(returnEngineId)))
         }
     }
 

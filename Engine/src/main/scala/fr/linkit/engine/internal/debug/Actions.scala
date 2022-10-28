@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheReference}
+import fr.linkit.api.gnom.network.{EngineTag, IdentifierTag, UniqueTag}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.internal.concurrency.Procrastinator
 
@@ -33,15 +34,15 @@ sealed abstract class AbstractStep(val actionType: String) extends Step {
     override val taskID: Int = Procrastinator.currentWorker.map(_.taskID).getOrElse(-1)
 }
 
-case class RequestStep(requestType: String, goal: String, targetEngine: String, channel: TrafficReference) extends AbstractStep("request") {
-    override def insights: String = s"Performing request '$requestType' in channel $channel with goal: $goal. waiting $targetEngine to answer..."
+case class RequestStep(requestType: String, goal: String, target: EngineTag, channel: TrafficReference) extends AbstractStep("request") {
+    override def insights: String = s"Performing request '$requestType' in channel $channel with goal: $goal. waiting $target to answer..."
 }
 
-case class ResponseStep(requestType: String, senderEngine: String, channel: TrafficReference) extends AbstractStep("response") {
+case class ResponseStep(requestType: String, senderEngine: UniqueTag, channel: TrafficReference) extends AbstractStep("response") {
     override def insights: String = s"Performing response to request '$requestType' in channel $channel. engine '$senderEngine' is currently waiting answer..."
 }
 
-case class MethodInvocationSendStep(agreement: RMIDispatchAgreement, method: MethodDescription, appointedEngine: String) extends AbstractStep("rmi - send") {
+case class MethodInvocationSendStep(agreement: RMIDispatchAgreement, method: MethodDescription, appointedEngine: UniqueTag) extends AbstractStep("rmi - send") {
     override def insights: String = s"Performing remote method invocation following agreement $agreement, for method $method." + {
         if (appointedEngine == null) "" else s" waiting for engine '$appointedEngine' to return or throw."
     }

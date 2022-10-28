@@ -49,7 +49,7 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         if (hideMsg.isDefined)
             throw new HiddenMethodInvocationException(hideMsg.get)
         if (!isOrigin && isDistant)
-            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring ${chippedObject.reference} on engine ${chippedObject.ownerID}")
+            throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring ${chippedObject.reference} on engine ${chippedObject.owner}")
         val procrastinator = methodContract.procrastinator
         if (procrastinator != null) {
             AppLoggers.COInv.debug(s"Calling Method in another Procrastinator - '$methodID'")

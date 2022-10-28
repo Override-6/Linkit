@@ -82,9 +82,9 @@ class RMIRulesAgreementGenericBuilder private(private val discarded: Seq[EngineT
         for (condition <- conditions) {
             builder = condition(context).asInstanceOf[RMIRulesAgreementGenericBuilder]
         }
-        val desiredEngineReturn = context.translate(desiredEngineReturn)
-        val accepted            = builder.accepted
-        val discarded           = builder.discarded
+        val desiredEngineReturn = context.translate(this.desiredEngineReturn)
+        val accepted            = context.translateAll(builder.accepted)
+        val discarded           = context.translateAll(builder.discarded)
         new UsageRMIDispatchAgreement(context, desiredEngineReturn,
             builder.acceptAllTargets, accepted, discarded)
     }
@@ -99,9 +99,9 @@ object RMIRulesAgreementGenericBuilder {
     type AgreementCondition = (ConnectedObjectContext, RMIRulesAgreementBuilder, Action, Action) => RMIRulesAgreementBuilder
     type AgreementConditionResult = ConnectedObjectContext => RMIRulesAgreementBuilder
 
-    private final def compare(left: EngineTag, right: EngineTag): AgreementCondition = (c, b, ifTrue, ifFalse) => if (c.areEquals(right, left)) ifTrue(b) else ifFalse(b)
+    private final def compare(left: EngineTag, right: EngineTag): AgreementCondition = (c, b, ifTrue, ifFalse) => if (c.areEquivalent(right, left)) ifTrue(b) else ifFalse(b)
 
-    private final def compareNot(left: EngineTag, right: EngineTag): AgreementCondition = (c, b, ifTrue, ifFalse) => if (!c.areEquals(right, left)) ifTrue(b) else ifFalse(b)
+    private final def compareNot(left: EngineTag, right: EngineTag): AgreementCondition = (c, b, ifTrue, ifFalse) => if (!c.areEquivalent(right, left)) ifTrue(b) else ifFalse(b)
 
     implicit private def fastWrap(in: () => Unit): Boolean = true
 

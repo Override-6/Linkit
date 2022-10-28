@@ -14,21 +14,22 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
+import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 import java.util
 
 /**
  * All the information that allows to retrieve the synchronized object node.
- * @param cacheFamily the cache family of the object cache's manager.
+ * @param family the cache family of the object cache's manager.
  * @param cacheID the object cache identifier
- * @param ownerID the owner of the object (the engine's name that created the object)
+ * @param owner the owner of the object (the engine's name that created the object)<br>
  *                NOTE: The value of this field have no influence on the reference location linking, it's just informal.
  * @param nodePath the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectTree]]
  */
-class ConnectedObjectReference(family: String,
-                               cacheID: Int,
-                               val ownerID: String,
+class ConnectedObjectReference(family      : String,
+                               cacheID     : Int,
+                               val owner   : UniqueTag with NetworkFriendlyEngineTag,
                                val nodePath: Array[NamedIdentifier]) extends SharedCacheReference(family, cacheID) {
 
     override def asSuper: Option[SharedCacheReference] = Some(new SharedCacheReference(family, cacheID))
@@ -49,5 +50,7 @@ class ConnectedObjectReference(family: String,
 
 object ConnectedObjectReference {
 
-    def apply(family: String, cacheID: Int, owner: String, nodePath: Array[NamedIdentifier]): ConnectedObjectReference = new ConnectedObjectReference(family, cacheID, owner, nodePath)
+    def apply(family: String, cacheID: Int, owner: UniqueTag with NetworkFriendlyEngineTag, nodePath: Array[NamedIdentifier]): ConnectedObjectReference = {
+        new ConnectedObjectReference(family, cacheID, owner, nodePath)
+    }
 }

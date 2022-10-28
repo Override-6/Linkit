@@ -14,23 +14,23 @@
 package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIDispatchAgreement}
-import fr.linkit.api.gnom.network.IdentifierTag
+import fr.linkit.api.gnom.network.{Everyone, IdentifierTag}
 
 class UsageRMIDispatchAgreement private(currentID: IdentifierTag, ownerID: IdentifierTag,
                                         appointedEngineReturn: IdentifierTag, acceptAll: Boolean,
-                                        accepted: Array[IdentifierTag], excluded: Array[IdentifierTag]) extends RMIDispatchAgreement {
+                                        accepted: Set[IdentifierTag], excluded: Set[IdentifierTag]) extends RMIDispatchAgreement {
 
     def this(context: ConnectedObjectContext,
              appointedEngineReturn: IdentifierTag, acceptAll: Boolean,
-             accepted: Array[IdentifierTag], excluded: Array[IdentifierTag]) = {
+             accepted: Set[IdentifierTag], excluded: Set[IdentifierTag]) = {
         this(context.currentID, context.ownerID, appointedEngineReturn, acceptAll, accepted, excluded)
     }
 
     private val currentIsOwner = currentID == ownerID
 
-    override val acceptedEngines: Array[IdentifierTag] = accepted
+    override val acceptedEngines: Set[IdentifierTag] = accepted
 
-    override val discardedEngines: Array[IdentifierTag] = excluded
+    override val discardedEngines: Set[IdentifierTag] = excluded
 
     override def isAcceptAll: Boolean = acceptAll
 
@@ -44,7 +44,7 @@ class UsageRMIDispatchAgreement private(currentID: IdentifierTag, ownerID: Ident
     }
 
     override val mayPerformRemoteInvocation: Boolean = {
-        acceptAll || (accepted.nonEmpty && !(accepted.length == 1 && accepted.head == currentID))
+        acceptAll || (accepted.nonEmpty && !(accepted.size == 1 && accepted.head == currentID))
     }
 
     override def toString: String = {

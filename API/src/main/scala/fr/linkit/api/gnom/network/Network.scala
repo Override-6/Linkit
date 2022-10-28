@@ -40,9 +40,12 @@ trait Network extends StaticNetworkObject[NetworkReference.type] {
 
     def listEngines: List[Engine]
 
-    def findEngine(identifier: UniqueTag with NetworkFriendlyTag): Option[Engine]
+    def findEngine(identifier: UniqueTag with NetworkFriendlyEngineTag): Option[Engine]
+
 
     def findEngines(group: GroupTag): List[Engine]
+
+    def exists(tag: NetworkFriendlyEngineTag): Boolean
 
     def startUpDate: Timestamp
 

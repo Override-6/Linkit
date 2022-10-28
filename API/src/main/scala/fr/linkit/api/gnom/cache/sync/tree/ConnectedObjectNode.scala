@@ -15,6 +15,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
+import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable
@@ -43,7 +44,7 @@ trait ConnectedObjectNode[A <: AnyRef] {
      * The engine identifier that owns the synchronized object.
      * (The owner is usually the engine that have created the object)
      */
-    val ownerID: String
+    val ownerTag: UniqueTag with NetworkFriendlyEngineTag
 
     /**
      * This node's parent (null if this node is a root node)

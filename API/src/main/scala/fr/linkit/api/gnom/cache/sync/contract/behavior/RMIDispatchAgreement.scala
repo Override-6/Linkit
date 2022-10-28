@@ -17,9 +17,9 @@ import fr.linkit.api.gnom.network.IdentifierTag
 
 trait RMIDispatchAgreement {
 
-    val acceptedEngines: Array[IdentifierTag]
+    val acceptedEngines: Set[IdentifierTag]
 
-    val discardedEngines: Array[IdentifierTag]
+    val discardedEngines: Set[IdentifierTag]
 
     def isAcceptAll: Boolean
 
