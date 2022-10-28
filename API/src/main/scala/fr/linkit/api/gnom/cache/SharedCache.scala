@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.cache
 
+import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.DynamicNetworkObject
 
 /**
@@ -26,7 +27,7 @@ trait SharedCache extends DynamicNetworkObject[SharedCacheReference] {
      */
     val family: String
     
-    val ownerID: String
+    val ownerTag: UniqueTag with NetworkFriendlyEngineTag
 
     /**
      * The cache ID of this cache.

@@ -42,5 +42,5 @@ class SyncNodeDataRequest[A <: AnyRef](parent        : MutableNode[_ <: AnyRef],
 class ChippedObjectNodeDataRequest[A <: AnyRef](val parent       : MutableNode[_ <: AnyRef],
                                                 val id           : NamedIdentifier,
                                                 val chippedObject: ChippedObject[A],
-                                                val ownerID      : UniqueTag with NetworkFriendlyEngineTag)
+                                                val ownerTag     : UniqueTag with NetworkFriendlyEngineTag)
         extends NodeDataRequest[A, ChippedObjectNodeData[A]]

@@ -18,9 +18,8 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
 import fr.linkit.api.gnom.cache.sync.{CannotConnectException, ChippedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.network.{Engine, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network._
 import fr.linkit.api.gnom.packet.channel.request.Submitter
-import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
@@ -28,7 +27,7 @@ import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.cache.sync.tree.DefaultConnectedObjectTree
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
-import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeStep, ResponseStep}
+import fr.linkit.engine.internal.debug.{Debugger, ResponseStep}
 
 import java.lang.reflect.InvocationTargetException
 import scala.collection.mutable
@@ -38,27 +37,26 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
 
     //Note: The parent can be of type `UnknownSyncObjectNode`. In this case, this node have an unknown parent
     //and the method `discoverParent(ObjectSyncNodeImpl)` can be called at any time by the system.
-    private var parent0            : ConnectedObjectNode[_]                  = data.parent.orNull
-    override  val reference        : ConnectedObjectReference                = data.reference
-    override  val id               : NamedIdentifier                         = reference.nodePath.last
-    override  val chip             : Chip[A]                                 = data.chip
-    override  val tree             : DefaultConnectedObjectTree[_]           = data.tree
-    override  val contract         : StructureContract[A]                    = data.contract
-    override  val choreographer: InvocationChoreographer                 = data.choreographer
+    private var parent0         : ConnectedObjectNode[_]                  = data.parent.orNull
+    override  val reference     : ConnectedObjectReference                = data.reference
+    override  val id            : NamedIdentifier                         = reference.nodePath.last
+    override  val chip          : Chip[A]                                 = data.chip
+    override  val tree          : DefaultConnectedObjectTree[_]           = data.tree
+    override  val contract      : StructureContract[A]                    = data.contract
+    override  val choreographer : InvocationChoreographer                 = data.choreographer
     /**
      * The identifier of the engine that posted this object.
      */
-    override  val ownerTag     : UniqueTag with NetworkFriendlyEngineTag = data.ownerID
+    override  val ownerTag      : UniqueTag with NetworkFriendlyEngineTag = data.ownerID
     /**
      * This map contains all the synchronized object of the parent object
      * including method return values and parameters and class fields
      * */
-    protected val childs                                                 = new mutable.HashMap[NamedIdentifier, MutableNode[_]]
-    private   val currentIdentifier: String                                  = data.currentIdentifier
+    protected val childs                                                  = new mutable.HashMap[NamedIdentifier, MutableNode[_]]
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    override  val objectPresence   : NetworkObjectPresence                   = data.presence
+    override  val objectPresence: NetworkObjectPresence                   = data.presence
 
     override def obj: ChippedObject[A] = data.obj
 
@@ -99,7 +97,9 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
         (childs.get(id): Any).asInstanceOf[Option[MutableNode[B]]]
     }
 
-    override def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
+    override def handlePacket(packet: InvocationPacket,
+                              senderTag: IdentifierTag,
+                              response: Submitter[Unit]): Unit = {
         val ref  = packet.objRef
         val path = ref.nodePath
         if (!(path sameElements nodePath)) {
@@ -108,23 +108,26 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
 
             tree.findNode[AnyRef](path.drop(nodePath.length))
                     .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node ($ref)")) {
-                        case node: TrafficInterestedNode[_] => node.handlePacket(packet, senderID, response)
+                        case node: TrafficInterestedNode[_] => node.handlePacket(packet, senderTag, response)
                         case _                              =>
                     }
         }
-        makeMemberInvocation(packet, senderID, response)
+        makeMemberInvocation(packet, senderTag, response)
     }
 
-    private def makeMemberInvocation(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
-        val executor               = data.network.findEngine(senderID).orNull
+    private def makeMemberInvocation(packet  : InvocationPacket,
+                                     senderID: UniqueTag with NetworkFriendlyEngineTag,
+                                     response: Submitter[Unit]): Unit = {
+        val network = data.network
+        val executor               = network.findEngine(senderID).orNull
         val params                 = packet.params
-        val expectedEngineIDReturn = packet.expectedEngineIDReturn
+        val expectedEngineReturn = packet.expectedEngineReturn
         scanParams(params)
 
         def handleException(e: Throwable): Unit = {
             e.printStackTrace()
             val ex = if (e.isInstanceOf[InvocationTargetException]) e.getCause else e
-            if (expectedEngineIDReturn == currentIdentifier)
+            if (network.findEngine(expectedEngineReturn).exists(_.isCurrentEngine))
                 handleRemoteInvocationException(response, ex)
         }
 
@@ -167,7 +170,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
             })
         }
         if (packet.expectedEngineReturn == currentIdentifier) {
-            Debugger.push(ResponseStep("rmi", currentIdentifier, null)) //TODO replace null by the channel's reference
+            Debugger.push(ResponseStep("rmi", Current, null)) //TODO replace null by the channel's reference
             response
                     .addPacket(RefPacket[Any](result))
                     .submit()

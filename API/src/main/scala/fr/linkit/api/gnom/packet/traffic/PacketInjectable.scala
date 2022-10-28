@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
+import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.packet.{PacketAttributesPresence, PacketBundle}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.DynamicNetworkObject
@@ -23,11 +24,11 @@ trait PacketInjectable extends TrafficObject[TrafficReference]
         with JustifiedCloseable
         with PacketAttributesPresence {
 
-    val ownerID: String
+    val ownerTag: UniqueTag with NetworkFriendlyEngineTag
     /**
      * The traffic handler that is directly or not injecting the packets
      * */
-    val traffic: PacketTraffic
+    val traffic : PacketTraffic
 
 
     def inject(bundle: PacketBundle): Unit

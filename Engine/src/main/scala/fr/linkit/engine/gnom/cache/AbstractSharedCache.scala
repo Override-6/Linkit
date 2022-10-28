@@ -15,18 +15,19 @@ package fr.linkit.engine.gnom.cache
 
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheReference}
+import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 
 abstract class AbstractSharedCache(channel: CachePacketChannel) extends AbstractAttributesPresence with SharedCache {
-    
+
     private val manager = channel.manager
-    
+
     override val family: String = manager.family
-    
-    override val ownerID  : String                = channel.ownerID
-    override val cacheID  : Int                   = channel.cacheID
-    override val reference: SharedCacheReference  = new SharedCacheReference(family, cacheID)
-    override val presence : NetworkObjectPresence = manager.getCachesLinker.getPresence(reference)
-    
+
+    override val ownerTag: UniqueTag with NetworkFriendlyEngineTag = channel.ownerTag
+    override val cacheID : Int                                     = channel.cacheID
+    override val reference: SharedCacheReference                    = new SharedCacheReference(family, cacheID)
+    override val presence : NetworkObjectPresence                   = manager.getCachesLinker.getPresence(reference)
+
 }

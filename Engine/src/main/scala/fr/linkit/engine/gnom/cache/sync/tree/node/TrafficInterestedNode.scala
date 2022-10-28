@@ -14,12 +14,13 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectNode
+import fr.linkit.api.gnom.network.IdentifierTag
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.packet.traffic.channel.request.ResponseSubmitter
 
 trait TrafficInterestedNode[A <: AnyRef] extends ConnectedObjectNode[A] {
 
-    def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit
+    def handlePacket(packet: InvocationPacket, senderID: IdentifierTag, response: Submitter[Unit]): Unit
 
 }

@@ -21,12 +21,11 @@ import fr.linkit.engine.gnom.cache.sync.tree.DefaultConnectedObjectTree
 class NodeData[+A <: AnyRef](val reference: ConnectedObjectReference, //The sync object reference
                              val presence: NetworkObjectPresence, //the sync object presence
                              val tree: DefaultConnectedObjectTree[_], //The object's tree
-                             val currentIdentifier: String, //the current identifier
                              val ownerID: UniqueTag with NetworkFriendlyEngineTag, //the owner Identifier
                              val parent: Option[MutableNode[_]]) { // the parent of the node
 
     def this(other: NodeData[A]) = {
-        this(other.reference, other.presence, other.tree, other.currentIdentifier, other.ownerID, other.parent)
+        this(other.reference, other.presence, other.tree,  other.ownerID, other.parent)
     }
 
 }

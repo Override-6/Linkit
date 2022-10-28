@@ -19,7 +19,6 @@ import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.tree.{ObjectConnector, ObjectSyncNode}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectAlreadyInitialisedException, ConnectedObjectReference, SynchronizedObject}
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
 
@@ -35,8 +34,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient private final var connector        : ObjectConnector          = _
 
     //cached values for handleCall
-    @transient private final var isNotMirroring: Boolean                                 = _
-    @transient private final var isOrigin      : Boolean                                 = _
+    @transient private final var isNotMirroring: Boolean = _
+    @transient private final var isOrigin      : Boolean = _
 
     def originClass: Class[_]
 
@@ -56,7 +55,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         this.choreographer = node.choreographer
         this.connector = node.tree
 
-        this.isOrigin = puppeteer.network.findEngine(node.ownerTag)
+        this.isOrigin = puppeteer.network.findEngine(node.ownerTag).exists(_.isCurrentEngine)
         this.isNotMirroring = !node.isMirroring
     }
 
@@ -127,7 +126,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     }
 
     private def getMirroringCallExceptionMessage: String = {
-        s"Attempted to call a method on a distant object representation. This object is mirroring $reference on engine ${ownerID}"
+        s"Attempted to call a method on a distant object representation. This object is mirroring $reference on engine ${location.owner}"
     }
 
     @inline override def isInitialized: Boolean = node != null

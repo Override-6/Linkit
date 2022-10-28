@@ -10,8 +10,8 @@ import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 
 abstract class AbstractPacketChannelMock extends AbstractAttributesPresence with PacketChannel {
-    override val ownerID: String        = "NONE"
-    override val traffic: PacketTraffic = null
+    override val ownerTag: String        = "NONE"
+    override val traffic : PacketTraffic = null
 
     override def storeBundle(bundle: ChannelPacketBundle): Unit = throw new UnsupportedOperationException()
 
