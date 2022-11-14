@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-Linkit is a high level networking framework that is able to make any virtual object useable and accessible between the client and the server.
+Linkit is a high level networking framework to create virtual objects useable and accessible between the server and its clients.
 </p>
 <p align="center">
 This readme lackes clear explanations, graphs are planned to be drawn for better understanding of what are those inter-engine virtual objects. 
