@@ -7,13 +7,16 @@
 </p>
 
 <p align="center">
-Linkit is a high level networking framework that is able to make any virtual object useable and accessible between the client and the server.
+Linkit is a high level networking framework to create virtual objects useable and accessible between the server and its clients.
 </p>
 <p align="center">
-For example, you could have a java.util.HashMap object that is shared and synchronized between all peers.
+This readme lackes clear explanations, graphs are planned to be drawn for better understanding of what are those inter-engine virtual objects. 
+</p>
+<p align="center">
+Contact me at my email address or on discord (Override#2623) if you want to discuss about the project.
 </p>
 <h2 align="center">How to download</h2>
-<p align="center">Project stills in hard development, so there is no stable version that can be downloaded using a build tool.</p>
+<p align="center">This project stills in hard development, so there is no stable version that can be downloaded using a build tool.</p>
 <p align="center">If you still want to test the project,
 first keep in mind that a lot of things might work wrongly, then, 
 </p>
@@ -21,5 +24,3 @@ first keep in mind that a lot of things might work wrongly, then,
 <h2 align="center">
 Learn more on the <a href="https://override-6.github.io/Linkit/">Website</a> !
 </h2>
-
-<img src="Diagrams-Readme/README footer.svg" />
