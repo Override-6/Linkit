@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
+import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
 import fr.linkit.api.gnom.packet.channel.PacketChannel
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 
@@ -21,11 +22,11 @@ trait PacketSender extends PacketChannel {
     def send(packet: Packet, attributes: PacketAttributes): Unit
 
     @throws[IllegalArgumentException]("If targets contains an identifier that is not authorised by its scope.")
-    def sendTo(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit
+    def sendTo(packet: Packet, attributes: PacketAttributes, selection: NetworkFriendlyEngineTag): Unit
 
     def send(packet: Packet): Unit
 
     @throws[IllegalArgumentException]("If targets contains an identifier that is not authorised by its scope.")
-    def sendTo(packet: Packet, targets: Array[String]): Unit
+    def sendTo(packet: Packet, selection: NetworkFriendlyEngineTag): Unit
 
 }

@@ -44,9 +44,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             throw new ConnectedObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
         //if (location != null && location != node.reference)
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
-        val puppeteer = node.puppeteer
         this.location = node.reference
-        this.isMirrored0 = node.isMirrored
+        this.isMirrored0 = node.isMirror
 
         this.puppeteer = node.puppeteer
         this.contract = node.contract
@@ -55,7 +54,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         this.choreographer = node.choreographer
         this.connector = node.tree
 
-        this.isOrigin = puppeteer.network.findEngine(node.ownerTag).exists(_.isCurrentEngine)
+        this.isOrigin = node.isMirroring
         this.isNotMirroring = !node.isMirroring
     }
 
@@ -91,6 +90,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getClassDef: SyncClassDef = classDef
 
+    //called by generated implementations
     protected final def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         if (!isInitialized) {
             //throw new IllegalStateException(s"Synchronized object at '${location}' is not initialised")

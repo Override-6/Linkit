@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic.channel
 
+import fr.linkit.api.gnom.network.tag.Server
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.gnom.packet.traffic._
@@ -30,9 +31,9 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
-    protected      val writer     : PacketWriter = scope.writer
-    override       val ownerTag   : String       = writer.serverName
-    override       val trafficPath: Array[Int]   = writer.path
+    protected      val writer       : PacketWriter                     = scope.writer
+    override       val ownerTag                                        = Server
+    override       val trafficPath  : Array[Int]                       = writer.path
     override       val traffic      : PacketTraffic                    = writer.traffic
     private        val storedBundles: mutable.Set[ChannelPacketBundle] = mutable.HashSet.empty[ChannelPacketBundle]
     override final val reference    : TrafficObjectReference           = makeReference
@@ -49,7 +50,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
 
     final override def inject(bundle: PacketBundle): Unit = {
         val coordinates = bundle.coords
-        scope.assertAuthorised(Array(coordinates.senderID))
+        scope.assertAuthorised(coordinates.senderTag)
         handleBundle(DefaultPacketChannelBundle(this, bundle))
     }
 

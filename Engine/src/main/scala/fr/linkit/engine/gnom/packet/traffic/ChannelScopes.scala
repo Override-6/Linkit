@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.gnom.network.{EngineTag, Everyone}
+import fr.linkit.api.gnom.network.tag.{EngineResolver, EngineTag, NetworkFriendlyEngineTag, Server}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
@@ -22,33 +22,36 @@ import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAtt
 
 object ChannelScopes {
 
-    final case class SelectiveScope private(override val writer: PacketWriter, excludeBaseTags: Boolean, baseTags: Array[EngineTag])
+    final case class SelectiveScope private(override val writer: PacketWriter, selection: NetworkFriendlyEngineTag)
             extends AbstractAttributesPresence with ChannelScope {
+
+        private val resolver: EngineResolver = writer.traffic.connection.network
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
             defaultAttributes.drainAttributes(attributes)
-            writer.writePackets(packet, attributes, baseTags, excludeBaseTags)
+            writer.writePackets(packet, attributes, selection)
         }
 
-        override def sendTo(packet: Packet, attributes: PacketAttributes, targetTags: Array[EngineTag]): Unit = {
-            assertAuthorised(targetTags)
+        override def sendTo(packet: Packet, attributes: PacketAttributes, target: NetworkFriendlyEngineTag): Unit = {
+            assertAuthorised(target)
             defaultAttributes.drainAttributes(attributes)
-            writer.writePackets(packet, attributes, targetTags, excludeBaseTags)
+            writer.writePackets(packet, attributes, target)
         }
 
         override def sendToAll(packet: Packet): Unit = {
             sendToAll(packet, SimplePacketAttributes.empty)
         }
 
-        override def sendTo(packet: Packet, targetTags: Array[EngineTag]): Unit = {
-            sendTo(packet, SimplePacketAttributes.empty, targetTags)
+        override def sendTo(packet: Packet, tag: NetworkFriendlyEngineTag): Unit = {
+            sendTo(packet, SimplePacketAttributes.empty, tag)
         }
 
-        override def areAuthorised(tags: Array[EngineTag]): Boolean = excludeBaseTags != baseTags.containsSlice(tags)
+
+        override def areAuthorised(tag: NetworkFriendlyEngineTag): Boolean = resolver.isIncluded(tag, this.selection)
 
         override def equals(obj: Any): Boolean = {
             obj match {
-                case s: SelectiveScope => s.baseTags sameElements this.baseTags
+                case s: SelectiveScope => s.resolver == resolver && s.resolver.isEquivalent(s.selection, selection)
                 case _                 => false
             }
         }
@@ -57,14 +60,9 @@ object ChannelScopes {
 
     }
 
-    def discardCurrent: ScopeFactory[ChannelScope] = writer => SelectiveScope(writer, true, Array(writer.currentEngineName))
 
-    def discards(discarded: EngineTag*): ScopeFactory[ChannelScope] = SelectiveScope(_, true, Array(discarded: _*))
-
-    def broadcast: ScopeFactory[ChannelScope] = include(Everyone)
-
-    def include(authorised: EngineTag*): ScopeFactory[ChannelScope] = {
-        SelectiveScope(_, false, Array(authorised: _*))
+    def apply(selection: NetworkFriendlyEngineTag): ScopeFactory[ChannelScope] = {
+        SelectiveScope(_, selection)
     }
 
 }

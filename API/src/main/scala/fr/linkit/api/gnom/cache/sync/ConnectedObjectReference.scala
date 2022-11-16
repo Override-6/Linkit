@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{NameTag, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 import java.util
@@ -29,7 +29,7 @@ import java.util
  */
 class ConnectedObjectReference(family      : String,
                                cacheID     : Int,
-                               val owner   : UniqueTag with NetworkFriendlyEngineTag,
+                               val owner   : NameTag,
                                val nodePath: Array[NamedIdentifier]) extends SharedCacheReference(family, cacheID) {
 
     override def asSuper: Option[SharedCacheReference] = Some(new SharedCacheReference(family, cacheID))
@@ -50,7 +50,7 @@ class ConnectedObjectReference(family      : String,
 
 object ConnectedObjectReference {
 
-    def apply(family: String, cacheID: Int, owner: UniqueTag with NetworkFriendlyEngineTag, nodePath: Array[NamedIdentifier]): ConnectedObjectReference = {
+    def apply(family: String, cacheID: Int, owner: NameTag, nodePath: Array[NamedIdentifier]): ConnectedObjectReference = {
         new ConnectedObjectReference(family, cacheID, owner, nodePath)
     }
 }

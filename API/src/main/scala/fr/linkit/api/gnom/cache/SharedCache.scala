@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache
 
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.DynamicNetworkObject
 
 /**

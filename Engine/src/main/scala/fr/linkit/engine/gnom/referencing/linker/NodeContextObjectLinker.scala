@@ -45,7 +45,7 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
 
     override def findPersistableReference(obj: AnyRef, coords: PacketCoordinates): Option[Int] = {
         val result = findReferenceID(obj)
-        if (result.isDefined && isPresentOnEngine(coords.senderID, new ContextualObjectReference(coords.path, result.get))) {
+        if (result.isDefined && isPresentOnEngine(coords.senderTag, new ContextualObjectReference(coords.path, result.get))) {
             result
         } else {
             None

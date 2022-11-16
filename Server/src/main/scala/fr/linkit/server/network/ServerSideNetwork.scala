@@ -59,7 +59,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
     }
 
     def removeEngine(identifier: String): Unit = {
-        findEngine(identifier).foreach(trunk.removeEngine)
+        getEngine(identifier).foreach(trunk.removeEngine)
     }
     
     override def initialize(): this.type = {

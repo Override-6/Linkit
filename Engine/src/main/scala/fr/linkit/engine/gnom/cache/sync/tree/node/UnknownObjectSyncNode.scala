@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectTree, ObjectSyncNode}
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.SynchronizedObjectException

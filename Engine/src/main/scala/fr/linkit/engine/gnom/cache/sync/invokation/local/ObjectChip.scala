@@ -18,7 +18,9 @@ import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
-import fr.linkit.api.gnom.network.{Engine, ExecutorEngine, Network}
+import fr.linkit.api.gnom.network.tag.{Current, EngineResolver}
+import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationComputeStep}
 import fr.linkit.engine.internal.util.ScalaUtils
@@ -27,8 +29,10 @@ import org.jetbrains.annotations.Nullable
 import scala.annotation.switch
 import scala.util.control.NonFatal
 
-class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
-                                      network : Network, chippedObject: ChippedObject[A]) extends Chip[A] {
+class ObjectChip[A <: AnyRef] private(contract     : StructureContract[A],
+                                      chippedObject: ChippedObject[A],
+                                      resolver     : EngineResolver,
+                                      defaultPool  : Procrastinator) extends Chip[A] {
 
     private val chipped   = chippedObject.connected
     private val isDistant = contract.mirroringInfo.isDefined
@@ -39,8 +43,8 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
     }
 
     override def callMethod(methodID: Int, params: Array[Any], @Nullable caller: Engine)(onException: Throwable => Unit, onResult: Any => Unit): Unit = try {
-        val callerID = if (caller == null) null else caller.name
-        Debugger.push(MethodInvocationComputeStep(methodID, callerID, callerID == currentIdentifier))
+        val callerID = if (caller == null) null else caller.nameTag
+        Debugger.push(MethodInvocationComputeStep(methodID, callerID, resolver.isEquivalent(callerID, Current)))
 
         val methodContract = contract.findMethodContract[Any](methodID).getOrElse {
             throw new NoSuchElementException(s"Could not find method contract with identifier #$methodID for ${chippedObject.getClassDef}.")
@@ -50,12 +54,12 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
             throw new HiddenMethodInvocationException(hideMsg.get)
         if (!isOrigin && isDistant)
             throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring ${chippedObject.reference} on engine ${chippedObject.owner}")
-        val procrastinator = methodContract.procrastinator
-        if (procrastinator != null) {
+        val methodPool = methodContract.procrastinator
+        if (methodPool != null) {
             AppLoggers.COInv.debug(s"Calling Method in another Procrastinator - '$methodID'")
-            procrastinator.runLater {
+            methodPool.runLater {
                 val result = callMethod(methodContract, params, caller)(onException)
-                network.connection.runLater(onResult(result)) //return back to initial worker pool
+                defaultPool.runLater(onResult(result)) //return back to initial worker pool
             }
         } else {
             onResult(callMethod(methodContract, params, caller)(onException))
@@ -66,17 +70,17 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         val invKind = contract.invocationHandlingMethod
 
         def call() = contract.choreographer.disinv {
-            ExecutorEngine.setCurrentEngine(caller)
-            val data   = new contract.InvocationExecution {
+            val initial = ExecutorEngine.setCurrentEngine(caller)
+            val data    = new contract.InvocationExecution {
                 override val obj      : ChippedObject[_] = ObjectChip.this.chippedObject
                 override val arguments: Array[Any]       = params
             }
-            val result = try {
+            val result  = try {
                 contract.executeMethodInvocation(caller, data)
             } catch {
                 case NonFatal(e) => onException(e)
             }
-            ExecutorEngine.setCurrentEngine(network.currentEngine) //return to the current engine.
+            ExecutorEngine.setCurrentEngine(initial) //return to the initial engine.
             result
         }
 
@@ -89,17 +93,17 @@ class ObjectChip[A <: AnyRef] private(contract: StructureContract[A],
         }
     }
 
-    private def currentIdentifier = network.currentEngine.name
 
 }
 
 object ObjectChip {
 
 
-    def apply[S <: AnyRef](contract: StructureContract[S], network: Network, chippedObject: ChippedObject[S]): ObjectChip[S] = {
+    def apply[S <: AnyRef](contract: StructureContract[S], resolver: EngineResolver,
+                           pool    : Procrastinator, chippedObject: ChippedObject[S]): ObjectChip[S] = {
         if (chippedObject == null)
             throw new NullPointerException("chipped object is null !")
-        new ObjectChip[S](contract, network, chippedObject)
+        new ObjectChip[S](contract, chippedObject, resolver, pool)
     }
 
 }

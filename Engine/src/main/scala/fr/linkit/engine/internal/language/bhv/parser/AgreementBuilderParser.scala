@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import fr.linkit.api.gnom.network.{EngineTag, IdentifierTag}
+import fr.linkit.api.gnom.network.tag.{EngineTag, IdentifierTag}
 import fr.linkit.engine.internal.language.bhv.ast.Equals.IsBuilder
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._

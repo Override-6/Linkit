@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic.channel
 
+import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
@@ -21,7 +22,7 @@ import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.internal.util.ConsumerContainer
 
 class AsyncPacketChannel protected(scope: ChannelScope)
-    extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {
+        extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {
 
     private val packetReceivedContainer: ConsumerContainer[PacketBundle] = ConsumerContainer()
 
@@ -36,13 +37,13 @@ class AsyncPacketChannel protected(scope: ChannelScope)
         scope.sendToAll(packet, attributes)
     }
 
-    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = {
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: NetworkFriendlyEngineTag): Unit = {
         scope.sendTo(packet, attributes, targets)
     }
 
     override def send(packet: Packet): Unit = send(packet, SimplePacketAttributes.empty)
 
-    override def sendTo(packet: Packet, targets: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targets)
+    override def sendTo(packet: Packet, targets: NetworkFriendlyEngineTag): Unit = sendTo(packet, SimplePacketAttributes.empty, targets)
 
     override def addOnPacketReceived(callback: PacketBundle => Unit): Unit = {
         packetReceivedContainer += callback

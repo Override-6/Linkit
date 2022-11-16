@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.invokation.remote
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
-import fr.linkit.api.gnom.network.{IdentifierTag, Network}
+import fr.linkit.api.gnom.network.tag.{Current, EngineResolver, NameTag}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, ResponseHolder}
@@ -30,16 +30,14 @@ import fr.linkit.engine.internal.debug.{Debugger, RequestStep}
 import fr.linkit.engine.internal.util.JavaUtils
 import org.jetbrains.annotations.Nullable
 
-class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
-                                   override val cache: ConnectedObjectCache[_],
+class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChannel,
                                    override val nodeReference: ConnectedObjectReference) extends Puppeteer[S] {
 
-    override val network          : Network = cache.network
-    private  val traffic                    = channel.traffic
-    override val currentEngineName: String  = traffic.currentEngineName
-    private  val writer                     = traffic.newWriter(channel.trafficPath)
+    private val traffic                  = channel.traffic
+    private val resolver: EngineResolver = traffic.connection.network
+    private val writer                   = traffic.newWriter(channel.trafficPath)
 
-    override def isCurrentEngineOwner: Boolean = ownerTag == currentEngineName
+    override def isCurrentEngineOwner: Boolean = resolver.isEquivalent(nodeReference.owner, Current)
 
     private lazy val isPerformant: Boolean = traffic.findNode(channel.trafficPath).get match {
         case node: InjectableTrafficNode[_] => node.preferPerformances()
@@ -52,14 +50,15 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             throw new IllegalAccessException("the agreement states that the method should not be called on a remote engine")
         val appointedEngineReturn = agreement.getAppointedEngineReturn
 
-        if (appointedEngineReturn == currentEngineName)
+        val appointedEngineReturnNT = resolver(appointedEngineReturn).nameTag
+        if (resolver.isEquivalent(appointedEngineReturnNT, Current))
             throw new UnsupportedOperationException("invocation's desired engine return is this engine.")
 
         val methodId         = invocation.methodID
-        val scope            = new AgreementScope(writer, network, agreement)
+        val scope            = new AgreementScope(writer, resolver, agreement)
         var requestResult: R = JavaUtils.nl()
         var isResultSet      = false
-        val dispatcher       = new ObjectRMIDispatcher(scope, methodId, appointedEngineReturn) {
+        val dispatcher       = new ObjectRMIDispatcher(scope, methodId, appointedEngineReturnNT) {
             override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
                 holder
                         .nextResponse
@@ -92,38 +91,40 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val methodId = invocation.methodID
 
         runOnContext {
-            val scope      = new AgreementScope(writer, network, agreement)
+            val scope      = new AgreementScope(writer, resolver, agreement)
             val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
             invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         }
     }
 
-    class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngineId: IdentifierTag) extends RMIDispatcher {
+    class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngineTag: NameTag) extends RMIDispatcher {
 
         override def broadcast(args: Array[Any]): Unit = {
             handleResponseHolder(makeRequest(scope, args))
         }
 
+        protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
+
+        override def foreachEngines(action: NameTag => Array[Any]): Unit = {
+            resolver.listEngines(scope.selection).foreach(engine => runOnContext {
+                val engineNT = engine.nameTag
+                //return engine is processed at last, don't send a request to the current engine
+                if (engineNT != returnEngineTag && !engine.isCurrentEngine)
+                    makeRequest(ChannelScopes(engineNT)(writer), action(engineNT))
+            })
+            if (returnEngineTag != null && resolver.isEquivalent(returnEngineTag, Current))
+                handleResponseHolder(makeRequest(ChannelScopes.apply(returnEngineTag)(writer), action(returnEngineTag)))
+        }
+
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)
-                    .addPacket(InvocationPacket(nodeReference, methodID, args, returnEngineId))
+                    .addPacket(InvocationPacket(nodeReference, methodID, args, returnEngineTag))
                     .submit()
         }
 
-        protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
-
-        override def foreachEngines(action: IdentifierTag => Array[Any]): Unit = {
-            scope.foreachAcceptedEngines(engineID => runOnContext {
-                //return engine is processed at last, don't send a request to the current engine
-                if (engineID != returnEngineId && engineID.identifier != currentEngineName)
-                    makeRequest(ChannelScopes.include(engineID)(writer), action(engineID))
-            })
-            if (returnEngineId != null && returnEngineId.identifier != currentEngineName)
-                handleResponseHolder(makeRequest(ChannelScopes.include(returnEngineId)(writer), action(returnEngineId)))
-        }
     }
 
-    private val procrastinator: Procrastinator = network.connection
+    private val procrastinator: Procrastinator = traffic.connection
 
     private def runOnContext(action: => Unit): Unit = {
         if (isPerformant) procrastinator.runLater(action)
@@ -134,5 +135,5 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
 object ObjectPuppeteer {
 
-    def apply[S <: AnyRef](channel: RequestPacketChannel, cache: ConnectedObjectCache[_], nodeLocation: ConnectedObjectReference): ObjectPuppeteer[S] = new ObjectPuppeteer(channel, cache, nodeLocation)
+    def apply[S <: AnyRef](channel: RequestPacketChannel, nodeLocation: ConnectedObjectReference): ObjectPuppeteer[S] = new ObjectPuppeteer(channel, nodeLocation)
 }

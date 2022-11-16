@@ -14,45 +14,35 @@
 package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIDispatchAgreement}
-import fr.linkit.api.gnom.network.{Everyone, IdentifierTag}
+import fr.linkit.api.gnom.network.tag.{Current, NetworkFriendlyEngineTag, UniqueTag}
 
-class UsageRMIDispatchAgreement private(currentID: IdentifierTag, ownerID: IdentifierTag,
-                                        appointedEngineReturn: IdentifierTag, acceptAll: Boolean,
-                                        accepted: Set[IdentifierTag], excluded: Set[IdentifierTag]) extends RMIDispatchAgreement {
+class UsageRMIDispatchAgreement private(context              : ConnectedObjectContext,
+                                        appointedEngineReturn: UniqueTag with NetworkFriendlyEngineTag,
+                                        val selection        : NetworkFriendlyEngineTag) extends RMIDispatchAgreement {
 
-    def this(context: ConnectedObjectContext,
-             appointedEngineReturn: IdentifierTag, acceptAll: Boolean,
-             accepted: Set[IdentifierTag], excluded: Set[IdentifierTag]) = {
-        this(context.currentID, context.ownerID, appointedEngineReturn, acceptAll, accepted, excluded)
+    private val resolver = context.resolver
+
+    def this(context: ConnectedObjectContext, appointedEngineReturn: UniqueTag, selection: NetworkFriendlyEngineTag) {
+        this(context, context.translate(appointedEngineReturn), selection)
     }
 
-    private val currentIsOwner = currentID == ownerID
+    override def getAppointedEngineReturn: UniqueTag with NetworkFriendlyEngineTag = appointedEngineReturn
 
-    override val acceptedEngines: Set[IdentifierTag] = accepted
+    override val currentMustReturn: Boolean = {
+        resolver.isEquivalent(Current, appointedEngineReturn)
+    }
 
-    override val discardedEngines: Set[IdentifierTag] = excluded
-
-    override def isAcceptAll: Boolean = acceptAll
-
-    override def getAppointedEngineReturn: IdentifierTag = appointedEngineReturn
-
-    override def mayCallSuper: Boolean = {
-        if (acceptAll)
-            !(excluded.contains(currentID) && (currentIsOwner || excluded.contains(ownerID)))
-        else
-            accepted.contains(currentID) && (currentIsOwner || accepted.contains(ownerID))
+    override val mayCallSuper: Boolean = {
+        //call super if the current engine is included in the invocation selection
+        resolver.isIncluded(Current, selection)
     }
 
     override val mayPerformRemoteInvocation: Boolean = {
-        acceptAll || (accepted.nonEmpty && !(accepted.size == 1 && accepted.head == currentID))
+        //perform rmi is the selection include another engine that the current engine.
+        //NOTE: selection cannot be empty
+        !resolver.isEquivalent(selection, Current)
     }
 
-    override def toString: String = {
-        (if (acceptAll) {
-            s"accept * -> discard ${excluded.mkString("and")}"
-        } else {
-            s"discard * -> accept ${accepted.mkString("and")}"
-        }) + s" -> appoint $appointedEngineReturn"
-    }
+    override def toString: String = s"RMIAgreement($selection, $appointedEngineReturn)"
 
 }

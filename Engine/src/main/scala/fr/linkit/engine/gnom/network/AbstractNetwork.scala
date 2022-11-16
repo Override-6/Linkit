@@ -20,6 +20,7 @@ import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.{SharedCacheManager, SharedCacheManagerReference}
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.gnom.network.statics.StaticAccess
+import fr.linkit.api.gnom.network.tag._
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.referencing.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectLinker}
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
@@ -67,16 +68,47 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override def countConnections: Int = trunk.countConnection
 
-    override def findEngine(identifier: UniqueTag with NetworkFriendlyEngineTag): Option[Engine] = {
+    override def getEngine(tag: UniqueTag with NetworkFriendlyEngineTag): Option[Engine] = {
         if (trunkInitializing)
             return None
-        identifier match {
+        tag match {
+            case name: NameTag     => trunk.findEngine(name)
             case id: IdentifierTag => trunk.findEngine(id)
-            case magic: MagicTag   =>
-                if (identifier == Current) Some(currentEngine)
-                else throw new IllegalTagException(s"Unknown magic tag '$magic'.")
+            case Current           => Some(currentEngine)
+            case _                 => throw new IllegalTagException(s"Unknown tag '$tag'.")
         }
+    }
 
+    override def exists(tag: NetworkFriendlyEngineTag): Boolean = tag match {
+        case Nobody => true
+        case tag    => listEngines.exists(_.isTagged(tag))
+    }
+
+
+    override def isIncluded(a: NetworkFriendlyEngineTag, b: NetworkFriendlyEngineTag): Boolean = {
+        //TODO optimize
+        listEngines(a).forall(_.isTagged(b))
+    }
+
+    override def listEngines(tag: NetworkFriendlyEngineTag): List[Engine] = {
+        if (trunkInitializing)
+            return Nil
+        findEngines(tag, false)
+    }
+
+    private def findEngines(tag: NetworkFriendlyEngineTag, reverseSelection: Boolean): List[Engine] = {
+        val allEngines      = listEngines
+        val selectedEngines = tag match {
+            case NotTag(tag)    => findEngines(tag, !reverseSelection)
+            case UnionTag(tags) => tags.flatMap(listEngines)
+            case _              => tag match {
+                case id: UniqueTag with NetworkFriendlyEngineTag => getEngine(id).toList
+                case other: NetworkFriendlyEngineTag             => trunk.listEngines(other)
+            }
+        }
+        if (reverseSelection)
+            allEngines.diff(selectedEngines)
+        else selectedEngines
     }
 
     private[network] def createNewCache(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {

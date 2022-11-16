@@ -14,7 +14,8 @@
 package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
-import fr.linkit.api.gnom.network.{Engine, GroupTag, IdentifierTag}
+import fr.linkit.api.gnom.network.tag.{GroupTag, IdentifierTag, NameTag, NetworkFriendlyEngineTag}
+import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.{CacheManagerInfo, NetworkDataBundle}
 import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.internal.util.ConsumerContainer
@@ -67,12 +68,16 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     }
 
     def findEngine(identifier: IdentifierTag): Option[Engine] = engines.synchronized {
-        val opt = engines.get(identifier.identifier)
+        val opt = engines.get(identifier.id)
         if (opt.isDefined) return opt
         engines.values.find(_.isTagged(identifier))
     }
 
-    def findEngines(group: GroupTag): List[Engine] = engines.synchronized {
+    def findEngine(name: NameTag): Option[Engine] = engines.synchronized {
+        engines.get(name.name)
+    }
+
+    def listEngines(group: NetworkFriendlyEngineTag): List[Engine] = engines.synchronized {
         engines.values.filter(_.isTagged(group)).toList
     }
 

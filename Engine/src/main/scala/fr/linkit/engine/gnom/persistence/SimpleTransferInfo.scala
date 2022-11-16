@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle, TransferInfo}
@@ -36,11 +37,11 @@ case class SimpleTransferInfo(override val coords: DedicatedPacketCoordinates,
             packetBuff += packet
         val content = packetBuff.toArray[AnyRef]
         serializer.serializeObjects(content)(new PersistenceBundle {
-            override val packetID  : String = s"@${coords.path.mkString("/")}$$${coords.senderID}:??" //ordinal can't be known at serialisation
+            override val packetID  : String = s"@${coords.path.mkString("/")}$$${coords.senderTag}:??" //ordinal can't be known at serialisation
             override val network   : Network           = SimpleTransferInfo.this.network
-            override val buff      : ByteBuffer        = buffer
-            override val boundId   : String            = coords.targetID
-            override val packetPath: Array[Int]        = coords.path
+            override val buff      : ByteBuffer = buffer
+            override val boundNT   : NameTag     = coords.targetID
+            override val packetPath: Array[Int] = coords.path
             override val config    : PersistenceConfig = info.config
         })
     }

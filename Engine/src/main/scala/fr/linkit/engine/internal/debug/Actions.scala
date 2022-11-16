@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheReference}
-import fr.linkit.api.gnom.network.{EngineTag, IdentifierTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{EngineTag, UniqueTag}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.internal.concurrency.Procrastinator
 
@@ -48,7 +48,7 @@ case class MethodInvocationSendStep(agreement: RMIDispatchAgreement, method: Met
     }
 }
 
-case class MethodInvocationComputeStep(methodID: Int, triggerEngine: String, isWaiting: Boolean) extends AbstractStep("rmi - compute") {
+case class MethodInvocationComputeStep(methodID: Int, triggerEngine: UniqueTag, isWaiting: Boolean) extends AbstractStep("rmi - compute") {
     override def insights: String = s"Computing method invocation (id $methodID) triggered by $triggerEngine." + {
         if (!isWaiting) "" else s" remote is waiting this method invocation to return or throw."
     }
@@ -71,11 +71,11 @@ case class SIPURectifyStep(channel: TrafficReference, received: Int, expectedOrd
     }
 }
 
-case class PacketSerializationStep(packetID: String, target: String) extends AbstractStep("serialize") {
+case class PacketSerializationStep(packetID: String, target: UniqueTag) extends AbstractStep("serialize") {
     override def insights: String = s"Serializing packet '$packetID' for targeted engine $target."
 }
 
-case class PacketDeserializationStep(packetID: String, sender: String) extends AbstractStep("deserialize") {
+case class PacketDeserializationStep(packetID: String, sender: UniqueTag) extends AbstractStep("deserialize") {
     override def insights: String = s"Deserializing packet '$packetID' sent from engine $sender."
 }
 

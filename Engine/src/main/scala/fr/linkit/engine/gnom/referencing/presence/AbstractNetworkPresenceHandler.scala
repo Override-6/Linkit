@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.referencing.presence
 
-import fr.linkit.api.gnom.network.{IdentifierTag, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag._
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
 import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, NetworkPresenceHandler, ObjectPresenceState}
@@ -33,14 +33,16 @@ import scala.collection.mutable
 abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Nullable parent: NetworkPresenceHandler[_ >: R], channel: ObjectManagementChannel)
         extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
-    private lazy val currentIdentifier = channel.traffic.currentEngineName
+    private val network           = channel.traffic.connection.network
     //What other engines thinks about current engine presences states
-    private      val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
+    private val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
     //What current engine thinks about other engines presences states
-    private      val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
+    private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
 
-    private[presence] def toIdentifier(tag: UniqueTag with NetworkFriendlyEngineTag): IdentifierTag = {
-        IdentifierTag(channel.traffic.connection.network.findEngine(tag).get.name)
+    private def toName(tag: UniqueTag with NetworkFriendlyEngineTag): NameTag = {
+        network.getEngine(tag).getOrElse {
+            throw new NoSuchElementException(s"Could not find engine tagged with '$tag'")
+        }.nameTag
     }
 
     @inline
@@ -55,32 +57,33 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
     }
 
     override def isPresentOnEngine(engineTag: UniqueTag with NetworkFriendlyEngineTag, ref: R): Boolean = {
-        val presence  = getPresence(ref)
-        val isPresent = if (presence.isPresenceKnownFor(engineId)) {
-            presence.getPresenceFor(engineId) eq PRESENT
+        val presence = getPresence(ref)
+
+        val engineNameTag = toName(engineTag)
+        val isPresent     = if (presence.isPresenceKnownFor(engineNameTag)) {
+            presence.getPresenceFor(engineNameTag) eq PRESENT
         } else {
-            (parent == null || ref.asSuper.exists(r => parent.isPresentOnEngine(engineId, casted(r)))) &&
-                    (presence.getPresenceFor(engineId) eq PRESENT)
+            (parent == null || ref.asSuper.exists(r => parent.isPresentOnEngine(engineNameTag, casted(r)))) &&
+                    (presence.getPresenceFor(engineNameTag) eq PRESENT)
         }
-        AppLoggers.GNOM.debug(s"is '$ref' present on engine '$engineId' ? $isPresent")
+        AppLoggers.GNOM.debug(s"is '$ref' present on engine '${engineNameTag.name}' ? $isPresent")
         isPresent
     }
 
     private def casted[A](ref: NetworkObjectReference): A = ref.asInstanceOf[A]
 
 
-    private[referencing] def askIfPresent(engineId: String, location: R): Boolean = {
+    private[referencing] def askIfPresent(engineName: NameTag, location: R): Boolean = {
         val traffic = channel.traffic
-        //fixme quick wobbly fix
-        if (traffic != null && traffic.currentEngineName == engineId)
+        if (traffic != null && toName(Current) == engineName)
             return isLocationReferenced(location)
 
-        val parentIsPresent = parent == null || location.asSuper.exists(r => parent.isPresentOnEngine(engineId, casted(r)))
+        val parentIsPresent = parent == null || location.asSuper.exists(r => parent.isPresentOnEngine(engineName, casted(r)))
         parentIsPresent && {
-            AppLoggers.GNOM.debug(s"Asking if $location is present on engine: $engineId")
-            Debugger.push(RequestStep("presence check", s"asking if reference $location is present on engine $engineId", engineId, channel.reference))
+            AppLoggers.GNOM.debug(s"Asking if $location is present on engine: $engineName")
+            Debugger.push(RequestStep("presence check", s"asking if reference $location is present on engine $engineName", engineName, channel.reference))
             val isPresent = channel
-                    .makeRequest(ChannelScopes.include(engineId))
+                    .makeRequest(ChannelScopes.apply(engineName))
                     .addPacket(EmptyPacket)
                     .putAttribute(ReferenceAttributeKey, location)
                     .submit()
@@ -92,9 +95,9 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         }
     }
 
-    private[referencing] def informPresence(enginesId: Array[IdentifierTag], location: R, presence: ObjectPresenceState): Unit = {
+    private[referencing] def informPresence(enginesId: Array[NameTag], location: R, presence: ObjectPresenceState): Unit = {
         channel
-                .makeRequest(ChannelScopes.include(enginesId: _*))
+                .makeRequest(ChannelScopes(UnionTag(enginesId.toList)))
                 .addPacket(AnyRefPacket(presence))
                 .putAttribute(ReferenceAttributeKey, location)
                 .submit()
@@ -114,8 +117,8 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         presence.setPresent()
         val opt = externalPresences.get(ref)
         if (opt.isDefined) {
-            opt.get.setToPresent(currentIdentifier)
-            AppLoggers.GNOM.debug(s"Presence set to present for current engine ($currentIdentifier), at reference $ref")
+            opt.get.setToPresent(toName(Current))
+            AppLoggers.GNOM.debug(s"Presence set to present for current engine (${toName(Current)}), at reference $ref")
         }
     }
 
@@ -127,7 +130,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         }
         val otp2 = externalPresences.get(ref)
         if (otp2.isDefined)
-            otp2.get.setToNotPresent(currentIdentifier)
+            otp2.get.setToNotPresent(toName(Current))
     }
 
     def injectRequest(bundle: LinkerRequestBundle): Unit = {
@@ -135,8 +138,8 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         val request           = bundle.packet
         val reference: R      = bundle.linkerReference.asInstanceOf[R]
         val pct               = request.nextPacket[Packet]
-        val senderId          = bundle.coords.senderID
-        AppLoggers.GNOM.trace(s"Handling presence request bundle, request from $senderId. packet : $pct")
+        val senderName        = toName(bundle.coords.senderTag)
+        AppLoggers.GNOM.trace(s"Handling presence request bundle, request from $senderName. packet : $pct")
         pct match {
             case EmptyPacket =>
                 val isPresent = isLocationReferenced(reference)
@@ -145,16 +148,16 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
                         .addPacket(BooleanPacket(isPresent))
                         .submit()
                 val presence = internalPresences(reference)
-                presence.setPresenceFor(senderId, if (isPresent) PRESENT else NOT_PRESENT)
-                AppLoggers.GNOM.trace(s"presence information sent and modified for '$senderId' to ${if (isPresent) PRESENT else NOT_PRESENT}")
+                presence.setPresenceFor(senderName, if (isPresent) PRESENT else NOT_PRESENT)
+                AppLoggers.GNOM.trace(s"presence information sent and modified for '$senderName' to ${if (isPresent) PRESENT else NOT_PRESENT}")
 
             case AnyRefPacket(presenceType: ObjectPresenceState) =>
                 val presence = getPresence0(reference)
                 presenceType match {
-                    case NOT_PRESENT => presence.setToNotPresent(senderId)
+                    case NOT_PRESENT => presence.setToNotPresent(senderName)
                     case PRESENT     =>
-                        presence.setToPresent(senderId)
-                        AppLoggers.GNOM.debug(s"Presence set to present for engine $senderId, for reference $reference")
+                        presence.setToPresent(senderName)
+                        AppLoggers.GNOM.debug(s"Presence set to present for engine $senderName, for reference $reference")
                     case NEVER_ASKED => throw new IllegalArgumentException("Received invalid 'NEVER_ASKED' Presence Type event")
                 }
         }

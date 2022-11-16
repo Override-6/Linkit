@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.network
 import fr.linkit.api.application.ApplicationReference
 import fr.linkit.api.application.connection.NetworkConnectionReference
 import fr.linkit.api.gnom.cache.SharedCacheManagerReference
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.network.{EngineReference, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
@@ -74,7 +75,7 @@ class GeneralNetworkObjectLinkerImpl(omc                    : ObjectManagementCh
         }
     }
 
-    override def isPresentOnEngine(engineID: String, reference: NetworkObjectReference): Boolean = reference match {
+    override def isPresentOnEngine(engineID: UniqueTag with NetworkFriendlyEngineTag, reference: NetworkObjectReference): Boolean = reference match {
         case ref: SharedCacheManagerReference => cacheNOL.isPresentOnEngine(engineID, ref)
         case ref: TrafficReference            => trafficNOL.isPresentOnEngine(engineID, ref)
         case _: SystemObjectReference         => true //System references, are guaranteed to be present on every remote engines
@@ -149,7 +150,7 @@ class GeneralNetworkObjectLinkerImpl(omc                    : ObjectManagementCh
                 case NetworkConnectionReference => Some(connection)
                 case NetworkReference           => Some(network)
                 case ApplicationReference       => Some(application)
-                case er: EngineReference        => network.findEngine(er.name)
+                case er: EngineReference        => network.getEngine(er.name)
                 case TrafficReference           => Some(connection.traffic.asInstanceOf[NetworkObject[_ <: SystemObjectReference]]) //TODO remove
                 case _                          => None
             }

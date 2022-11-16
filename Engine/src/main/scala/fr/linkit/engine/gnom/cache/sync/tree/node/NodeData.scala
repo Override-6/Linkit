@@ -14,18 +14,19 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{EngineResolver, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.tree.DefaultConnectedObjectTree
 
 class NodeData[+A <: AnyRef](val reference: ConnectedObjectReference, //The sync object reference
-                             val presence: NetworkObjectPresence, //the sync object presence
-                             val tree: DefaultConnectedObjectTree[_], //The object's tree
-                             val ownerID: UniqueTag with NetworkFriendlyEngineTag, //the owner Identifier
-                             val parent: Option[MutableNode[_]]) { // the parent of the node
+                             val presence : NetworkObjectPresence, //the sync object presence
+                             val tree     : DefaultConnectedObjectTree[_], //The object's tree
+                             val ownerID  : UniqueTag with NetworkFriendlyEngineTag, //the owner Identifier
+                             val resolver : EngineResolver, //engine tag resolver
+                             val parent   : Option[MutableNode[_]]) { // the parent of the node
 
     def this(other: NodeData[A]) = {
-        this(other.reference, other.presence, other.tree,  other.ownerID, other.parent)
+        this(other.reference, other.presence, other.tree, other.ownerID, other.resolver, other.parent)
     }
 
 }

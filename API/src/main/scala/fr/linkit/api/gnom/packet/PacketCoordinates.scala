@@ -13,11 +13,11 @@
 
 package fr.linkit.api.gnom.packet
 
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.NameTag
 
 trait PacketCoordinates extends Serializable {
 
-    val path         : Array[Int]
-    val senderID     : UniqueTag with NetworkFriendlyEngineTag
+    val path     : Array[Int]
+    val senderTag: NameTag
 
 }

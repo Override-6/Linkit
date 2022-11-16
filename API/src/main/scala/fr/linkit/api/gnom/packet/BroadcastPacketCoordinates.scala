@@ -13,28 +13,23 @@
 
 package fr.linkit.api.gnom.packet
 
-import fr.linkit.api.gnom.network.{IdentifierTag, Network, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.tag.{NameTag, NetworkFriendlyEngineTag, UniqueTag}
 
 //MAINTAINED
-case class BroadcastPacketCoordinates(override val path: Array[Int],
-                                      override val senderID: UniqueTag with NetworkFriendlyEngineTag,
-                                      discardTargets: Boolean,
-                                      targetIDs: Seq[UniqueTag with NetworkFriendlyEngineTag]) extends PacketCoordinates {
+@deprecated("Maintained until broadcast is supported by persistence system")
+case class BroadcastPacketCoordinates(override val path     : Array[Int],
+                                      override val senderTag: NameTag,
+                                      discardTargets        : Boolean,
+                                      targetIDs             : Seq[UniqueTag with NetworkFriendlyEngineTag]) extends PacketCoordinates {
 
-    override def toString: String = s"BroadcastPacketCoordinates(${path.mkString("/")}, $senderID, $discardTargets, $targetIDs)"
+    override def toString: String = s"BroadcastPacketCoordinates(${path.mkString("/")}, $senderTag, $discardTargets, $targetIDs)"
 
     def listDiscarded(network: Network): Seq[UniqueTag with NetworkFriendlyEngineTag] = {
-        if (discardTargets)
-            targetIDs
-        else network.listEngines
-                .map(e => IdentifierTag(e.name))
-                .filterNot(targetIDs.contains)
+        throw new UnsupportedOperationException()
     }
 
-    def getDedicated(network: Network, target: UniqueTag with NetworkFriendlyEngineTag): DedicatedPacketCoordinates = {
-        if (targetIDs.exists(tag => network.findEngine(tag).exists(_.isTagged(tag))) == discardTargets) {
-            throw new IllegalArgumentException(s"These coordinates does not target $target (discardTargets = $discardTargets).")
-        }
-        DedicatedPacketCoordinates(path, target, senderID)
+    def getDedicated(network: Network, target: NameTag): DedicatedPacketCoordinates = {
+        throw new UnsupportedOperationException()
     }
 }

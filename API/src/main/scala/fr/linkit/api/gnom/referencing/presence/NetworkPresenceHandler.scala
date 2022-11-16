@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.referencing.presence
 
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
 
 /**
@@ -26,5 +27,5 @@ trait NetworkPresenceHandler[R <: NetworkObjectReference] {
      * */
     def getPresence(ref: R): NetworkObjectPresence
 
-    def isPresentOnEngine(engineId: String, ref: R): Boolean
+    def isPresentOnEngine(engineId: UniqueTag with NetworkFriendlyEngineTag, ref: R): Boolean
 }

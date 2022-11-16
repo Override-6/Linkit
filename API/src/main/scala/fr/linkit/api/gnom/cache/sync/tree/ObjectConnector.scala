@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{CannotConnectException, ConnectedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 import java.util.concurrent.ThreadLocalRandom

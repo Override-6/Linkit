@@ -14,9 +14,8 @@
 package fr.linkit.api.gnom.persistence
 
 import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.referencing.linker.GeneralNetworkObjectLinker
-import org.jetbrains.annotations.Nullable
 
 import java.nio.ByteBuffer
 
@@ -25,7 +24,7 @@ trait PersistenceBundle {
     val packetID  : String
     val network   : Network
     val buff      : ByteBuffer
-    val boundId   : String
+    val boundNT   : NameTag
     val packetPath: Array[Int]
     val config    : PersistenceConfig
 

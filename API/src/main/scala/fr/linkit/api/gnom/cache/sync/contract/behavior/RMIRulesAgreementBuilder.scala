@@ -13,44 +13,18 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.network.{EngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{EngineTag, UniqueTag}
 
 trait RMIRulesAgreementBuilder {
 
     type AgreementConditionAction = RMIRulesAgreementBuilder => RMIRulesAgreementBuilder
 
-    def discard(target: EngineTag): RMIRulesAgreementBuilder
-
-    def accept(target: EngineTag): RMIRulesAgreementBuilder
-
-    def acceptAll(): RMIRulesAgreementBuilder
-
-    def discardAll(): RMIRulesAgreementBuilder
+    def selection(tagSelection: EngineTag): RMIRulesAgreementBuilder
 
     def appointReturn(target: UniqueTag): RMIRulesAgreementBuilder
 
-    def assuming(left: EngineTag): Condition
-
     def result(context: ConnectedObjectContext): RMIDispatchAgreement
 
-    trait Condition {
-
-        def is(right: EngineTag, ifTrue: AgreementConditionAction): RMIRulesAgreementBuilder = is(right)(ifTrue)
-
-        def isNot(right: EngineTag, ifTrue: AgreementConditionAction): RMIRulesAgreementBuilder = isNot(right)(ifTrue)
-
-        def isElse(right: EngineTag, ifTrue: AgreementConditionAction, ifFalse: AgreementConditionAction): RMIRulesAgreementBuilder = isElse(right)(ifTrue, ifFalse)
-
-        def isNotElse(right: EngineTag, ifTrue: AgreementConditionAction, ifFalse: AgreementConditionAction): RMIRulesAgreementBuilder = isNotElse(right)(ifTrue, ifFalse)
-
-        def is(right: EngineTag): AgreementConditionAction => RMIRulesAgreementBuilder
-
-        def isNot(right: EngineTag): AgreementConditionAction => RMIRulesAgreementBuilder
-
-        def isElse(right: EngineTag): (AgreementConditionAction, AgreementConditionAction) => RMIRulesAgreementBuilder
-
-        def isNotElse(right: EngineTag): (AgreementConditionAction, AgreementConditionAction) => RMIRulesAgreementBuilder
-    }
 
 }
 

@@ -17,12 +17,13 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network.statics.StaticAccess
+import fr.linkit.api.gnom.network.tag.EngineResolver
 import fr.linkit.api.gnom.referencing.StaticNetworkObject
 import fr.linkit.api.gnom.referencing.linker.GeneralNetworkObjectLinker
 
 import java.sql.Timestamp
 
-trait Network extends StaticNetworkObject[NetworkReference.type] {
+trait Network extends StaticNetworkObject[NetworkReference.type] with EngineResolver {
 
     val connection: ConnectionContext
 
@@ -39,13 +40,6 @@ trait Network extends StaticNetworkObject[NetworkReference.type] {
     def countConnections: Int
 
     def listEngines: List[Engine]
-
-    def findEngine(identifier: UniqueTag with NetworkFriendlyEngineTag): Option[Engine]
-
-
-    def findEngines(group: GroupTag): List[Engine]
-
-    def exists(tag: NetworkFriendlyEngineTag): Boolean
 
     def startUpDate: Timestamp
 

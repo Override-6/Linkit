@@ -14,6 +14,7 @@
 package fr.linkit.client.network
 
 import fr.linkit.api.gnom.cache.{CacheSearchMethod, SharedCacheManager}
+import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.client.cache.ClientSharedCacheManager
 import fr.linkit.client.connection.traffic.ClientPacketTraffic

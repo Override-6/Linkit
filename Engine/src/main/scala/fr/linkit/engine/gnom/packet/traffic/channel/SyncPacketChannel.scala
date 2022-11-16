@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic.channel
 
+import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketSender, PacketSyncReceiver}
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes}
@@ -38,7 +39,7 @@ class SyncPacketChannel protected(scope: ChannelScope) extends AbstractPacketCha
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)
 
-    override def sendTo(packet: Packet, targets: Array[String]): Unit = {
+    override def sendTo(packet: Packet, targets: NetworkFriendlyEngineTag): Unit = {
         scope.sendTo(packet, targets)
     }
 
@@ -63,7 +64,7 @@ class SyncPacketChannel protected(scope: ChannelScope) extends AbstractPacketCha
 
     override def send(packet: Packet, attributes: PacketAttributes): Unit = scope.sendToAll(packet, attributes)
 
-    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = {
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: NetworkFriendlyEngineTag): Unit = {
         scope.sendTo(packet, attributes, targets)
     }
 }

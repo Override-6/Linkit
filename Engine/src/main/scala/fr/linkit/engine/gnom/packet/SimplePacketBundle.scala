@@ -20,7 +20,7 @@ case class SimplePacketBundle(packet    : Packet,
                               attributes: PacketAttributes,
                               coords    : PacketCoordinates,
                               ordinal   : Option[Int]) extends PacketBundle {
-    override val packetID: String = s"@${coords.path.mkString("/")}$$${coords.senderID}:${ordinal.getOrElse("??")}"
+    override val packetID: String = s"@${coords.path.mkString("/")}$$${coords.senderTag}:${ordinal.getOrElse("??")}"
 
 }
 

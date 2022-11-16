@@ -17,13 +17,10 @@ import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.CentralConnection
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.gnom.persistence.ObjectTranslator
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.internal.concurrency.WorkerPool
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
-import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.concurrency.VirtualProcrastinator
 import fr.linkit.engine.internal.debug.Debugger
 import fr.linkit.engine.internal.system.Rules
@@ -96,30 +93,8 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def runLater[A](f: => A): Future[A] = workerPool.runLater(f)
 
-    //TODO write an object for this method entry
-    def broadcastPacket(packet: Packet, attributes: PacketAttributes,
-                        sender: String, path: Array[Int],
-                        config: PersistenceConfig, discarded: Array[String]): Unit = {
-        if (connectionsManager.countConnections - discarded.length < 0) {
-            // There is nowhere to send this packet.
-            return
-        }
-        connectionsManager.listIdentifiers
-                          .filterNot(discarded.contains)
-                          .foreach(candidate => {
-                              val coords = DedicatedPacketCoordinates(path, candidate, sender)
-                              val result = translator.translate(SimpleTransferInfo(coords, attributes, packet, config, network))
-                              connectionsManager.getConnection(candidate).send(result)
-                          })
-
-        if (!discarded.contains(currentIdentifier)) {
-            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, sender))
-        }
-    }
-
     private[connection] def getSideNetwork: ServerSideNetwork = sideNetwork
 
-    private[server] def getAllConnectionSessions: List[ExternalConnectionSession] = connectionsManager.listConnectionSessions
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +129,6 @@ class ServerConnection(applicationContext: ServerApplication,
         AppLoggers.Connection.info(s"Socket accepted (${socketContainer.getCurrent})")
         runLater {
             AppLoggers.Connection.debug(s"Handling client socket ${socketContainer.getCurrent}...")
-            val count = connectionsManager.countConnections
             handleSocket(socketContainer)
         }
 

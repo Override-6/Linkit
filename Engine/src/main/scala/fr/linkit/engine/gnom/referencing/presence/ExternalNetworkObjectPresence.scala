@@ -13,25 +13,21 @@
 
 package fr.linkit.engine.gnom.referencing.presence
 
-import fr.linkit.api.gnom.network.{IdentifierTag, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
 import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
 import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceState}
-import fr.linkit.api.internal.system.log.AppLoggers
 
 import scala.collection.mutable
 
 class ExternalNetworkObjectPresence[R <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[R], val reference: R)
         extends NetworkObjectPresence {
 
-    private val presences = mutable.HashMap.empty[IdentifierTag, ObjectPresenceState]
-    
-    override def isPresenceKnownFor(engineTag: UniqueTag with NetworkFriendlyEngineTag): Boolean = {
-        val engineId = handler.
-        presences.contains(engineId)
-    }
-    
-    override def getPresenceFor(engineId: UniqueTag with NetworkFriendlyEngineTag): ObjectPresenceState = {
+    private val presences = mutable.HashMap.empty[NameTag, ObjectPresenceState]
+
+    override def isPresenceKnownFor(engineTag: NameTag): Boolean = presences.contains(engineTag)
+
+    override def getPresenceFor(engineId: NameTag): ObjectPresenceState = {
         if (engineId == null)
             throw new NullPointerException("engineId is null.")
         this.synchronized {
@@ -43,13 +39,13 @@ class ExternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
         }
     }
 
-    def setToPresent(engineId: String): Unit = {
+    def setToPresent(engineId: NameTag): Unit = {
         if (engineId == null)
             throw new NullPointerException()
         presences(engineId) = PRESENT
     }
 
-    def setToNotPresent(engineId: String): Unit = {
+    def setToNotPresent(engineId: NameTag): Unit = {
         if (engineId == null)
             throw new NullPointerException()
         presences(engineId) = NOT_PRESENT

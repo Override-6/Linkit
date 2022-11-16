@@ -15,7 +15,8 @@ package fr.linkit.engine.gnom.cache
 
 import fr.linkit.api.gnom.cache.{NoSuchCacheManagerException, SharedCacheManagerReference, SharedCacheReference}
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.api.gnom.referencing.linker.InitialisableNetworkObjectLinker
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel}
@@ -27,7 +28,7 @@ class SharedCacheManagersLinker(network: Network, omc: ObjectManagementChannel)
                 with InitialisableNetworkObjectLinker[SharedCacheManagerReference] {
 
 
-    override def isPresentOnEngine(engineId: String, ref: SharedCacheManagerReference): Boolean = {
+    override def isPresentOnEngine(engineId: UniqueTag with NetworkFriendlyEngineTag, ref: SharedCacheManagerReference): Boolean = {
         val manager = network.findCacheManager(ref.family)
         ref match {
             case ref: SharedCacheReference      => manager.exists(_.getCachesLinker.isPresentOnEngine(engineId, ref))

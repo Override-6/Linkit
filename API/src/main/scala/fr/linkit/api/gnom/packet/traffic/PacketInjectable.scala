@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.packet.{PacketAttributesPresence, PacketBundle}
 import fr.linkit.api.gnom.persistence.obj.TrafficReference
 import fr.linkit.api.gnom.referencing.DynamicNetworkObject

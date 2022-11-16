@@ -13,14 +13,16 @@
 
 package fr.linkit.engine.internal.util
 
+import fr.linkit.api.gnom.network.tag.{IdentifierTag, UniqueTag}
+
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 
 class OrdinalCounter {
 
-    private val counters = mutable.HashMap.empty[String, AtomicInteger]
+    private val counters = mutable.HashMap.empty[UniqueTag, AtomicInteger]
 
-    def increment(target: String): Int = {
+    def increment(target: UniqueTag): Int = {
         counters.getOrElseUpdate(target, new AtomicInteger()).incrementAndGet()
     }
 

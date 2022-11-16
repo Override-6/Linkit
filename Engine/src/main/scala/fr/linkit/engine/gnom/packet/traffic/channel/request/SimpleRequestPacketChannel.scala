@@ -40,7 +40,7 @@ class SimpleRequestPacketChannel(scope: ChannelScope) extends AbstractPacketChan
             case request: RequestPacket =>
                 request.setAttributes(attr)
 
-                val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
+                val submitterScope = scope.shareWriter(ChannelScopes.apply(coords.senderTag))
                 val submitter      = new ResponseSubmitter(request.id, submitterScope)
                 val channelBundle  = DefaultRequestPacketChannelBundle(this, request, coords, submitter, bundle.ordinal)
                 Procrastinator.current match {

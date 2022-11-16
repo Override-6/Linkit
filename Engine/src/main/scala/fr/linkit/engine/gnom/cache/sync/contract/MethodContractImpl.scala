@@ -23,7 +23,8 @@ import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvoca
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, InvocationChoreographer, InvocationHandlingMethod, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.tree.ObjectConnector
-import fr.linkit.api.gnom.network.{Engine, Network}
+import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.gnom.network.tag.{Current, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
@@ -34,12 +35,12 @@ import org.jetbrains.annotations.Nullable
 import scala.annotation.switch
 
 class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHandlingMethod,
-                            parentChoreographer: InvocationChoreographer,
-                            agreement: RMIDispatchAgreement,
-                            parameterContracts: Array[ModifiableValueContract[Any]],
-                            returnValueContract: ModifiableValueContract[Any],
-                            override val description: MethodDescription,
-                            override val hideMessage: Option[String],
+                            parentChoreographer                  : InvocationChoreographer,
+                            agreement                            : RMIDispatchAgreement,
+                            parameterContracts                   : Array[ModifiableValueContract[Any]],
+                            returnValueContract                  : ModifiableValueContract[Any],
+                            override val description             : MethodDescription,
+                            override val hideMessage             : Option[String],
                             @Nullable override val procrastinator: Procrastinator) extends MethodContract[R] {
 
     override val isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
@@ -165,11 +166,10 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {
-        val currentIdentifier = puppeteer.currentEngineName
-        val objectNode        = localInvocation.objectNode
-        val obj               = objectNode.obj
-        val mayPerformRMI     = agreement.mayPerformRemoteInvocation
-        val connector         = localInvocation.connector
+        val objectNode    = localInvocation.objectNode
+        val obj           = objectNode.obj
+        val mayPerformRMI = agreement.mayPerformRemoteInvocation
+        val connector     = localInvocation.connector
 
         var result     : Any = null
         var localResult: Any = null
@@ -185,7 +185,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         }
 
         val appointedEngine   = agreement.getAppointedEngineReturn
-        val currentMustReturn = appointedEngine == currentIdentifier
+        val currentMustReturn = agreement.currentMustReturn
         if (!mayPerformRMI) {
             return (if (currentMustReturn) syncValue(localResult) else null).asInstanceOf[R]
         }
@@ -194,25 +194,25 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             override val agreement: RMIDispatchAgreement = MethodContractImpl.this.agreement
 
             override def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit = {
-                makeDispatch(puppeteer.network, dispatcher, localInvocation)
+                makeDispatch(dispatcher, localInvocation)
             }
         }
         if (currentMustReturn) {
             Debugger.push(MethodInvocationSendStep(agreement, description, null))
-            AppLoggers.COInv.debug(debugMsg(null, localInvocation))
+            AppLoggers.COInv.debug(debugMsg(Current, localInvocation))
             puppeteer.sendInvoke(remoteInvocation)
             result = localResult
             Debugger.pop()
         } else {
             Debugger.push(MethodInvocationSendStep(agreement, description, appointedEngine))
-            AppLoggers.COInv.debug(debugMsg(appointedEngine.identifier, localInvocation))
+            AppLoggers.COInv.debug(debugMsg(appointedEngine, localInvocation))
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
             Debugger.pop()
         }
         syncValue(result).asInstanceOf[R]
     }
 
-    private def debugMsg(appointed: String, invocation: LocalMethodInvocation[_]): String = {
+    private def debugMsg(appointed: UniqueTag with NetworkFriendlyEngineTag, invocation: LocalMethodInvocation[_]): String = {
         if (!AppLoggers.COInv.isDebugEnabled) return null
         val method    = description.javaMethod
         val name      = method.getName
@@ -228,8 +228,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         s"Sending method invocation ($methodID) $className.$name($params) (on object: ${obj.reference}) " + expectedEngineReturn
     }
 
-    private def makeDispatch(network: Network,
-                             dispatcher: Puppeteer[AnyRef]#RMIDispatcher,
+    private def makeDispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher,
                              invocation: LocalMethodInvocation[_]): Unit = {
         val args = invocation.methodArguments
         if (parameterContracts.isEmpty) {
@@ -237,8 +236,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             return
         }
         val buff = args.clone()
-        dispatcher.foreachEngines(engineID => {
-            val target = network.findEngine(engineID).get
+        dispatcher.foreachEngines(target => {
             modifyArgsOut(buff, target, invocation.objectNode.reference, invocation.connector)
             buff
         })

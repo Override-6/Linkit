@@ -13,11 +13,11 @@
 
 package fr.linkit.api.gnom.packet.channel
 
-import fr.linkit.api.gnom.network.{EngineTag, NetworkFriendlyEngineTag}
+import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketAttributesPresence}
-import fr.linkit.api.internal.system.ForbiddenIdentifierException
+import fr.linkit.api.internal.system.ForbiddenSelectionException
 
 trait ChannelScope extends PacketAttributesPresence {
 
@@ -29,16 +29,16 @@ trait ChannelScope extends PacketAttributesPresence {
 
     def sendToAll(packet: Packet): Unit
 
-    def sendTo(packet: Packet, attributes: PacketAttributes, tags: Array[NetworkFriendlyEngineTag]): Unit
+    def sendTo(packet: Packet, attributes: PacketAttributes, tag: NetworkFriendlyEngineTag): Unit
 
-    def sendTo(packet: Packet, tags: Array[NetworkFriendlyEngineTag]): Unit
+    def sendTo(packet: Packet, tag: NetworkFriendlyEngineTag): Unit
 
-    def areAuthorised(tags: Array[NetworkFriendlyEngineTag]): Boolean
+    def areAuthorised(tags: NetworkFriendlyEngineTag): Boolean
 
 
-    def assertAuthorised(identifiers: Array[NetworkFriendlyEngineTag]): Unit = {
-        if (!areAuthorised(identifiers))
-            throw new ForbiddenIdentifierException(s"one of the identifier in '${identifiers.mkString("Array(", ", ", ")")}' is not authorised by this scope.")
+    def assertAuthorised(tag: NetworkFriendlyEngineTag): Unit = {
+        if (!areAuthorised(tag))
+            throw new ForbiddenSelectionException(s"selection $tag is not authorized")
     }
 
     def shareWriter[S <: ChannelScope](factory: ScopeFactory[S]): S

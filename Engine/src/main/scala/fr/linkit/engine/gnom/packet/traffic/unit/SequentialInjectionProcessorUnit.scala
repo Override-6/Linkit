@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic.unit
 
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.packet.traffic.PacketInjectable
 import fr.linkit.api.gnom.packet.traffic.unit.InjectionProcessorUnit
 import fr.linkit.api.gnom.persistence.PacketDownload
@@ -22,8 +23,6 @@ import fr.linkit.engine.gnom.packet.traffic.PacketInjectionException
 import fr.linkit.engine.internal.debug.cli.SectionedPrinter
 import fr.linkit.engine.internal.debug.{Debugger, SIPURectifyStep}
 
-import java.io.PrintStream
-import java.util.concurrent.locks.{LockSupport, ReentrantLock}
 import java.util.{Comparator, PriorityQueue}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -33,7 +32,7 @@ import scala.collection.mutable.ListBuffer
  * */
 class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable) extends InjectionProcessorUnit {
 
-    private final val queues           = mutable.HashMap.empty[String, OrdinalQueue]
+    private final val queues           = mutable.HashMap.empty[NameTag, OrdinalQueue]
     private final val chain            = ListBuffer.empty[SequentialInjectionProcessorUnit]
     private final var executor: Thread = _
 
@@ -54,10 +53,10 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
     override val shortname: String = "SIPU"
 
     override def post(result: PacketDownload): Unit = {
-        AppLoggers.Traffic.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderID}) Current unit executor: ${executor}.")
+        AppLoggers.Traffic.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderTag}) Current unit executor: ${executor}.")
 
         contentLock.synchronized {
-            val senderId = result.coords.senderID
+            val senderId = result.coords.senderTag
             queues.getOrElseUpdate(senderId, new OrdinalQueue).offer(result)
             if (refocusShift > 0) {
                 if (executor eq null)
@@ -181,18 +180,18 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
         sec.append(indentStr).append('\n')
         if (executor != null) {
             sec.append(s"- executor: ${executor.getName} (${executor.getState.name().toLowerCase})")
-                .enable()
+                    .enable()
         } else sec.append("- no executor\n")
 
         if (chain.nonEmpty) {
             sec.append(indentStr)
-                .append("- chained units: " + chain.map(x => x.injectable.trafficPath.mkString("/", "/", "")).mkString("", "; ", ";"))
-                .append('\n')
+                    .append("- chained units: " + chain.map(x => x.injectable.trafficPath.mkString("/", "/", "")).mkString("", "; ", ";"))
+                    .append('\n')
         }
         if (joiningThreads.nonEmpty) {
             sec.append(indentStr)
-                .append(s"- threads waiting this unit: ${joiningThreads.map(_.getName).mkString(", ")}\n")
-                .enable()
+                    .append(s"- threads waiting this unit: ${joiningThreads.map(_.getName).mkString(", ")}\n")
+                    .enable()
         }
         val pendingPackets = queues.values.map(_.size).sum
         sec.append(indentStr)
@@ -200,7 +199,7 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             sec.append("- this unit has no pending packets\n")
         } else {
             sec.enable()
-                .append(s"- this unit has $pendingPackets pending packets. ")
+                    .append(s"- this unit has $pendingPackets pending packets. ")
             if (refocusShift > 0) sec.append(s"Those packets ordinals are $refocusShift ahead of expected ordinal.\n")
             else sec.append('\n')
         }

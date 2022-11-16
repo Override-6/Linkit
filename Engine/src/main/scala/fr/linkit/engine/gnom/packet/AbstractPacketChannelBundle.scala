@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.packet.channel.PacketChannel
 
 abstract class AbstractPacketChannelBundle(channel: PacketChannel) extends ChannelPacketBundle {
 
-    override def packetID: String = s"@${coords.path.mkString("/")}$$${coords.senderID}:${ordinal.getOrElse("??")}"
+    override def packetID: String = s"@${coords.path.mkString("/")}$$${coords.senderTag}:${ordinal.getOrElse("??")}"
 
     override def getChannel: PacketChannel = channel
 

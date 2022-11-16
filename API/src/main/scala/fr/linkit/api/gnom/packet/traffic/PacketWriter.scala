@@ -13,18 +13,17 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
-import fr.linkit.api.gnom.network.NetworkFriendlyEngineTag
+import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 
 trait PacketWriter {
 
-    val serverName       : String
-    val currentEngineName: String
-    val path             : Array[Int]
-    val traffic          : PacketTraffic
+    val path   : Array[Int]
+    val traffic: PacketTraffic
 
-    def writePackets(packet: Packet, included: Seq[NetworkFriendlyEngineTag], excluded: Seq[NetworkFriendlyEngineTag]): Unit
-    def writePackets(packet: Packet, attributes: PacketAttributes, included: Seq[NetworkFriendlyEngineTag], excluded: Seq[NetworkFriendlyEngineTag]): Unit
+    def writePackets(packet: Packet, selection: NetworkFriendlyEngineTag): Unit
+
+    def writePackets(packet: Packet, attributes: PacketAttributes, selection: NetworkFriendlyEngineTag): Unit
 
 
 }

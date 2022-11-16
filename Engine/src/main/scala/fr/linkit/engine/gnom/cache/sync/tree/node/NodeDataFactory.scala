@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{NameTag, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 trait NodeDataFactory {
@@ -29,18 +29,18 @@ sealed trait NodeDataRequest[A <: AnyRef, +N <: NodeData[A]] {
 
 class NormalNodeDataRequest[A <: AnyRef](val parent : MutableNode[_ <: AnyRef],
                                          val path   : Array[NamedIdentifier],
-                                         val ownerID: UniqueTag with NetworkFriendlyEngineTag) extends NodeDataRequest[A, NodeData[A]]
+                                         val ownerID: NameTag) extends NodeDataRequest[A, NodeData[A]]
 
 class SyncNodeDataRequest[A <: AnyRef](parent        : MutableNode[_ <: AnyRef],
                                        id            : NamedIdentifier,
                                        val syncObject: A with SynchronizedObject[A],
                                        val origin    : Option[A],
-                                       ownerID       : UniqueTag with NetworkFriendlyEngineTag,
+                                       ownerID       : NameTag,
                                        val syncLevel : SyncLevel)
         extends ChippedObjectNodeDataRequest[A](parent, id, syncObject, ownerID) with NodeDataRequest[A, SyncObjectNodeData[A]]
 
 class ChippedObjectNodeDataRequest[A <: AnyRef](val parent       : MutableNode[_ <: AnyRef],
                                                 val id           : NamedIdentifier,
                                                 val chippedObject: ChippedObject[A],
-                                                val ownerTag     : UniqueTag with NetworkFriendlyEngineTag)
+                                                val ownerTag     : NameTag)
         extends NodeDataRequest[A, ChippedObjectNodeData[A]]

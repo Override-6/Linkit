@@ -13,17 +13,15 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.network.IdentifierTag
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 
 trait RMIDispatchAgreement {
 
-    val acceptedEngines: Set[IdentifierTag]
+    val selection: NetworkFriendlyEngineTag
 
-    val discardedEngines: Set[IdentifierTag]
+    def getAppointedEngineReturn: UniqueTag with NetworkFriendlyEngineTag
 
-    def isAcceptAll: Boolean
-
-    def getAppointedEngineReturn: IdentifierTag
+    def currentMustReturn: Boolean
 
     def mayCallSuper: Boolean
 

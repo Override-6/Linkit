@@ -45,13 +45,13 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     private[connection] def send(result: PacketUpload): Unit = {
         val coords   = result.coords
         val ordinals = this.ordinalsMap.getOrElseUpdate(java.util.Arrays.hashCode(coords.path), new OrdinalCounter)
-        val bytes    = result.buff(() => ordinals.increment(coords.senderID))
+        val bytes    = result.buff(() => ordinals.increment(coords.senderTag))
         socket.write(bytes)
     }
 
     private[connection] def updateSocket(socket: Socket): Unit = this.socket.set(socket)
 
-    def getEntity: Engine = network.findEngine(boundIdentifier).get
+    def getEntity: Engine = network.getEngine(boundIdentifier).get
 
     override def isClosed: Boolean = socket.isClosed //refers to an used closeable element
 }

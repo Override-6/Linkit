@@ -13,14 +13,14 @@
 
 package fr.linkit.api.gnom.packet
 
-import fr.linkit.api.gnom.network.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.NameTag
 
-case class DedicatedPacketCoordinates(override val path: Array[Int],
-                                      targetID: UniqueTag with NetworkFriendlyEngineTag,
-                                      override val senderID: UniqueTag with NetworkFriendlyEngineTag) extends PacketCoordinates {
+case class DedicatedPacketCoordinates(override val path     : Array[Int],
+                                      targetID              : NameTag,
+                                      override val senderTag: NameTag) extends PacketCoordinates {
 
-    override def toString: String = s"$productPrefix(${path.mkString("Array(", ", ", ")")}, $targetID, $senderID)"
+    override def toString: String = s"$productPrefix(${path.mkString("Array(", ", ", ")")}, $targetID, $senderTag)"
 
-    def reversed: DedicatedPacketCoordinates = DedicatedPacketCoordinates(path, senderID, targetID)
+    def reversed: DedicatedPacketCoordinates = DedicatedPacketCoordinates(path, senderTag, targetID)
 
 }

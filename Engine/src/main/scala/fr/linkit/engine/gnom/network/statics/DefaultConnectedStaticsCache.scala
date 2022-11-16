@@ -24,19 +24,24 @@ import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.{StaticsCaller, SynchronizedStaticsCache}
+import fr.linkit.api.gnom.network.tag.EngineResolver
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncClassStorageResource}
 import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
+import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 
 //this class is used by the statics synchronization side.
 //It is not directly used by the user and must uses a specific sync instance creator.
 class DefaultConnectedStaticsCache @Persist()(channel                      : CachePacketChannel,
                                               classCenter                  : SyncClassCenter,
                                               override val defaultContracts: ContractDescriptorData,
-                                              override val network         : Network) extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, network) with SynchronizedStaticsCache {
+                                              resolver                     : EngineResolver,
+                                              omc                          : ObjectManagementChannel)
+        extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, resolver, omc) with SynchronizedStaticsCache {
 
     //ensuring that the creator is of the right type
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {
@@ -96,8 +101,12 @@ object DefaultConnectedStaticsCache {
                 .getEntry
                 .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
         val generator = new DefaultSyncClassCenter(resources, app.compilerCenter)
-
-        new DefaultConnectedStaticsCache(channel, generator, contracts, network)
+        //FIXME ugly
+        val omc       = network.connection.traffic match {
+            case traffic: AbstractPacketTraffic => traffic.getObjectManagementChannel
+            case _                              => throw new UnsupportedOperationException("Cannot retrieve object management channel.")
+        }
+        new DefaultConnectedStaticsCache(channel, generator, contracts, network, omc)
     }
 
 }

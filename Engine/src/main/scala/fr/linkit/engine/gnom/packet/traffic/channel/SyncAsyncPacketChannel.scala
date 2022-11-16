@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic.channel
 
+import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableFactory
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
@@ -61,13 +62,13 @@ class SyncAsyncPacketChannel(scope: ChannelScope)
         scope.sendToAll(packet, attributes)
     }
 
-    def sendAsync(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = {
+    def sendAsync(packet: Packet, attributes: PacketAttributes, targets: NetworkFriendlyEngineTag): Unit = {
         attributes.putAttribute(Attribute, true)
         drainAllAttributes(attributes)
         scope.sendTo(packet, attributes, targets)
     }
 
-    def sendSync(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = {
+    def sendSync(packet: Packet, attributes: PacketAttributes, targets: NetworkFriendlyEngineTag): Unit = {
         attributes.putAttribute(Attribute, false)
         drainAllAttributes(attributes)
         scope.sendTo(packet, targets)

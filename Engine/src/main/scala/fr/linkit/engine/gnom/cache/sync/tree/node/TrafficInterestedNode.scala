@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectNode
-import fr.linkit.api.gnom.network.IdentifierTag
+import fr.linkit.api.gnom.network.tag.IdentifierTag
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.packet.traffic.channel.request.ResponseSubmitter

@@ -13,6 +13,6 @@
 
 package fr.linkit.api.internal.system
 
-class ForbiddenIdentifierException(msg: String) extends Exception(msg) {
+class ForbiddenSelectionException(msg: String) extends Exception(msg) {
 
 }

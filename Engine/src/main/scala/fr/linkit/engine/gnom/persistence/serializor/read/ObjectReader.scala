@@ -39,7 +39,7 @@ class ObjectReader(bundle: PersistenceBundle,
     
     final         val buff: ByteBuffer             = bundle.buff
     private final val selector                     = new ObjectSelector(bundle)
-    private lazy val boundMappings                = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
+    private lazy val boundMappings                = bundle.network.getEngine(bundle.boundNT).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
     private final val config                       = bundle.config
     private       val (packetRefSize, sizes, pool) = readPoolStructure()
     private var isInit                             = false

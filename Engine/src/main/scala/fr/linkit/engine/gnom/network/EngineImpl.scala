@@ -15,28 +15,31 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.gnom.cache.sync.instantiation.New
 import fr.linkit.api.gnom.network._
+import fr.linkit.api.gnom.network.tag._
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.mapping.RemoteClassMappings
 
 import java.sql.Timestamp
+import scala.annotation.tailrec
 import scala.collection.mutable
 
 class EngineImpl(override val name: String,
                  network0         : AbstractNetwork) extends Engine {
 
 
-    private  val identifierSet              = mutable.Set.empty[IdentifierTag]
-    private  val groupSet                   = mutable.Set.empty[GroupTag]
-    override val reference: EngineReference = new EngineReference(name)
-    override val network  : Network         = network0
-
+    private val identifierSet                                       = mutable.Set.empty[IdentifierTag]
+    private val groupSet                                            = mutable.Set.empty[GroupTag]
     private var mappings              : Option[RemoteClassMappings] = None
     private var isMappingsInitializing: Boolean                     = false
 
+    override val nameTag  : NameTag         = NameTag(name)
+    override val reference: EngineReference = new EngineReference(nameTag)
+    override val network  : Network         = network0
+
     fillInDefaultTags()
 
+
     private def fillInDefaultTags(): Unit = {
-        identifierSet += IdentifierTag(name)
         groupSet += Everyone
         if (isServer) identifierSet += Server
         else groupSet += Clients
@@ -46,32 +49,69 @@ class EngineImpl(override val name: String,
 
     override def groups: Set[GroupTag] = groupSet.toSet
 
+
     override def isTagged(tag: NetworkFriendlyEngineTag): Boolean = tag match {
-        case id: IdentifierTag => identifierSet(id)
-        case g: GroupTag       => groupSet(g)
-        case Current           => isCurrentEngine
+        case NotTag(tag)           => !isTagged(tag)
+        case Nobody                => false
+        case Everyone              => true
+        case UnionTag(tags)        => tags.exists(isTagged)
+        case IntersectionTag(tags) => tags.forall(isTagged)
+        case id: IdentifierTag     => identifierSet(id)
+        case g: GroupTag           => groupSet(g)
+        case Current               => isCurrentEngine
     }
 
     override def addTag(tag: NetworkFriendlyEngineTag): Unit = tag match {
+        case st: SelectionTag =>
+            throw new IllegalTagException(s"tag selections ($st) are not allowed for attribution.")
+
         case id@IdentifierTag(identifier) =>
-            if (identifierSet(id)) throw new IllegalTagException(s"'$identifier' is already an identifier of this engine.")
-            if (id == Server) throw new IllegalTagException("Cannot add 'Server' tag to a client.")
-            if (network.findEngine(id).nonEmpty) throw new IllegalTagException(s"Another engine is already identified with '$identifier'")
+            if (identifierSet(id))
+                throw new IllegalTagException(s"'$identifier' is already an identifier of this engine.")
+            if (id == Server)
+                throw new IllegalTagException("Cannot add 'Server' tag to a client.")
+            if (network.getEngine(id).nonEmpty)
+                throw new IllegalTagException(s"Another engine is already identified with '$identifier'")
+
             identifierSet += id
         case g@GroupTag(name)             =>
-            if (groupSet(g)) throw new IllegalTagException(s"This engine is already present in group '$name'")
-            if (g == Clients) throw new IllegalTagException("Cannot add 'Clients' group to server.")
+            if (groupSet(g))
+                throw new IllegalTagException(s"This engine is already present in group '$name'")
+            if (g == Clients)
+                throw new IllegalTagException("Cannot add 'Clients' group to server.")
+
             groupSet += g
+        case magic: MagicTag              =>
+            throw new IllegalTagException(s"magic tags ($magic) are not allowed for attribution")
     }
 
-    override def removeTag(tag: NetworkFriendlyEngineTag): Unit = tag match {
-        case id@IdentifierTag(identifier) =>
-            if (identifier == name) throw new IllegalTagException("Cannot remove engine's name from identifiers")
-            if (id == Server && isServer) throw new IllegalTagException("Cannot remove 'Server' identifier from identifiers")
-            identifierSet -= id
-        case g@GroupTag(name)             =>
-            if (g == Everyone || (g == Clients && !isServer)) throw new IllegalTagException(s"Cannot remove '$name' group.")
-            groupSet -= g
+    override def removeTag(tag: NetworkFriendlyEngineTag): Unit = removeTag(tag, false)
+
+    @tailrec
+    private def removeTag(tag: NetworkFriendlyEngineTag, inverseSelection: Boolean): Unit = {
+        tag match {
+            case id@IdentifierTag(identifier) =>
+                if (identifier == name)
+                    throw new IllegalTagException("Cannot remove engine's name from identifiers")
+                if (id == Server && isServer)
+                    throw new IllegalTagException("Cannot remove 'Server' identifier from identifiers")
+                if (inverseSelection) {
+                    val exists = identifierSet(id)
+                    identifierSet.clear()
+                    if (exists) identifierSet += id
+                } else identifierSet -= id
+            case g@GroupTag(name)             =>
+                if (g == Everyone || (g == Clients && !isServer))
+                    throw new IllegalTagException(s"Cannot remove '$name' group.")
+                if (inverseSelection) {
+                    val exists = groupSet(g)
+                    groupSet.clear()
+                    if (exists) groupSet += g
+                } else groupSet -= g
+            case magic: MagicTag              =>
+                throw new IllegalTagException(s"Cannot remove magic tags ($magic)")
+            case NotTag(tag)                  => removeTag(tag, !inverseSelection)
+        }
     }
 
 

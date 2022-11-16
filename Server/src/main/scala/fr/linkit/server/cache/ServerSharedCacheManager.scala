@@ -48,7 +48,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
         val response      = requestBundle.responseSubmitter
         requestPacket.nextPacket[Packet] match {
             case IntPacket(cacheID)                           => handleContentRetrievalRequest(requestBundle, cacheID)
-            case ObjectPacket((id: Int, cacheType: Class[_])) => handlePreCacheOpeningRequest(id, cacheType, coords.senderID, response)
+            case ObjectPacket((id: Int, cacheType: Class[_])) => handlePreCacheOpeningRequest(id, cacheType, coords.senderTag, response)
             case unknown                                      => throw UnexpectedPacketException(s"Unknown packet $unknown.")
         }
     }
@@ -98,7 +98,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
                         case None                            => acceptRequest //There is no attach handler set, the cache is free to accept any thing
                         case Some(_) if isSystemCache        => acceptRequest //System Caches are free to access caches content.
                         case Some(value: CacheAttachHandler) =>
-                            val engineOpt = network.findEngine(senderID)
+                            val engineOpt = network.getEngine(senderID)
                             if (engineOpt.isDefined)
                                 value.inspect(engineOpt.get, registeredCache.cache.getClass, cacheType).fold(acceptRequest)(failRequest)
                             else failRequest(s"Unknown engine '$senderID'.")
@@ -115,7 +115,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
         val request  = bundle.packet
         val response = bundle.responseSubmitter
 
-        val senderID: String = coords.senderID
+        val senderID: String = coords.senderTag
         val behavior         = request.getAttribute[CacheSearchMethod]("behavior").get //TODO orElse throw an exception
 
 
@@ -147,7 +147,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
                 sendContent(None)
         }
 
-        Debugger.push(ResponseStep("cache content retrieval", bundle.coords.senderID, channel.reference))
+        Debugger.push(ResponseStep("cache content retrieval", bundle.coords.senderTag, channel.reference))
         breakable {
 
             LocalCachesStore.findCache(cacheID).fold(handleContentNotAvailable()) { storedCache =>
@@ -157,7 +157,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
                     case Some(_) if isSystemCache                         => sendContent(content)
                     case None                                             => sendContent(content) //There is no handler, the engine is by default accepted.
                     case Some(handler: CacheContentHandler[CacheContent]) =>
-                        val engine = network.findEngine(senderID).getOrElse {
+                        val engine = network.getEngine(senderID).getOrElse {
                             failRequest(s"Engine not found: $senderID. (shared cache manager engine: $currentIdentifier)")
                         }
                         if (handler.canAccessToContent(engine)) {

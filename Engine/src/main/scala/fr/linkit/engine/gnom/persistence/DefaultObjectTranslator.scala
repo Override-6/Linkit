@@ -16,6 +16,7 @@ package fr.linkit.engine.gnom.persistence
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.resource.local.LocalFolder
 import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.gnom.persistence._
@@ -34,8 +35,8 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         import SyncClassStorageResource._
         val prop           = LinkitApplication.getProperty("compilation.working_dir") + "/Classes"
         val resources      = app.getAppResources.getOrOpen[LocalFolder](prop)
-                                .getEntry
-                                .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
+                .getEntry
+                .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
         val compilerCenter = app.compilerCenter
         val center         = new DefaultSyncClassCenter(resources, compilerCenter)
         new DefaultObjectPersistence(center)
@@ -53,8 +54,8 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
                     buff.put(DedicatedFlag) //set the dedicated flag
                     buff.putInt(path.length) //path length
                     path.foreach(buff.putInt) //path content
-                    putString(targetID, buff) // targetID String
-                    putString(senderID, buff) // senderID String
+                    putString(targetID.name, buff) // targetID String
+                    putString(senderID.name, buff) // senderID String
                 case _                                                    =>
                     throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
             }
@@ -71,8 +72,8 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
             case DedicatedFlag =>
                 val path = new Array[Int](buff.getInt) //init path array
                 for (i <- path.indices) path(i) = buff.getInt() //fill path array
-                val targetID = getString(buff) //targetID string
-                val senderID = getString(buff) //senderID string
+                val targetID = NameTag(getString(buff)) //targetID string
+                val senderID = NameTag(getString(buff)) //senderID string
                 DedicatedPacketCoordinates(path, targetID, senderID)
             case unknown       =>
                 throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'.")
@@ -94,11 +95,11 @@ class DefaultObjectTranslator(app: ApplicationContext) extends ObjectTranslator 
         val coords = readCoordinates(buffer)
         val conf   = traffic.getPersistenceConfig(coords.path)
         val bundle = new PersistenceBundle {
-            override val packetID  : String            = s"@${coords.path.mkString("/")}$$${coords.senderID}:${ordinal}"
+            override val packetID  : String            = s"@${coords.path.mkString("/")}$$${coords.senderTag}:${ordinal}"
             override val network   : Network           = traffic.connection.network
-            override val buff      : ByteBuffer        = buffer
-            override val boundId   : String            = coords.senderID
-            override val packetPath: Array[Int]        = coords.path
+            override val buff      : ByteBuffer = buffer
+            override val boundNT   : NameTag    = coords.senderTag
+            override val packetPath: Array[Int] = coords.path
             override val config    : PersistenceConfig = conf
         }
         new PacketDownloadImpl(buffer, coords, ordinal)(serializer.deserializeObjects(bundle))

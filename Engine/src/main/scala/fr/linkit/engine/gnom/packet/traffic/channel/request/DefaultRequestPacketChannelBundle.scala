@@ -27,7 +27,7 @@ case class DefaultRequestPacketChannelBundle(channel          : RequestPacketCha
         this(channel, bundle.packet, bundle.coords, bundle.responseSubmitter, bundle.ordinal)
     }
 
-    override val packetID  : String           = s"@${coords.path.mkString("/")}$$${coords.senderID}:${ordinal.getOrElse("??")}"
+    override val packetID  : String           = s"@${coords.path.mkString("/")}$$${coords.senderTag}:${ordinal.getOrElse("??")}"
     override val attributes: PacketAttributes = packet.getAttributes
 
     override def getChannel: RequestPacketChannel = channel

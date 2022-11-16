@@ -29,10 +29,12 @@ object ExecutorEngine {
         engine
     }
 
-    private[linkit] def setCurrentEngine(engine: Engine): Unit = {
+    private[linkit] def setCurrentEngine(engine: Engine): Engine = {
         /*if (engine == null && networkStarted)
             throw new NullPointerException*/
+        val last = local.get()
         local.set(engine)
+        last
     }
 
     private[linkit] def initDefaultEngine(engine: Engine): Unit = {

@@ -13,6 +13,7 @@
 
 package fr.linkit.client.connection.traffic
 
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.ObjectTranslator
@@ -22,49 +23,39 @@ import fr.linkit.engine.gnom.packet.traffic.{DynamicSocket, WriterInfo}
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.util.OrdinalCounter
 
-class ClientPacketWriter(socket: DynamicSocket,
-                         ordinal: OrdinalCounter,
+class ClientPacketWriter(socket    : DynamicSocket,
+                         ordinal   : OrdinalCounter,
                          translator: ObjectTranslator,
                          writerInfo: WriterInfo) extends AbstractPacketWriter {
 
     override      val traffic          : PacketTraffic     = writerInfo.traffic
-    override      val currentEngineName: String            = traffic.currentEngineName
-    override      val serverName       : String            = traffic.serverName
     override      val path             : Array[Int]        = writerInfo.path
     private       val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
     override lazy val network                              = writerInfo.network
+    private lazy  val currentEngineTag                     = network.currentEngine.nameTag
+    private lazy  val serverEngineTag                      = network.serverEngine.nameTag
 
-    protected def writePacketsInclude(packet: Packet, attributes: PacketAttributes, includedTags: Array[String]): Unit = {
-        if (includedTags.length == 1) {
-            val target    = includedTags.head
-            val dedicated = DedicatedPacketCoordinates(path, target, currentEngineName)
-            if (target == currentEngineName) {
+
+    override protected def writePackets(packet: Packet, attributes: PacketAttributes, targets: Seq[NameTag]): Unit = {
+        if (targets.length == 1) {
+            val target    = targets.head
+            val dedicated = DedicatedPacketCoordinates(path, target, currentEngineTag)
+            if (target == currentEngineTag) {
                 traffic.processInjection(packet, attributes, dedicated)
                 return
             }
             send(dedicated)(attributes, packet)
         } else {
-            if (includedTags.contains(currentEngineName)) {
-                val coords = DedicatedPacketCoordinates(path, serverName, currentEngineName)
+            if (targets.contains(currentEngineTag)) {
+                val coords = DedicatedPacketCoordinates(path, serverEngineTag, currentEngineTag)
                 traffic.processInjection(packet, attributes, coords)
             }
 
-            for (target <- includedTags) if (target != currentEngineName) {
-                val coords = DedicatedPacketCoordinates(path, target, currentEngineName)
+            for (target <- targets) if (target != currentEngineTag) {
+                val coords = DedicatedPacketCoordinates(path, target, currentEngineTag)
                 send(coords)(attributes, packet)
             }
         }
-    }
-
-    protected def writePacketsExclude(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
-        if (!discardedIDs.contains(currentEngineName))
-            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentEngineName, currentEngineName))
-        network.listEngines
-                .filterNot(e => discardedIDs.contains(e.name))
-                .foreach(engine => {
-                    val coords = DedicatedPacketCoordinates(path, engine.name, currentEngineName)
-                    send(coords)(attributes, packet)
-                })
     }
 
     private def send(coords: DedicatedPacketCoordinates)(attributes: PacketAttributes, packet: Packet): Unit = {

@@ -16,20 +16,19 @@ package fr.linkit.api.gnom.cache.sync.contract.behavior
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.network.{EngineTag, GroupTag, IdentifierTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag._
 
 trait ConnectedObjectContext {
 
-    val currentID    : IdentifierTag
-    val ownerID      : IdentifierTag
-    val classDef     : SyncClassDef
+    val resolver: EngineResolver
+    val ownerTag: NameTag
+    val classDef: SyncClassDef
     val choreographer: InvocationChoreographer
     val syncLevel    : SyncLevel
 
-    def translate(tag: UniqueTag): IdentifierTag
+    def translate(tag: UniqueTag): NameTag
 
-    def translateAll(tags: Seq[EngineTag]): Set[IdentifierTag]
-
+    def deepTranslate(tag: EngineTag): NetworkFriendlyEngineTag
 
     def areEquivalent(a: EngineTag, b: EngineTag): Boolean = a match {
         case au: UniqueTag => b match {

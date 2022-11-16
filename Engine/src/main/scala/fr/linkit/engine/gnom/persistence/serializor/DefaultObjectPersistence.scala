@@ -38,7 +38,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
 
     override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disinv {
         AppLoggers.Persistence.debug("Starting Serializing objects...")
-        Debugger.push(PacketSerializationStep(bundle.packetID, bundle.boundId))
+        Debugger.push(PacketSerializationStep(bundle.packetID, bundle.boundNT))
         val t0     = System.currentTimeMillis()
         val buffer = bundle.buff
         try {
@@ -75,7 +75,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         checkSignatureAndProtocol(buff)
 
         AppLoggers.Persistence.debug(s"Starting Deserializing objects... (from buff length: ${buff.limit()})")
-        Debugger.push(PacketDeserializationStep(bundle.packetID, bundle.boundId))
+        Debugger.push(PacketDeserializationStep(bundle.packetID, bundle.boundNT))
 
         try {
             val t0 = System.currentTimeMillis()

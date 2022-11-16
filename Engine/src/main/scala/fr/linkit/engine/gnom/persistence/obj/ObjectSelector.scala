@@ -30,7 +30,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
     private val gnol       = bundle.network.gnol
     private val rnol       = gnol.defaultNOL
     private val col        = bundle.config.contextualObjectLinker
-    private val boundId    = bundle.boundId
+    private val boundId    = bundle.boundNT
     private val packetPath = bundle.packetPath
 
     def findObjectReference(obj: AnyRef): Option[NetworkObjectReference] = {

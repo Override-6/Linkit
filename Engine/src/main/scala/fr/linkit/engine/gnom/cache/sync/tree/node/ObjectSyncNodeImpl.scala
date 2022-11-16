@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
+import fr.linkit.api.gnom.network.tag.Current
 import fr.linkit.engine.gnom.cache.sync.{AbstractSynchronizedObject, IllegalSynchronizedObjectException}
 import org.jetbrains.annotations.Nullable
 
@@ -27,10 +28,10 @@ class ObjectSyncNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends Chipp
     override def obj: A with SynchronizedObject[A] = data.obj
 
     private val originRef = data.origin.orNull
-    
-    override val isMirrored: Boolean = data.syncLevel == SyncLevel.Mirror
-    override val isMirroring: Boolean = isMirrored && puppeteer.currentEngineName != ownerTag
 
+    override val isMirror   : Boolean = data.syncLevel == SyncLevel.Mirror
+    override val isOrigin   : Boolean = data.resolver.isEquivalent(Current, ownerTag)
+    override val isMirroring: Boolean = isMirror && !isOrigin
 
     initSyncObject()
 

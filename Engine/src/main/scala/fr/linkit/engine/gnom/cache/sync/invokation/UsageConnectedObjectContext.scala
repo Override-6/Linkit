@@ -18,33 +18,40 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.{OwnerEngine, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.network._
+import fr.linkit.api.gnom.network.tag.TagUtils.TagOps
+import fr.linkit.api.gnom.network.tag._
 
-case class UsageConnectedObjectContext(ownerID: IdentifierTag, currentID: IdentifierTag,
-                                       classDef: SyncClassDef, syncLevel: SyncLevel,
-                                       choreographer: InvocationChoreographer, network: Network) extends ConnectedObjectContext {
+case class UsageConnectedObjectContext(ownerTag     : NameTag,
+                                       classDef     : SyncClassDef,
+                                       syncLevel    : SyncLevel,
+                                       choreographer: InvocationChoreographer,
+                                       resolver     : EngineResolver) extends ConnectedObjectContext {
 
 
-    override def translate(tag: UniqueTag): IdentifierTag = tag match {
-        case id: IdentifierTag                    => id //nothing to translate
-        case OwnerEngine                          => ownerID
-        case Current                                    => currentID
+    override def translate(tag: UniqueTag): NameTag = tag match {
+        case name: NameTag                              => name //nothing to translate
+        case OwnerEngine                                => ownerTag
         case t: UniqueTag with NetworkFriendlyEngineTag =>
-            network.findEngine(t)
-                    .map(e => IdentifierTag(e.name))
+            resolver.getEngine(t)
+                    .map(_.nameTag)
                     .getOrElse(throw new IllegalTagException(s"Unable to translate tag '$tag'"))
-        case _                                          => throw new IllegalTagException(s"Unable to translate tag '$tag'")
+        case _                                          =>
+            throw new IllegalTagException(s"Unable to translate tag '$tag'")
     }
 
 
-    override def translateAll(tags: Seq[EngineTag]): Set[IdentifierTag] = {
-        tags.flatMap {
-            case OwnerEngine                                  => Seq(ownerID)
-            case tag: UniqueTag with NetworkFriendlyEngineTag => network.findEngine(tag).map(e => Set(IdentifierTag(e.name))).getOrElse(Seq())
-            case g: GroupTag                                  => network.findEngines(g).map(e => IdentifierTag(e.name))
-        }.toSet
+    override def deepTranslate(tag: EngineTag): NetworkFriendlyEngineTag = tag match {
+        case tag: SelectionTag             => tag match {
+            case NotTag(tag)           => !deepTranslate(tag)
+            case UnionTag(tags)        => tags.fold(Nobody)(_ U deepTranslate(_))
+            case IntersectionTag(tags) => tags.fold(Everyone)(_ I deepTranslate(_))
+        }
+        case tag: NetworkFriendlyEngineTag => tag
+        case OwnerEngine                   => ownerTag
+        case _                             => throw new IllegalTagException(s"Unable to translate tag '$tag'")
     }
 
     override def withSyncLevel(syncLevel: SyncLevel): ConnectedObjectContext = {
-        UsageConnectedObjectContext(ownerID, currentID, classDef, syncLevel, choreographer, network)
+        UsageConnectedObjectContext(ownerTag, classDef, syncLevel, choreographer, resolver)
     }
 }

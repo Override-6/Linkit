@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
 import fr.linkit.api.gnom.cache.sync.{CannotConnectException, ChippedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.network._
+import fr.linkit.api.gnom.network.tag.{Current, IdentifierTag, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
@@ -119,7 +120,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
                                      senderID: UniqueTag with NetworkFriendlyEngineTag,
                                      response: Submitter[Unit]): Unit = {
         val network = data.network
-        val executor               = network.findEngine(senderID).orNull
+        val executor               = network.getEngine(senderID).orNull
         val params                 = packet.params
         val expectedEngineReturn = packet.expectedEngineReturn
         scanParams(params)
@@ -127,7 +128,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
         def handleException(e: Throwable): Unit = {
             e.printStackTrace()
             val ex = if (e.isInstanceOf[InvocationTargetException]) e.getCause else e
-            if (network.findEngine(expectedEngineReturn).exists(_.isCurrentEngine))
+            if (network.getEngine(expectedEngineReturn).exists(_.isCurrentEngine))
                 handleRemoteInvocationException(response, ex)
         }
 
@@ -169,7 +170,8 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
                 tree.insertObject(this, ref.asInstanceOf[AnyRef], ownerTag, registrationLevel).obj
             })
         }
-        if (packet.expectedEngineReturn == currentIdentifier) {
+        val expectedEngineReturn = packet.expectedEngineReturn
+        if (engine.network.getEngine(expectedEngineReturn).exists(_.isCurrentEngine)) {
             Debugger.push(ResponseStep("rmi", Current, null)) //TODO replace null by the channel's reference
             response
                     .addPacket(RefPacket[Any](result))

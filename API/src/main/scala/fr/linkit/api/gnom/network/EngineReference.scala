@@ -12,14 +12,15 @@
  */
 
 package fr.linkit.api.gnom.network
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.referencing.{NetworkObjectReference, SystemObjectReference}
 
-class EngineReference(val name: String) extends NetworkReference with SystemObjectReference {
+class EngineReference(val name: NameTag) extends NetworkReference with SystemObjectReference {
 
     override def asSuper: Option[NetworkObjectReference] = Some(NetworkReference)
 
     override def toString: String = {
-        s"@network/$name"
+        s"@network/${name.name}"
     }
 
     override def hashCode(): Int = name.hashCode

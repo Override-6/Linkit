@@ -1,4 +1,5 @@
-import fr.linkit.api.gnom.network.{Network, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.engine.gnom.network.NetworkDataTrunk
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.NetworkDataBundle
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket

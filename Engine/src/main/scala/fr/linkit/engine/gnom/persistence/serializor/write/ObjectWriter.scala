@@ -30,7 +30,7 @@ import scala.annotation.switch
 class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     val buff: ByteBuffer = bundle.buff
-    private final val boundClassMappings = bundle.network.findEngine(bundle.boundId).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
+    private final val boundClassMappings = bundle.network.getEngine(bundle.boundNT).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
     //private       val config             = bundle.config
     private var packetRefSize            = 1
     private       val pool               = new SerializerObjectPool(bundle)

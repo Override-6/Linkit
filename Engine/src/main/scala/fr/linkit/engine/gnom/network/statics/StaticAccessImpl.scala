@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.network.statics
 
-import fr.linkit.api.application.resource.local.{LocalFolder, ResourceEntry, ResourceFolder}
+import fr.linkit.api.application.resource.local.LocalFolder
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network.statics.{StaticAccess, StaticAccessor, StaticsCaller}
@@ -33,7 +33,7 @@ import scala.reflect.{ClassTag, classTag}
 class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, contract: ContractDescriptorData) extends StaticAccess with Deconstructible {
 
     private val cache    = manager.attachToCache(cacheId, DefaultConnectedStaticsCache.apply(contract))
-    private val app      = cache.network.connection.getApp
+    private val app      = manager.network.connection.getApp
     private val center   = app.compilerCenter
     private val resource = {
         val prop     = LinkitApplication.getProperty("compilation.working_dir") + "/Classes"
@@ -42,11 +42,11 @@ class StaticAccessImpl @Persist()(cacheId: Int, manager: SharedCacheManager, con
         val entry = resource.getEntry
         import CachedClassFolderResource._
         entry
-            .findRepresentation[R]()
-            .getOrElse {
-                entry.attachRepresentation[R]()
-                entry.getRepresentation[R]()
-            }
+                .findRepresentation[R]()
+                .getOrElse {
+                    entry.attachRepresentation[R]()
+                    entry.getRepresentation[R]()
+                }
     }
 
     override def apply[S: ClassTag]: StaticAccessor = {

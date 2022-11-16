@@ -13,6 +13,7 @@
 
 package fr.linkit.api.gnom.network
 
+import fr.linkit.api.gnom.network.tag.{EngineTag, GroupTag, IdentifierTag, NameTag, NetworkFriendlyEngineTag}
 import fr.linkit.api.gnom.referencing.NetworkObject
 
 import java.sql.Timestamp
@@ -28,6 +29,8 @@ trait Engine extends NetworkObject[EngineReference] {
      * thus, two engines can't have the same name, and an engine name is also part of its identifiers (see [[identifiers]])
      * */
     val name: String
+
+    val nameTag: NameTag
 
     /**
      * the timestamp of the last time this engine connected on the network.
