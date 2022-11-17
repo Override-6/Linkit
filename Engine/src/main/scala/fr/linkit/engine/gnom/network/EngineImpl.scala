@@ -27,7 +27,7 @@ class EngineImpl(override val name: String,
 
 
     private val identifierSet                                       = mutable.Set.empty[IdentifierTag]
-    private val groupSet                                            = mutable.Set.empty[GroupTag]
+    private val groupSet                                            = mutable.Set.empty[Group]
     private var mappings              : Option[RemoteClassMappings] = None
     private var isMappingsInitializing: Boolean                     = false
 
@@ -46,14 +46,14 @@ class EngineImpl(override val name: String,
 
     override def identifiers: Set[IdentifierTag] = identifierSet.toSet
 
-    override def groups: Set[GroupTag] = groupSet.toSet
+    override def groups: Set[Group] = groupSet.toSet
 
 
     override def isIncluded(tag: NetworkFriendlyEngineTag): Boolean = tag match {
         case Nobody            => false
         case Everyone          => true
         case id: IdentifierTag => identifierSet(id)
-        case g: GroupTag       => groupSet(g)
+        case g: Group          => groupSet(g)
         case Current           => isCurrentEngine
     }
 
@@ -74,14 +74,14 @@ class EngineImpl(override val name: String,
                 throw new IllegalTagException(s"Another engine is already identified with '$identifier'")
 
             identifierSet += id
-        case g@GroupTag(name)             =>
+        case g@Group(name)                =>
             if (groupSet(g))
                 throw new IllegalTagException(s"This engine is already present in group '$name'")
             if (g == Clients)
                 throw new IllegalTagException("Cannot add 'Clients' group to server.")
 
             groupSet += g
-        case Current | Nobody              =>
+        case Current | Nobody             =>
             throw new IllegalTagException(s"Current / Nobody tags are not allowed for attribution")
     }
 
@@ -92,11 +92,11 @@ class EngineImpl(override val name: String,
             if (id == Server && isServer)
                 throw new IllegalTagException("Cannot remove 'Server' identifier from identifiers")
             else identifierSet -= id
-        case g@GroupTag(name)             =>
+        case g@Group(name)                =>
             if (g == Everyone || (g == Clients && !isServer))
                 throw new IllegalTagException(s"Cannot remove '$name' group.")
             else groupSet -= g
-        case Current | Nobody              =>
+        case Current | Nobody             =>
             throw new IllegalTagException(s"Cannot remove Current / Nobody tags")
     }
 

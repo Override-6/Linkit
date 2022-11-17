@@ -30,20 +30,17 @@ import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 
-abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Nullable parent: NetworkPresenceHandler[_ >: R], channel: ObjectManagementChannel)
+abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](parent  : Option[NetworkPresenceHandler[_ >: R]],
+                                                                           omc     : ObjectManagementChannel,
+                                                                           selector: EngineSelector)
         extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
-    private val selector: EngineSelector = channel.traffic.connection.network
     //What other engines thinks about current engine presences states
-    private val internalPresences        = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
+    private val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
     //What current engine thinks about other engines presences states
-    private val externalPresences        = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
+    private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
 
-    private def toName(tag: UniqueTag with NetworkFriendlyEngineTag): NameTag = {
-        selector.getEngine(tag).getOrElse {
-            throw new NoSuchElementException(s"Could not find engine tagged with '$tag'")
-        }.nameTag
-    }
+    import selector._
 
     @inline
     def getPresence(ref: R): NetworkObjectPresence = getPresence0(ref)
@@ -59,10 +56,11 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
     override def isPresentOnEngine(engineTag: UniqueTag with NetworkFriendlyEngineTag, ref: R): Boolean = {
         val presence = getPresence(ref)
 
-        val engineNameTag = toName(engineTag)
+        val engineNameTag = selector.retrieveNT(engineTag)
         val isPresent     = if (presence.isPresenceKnownFor(engineNameTag)) {
             presence.getPresenceFor(engineNameTag) eq PRESENT
         } else {
+            val parent = this.parent.orNull
             (parent == null || ref.asSuper.exists(r => parent.isPresentOnEngine(engineNameTag, casted(r)))) &&
                     (presence.getPresenceFor(engineNameTag) eq PRESENT)
         }
@@ -73,19 +71,20 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
     private def casted[A](ref: NetworkObjectReference): A = ref.asInstanceOf[A]
 
 
-    private[referencing] def askIfPresent(engineName: NameTag, location: R): Boolean = {
-        val traffic = channel.traffic
-        if (traffic != null && toName(Current) == engineName)
-            return isLocationReferenced(location)
+    private[referencing] def askIfPresent(engineName: NameTag, reference: R): Boolean = {
+        val traffic = omc.traffic
+        if (traffic != null && Current <=> engineName)
+            return isLocationReferenced(reference)
 
-        val parentIsPresent = parent == null || location.asSuper.exists(r => parent.isPresentOnEngine(engineName, casted(r)))
+        val parent          = this.parent.orNull
+        val parentIsPresent = parent == null || reference.asSuper.exists(r => parent.isPresentOnEngine(engineName, casted(r)))
         parentIsPresent && {
-            AppLoggers.GNOM.debug(s"Asking if $location is present on engine: $engineName")
-            Debugger.push(RequestStep("presence check", s"asking if reference $location is present on engine $engineName", engineName, channel.reference))
-            val isPresent = channel
+            AppLoggers.GNOM.debug(s"Asking if $reference is present on engine: $engineName")
+            Debugger.push(RequestStep("presence check", s"asking if reference $reference is present on engine $engineName", engineName, omc.reference))
+            val isPresent = omc
                     .makeRequest(ChannelScopes.apply(engineName))
                     .addPacket(EmptyPacket)
-                    .putAttribute(ReferenceAttributeKey, location)
+                    .putAttribute(ReferenceAttributeKey, reference)
                     .submit()
                     .nextResponse
                     .nextPacket[BooleanPacket]
@@ -96,7 +95,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
     }
 
     private[referencing] def informPresence(enginesId: Array[NameTag], location: R, presence: ObjectPresenceState): Unit = {
-        channel
+        omc
                 .makeRequest(ChannelScopes(enginesId.toList.foldLeft(Select(Nobody): TagSelection[NetworkFriendlyEngineTag])(_ U _)))
                 .addPacket(AnyRefPacket(presence))
                 .putAttribute(ReferenceAttributeKey, location)
@@ -117,8 +116,8 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         presence.setPresent()
         val opt = externalPresences.get(ref)
         if (opt.isDefined) {
-            opt.get.setToPresent(toName(Current))
-            AppLoggers.GNOM.debug(s"Presence set to present for current engine (${toName(Current)}), at reference $ref")
+            opt.get.setToPresent(Current)
+            AppLoggers.GNOM.debug(s"Presence set to present for current engine ($Current), at reference $ref")
         }
     }
 
@@ -130,7 +129,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         }
         val otp2 = externalPresences.get(ref)
         if (otp2.isDefined)
-            otp2.get.setToNotPresent(toName(Current))
+            otp2.get.setToNotPresent(Current)
     }
 
     def injectRequest(bundle: LinkerRequestBundle): Unit = {
@@ -138,7 +137,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         val request           = bundle.packet
         val reference: R      = bundle.linkerReference.asInstanceOf[R]
         val pct               = request.nextPacket[Packet]
-        val senderName        = toName(bundle.coords.senderTag)
+        val senderName        = retrieveNT(bundle.coords.senderTag)
         AppLoggers.GNOM.trace(s"Handling presence request bundle, request from $senderName. packet : $pct")
         pct match {
             case EmptyPacket =>

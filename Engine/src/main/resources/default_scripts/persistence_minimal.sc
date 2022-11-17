@@ -1,3 +1,4 @@
+import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.tag.{Current, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.engine.gnom.network.NetworkDataTrunk
@@ -13,11 +14,13 @@ import java.nio.file.Path
 
 //Start Of Context
 val builder: PersistenceConfigBuilder = null
-val network: Network
+val connection: ConnectionContext
 
 import builder._
 
 //ENd Of Context
+
+def network = connection.network
 
 putContextReference(1, EmptyPacket)
 putContextReference(2, Identity(Nil))

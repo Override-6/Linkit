@@ -44,7 +44,8 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
                     case s"$prefix.$name" if array.lastOption.contains(prefix) => Class.forName(packageName + "." + name)
                 }
             case ClassImport(pck, 1)                                                  => {
-                case name if Try(Class.forName(pck + "." + name)).isSuccess => Class.forName(pck + "." + name)
+                case name if Try(Class.forName(pck + "." + name)).isSuccess =>
+                    Class.forName(pck + "." + name)
             }
             case ClassImport(rootPck, 2)                                              => {
                 case name if MappedClassesTree.getClass(rootPck, name).isDefined =>
@@ -59,12 +60,12 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
         val pureName   = name.take(arrayIndex)
         val arrayDepth = (name.length - pureName.length) / 2
         val clazz      = imports
-                .find(x => x.isDefinedAt(pureName)).map(_.apply(pureName))
+                .find(_.isDefinedAt(pureName)).map(_.apply(pureName))
                 .orElse(Try(Class.forName(pureName)).toOption)
                 .orElse(PrimitiveClasses.get(pureName))
                 .orElse(Try(Class.forName("java.lang." + pureName)).toOption)
                 .getOrElse {
-                    throw new BHVLanguageException(s"Unknown class '$pureName' ${if (!pureName.contains(".")) ", is it imported ?" else ""}")
+                    bhve(s"Unknown class '$pureName' ${if (!pureName.contains(".")) ", is it imported ?" else ""}")
                 }
         lambdas.addImportedClass(clazz)
         (0 until arrayDepth).foldLeft[Class[_]](clazz)((cl, _) => cl.arrayType())
@@ -84,22 +85,24 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
             name + s"_array_$arrayDepth"
     }
 
+    private def bhve(msg: String): Nothing = throw new BHVLanguageException(msg)
+
     def getMethodDescFromSignature(kind: DescriptionKind, signature: MethodSignature, classDesc: SyncStructureDescription[_]): SMethodDescription = {
         val name   = signature.methodName
-        val params = signature.params.map(param => findClass(param.tpe.tpe)).toArray
+        val params = signature.params.map(param => findClass(param.tpe.tpe.getOrElse(bhve("Parameter need to be typed")))).toArray
         if (!classDesc.specs.isInstanceOf[SyncClassDefUnique])
-            throw new BHVLanguageException("class description's sync class definition is not 'unique' ")
+            bhve("class description's sync class definition is not 'unique' ")
         val method = {
             try classDesc.specs.mainClass.getDeclaredMethod(name, params: _*)
             catch {
-                case _: NoSuchMethodException => throw new BHVLanguageException(s"Unknown method $signature in ${classDesc.specs}")
+                case _: NoSuchMethodException => bhve(s"Unknown method $signature in ${classDesc.specs}")
             }
         }
         val static = Modifier.isStatic(method.getModifiers)
         //checking if method is valid depending on the description context
         kind match {
-            case StaticsDescription if !static                            => throw new BHVLanguageException(s"Method '$signature' is not static.")
-            case _@(LeveledDescription(_) | RegularDescription) if static => throw new BHVLanguageException(s"Method '$signature' is static. ")
+            case StaticsDescription if !static                            => bhve(s"Method '$signature' is not static.")
+            case _@(LeveledDescription(_) | RegularDescription) if static => bhve(s"Method '$signature' is static. ")
             case _                                                        =>
         }
 
@@ -111,14 +114,14 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
         val clazz     = classDesc.specs
         val fieldDesc = {
             classDesc.listFields().find(_.javaField.getName == name).getOrElse {
-                throw new BHVLanguageException(s"Unknwown field $name in $clazz")
+                bhve(s"Unknwown field $name in $clazz")
             }
         }
         val field     = fieldDesc.javaField
         val static    = Modifier.isStatic(field.getModifiers)
         kind match {
-            case StaticsDescription if !static                            => throw new BHVLanguageException(s"Field $name is not static.")
-            case _@(LeveledDescription(_) | RegularDescription) if static => throw new BHVLanguageException(s"Field $name is static. ")
+            case StaticsDescription if !static                            => bhve(s"Field $name is not static.")
+            case _@(LeveledDescription(_) | RegularDescription) if static => bhve(s"Field $name is static. ")
             case _                                                        =>
         }
         fieldDesc

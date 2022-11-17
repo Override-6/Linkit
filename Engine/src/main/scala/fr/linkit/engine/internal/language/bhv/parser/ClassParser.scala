@@ -16,7 +16,6 @@ package fr.linkit.engine.internal.language.bhv.parser
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
-import fr.linkit.engine.internal.language.bhv.ast
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
@@ -37,18 +36,13 @@ object ClassParser extends BehaviorLanguageParser {
             repsep(property, Comma.?)
         }
 
-        /*MAINTAINED val methodModifierParser       = {
-            ((identifier | ReturnValue ^^^ "returnvalue") <~ Arrow) ~ (identifier | modifiers) ^^ {
-                case target ~ (ref: String)                 => ValueModifierReference(target, ref)
-                case target ~ (mods: Seq[LambdaExpression]) => ModifierExpression(target, mods.find(_.kind == ast.In), mods.find(_.kind == ast.Out))
-            }
-        }*/
         val dispatcher              = {
             // we can either reference an agreement or define one directly into this method declaration.
             val anb = AgreementBuilderParser.anonymous
-            FatArrow ~> (((((identifier ^^ AgreementReference).? <~ Colon) ~ anb) ^^ {
+            val ref = identifier ^^ AgreementReference
+            FatArrow ~> ((((ref.? <~ Colon) ~ anb) ^^ {
                 case ref ~ agreement => AgreementBuilder(ref.map(_.name), agreement.instructions)
-            }) | anb)
+            }) | anb | ref)
         }
         val invHandlingTypeParser   = (Ensinv ^^^ EnableSubInvocations | Disinv ^^^ DisableSubInvocations) | success(Inherit)
         val foreachMethodParameters = ParenLeft ~ ParenRight withErrorMessage "generic method definitions cannot contain parameter"
@@ -64,19 +58,20 @@ object ClassParser extends BehaviorLanguageParser {
         val foreachMethod           = foreachMethodEnable | foreachMethodDisable
         val foreachFields           = syncParser <~ Star ^^ (new FieldDescription(_))
         val methodSignature         = {
-            val synchronizedType = syncParser ~ typeParser ^^ { case syncLevel ~ tpe => SynchronizedType(syncLevel, tpe) }
-            val param            = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case syncLevel ~ name ~ tpe => MethodParam(name, SynchronizedType(syncLevel, tpe)) }
+            val synchronizedType = syncParser ~ typeParser.? ^^ { case syncLevel ~ tpe => SynchronizedType(syncLevel, tpe) }
+            val param            = syncParser ~ (identifier <~ Colon).? ~ typeParser ^^ { case syncLevel ~ name ~ tpe => MethodParam(name, SynchronizedType(syncLevel, Some(tpe))) }
             val params           = repsep(param, Comma)
 
-            (identifier <~ Dot).? ~ identifier ~ (ParenLeft ~> params <~ ParenRight).? ~ (Colon ~> synchronizedType).? ^^ { case targetClass ~ name ~ params ~ rstpe => MethodSignature(targetClass, name, params.getOrElse(Seq()), rstpe) }
+            (identifier <~ Dot).? ~ identifier ~ (ParenLeft ~> params <~ ParenRight).? ~ (Colon ~> synchronizedType).? ^^ {
+                case targetClass ~ name ~ params ~ rstpe =>
+                    val s = MethodSignature(targetClass, name, params.getOrElse(Seq()), rstpe)
+                    println(s)
+                    s
+            }
         }
 
-
-        /* val enabledMethodCore          = {
-             (BracketLeft ~> rep(methodModifierParser) ~ returnvalueState <~ BracketRight) | success(List() ~~ RegistrationState(false, NotRegistered))
-         }*/
         val enabledMethodParser        = {
-            invHandlingTypeParser ~ properties ~ (Enable.? ~> methodSignature) ~ dispatcher.? /*~ enabledMethodCore*/ ^^ {
+            invHandlingTypeParser ~ properties ~ (Enable.? ~> methodSignature) ~ dispatcher.? ^^ {
                 case invMethod ~ properties ~ sig ~ agreement =>
                     EnabledMethodDescription(invMethod, properties, agreement)(sig)
             }
@@ -85,7 +80,7 @@ object ClassParser extends BehaviorLanguageParser {
             Disable ~> methodSignature ^^ (DisabledMethodDescription(_))
         }
         val hiddenMethodParser         = {
-            Hide ~> Method ~> methodSignature ~ literal.? ^^ { case sig ~ msg => HiddenMethodDescription(msg)(sig) }
+            Hide ~> Method.? ~> methodSignature ~ literal.? ^^ { case sig ~ msg => HiddenMethodDescription(msg)(sig) }
         }
         val methodsParser              = enabledMethodParser | disabledMethodParser | hiddenMethodParser
         val fieldsParser               = (identifier <~ Dot).? ~ syncParser ~ identifier ^^ { case clazz ~ state ~ name => AttributedFieldDescription(clazz, name, state) }

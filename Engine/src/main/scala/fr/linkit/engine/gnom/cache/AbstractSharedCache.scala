@@ -25,8 +25,8 @@ abstract class AbstractSharedCache(channel: CachePacketChannel) extends Abstract
 
     override val family: String = manager.family
 
-    override val ownerTag: UniqueTag with NetworkFriendlyEngineTag = channel.ownerTag
-    override val cacheID : Int                                     = channel.cacheID
+    override val ownerTag : UniqueTag with NetworkFriendlyEngineTag = channel.ownerTag
+    override val cacheID  : Int                                     = channel.cacheID
     override val reference: SharedCacheReference                    = new SharedCacheReference(family, cacheID)
     override val presence : NetworkObjectPresence                   = manager.getCachesLinker.getPresence(reference)
 

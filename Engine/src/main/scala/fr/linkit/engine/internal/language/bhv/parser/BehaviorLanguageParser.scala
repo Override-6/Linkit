@@ -52,6 +52,6 @@ abstract class BehaviorLanguageParser extends Parsers {
         }
     }
     
-    protected def log[P](parser: Parser[P]): Parser[P] = super.log(parser)(parser.toString())
+    protected def logl[P](parser: Parser[P]): Parser[P] = super.log(parser)(parser.toString())
     
 }

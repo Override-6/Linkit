@@ -13,15 +13,16 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
+import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
 import fr.linkit.api.gnom.persistence.obj.{TrafficObjectReference, TrafficReference}
-import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel}
-import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
+import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel}
 import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
-class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: AbstractPacketTraffic) extends
-        AbstractNetworkPresenceHandler[TrafficReference](null, omc) with NetworkObjectLinker[TrafficReference] {
+class TrafficNetworkObjectLinker(omc: ObjectManagementChannel, traffic: AbstractPacketTraffic, selector: EngineSelector) extends
+        AbstractNetworkPresenceHandler[TrafficReference](None, omc, selector) with NetworkObjectLinker[TrafficReference] {
 
     override def findObject(reference: TrafficReference): Option[NetworkObject[_ <: TrafficReference]] = {
         reference match {

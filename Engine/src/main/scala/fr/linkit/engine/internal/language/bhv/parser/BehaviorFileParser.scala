@@ -39,9 +39,9 @@ object BehaviorFileParser extends BehaviorLanguageParser {
     }*/
 
     private val fileParser = {
-        phrase(rep(nameParser | importParser | classParser |
-                codeBlockParser | agreementParser |
-                optionParser))
+        phrase(rep(nameParser | importParser |
+                optionParser | codeBlockParser |
+                agreementParser | classParser))
     }
 
     def parse(context: ParserContext[Elem]): BehaviorFileAST = try {

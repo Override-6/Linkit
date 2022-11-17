@@ -30,7 +30,7 @@ import scala.collection.mutable
  * Special [[ContextObjectLinker]] for the
  * [[fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel]]
  * */
-class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extends ContextObjectLinker {
+class OMCContextObjectLinker(builder: PersistenceConfigBuilder) extends ContextObjectLinker {
 
     private val codeToRef = mutable.HashMap.empty[Int, AnyRef]
     private val refToCode = mutable.HashMap.empty[AnyRef, Int]
@@ -81,7 +81,7 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
         this
     }
 
-    override def transferTo(linker: ContextObjectLinker): ObjectChannelContextObjectLinker.this.type = {
+    override def transferTo(linker: ContextObjectLinker): OMCContextObjectLinker.this.type = {
         linker ++= codeToRef.toMap
         this
     }

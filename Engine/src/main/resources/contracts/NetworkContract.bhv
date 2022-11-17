@@ -1,4 +1,5 @@
 name "NetworkContract"
+
 import fr.linkit.api.gnom.**
 import fr.linkit.engine.gnom.**
 import fr.linkit.engine.internal.mapping.*
@@ -9,18 +10,18 @@ agreement current_and_origin = discard * -> accept current, owner -> appoint cur
 agreement broadcast_appoint_owner = accept * -> appoint owner
 
 describe EngineImpl {
-    addTag(EngineTag)    => broadcast
-    removeTag(EngineTag) => broadcast
+    addTag(NetworkFriendlyEngineTag)    => broadcast
+    removeTag(NetworkFriendlyEngineTag) => broadcast
 }
-describe NetworkDataTrunk {
+describe NetworkDataTrunk [sync] {
     sync staticAccesses
 
     newEngine(String) => accept * -> appoint owner
-    addEngine(sync DefaultEngine) //protected method
+    addEngine(sync EngineImpl) //protected method
 }
 
 describe StaticAccesses {
-    newStaticAccess0(int, ContractDescriptorData) following broadcast
+    newStaticAccess0(int, ContractDescriptorData) => broadcast
 }
 
 describe RemoteClassMappings {

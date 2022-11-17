@@ -42,13 +42,10 @@ object TagSelection {
 
         def unary_!(): Not[A] = Not(tag)
 
-        def -[B >: A](other: B with EngineTag): TagSelection[B with EngineTag] = Intersection(tag, !other)
         def -[B >: A](other: TagSelection[B with EngineTag]): TagSelection[B with EngineTag] = Intersection(tag, !other)
 
-        def U[B >: A](other: B with EngineTag): TagSelection[B with EngineTag] = Union(tag, other)
         def U[B >: A](other: TagSelection[B with EngineTag]): TagSelection[B with EngineTag] = Union(tag, other)
 
-        def I[B >: A](other: B with EngineTag): TagSelection[B with EngineTag] = Intersection(tag, other)
         def I[B >: A](other: TagSelection[B with EngineTag]): TagSelection[B with EngineTag] = Intersection(tag, other)
 
     }
@@ -58,11 +55,8 @@ object TagSelection {
     implicit class SelectOps[A <: EngineTag](tag: TagSelection[A]) {
         def unary_!(): Not[A] = Not(tag)
 
-        def -[B >: A](other: B with EngineTag): TagSelection[B with EngineTag] = Intersection(tag, !other)
         def -[B >: A](other: TagSelection[B with EngineTag]): TagSelection[B with EngineTag] = Intersection(tag, !other)
-        def U[B >: A](other: B with EngineTag): TagSelection[B with EngineTag] = Union(tag, other)
         def U[B >: A](other: TagSelection[B with EngineTag]): TagSelection[B with EngineTag] = Union(tag, other)
-        def I[B >: A](other: B with EngineTag): TagSelection[B with EngineTag] = Intersection(tag, other)
         def I[B >: A](other: TagSelection[B with EngineTag]): TagSelection[B with EngineTag] = Intersection(tag, other)
 
     }

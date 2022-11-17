@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.referencing.linker
 
+import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
@@ -20,7 +21,8 @@ import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
-class MapNetworkObjectLinker(omc: ObjectManagementChannel) extends AbstractNetworkPresenceHandler[NetworkObjectReference](null, omc) with NetworkObjectLinker[NetworkObjectReference] {
+class MapNetworkObjectLinker(omc: ObjectManagementChannel, selector: EngineSelector)
+        extends AbstractNetworkPresenceHandler[NetworkObjectReference](None, omc, selector) with NetworkObjectLinker[NetworkObjectReference] {
 
     private val map = mutable.HashMap.empty[NetworkObjectReference, NetworkObject[NetworkObjectReference]]
 

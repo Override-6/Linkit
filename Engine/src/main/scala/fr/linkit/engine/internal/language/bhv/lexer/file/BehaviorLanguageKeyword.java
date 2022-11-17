@@ -16,9 +16,10 @@ package fr.linkit.engine.internal.language.bhv.lexer.file;
 import fr.linkit.engine.internal.language.bhv.lexer.Keyword;
 
 public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
-    Import, Describe, Code, Stub, Name,
+    Import,
+    Describe, Code, Stub, Name,
     Mirror, Statics,
-    Method, Following, Enable, Disable, Hide, Ensinv, Disinv,
+    Method, Enable, Disable, Hide, Ensinv, Disinv,
     Sync, Chip, Regular,
     /*Modifier,*/ In, Out,
     //Agreements

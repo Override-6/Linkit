@@ -47,9 +47,9 @@ class ServerConnection(applicationContext: ServerApplication,
     private  val workerPool  : WorkerPool       = VirtualProcrastinator(currentName)
     private  val serverSocket: ServerSocket     = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    private  val serverTraffic     : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
+    private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)
+    private  val serverTraffic     : ServerPacketTraffic        = sideNetwork.traffic
     override val traffic           : PacketTraffic              = serverTraffic
-    private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(serverTraffic)
     override val network           : Network                    = sideNetwork
     @volatile private var alive    : Boolean                    = false
 

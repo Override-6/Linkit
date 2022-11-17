@@ -13,6 +13,8 @@
 
 package fr.linkit.engine.gnom.persistence.config.script
 
+import fr.linkit.api.application.connection.ConnectionContext
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile}
 import fr.linkit.engine.application.LinkitApplication
@@ -69,8 +71,7 @@ case class PersistenceScriptConfigContext(private val scriptCode: String,
 object PersistenceScriptConfigContext {
 
     final val DefaultScriptConfigParameter = Map(
-        "app" -> classOf[LinkitApplication],
-        "traffic" -> classOf[PacketTraffic]
+        "connection" -> classOf[ConnectionContext]
     )
     final val LineComment                  = "//"
     final val EndOfContext                 = "EndOfContext".toLowerCase

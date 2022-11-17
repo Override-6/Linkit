@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.gnom.network.tag.Everyone
+import fr.linkit.api.gnom.network.tag.{EngineSelector, Everyone}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
@@ -30,7 +30,7 @@ import fr.linkit.engine.gnom.packet.SimplePacketBundle
 import fr.linkit.engine.gnom.packet.traffic.channel.SystemObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.unit.SequentialInjectionProcessorUnit
 import fr.linkit.engine.gnom.persistence.config.{PersistenceConfigBuilder, SimplePersistenceConfig}
-import fr.linkit.engine.gnom.referencing.linker.ObjectChannelContextObjectLinker
+import fr.linkit.engine.gnom.referencing.linker.OMCContextObjectLinker
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 import fr.linkit.engine.internal.debug.cli.SectionedPrinter
 import fr.linkit.engine.internal.debug.{Debugger, PacketInjectionStep}
@@ -39,22 +39,23 @@ import fr.linkit.engine.internal.util.ClassMap
 import java.net.URL
 import scala.reflect.ClassTag
 
-abstract class AbstractPacketTraffic(defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
+abstract class AbstractPacketTraffic(defaultPersistenceConfigUrl: Option[URL],
+                                     selector: EngineSelector) extends PacketTraffic {
 
-    private  val minimalConfigBuilder                        = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), this)
+    private  val minimalConfigBuilder                        = PersistenceConfigBuilder.fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), connection)
     private  val omcNode                                     = createObjectManagementChannel()
     private  val objectChannel                               = omcNode.injectable
-    override val defaultPersistenceConfig: PersistenceConfig = {
+    override  val defaultPersistenceConfig: PersistenceConfig = {
         defaultPersistenceConfigUrl
-                .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
+                .fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, connection))
                 .transfer(minimalConfigBuilder)
-                .build(null, objectChannel)
+                .build(null, objectChannel, selector)
     }
 
     override  val reference  : TrafficReference      = TrafficReference
     override  val presence   : NetworkObjectPresence = SystemNetworkObjectPresence
     override  val trafficPath: Array[Int]            = Array.empty
-    private   val linker                             = new TrafficNetworkObjectLinker(objectChannel, this)
+    private   val linker                             = new TrafficNetworkObjectLinker(objectChannel, this, selector)
     protected val rootStore                          = new SimplePacketInjectableStore(this, linker, defaultPersistenceConfig, Array.empty)
     @volatile private var closed                     = false
 
@@ -136,7 +137,7 @@ abstract class AbstractPacketTraffic(defaultPersistenceConfigUrl: Option[URL]) e
 
     private def createObjectManagementChannel(): InjectableTrafficNode[ObjectManagementChannel] = {
         val objectChannelConfig = {
-            val linker = new ObjectChannelContextObjectLinker(minimalConfigBuilder)
+            val linker = new OMCContextObjectLinker(minimalConfigBuilder)
             new SimplePersistenceConfig(new ClassMap(), linker)
         }
         val objectChannel       = {

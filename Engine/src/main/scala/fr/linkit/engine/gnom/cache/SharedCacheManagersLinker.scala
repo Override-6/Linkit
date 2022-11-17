@@ -24,7 +24,7 @@ import fr.linkit.engine.gnom.referencing.NOLUtils._
 import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 
 class SharedCacheManagersLinker(network: Network, omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[SharedCacheManagerReference](null, omc)
+        extends AbstractNetworkPresenceHandler[SharedCacheManagerReference](None, omc, network)
                 with InitialisableNetworkObjectLinker[SharedCacheManagerReference] {
 
 

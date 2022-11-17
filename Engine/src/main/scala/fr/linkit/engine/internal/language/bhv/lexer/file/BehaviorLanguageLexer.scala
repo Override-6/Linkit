@@ -25,48 +25,27 @@ import scala.util.parsing.input.CharSequenceReader
 
 object BehaviorLanguageLexer extends AbstractLexer with RegexParsers {
     
-    private var skipWhiteSpace = true
-    
+
     override type Token = BehaviorLanguageToken
     override protected val symbols  = BehaviorLanguageSymbol.values()
     override protected val keywords = BehaviorLanguageKeyword.values()
     
     override protected def symbolsRegex: Regex = BehaviorLanguageSymbol.RegexSymbols
     
-    override def skipWhitespace: Boolean = skipWhiteSpace
+    override def skipWhitespace: Boolean = true
     
     /////////// Parsers
     
-    private val codeBlock     = pos("${" ~> codeBlockParser ^^ CodeBlock)
     private val stringLiteral = pos("\"([^\"\\\\]|\\\\.)*\"".r ^^ (_.drop(1).dropRight(1)) ^^ Literal)
     private val identifier    = pos(identifierParser ^^ Identifier)
     private val numberParser  = pos("[0-9]+(\\.[0-9]+)?".r ^^ Number)
     private val boolParser    = pos("true|false".r ^^ Bool)
     
-    private def codeBlockParser: Parser[String] = {
-        var bracketDepth = 1
-        
-        def code: Parser[String] = {
-            skipWhiteSpace = false
-            ("[}{]|([\\s\\S]+?[}{])".r ^^ { s =>
-                if (s.last == '{') bracketDepth += 1 else bracketDepth -= 1
-                s
-            }) ~! (if (bracketDepth == 0) "" else code) ^^ {
-                case a ~ b =>
-                    skipWhiteSpace = true
-                    bracketDepth = 1
-                    a + b
-            }
-        }
-        
-        code
-    }
-    
     implicit private def tokenToParser(token: Token): Parser[String] = literal(token.toString)
     
     //NOTE: order is important
     private val tokensParser = rep(keywordParser | symbolParser | boolParser | numberParser |
-                                           codeBlock | stringLiteral | identifier)
+                                           stringLiteral | identifier)
     
     def tokenize(input: CharSequenceReader, filePath: String): ParserContext[Token] = {
         parseAll(tokensParser, input) match {

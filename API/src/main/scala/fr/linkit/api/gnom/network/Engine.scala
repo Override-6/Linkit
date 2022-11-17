@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.network
 
-import fr.linkit.api.gnom.network.tag.{EngineTag, GroupTag, IdentifierTag, NameTag, NetworkFriendlyEngineTag, TagSelection}
+import fr.linkit.api.gnom.network.tag.{EngineTag, Group, IdentifierTag, NameTag, NetworkFriendlyEngineTag, TagSelection}
 import fr.linkit.api.gnom.referencing.NetworkObject
 
 import java.sql.Timestamp
@@ -56,7 +56,7 @@ trait Engine extends NetworkObject[EngineReference] {
      * All Engines contains at least one GroupTag which is the [[Everyone]] group tag.
      * If this engine is not the server, and thus is a client, the set will also contain the [[Clients]] group tag
      * */
-    def groups: Set[GroupTag]
+    def groups: Set[Group]
 
     /**
      * @return true if this engine is tagged by the given tag

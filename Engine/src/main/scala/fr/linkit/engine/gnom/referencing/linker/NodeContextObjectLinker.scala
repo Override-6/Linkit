@@ -13,11 +13,12 @@
 
 package fr.linkit.engine.gnom.referencing.linker
 
+import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.{LinkerRequestBundle, ObjectManagementChannel}
-import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.referencing.presence.AbstractNetworkPresenceHandler
 import fr.linkit.engine.gnom.referencing.{ContextObject, ObjectAlreadyReferencedException}
 import fr.linkit.engine.internal.util.Identity
@@ -27,8 +28,8 @@ import java.util
 import java.util.Map.Entry
 import scala.util.Try
 
-class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[ContextualObjectReference](omc.traffic.getTrafficObjectLinker, omc)
+class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: ObjectManagementChannel, selector: EngineSelector)
+        extends AbstractNetworkPresenceHandler[ContextualObjectReference](Some(omc.traffic.getTrafficObjectLinker), omc, selector)
                 with ContextObjectLinker {
 
     private val codeToRef = new util.HashMap[Int, AnyRef]()
@@ -53,7 +54,7 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
     }
 
     override def findObject(reference: ContextualObjectReference): Option[NetworkObject[_ <: ContextualObjectReference]] = {
-        val id = reference.objectID
+        val id     = reference.objectID
         val result = codeToRef.get(id)
         if (result == null && parent != null)
             return parent.findObject(reference)
@@ -66,8 +67,8 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
             Option(new ContextObject(obj, reference))
         }
     }
-    
-    
+
+
     override def transferTo(linker: ContextObjectLinker): this.type = {
         linker ++= codeToRef
                 .entrySet()
@@ -80,7 +81,7 @@ class NodeContextObjectLinker(@Nullable parent: ContextObjectLinker, omc: Object
         bundle.linkerReference match {
             case _: ContextualObjectReference =>
                 super.injectRequest(bundle)
-            case _ if parent != null                                                   =>
+            case _ if parent != null          =>
                 parent.injectRequest(bundle)
         }
     }

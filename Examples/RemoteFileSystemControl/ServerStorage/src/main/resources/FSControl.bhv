@@ -10,34 +10,19 @@ import java.util.function.*
 import java.util.*
 import java.nio.file.**
 
-code ${
-    import scala.collection.mutable
-    import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
-    import fr.linkit.api.gnom.network.Engine
-    val homes = £{@homes: mutable.HashMap[Engine, Path]}
-}
 @autochip(true) //enables auto chip for objects expected as being synchronized / mirrored but whose runtime class can't support generated 'Sync' class generation / overriding.
 
 describe statics Files, System, FileSystems {
-    FileSystems.getDefault() {
-        chip returnvalue
-    }
-    Files.newOutputStream(Path, OpenOption[]) {
-        chip returnvalue
-    }
+    FileSystems.getDefault(): chip FileSystem
+    Files.newOutputStream(Path, OpenOption[]): chip OutputStream
 }
 
 describe WatchService {
     [executor = @watchServiceWorkers]
-    take() following only_owner {
-        chip returnvalue
-    }
+    take(): chip WatchKey => only_owner
 }
 
 describe statics Path {
-    of(path: String, String[]) {
-        path -> in: ${(path, remote) => homes(remote).toString + s"/$path"}
-        chip returnvalue
-    }
-    hide method of(URI) "Please use method of(String, String[]) instead."
+    of(path: String, String[]): chip Path
+    hide of(URI) "Please use method of(String, String[]) instead."
 }

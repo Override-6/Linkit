@@ -32,7 +32,6 @@ import fr.linkit.engine.internal.system.{EngineConstants, InternalLibrariesLoade
 import java.nio.file.{Files, Path}
 import java.util.concurrent.Future
 import java.util.{Objects, Properties}
-import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 abstract class LinkitApplication(configuration: ApplicationConfiguration, appResources: ResourceFolder) extends ApplicationContext {
@@ -87,6 +86,8 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             throw new AppException("Application is already started")
         }
         alive = true
+        AppLoggers.App.debug("Parsing found behavior contracts...")
+        ContractProvider.precompute()
     }
 
 }
@@ -160,11 +161,11 @@ object LinkitApplication {
 
         val appResources        = prepareAppResources(configuration)
         val propertiesResources = appResources.find[LocalResourceFile](AppPropertiesName)
-                                              .getOrElse {
-                                                  val res = appResources.openResource(AppPropertiesName, LocalResourceFile)
-                                                  Files.write(res.getPath, getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes())
-                                                  res
-                                              }
+                .getOrElse {
+                    val res = appResources.openResource(AppPropertiesName, LocalResourceFile)
+                    Files.write(res.getPath, getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes())
+                    res
+                }
         AppLoggers.App.debug("Loading properties...")
         properties.load(Files.newInputStream(propertiesResources.getPath))
         AppLoggers.App.info("Loading Native Libraries...")
@@ -192,7 +193,7 @@ object LinkitApplication {
             path = rootPath,
             listener = resourceListener,
             parent = None
-            )
+        )
         recursiveScan(root)
 
         def recursiveScan(folder: LocalFolder): Unit = {

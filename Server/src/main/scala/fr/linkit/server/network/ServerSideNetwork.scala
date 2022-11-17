@@ -13,21 +13,24 @@
 
 package fr.linkit.server.network
 
+import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.cache.sync.instantiation.New
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
-import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
-import fr.linkit.engine.internal.language.bhv.ContractProvider
 import fr.linkit.server.cache.ServerSharedCacheManager
+import fr.linkit.server.connection.ServerConnection
+import fr.linkit.server.connection.traffic.ServerPacketTraffic
 
-class ServerSideNetwork(traffic: AbstractPacketTraffic)
-        extends AbstractNetwork(traffic) {
+class ServerSideNetwork(connection: ServerConnection)
+        extends AbstractNetwork(connection) {
+
+    override lazy val traffic: ServerPacketTraffic = new ServerPacketTraffic(connection, connection.configuration.defaultPersistenceConfigScript, this)
 
     override protected def createNewCache0(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {
-        new ServerSharedCacheManager(family, this, objectManagementChannel, getStore(managerChannelPath))
+        new ServerSharedCacheManager(family, this, traffic.getObjectManagementChannel, getStore(managerChannelPath))
     }
 
     def attachToCacheManager(family: String): SharedCacheManager = {
@@ -44,7 +47,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
 
     private[network] def newCacheManager(family: String): SharedCacheManager = {
         val store       = networkStore.createStore(family.hashCode)
-        val manager     = new ServerSharedCacheManager(family, this, objectManagementChannel, store)
+        val manager     = new ServerSharedCacheManager(family, this, traffic.getObjectManagementChannel, store)
         val trafficPath = store.trafficPath
         registerSCMReference(manager.reference)
         addCacheManager(manager, trafficPath)
@@ -53,7 +56,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
 
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
-        val contracts = ContractProvider("NetworkContract", ObjectsProperty.defaults(this))
+        val contracts = Contract("NetworkContract", ObjectsProperty.defaults(this))
         globalCaches.attachToCache(0, DefaultConnectedObjectCache[NetworkDataTrunk](this))
                 .syncObject(0, New[NetworkDataTrunk](this), contracts)
     }
@@ -61,7 +64,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
     def removeEngine(identifier: NameTag): Unit = {
         getEngine(identifier).foreach(trunk.removeEngine)
     }
-    
+
     override def initialize(): this.type = {
         declareNewCacheManager("StaticAccesses")
         super.initialize()

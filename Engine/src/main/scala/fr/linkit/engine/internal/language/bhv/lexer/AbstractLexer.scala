@@ -14,6 +14,8 @@
 package fr.linkit.engine.internal.language.bhv.lexer
 
 import fr.linkit.engine.internal.language.bhv.lexer
+import fr.linkit.engine.internal.language.bhv.lexer.file.{BehaviorLanguageKeyword, BehaviorLanguageSymbol}
+
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 import scala.util.parsing.input.Position
@@ -43,11 +45,10 @@ abstract class AbstractLexer extends RegexParsers {
     }
     protected lazy val symbolParser    : Parser[PosToken] = {
         val symbols = this.symbols.map(x => (x.value, x)).toMap
-        pos(symbolsRegex.filter(symbols.contains) ^^ symbols)
+        pos(symbolsRegex ^^ symbols)
     }
     protected lazy val identifierParser: Parser[String]   = {
-        val s = symbols.map(_.value.map("\\" + (_: Char)).mkString("")).mkString("")
-        s"`[^\\s$s]+`".r.map(s => s.slice(1, s.length - 1)) | s"[^\\s$s]+".r
+        s"\\w+".r
     }
     
     override protected def handleWhiteSpace(source: CharSequence, offset: Int): Int = {

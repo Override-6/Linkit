@@ -31,9 +31,7 @@ object ContractProvider extends Contract.Provider {
     private val toPrecompute = mutable.HashSet.empty[(String, String)]
     private val center       = DefaultCompilerCenter
 
-    precompute()
-    private def precompute(): Unit = this.synchronized {
-        AppLoggers.App.debug("Parsing found behavior contracts...")
+    private[engine] def precompute(): Unit = this.synchronized {
         toPrecompute.foreach { case (text, filePath) => precompute(text, filePath) }
         toPrecompute.clear()
     }

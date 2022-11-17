@@ -14,7 +14,7 @@
 package fr.linkit.engine.internal.language.bhv.parser
 
 import fr.linkit.api.gnom.cache.sync.contract.OwnerEngine
-import fr.linkit.api.gnom.network.tag.{Current, EngineTag, GroupTag, IdentifierTag, NameTag, Nobody, Server}
+import fr.linkit.api.gnom.network.tag.{Current, EngineTag, Group, IdentifierTag, NameTag, Nobody, Server}
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageSymbol._
@@ -37,10 +37,9 @@ object AgreementBuilderParser extends BehaviorLanguageParser {
 
     private def block[P](parser: Parser[P]): Parser[P] = BracketLeft ~> parser <~ BracketRight
 
-    private val instructions = repsep(instruction, Arrow).pipe(p => block(p) | p)
+    private val instructions = rep1sep(instruction, Arrow).pipe(p => block(p) | p)
 
     private val agreementParser = {
-
         Agreement ~> (identifier <~ Equal) ~ instructions ^^ {
             case name ~ instructions => AgreementBuilder(Some(name), instructions)
         }
@@ -51,14 +50,16 @@ object AgreementBuilderParser extends BehaviorLanguageParser {
 
     private implicit def toToken(token: Elem): Parser[Elem] = accept(token)
 
-    def getTag(name: String): EngineTag = (name.toLowerCase: @switch) match {
-        case "server"  => Server
-        case "current" => Current
-        case "owner"   => OwnerEngine
-        case "nobody"  => Nobody
-        case s"#$id"   => IdentifierTag(id)
-        case s"@$gp"   => GroupTag(gp)
-        case s"~$name" => NameTag(name)
+    def getTag(name: String): EngineTag = {
+        name.toLowerCase match {
+            case "server"  => Server
+            case "current" => Current
+            case "owner"   => OwnerEngine
+            case "nobody"  => Nobody
+            case s"#$id"   => IdentifierTag(id)
+            case s"@$gp"   => Group(gp)
+            case s"~$name" => NameTag(name)
+        }
     }
 
 }

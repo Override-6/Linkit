@@ -23,7 +23,6 @@ import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.network.tag._
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.referencing.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectLinker}
-import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.SharedCacheManagersLinker
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
@@ -37,24 +36,28 @@ import fr.linkit.engine.internal.mapping.RemoteClassMappings
 
 import java.sql.Timestamp
 
-abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
+abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    override       val reference                                           = NetworkReference
-    override       val connection             : ConnectionContext          = traffic.connection
-    protected      val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
-    protected      val networkStore           : PacketInjectableStore      = traffic.createStore(0)
-    private        val currentIdentifier      : String                     = connection.currentName
-    private        val tnol                                                = traffic.getTrafficObjectLinker
-    private        val rnol                                                = new MapNetworkObjectLinker(objectManagementChannel) with RemainingNetworkObjectLinker
-    private        val scnol                  : SharedCacheManagersLinker  = new SharedCacheManagersLinker(this, objectManagementChannel)
-    override lazy  val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(objectManagementChannel, this, scnol, tnol, rnol)
-    override lazy  val globalCaches           : SharedCacheManager         = createNewCache(GlobalCacheID, Array(GlobalCacheID.hashCode))
-    protected lazy val trunk                  : NetworkDataTrunk           = initDataTrunk()
-    private var engine0                       : Engine                     = _
-    private var staticAccesses                : StaticAccesses             = _
+    override       val reference                                = NetworkReference
+    protected      val networkStore: PacketInjectableStore      = traffic.createStore(0)
+    private        val currentName : String                     = connection.currentName
+    private        val tnol                                     = traffic.getTrafficObjectLinker
+    private        val rnol                                     = new MapNetworkObjectLinker(traffic.getObjectManagementChannel, this) with RemainingNetworkObjectLinker
+    private        val scnol       : SharedCacheManagersLinker  = new SharedCacheManagersLinker(this, traffic.getObjectManagementChannel)
+    override lazy  val gnol        : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(traffic.getObjectManagementChannel, this, scnol, tnol, rnol)
+    override lazy  val globalCaches: SharedCacheManager         = createNewCache(GlobalCacheID, Array(GlobalCacheID.hashCode))
+    protected lazy val trunk       : NetworkDataTrunk           = initDataTrunk()
+    private var engine0            : Engine                     = _
+    private var staticAccesses     : StaticAccesses             = _
 
     private var trunkInitializing = false
 
+    def traffic: AbstractPacketTraffic
+
+    override implicit def retrieveNT(uniqueTag: UniqueTag with NetworkFriendlyEngineTag): NameTag = uniqueTag match {
+        case Current => NameTag(currentName)
+        case _       => apply(uniqueTag).nameTag
+    }
 
     override def currentEngine: Engine = engine0
 
@@ -64,7 +67,10 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
 
     override def startUpDate: Timestamp = trunk.startUpDate
 
-    override def listEngines: List[Engine] = trunk.listEngines
+    override def listEngines: List[Engine] = {
+        if (trunkInitializing) Nil
+        else trunk.listEngines
+    }
 
     override def countConnections: Int = trunk.countConnection
 
@@ -97,6 +103,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     }
 
     private def findEngines(selection: NFETSelect, reverseSelection: Boolean): List[Engine] = {
+
         val allEngines      = listEngines
         val selectedEngines = selection match {
             case Select(tag)        => findEngines(tag, reverseSelection)
@@ -178,7 +185,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         gnol
 
         AppLoggers.Connection.debug("Finalizing Network Initialisation.")
-        engine0 = trunk.newEngine(currentIdentifier)
+        engine0 = trunk.newEngine(currentName)
         trunk.reinjectEngines()
         staticAccesses = trunk.staticAccesses
 

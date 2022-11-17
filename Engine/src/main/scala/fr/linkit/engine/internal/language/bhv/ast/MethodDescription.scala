@@ -19,12 +19,12 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 trait MethodDescription
 
 trait AttributedMethodDescription extends MethodDescription {
-    
+
     val signature: MethodSignature
 }
 
 trait AttributedEnabledMethodDescription extends AttributedMethodDescription {
-    
+
    // val modifiers: List[CompModifier]
 }
 
@@ -38,7 +38,7 @@ class EnabledMethodDescription(val invocationHandlingMethod: InvocationHandlingM
                                val syncReturnValue         : RegistrationState) extends MethodDescription
 
 object EnabledMethodDescription {
-    
+
     def apply(invocationHandlingMethod: InvocationHandlingMethod,
               properties: List[MethodProperty],
               dispatch: Option[AgreementProvider])
@@ -51,7 +51,7 @@ object EnabledMethodDescription {
 }
 
 object HiddenMethodDescription {
-    
+
     def apply(hideMessage: Option[String])(sig: MethodSignature): HiddenMethodDescription with AttributedMethodDescription = {
         new HiddenMethodDescription(hideMessage) with AttributedMethodDescription {
             override val signature: MethodSignature = sig
@@ -60,7 +60,7 @@ object HiddenMethodDescription {
 }
 
 case object DisabledMethodDescription {
-    
+
     def apply(sig: MethodSignature): DisabledMethodDescription with AttributedMethodDescription = {
         new DisabledMethodDescription() with AttributedMethodDescription {
             override val signature: MethodSignature = sig
@@ -70,20 +70,26 @@ case object DisabledMethodDescription {
 
 case class MethodProperty(name: String, value: String)
 
-case class SynchronizedType(syncType: RegistrationState, tpe: String)
+case class SynchronizedType(syncType: RegistrationState, tpe: Option[String]) {
+    override def toString: String = syncType.lvl.name().toLowerCase() + tpe.map(" " + _).getOrElse("")
+}
 
 case class MethodParam(name: Option[String], tpe: SynchronizedType) {
-    
+
     override def toString: String = (tpe.syncType.lvl match {
         case SyncLevel.NotRegistered => ""
         case SyncLevel.Chipped       => "chip "
         case SyncLevel.Synchronized  => "sync "
-    }) + tpe
+    }) + name.map(n => s"$n: ").getOrElse("") + tpe.tpe.get
 }
 
 case class MethodSignature(target: Option[String], methodName: String, params: Seq[MethodParam], returnType: Option[SynchronizedType]) {
-    
-    override def toString: String = target.map(_ + ".").getOrElse("") + s"$methodName${params.mkString("(", ",", ")")}"
+
+    override def toString: String = {
+        target.map(_ + ".").getOrElse("") +
+                s"$methodName${params.mkString("(", ",", ")")}" +
+                returnType.map(rt => s": $rt").getOrElse("")
+    }
 }
 
 //case class MethodComponentsModifier(paramsModifiers: Map[Int, CompModifier], rvModifiers: Seq[CompModifier])

@@ -13,9 +13,12 @@
 
 package fr.linkit.api.gnom.cache.traffic
 
-import fr.linkit.api.gnom.cache.{CacheContent, SharedCacheManager}
+import fr.linkit.api.gnom.cache.{CacheContent, SharedCacheManager, SharedCacheReference}
 import fr.linkit.api.gnom.cache.traffic.handler.CacheHandler
+import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
+import fr.linkit.api.gnom.referencing.presence.NetworkPresenceHandler
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 
 /**
  * This channel is given to any [[fr.linkit.api.gnom.cache.SharedCache]]
@@ -36,6 +39,7 @@ trait CachePacketChannel extends RequestPacketChannel {
      */
     val manager: SharedCacheManager
 
+
     /**
      * This cache's identifier
      */
@@ -53,5 +57,6 @@ trait CachePacketChannel extends RequestPacketChannel {
      * @return Some(CacheHandler) if the handler is set, None instead
      */
     def getHandler: Option[CacheHandler]
+
 
 }

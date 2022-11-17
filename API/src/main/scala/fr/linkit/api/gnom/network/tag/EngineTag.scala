@@ -64,31 +64,31 @@ object Server extends IdentifierTag("server")
  * a Magic tag that identifies the current engine.<br>
  * If this tag is sent to an engine, it magically transforms itself to the name tag of the sender
  * */
-object Current extends UniqueTag with NetworkFriendlyEngineTag
+case object Current extends UniqueTag with NetworkFriendlyEngineTag
 
 /**
  * A special tag that selects nobody.<br>
  * Nobody <=> !Everyone
  * */
-object Nobody extends NetworkFriendlyEngineTag
+case object Nobody extends NetworkFriendlyEngineTag
 
 
 /**
  * A Group Tag is a tag that can be attributed to multiple engines in order to define a group, or a set of engine.
  * */
-case class GroupTag(name: String) extends NetworkFriendlyEngineTag {
+case class Group(name: String) extends NetworkFriendlyEngineTag {
     override def toString: String = s"@$name"
 }
 
 /**
  * Includes everyone of the network (server / clients)
  * */
-object Everyone extends GroupTag("everyone")
+object Everyone extends Group("everyone")
 
 /**
  * Includes clients only.<br>
  * Clients <=> !Server
  * */
-object Clients extends GroupTag("clients")
+object Clients extends Group("clients")
 
 

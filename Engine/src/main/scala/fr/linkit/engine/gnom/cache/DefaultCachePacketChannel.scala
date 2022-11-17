@@ -13,14 +13,17 @@
 
 package fr.linkit.engine.gnom.cache
 
-import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.api.gnom.cache.{SharedCacheManager, SharedCacheReference}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.CacheHandler
+import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableFactory
+import fr.linkit.api.gnom.referencing.presence.NetworkPresenceHandler
+import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 
-class DefaultCachePacketChannel(scope: ChannelScope,
+class DefaultCachePacketChannel(scope               : ChannelScope,
                                 override val manager: SharedCacheManager,
                                 override val cacheID: Int) extends SimpleRequestPacketChannel(scope) with CachePacketChannel {
 

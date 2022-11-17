@@ -13,6 +13,9 @@
 
 package fr.linkit.engine.gnom.persistence.config
 
+import fr.linkit.api.application.connection.ConnectionContext
+import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
@@ -133,10 +136,12 @@ class PersistenceConfigBuilder {
         this
     }
     
-    def build(@Nullable storeParent: ContextObjectLinker, omc: ObjectManagementChannel): PersistenceConfig = {
+    def build(@Nullable storeParent: ContextObjectLinker,
+              omc: ObjectManagementChannel,
+              selector: EngineSelector): PersistenceConfig = {
         if (omc == null)
             throw new NullPointerException("ObjectManagementChannel is null")
-        build(new NodeContextObjectLinker(storeParent, omc))
+        build(new NodeContextObjectLinker(storeParent, omc, selector))
     }
     
     private[linkit] def build(linker: ContextObjectLinker): PersistenceConfig = {
@@ -194,11 +199,11 @@ class PersistenceConfigBuilder {
 
 object PersistenceConfigBuilder {
     
-    def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
-        val application = traffic.application
+    def fromScript(url: URL, connection: ConnectionContext): PersistenceConfigBuilder = {
+        val application = connection.getApp
         val script      = ScriptExecutor
                 .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
-                .newScript(application, traffic)
+                .newScript(connection)
         script.execute()
         script
     }

@@ -191,7 +191,7 @@ abstract class AbstractSharedCacheManager(override val family : String,
 
 
     protected object ManagerCachesLinker
-            extends AbstractNetworkPresenceHandler[SharedCacheReference](network.gnol.cacheNOL, omc)
+            extends AbstractNetworkPresenceHandler[SharedCacheReference](Some(network.gnol.cacheNOL), omc, network)
                     with InitialisableNetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH {
 
         override def registerReference(ref: SharedCacheReference): Unit = super.registerReference(ref)

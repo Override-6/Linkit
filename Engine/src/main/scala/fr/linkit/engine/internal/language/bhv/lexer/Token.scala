@@ -26,8 +26,11 @@ trait Symbol extends Token
 
 object Symbol {
     def makeRegex(tokens: Array[Symbol]): Regex = {
-       tokens.map(_.value.map("\\" + _).mkString(""))
+       val r = tokens.sortBy(_.value.length)
+               .reverse
+               .map(_.value.map("\\" + _).mkString("(", "", ")"))
                .mkString("|").r
+        r
     }
 }
 

@@ -143,7 +143,7 @@ class GeneralNetworkObjectLinkerImpl(omc                    : ObjectManagementCh
     }
 
 
-    object SystemObjectPresenceHandler extends AbstractNetworkPresenceHandler[SystemObjectReference](null, omc) {
+    object SystemObjectPresenceHandler extends AbstractNetworkPresenceHandler[SystemObjectReference](null, omc, network) {
 
         def findObject(location: SystemObjectReference): Option[NetworkObject[_ <: SystemObjectReference]] = {
             location match {

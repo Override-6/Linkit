@@ -153,9 +153,10 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
 
     private def verifyAgreement(method: Method, agreement: RMIDispatchAgreement, context: ConnectedObjectContext): Unit = {
         val resolver  = context.resolver
+        import resolver._
         val selection = agreement.selection
 
-        if (resolver.isEquivalent(selection, Nobody))
+        if (selection <=> Nobody)
             throw new BadContractException(s"method agreement $method have nowhere to invoke the method.")
         if (context.syncLevel == Statics)
             return

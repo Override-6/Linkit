@@ -18,6 +18,7 @@ import scala.util.matching.Regex;
 
 public enum BehaviorLanguageSymbol implements BehaviorLanguageToken, Symbol {
     Exclamation("!"),
+
     Equal("="),
     Arrow("->"),
 
@@ -49,6 +50,6 @@ public enum BehaviorLanguageSymbol implements BehaviorLanguageToken, Symbol {
 
     @Override
     public String toString() {
-        return value();
+        return "symbol '" + value() + "'";
     }
 }

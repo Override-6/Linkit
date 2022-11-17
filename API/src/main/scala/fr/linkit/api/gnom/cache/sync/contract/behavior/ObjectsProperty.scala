@@ -60,7 +60,7 @@ object ObjectsProperty {
     def empty(name: String): ObjectsProperty = apply(name)(Map())
     
     def defaults(network: Network): ObjectsProperty = {
-        apply(s"defaults_${network.serverEngine.name}")(Map(
+        apply(s"defaults")(Map(
             "network" -> network,
             "connection" -> network.connection,
             "app" -> network.connection.getApp,
