@@ -18,14 +18,13 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.{OwnerEngine, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.network._
-import fr.linkit.api.gnom.network.tag.TagUtils.TagOps
 import fr.linkit.api.gnom.network.tag._
 
 case class UsageConnectedObjectContext(ownerTag     : NameTag,
                                        classDef     : SyncClassDef,
                                        syncLevel    : SyncLevel,
                                        choreographer: InvocationChoreographer,
-                                       resolver     : EngineResolver) extends ConnectedObjectContext {
+                                       resolver     : EngineSelector) extends ConnectedObjectContext {
 
 
     override def translate(tag: UniqueTag): NameTag = tag match {
@@ -40,15 +39,13 @@ case class UsageConnectedObjectContext(ownerTag     : NameTag,
     }
 
 
-    override def deepTranslate(tag: EngineTag): NetworkFriendlyEngineTag = tag match {
-        case tag: SelectionTag             => tag match {
-            case NotTag(tag)           => !deepTranslate(tag)
-            case UnionTag(tags)        => tags.fold(Nobody)(_ U deepTranslate(_))
-            case IntersectionTag(tags) => tags.fold(Everyone)(_ I deepTranslate(_))
-        }
-        case tag: NetworkFriendlyEngineTag => tag
-        case OwnerEngine                   => ownerTag
-        case _                             => throw new IllegalTagException(s"Unable to translate tag '$tag'")
+    override def deepTranslate(tag: TagSelection[EngineTag]): TagSelection[NetworkFriendlyEngineTag] = tag match {
+        case Select(tag: NetworkFriendlyEngineTag) => tag
+        case Select(OwnerEngine)                   => ownerTag
+        case Not(tag)                              => !deepTranslate(tag)
+        case Union(a, b)                           => deepTranslate(a) U deepTranslate(b)
+        case Intersection(a, b)                    => deepTranslate(a) I deepTranslate(b)
+        case _                                     => throw new IllegalTagException(s"Unable to translate tag '$tag'")
     }
 
     override def withSyncLevel(syncLevel: SyncLevel): ConnectedObjectContext = {

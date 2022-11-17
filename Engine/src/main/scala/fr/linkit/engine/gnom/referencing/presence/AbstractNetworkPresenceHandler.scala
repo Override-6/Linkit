@@ -33,14 +33,14 @@ import scala.collection.mutable
 abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Nullable parent: NetworkPresenceHandler[_ >: R], channel: ObjectManagementChannel)
         extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
-    private val network           = channel.traffic.connection.network
+    private val selector: EngineSelector = channel.traffic.connection.network
     //What other engines thinks about current engine presences states
-    private val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
+    private val internalPresences        = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
     //What current engine thinks about other engines presences states
-    private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
+    private val externalPresences        = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
 
     private def toName(tag: UniqueTag with NetworkFriendlyEngineTag): NameTag = {
-        network.getEngine(tag).getOrElse {
+        selector.getEngine(tag).getOrElse {
             throw new NoSuchElementException(s"Could not find engine tagged with '$tag'")
         }.nameTag
     }
@@ -52,7 +52,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         if (ref eq null)
             throw new NullPointerException()
         externalPresences.getOrElseUpdate(ref, {
-            new ExternalNetworkObjectPresence[R](this, ref)
+            new ExternalNetworkObjectPresence[R](selector, this, ref)
         })
     }
 
@@ -97,7 +97,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
 
     private[referencing] def informPresence(enginesId: Array[NameTag], location: R, presence: ObjectPresenceState): Unit = {
         channel
-                .makeRequest(ChannelScopes(UnionTag(enginesId.toList)))
+                .makeRequest(ChannelScopes(enginesId.toList.foldLeft(Select(Nobody): TagSelection[NetworkFriendlyEngineTag])(_ U _)))
                 .addPacket(AnyRefPacket(presence))
                 .putAttribute(ReferenceAttributeKey, location)
                 .submit()
@@ -109,7 +109,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
         AppLoggers.GNOM.trace(s"Registering Network Object reference $ref in presence handler '${this}'.")
         var presence: InternalNetworkObjectPresence[R] = null
         if (!internalPresences.contains(ref)) {
-            presence = new InternalNetworkObjectPresence[R](this, ref)
+            presence = new InternalNetworkObjectPresence[R](selector, this, ref)
             internalPresences(ref) = presence
         } else {
             presence = internalPresences(ref)
@@ -168,7 +168,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](@Null
     private def isLocationReferenced(location: R): Boolean = {
         val opt = internalPresences.get(location)
         if (opt.isEmpty) {
-            val presence = new InternalNetworkObjectPresence[R](this, location)
+            val presence = new InternalNetworkObjectPresence[R](selector, this, location)
             internalPresences(location) = presence
             val present = findObject(location).isDefined
             if (present) {

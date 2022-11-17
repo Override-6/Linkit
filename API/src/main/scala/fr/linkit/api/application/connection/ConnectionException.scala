@@ -26,7 +26,7 @@ class ConnectionException(@Nullable connection: ConnectionContext,
         if (connection == null)
             return
 
-        val identifier = connection.currentIdentifier
+        val identifier = connection.currentName
         sb.append("An exception occurred with connection '")
                 .append(identifier)
                 .append('\'')
@@ -34,7 +34,7 @@ class ConnectionException(@Nullable connection: ConnectionContext,
             case external: ExternalConnection =>
                 sb.append("\n\t")
                         .append("bound to '")
-                        .append(external.boundIdentifier)
+                        .append(external.boundNT)
                         .append("':\n")
         }
     }

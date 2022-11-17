@@ -15,7 +15,6 @@ package fr.linkit.api.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
 trait ObjectContractFactory {
 
@@ -23,6 +22,5 @@ trait ObjectContractFactory {
 
     def getContract[A <: AnyRef](clazz: Class[A], context: ConnectedObjectContext): StructureContract[A]
 
-    def getInstanceModifier[A <: AnyRef](clazz: Class[A], limit: Class[_ >: A]): ValueModifier[A]
 
 }

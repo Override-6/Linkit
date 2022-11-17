@@ -31,9 +31,9 @@ class ClientPacketWriter(socket    : DynamicSocket,
     override      val traffic          : PacketTraffic     = writerInfo.traffic
     override      val path             : Array[Int]        = writerInfo.path
     private       val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
-    override lazy val network                              = writerInfo.network
-    private lazy  val currentEngineTag                     = network.currentEngine.nameTag
-    private lazy  val serverEngineTag                      = network.serverEngine.nameTag
+    override lazy val selector                             = writerInfo.network
+    private lazy  val currentEngineTag                     = selector.currentEngine.nameTag
+    private lazy  val serverEngineTag                      = selector.serverEngine.nameTag
 
 
     override protected def writePackets(packet: Packet, attributes: PacketAttributes, targets: Seq[NameTag]): Unit = {
@@ -59,8 +59,8 @@ class ClientPacketWriter(socket    : DynamicSocket,
     }
 
     private def send(coords: DedicatedPacketCoordinates)(attributes: PacketAttributes, packet: Packet): Unit = {
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, network)
-        val target       = coords.targetID
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig, selector)
+        val target       = coords.targetNT
         val result       = translator.translate(transferInfo)
         socket.write(result.buff(() => this.ordinal.increment(target)))
     }

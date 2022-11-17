@@ -24,7 +24,7 @@ trait ConnectionContext extends StaticNetworkObject[NetworkConnectionReference.t
     
     override val reference = NetworkConnectionReference
     
-    val currentIdentifier: String
+    val currentName: String
     
     def port: Int
     

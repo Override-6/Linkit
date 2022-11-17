@@ -11,8 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.internal.language.bhv.ast
+package fr.linkit.engine.gnom.cache.sync.contract
 
-case class TypeModifier(typeName: String, in: Option[LambdaExpression], out: Option[LambdaExpression]) extends LambdaExpressionHolder
+import fr.linkit.api.gnom.cache.sync.contract.{SyncLevel, ValueContract}
 
-case class ValueModifier(name: String, typeName: String, in: Option[LambdaExpression], out: Option[LambdaExpression]) extends LambdaExpressionHolder
+case class SimpleValueContract(override val registrationKind: SyncLevel,
+                          override val autoChip        : Boolean) extends ValueContract {
+
+}

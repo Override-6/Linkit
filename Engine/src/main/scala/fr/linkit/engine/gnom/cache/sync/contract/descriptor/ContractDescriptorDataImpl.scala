@@ -27,12 +27,12 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]], name: String) extends ContractDescriptorData {
-    
+
     private val nodeMap = computeDescriptors()
-    
-    
+
+
     private var precompiled: Boolean = false
-    
+
     def precompile(center: SyncClassCenter): Unit = {
         if (isPrecompiled) {
             throw new IllegalStateException("This contract descriptor data has already been pre compiled")
@@ -40,16 +40,16 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         precompileClasses(center)
         precompiled = true
     }
-    
+
     private def precompileClasses(center: SyncClassCenter): Unit = {
         var classes = mutable.HashSet.empty[Class[_]]
         val descs   = groups.flatMap(_.descriptors)
-        
+
         def addClass(clazz: Class[_]): Unit = {
             if (!Modifier.isAbstract(clazz.getModifiers))
                 classes += clazz
         }
-        
+
         descs.foreach(desc => {
             val clazz = desc.targetClass
             desc match {
@@ -58,7 +58,7 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
                 case _                                                   =>
                     addClass(clazz)
             }
-            
+
             desc.fields.filter(_.registrationKind == Synchronized).foreach(f => addClass(f.description.javaField.getType))
             desc.methods.foreach(method => {
                 val javaMethod = method.description.javaMethod
@@ -73,9 +73,9 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         classes -= classOf[Object]
         classes = classes.filterNot(cl => center.isClassGenerated(SyncClassDef(cl)))
                 .filterNot(c => isNotOverrideable(c.getModifiers))
-        
+
         if (classes.isEmpty) {
-            
+
             return
         }
         AppLoggers.Compilation.info(s"Found ${classes.size} classes to compile in their sync versions")
@@ -83,13 +83,13 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         classes.foreach(clazz => AppLoggers.Compilation.debug(s"\tgen.${clazz}Sync"))
         center.preGenerateClasses(classes.toList.map(SyncClassDef(_)))
     }
-    
+
     def isPrecompiled: Boolean = precompiled
-    
+
     override def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A] = {
         nodeMap(clazz).asInstanceOf[StructureBehaviorDescriptorNode[A]]
     }
-    
+
     private def computeDescriptors(): ClassMap[StructureBehaviorDescriptorNode[_]] = {
         val groups             = rearrangeGroups()
         val relations          = new ClassMap[ContractClassRelation[AnyRef]]()
@@ -97,8 +97,8 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         if (objDescriptorGroup.clazz != classOf[Object]) {
             throw new BadContractException("No description for java.lang.Object found in given groups.")
         }
-        
-        val objectRelation = new ContractClassRelation[AnyRef](objDescriptorGroup.clazz, objDescriptorGroup.modifier, null)
+
+        val objectRelation = new ContractClassRelation[AnyRef](objDescriptorGroup.clazz, null)
         objDescriptorGroup.descriptors.foreach(objectRelation.addDescriptor)
         relations.put(objDescriptorGroup.clazz, objectRelation)
         for (group <- groups) if (group ne objDescriptorGroup) {
@@ -107,7 +107,7 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
             if (up.targetClass == clazz) {
                 group.descriptors.foreach(up.addDescriptor)
             } else {
-                val rel = new ContractClassRelation[AnyRef](clazz, group.modifier, up)
+                val rel = new ContractClassRelation[AnyRef](clazz, up)
                 group.descriptors.foreach(rel.addDescriptor)
                 relations.put(clazz, cast(rel))
             }
@@ -132,7 +132,7 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         }
         new ClassMap[StructureBehaviorDescriptorNode[_]](result.toMap)
     }
-    
+
     /*
     * Sorting descriptors by their hierarchy rank, and performing
     * checks to avoid multiple descriptor profiles per class
@@ -143,9 +143,9 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
             getClassHierarchicalDepth(a.clazz) - getClassHierarchicalDepth(b.clazz)
         })
     }
-    
+
     private def cast[X](y: Any): X = y.asInstanceOf[X]
-    
+
     private def getClassHierarchicalDepth(clazz: Class[_]): Int = {
         if (clazz == null)
             throw new NullPointerException("clazz is null")
@@ -159,5 +159,5 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         }
         depth
     }
-    
+
 }

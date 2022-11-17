@@ -24,7 +24,7 @@ import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.{StaticsCaller, SynchronizedStaticsCache}
-import fr.linkit.api.gnom.network.tag.EngineResolver
+import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.engine.application.LinkitApplication
@@ -39,7 +39,7 @@ import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 class DefaultConnectedStaticsCache @Persist()(channel                      : CachePacketChannel,
                                               classCenter                  : SyncClassCenter,
                                               override val defaultContracts: ContractDescriptorData,
-                                              resolver                     : EngineResolver,
+                                              resolver                     : EngineSelector,
                                               omc                          : ObjectManagementChannel)
         extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, resolver, omc) with SynchronizedStaticsCache {
 

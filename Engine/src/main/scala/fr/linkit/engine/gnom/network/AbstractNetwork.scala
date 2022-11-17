@@ -43,7 +43,7 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
     override       val connection             : ConnectionContext          = traffic.connection
     protected      val objectManagementChannel: ObjectManagementChannel    = traffic.getObjectManagementChannel
     protected      val networkStore           : PacketInjectableStore      = traffic.createStore(0)
-    private        val currentIdentifier      : String                     = connection.currentIdentifier
+    private        val currentIdentifier      : String                     = connection.currentName
     private        val tnol                                                = traffic.getTrafficObjectLinker
     private        val rnol                                                = new MapNetworkObjectLinker(objectManagementChannel) with RemainingNetworkObjectLinker
     private        val scnol                  : SharedCacheManagersLinker  = new SharedCacheManagersLinker(this, objectManagementChannel)
@@ -79,32 +79,30 @@ abstract class AbstractNetwork(traffic: AbstractPacketTraffic) extends Network {
         }
     }
 
-    override def exists(tag: NetworkFriendlyEngineTag): Boolean = tag match {
-        case Nobody => true
-        case tag    => listEngines.exists(_.isTagged(tag))
+    override def exists(selection: NFETSelect): Boolean = selection match {
+        case Select(Nobody) => true
+        case selection      => listEngines.exists(_.isIncluded(selection))
     }
 
 
-    override def isIncluded(a: NetworkFriendlyEngineTag, b: NetworkFriendlyEngineTag): Boolean = {
+    override def isIncluded(a: NFETSelect, b: NFETSelect): Boolean = {
         //TODO optimize
-        listEngines(a).forall(_.isTagged(b))
+        listEngines(a).forall(_.isIncluded(b))
     }
 
-    override def listEngines(tag: NetworkFriendlyEngineTag): List[Engine] = {
+    override def listEngines(tag: NFETSelect): List[Engine] = {
         if (trunkInitializing)
             return Nil
         findEngines(tag, false)
     }
 
-    private def findEngines(tag: NetworkFriendlyEngineTag, reverseSelection: Boolean): List[Engine] = {
+    private def findEngines(selection: NFETSelect, reverseSelection: Boolean): List[Engine] = {
         val allEngines      = listEngines
-        val selectedEngines = tag match {
-            case NotTag(tag)    => findEngines(tag, !reverseSelection)
-            case UnionTag(tags) => tags.flatMap(listEngines)
-            case _              => tag match {
-                case id: UniqueTag with NetworkFriendlyEngineTag => getEngine(id).toList
-                case other: NetworkFriendlyEngineTag             => trunk.listEngines(other)
-            }
+        val selectedEngines = selection match {
+            case Select(tag)        => findEngines(tag, reverseSelection)
+            case Not(tag)           => findEngines(tag, !reverseSelection)
+            case Union(a, b)        => listEngines(a) ::: listEngines(b)
+            case Intersection(a, b) => listEngines(a) intersect listEngines(b)
         }
         if (reverseSelection)
             allEngines.diff(selectedEngines)

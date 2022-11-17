@@ -36,7 +36,7 @@ import fr.linkit.engine.internal.debug.{CacheOpenStep, Debugger}
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
-import fr.linkit.api.gnom.network.tag.TagUtils._
+import fr.linkit.api.gnom.network.tag.TagSelection._
 
 abstract class AbstractSharedCacheManager(override val family : String,
                                           override val network: Network,
@@ -44,7 +44,7 @@ abstract class AbstractSharedCacheManager(override val family : String,
                                           store               : PacketInjectableStore) extends SharedCacheManager {
 
     protected val channel          : SimpleRequestPacketChannel  = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes(!Current))
-    protected val currentIdentifier: String                      = network.connection.currentIdentifier
+    protected val currentIdentifier: String                      = network.connection.currentName
     override  val reference        : SharedCacheManagerReference = new SharedCacheManagerReference(family)
 
     channel.addRequestListener(handleRequest)

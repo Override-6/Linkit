@@ -26,7 +26,7 @@ import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeEx
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{CacheAttachHandler, CacheContentHandler}
 import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
-import fr.linkit.api.gnom.network.tag.{Current, EngineResolver, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{Current, EngineSelector, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
@@ -60,7 +60,7 @@ import scala.util.control.NonFatal
 class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                      : CachePacketChannel,
                                                          classCenter                  : SyncClassCenter,
                                                          override val defaultContracts: ContractDescriptorData,
-                                                         resolver                     : EngineResolver,
+                                                         resolver                     : EngineSelector,
                                                          omc                          : ObjectManagementChannel)
         extends AbstractSharedCache(channel) with InternalConnectedObjectCache[A] {
 

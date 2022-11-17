@@ -13,16 +13,14 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
+import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, SyncLevel}
-import SyncLevel._
 import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 
 import scala.collection.mutable.ListBuffer
 
 class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
-                                         modifier: Option[ValueModifier[A]],
                                          nextSuperRelation: ContractClassRelation[_ >: A]) {
     relation =>
 
@@ -122,7 +120,7 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
 
             val interfaces: Array[StructureBehaviorDescriptorNodeImpl[_ >: A]] = interfaceRelation.map(_.asNode).toArray
 
-            node = try new StructureBehaviorDescriptorNodeImpl[A](targetClass, descs, modifier, nextSuperNode, interfaces)
+            node = try new StructureBehaviorDescriptorNodeImpl[A](targetClass, descs, nextSuperNode, interfaces)
             finally nodeInitialized = true
         }
         node

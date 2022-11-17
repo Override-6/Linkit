@@ -40,7 +40,7 @@ case class SimpleTransferInfo(override val coords: DedicatedPacketCoordinates,
             override val packetID  : String = s"@${coords.path.mkString("/")}$$${coords.senderTag}:??" //ordinal can't be known at serialisation
             override val network   : Network           = SimpleTransferInfo.this.network
             override val buff      : ByteBuffer = buffer
-            override val boundNT   : NameTag     = coords.targetID
+            override val boundNT   : NameTag     = coords.targetNT
             override val packetPath: Array[Int] = coords.path
             override val config    : PersistenceConfig = info.config
         })

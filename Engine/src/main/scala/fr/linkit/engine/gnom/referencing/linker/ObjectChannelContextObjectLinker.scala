@@ -13,16 +13,16 @@
 
 package fr.linkit.engine.gnom.referencing.linker
 
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.packet.PacketCoordinates
 import fr.linkit.api.gnom.persistence.context.ContextualObjectReference
+import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
-import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceState}
+import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.api.gnom.referencing.traffic.LinkerRequestBundle
-import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.config.PersistenceConfigBuilder
 import fr.linkit.engine.gnom.referencing.presence.SystemNetworkObjectPresence
 import fr.linkit.engine.gnom.referencing.{ContextObject, ObjectAlreadyReferencedException}
-import fr.linkit.engine.internal.util.Identity
 
 import scala.collection.mutable
 
@@ -96,7 +96,7 @@ class ObjectChannelContextObjectLinker(builder: PersistenceConfigBuilder) extend
 
     override def getPresence(ref: ContextualObjectReference): NetworkObjectPresence = SystemNetworkObjectPresence
 
-    override def isPresentOnEngine(engineId: String, ref: ContextualObjectReference): Boolean = {
+    override def isPresentOnEngine(engineId: UniqueTag with NetworkFriendlyEngineTag, ref: ContextualObjectReference): Boolean = {
         true //ObjectManagementChannel only uses objects that are mandatory on all engines
     }
 }

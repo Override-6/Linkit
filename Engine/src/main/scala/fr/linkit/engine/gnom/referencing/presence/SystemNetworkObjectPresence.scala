@@ -13,11 +13,12 @@
 
 package fr.linkit.engine.gnom.referencing.presence
 
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceState}
 
 object SystemNetworkObjectPresence extends NetworkObjectPresence {
 
-    override def getPresenceFor(engineId: String): ObjectPresenceState = ObjectPresenceState.PRESENT
+    override def getPresenceFor(engineId: UniqueTag with NetworkFriendlyEngineTag): ObjectPresenceState = ObjectPresenceState.PRESENT
 
-    override def isPresenceKnownFor(engineId: String): Boolean = true
+    override def isPresenceKnownFor(engineId: UniqueTag with NetworkFriendlyEngineTag): Boolean = true
 }

@@ -13,14 +13,14 @@
 
 package fr.linkit.api.gnom.referencing.presence
 
-import fr.linkit.api.gnom.network.tag.NameTag
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 
 trait NetworkObjectPresence {
 
-    def getPresenceFor(engineName: NameTag): ObjectPresenceState
+    def getPresenceFor(engineName: UniqueTag with NetworkFriendlyEngineTag): ObjectPresenceState
 
-    def isPresenceKnownFor(engineName: NameTag): Boolean
+    def isPresenceKnownFor(engineName: UniqueTag with NetworkFriendlyEngineTag): Boolean
     
-    def isPresentOn(engineName: NameTag): Boolean = getPresenceFor(engineName) eq ObjectPresenceState.PRESENT
+    def isPresentOn(engineName: UniqueTag with NetworkFriendlyEngineTag): Boolean = getPresenceFor(engineName) eq ObjectPresenceState.PRESENT
 
 }

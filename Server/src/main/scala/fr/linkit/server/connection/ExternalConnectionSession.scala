@@ -13,6 +13,7 @@
 
 package fr.linkit.server.connection
 
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.network.{Engine, ExternalConnectionState}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.PacketUpload
@@ -24,9 +25,9 @@ import fr.linkit.server.network.ServerSideNetwork
 import java.net.Socket
 import scala.collection.mutable
 
-case class ExternalConnectionSession private(boundIdentifier: String,
+case class ExternalConnectionSession private(boundNT           : NameTag,
                                              private val socket: SocketContainer,
-                                             info: ExternalConnectionSessionInfo) extends JustifiedCloseable {
+                                             info              : ExternalConnectionSessionInfo) extends JustifiedCloseable {
 
     private[connection] val server           : ServerConnection           = info.server
     private[connection] val network          : ServerSideNetwork          = info.network
@@ -37,7 +38,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
 
     override def close(reason: Reason): Unit = {
         socket.close(reason)
-        network.removeEngine(boundIdentifier)
+        network.removeEngine(boundNT)
     }
 
     def getSocketState: ExternalConnectionState = socket.getState
@@ -51,7 +52,6 @@ case class ExternalConnectionSession private(boundIdentifier: String,
 
     private[connection] def updateSocket(socket: Socket): Unit = this.socket.set(socket)
 
-    def getEntity: Engine = network.getEngine(boundIdentifier).get
 
     override def isClosed: Boolean = socket.isClosed //refers to an used closeable element
 }

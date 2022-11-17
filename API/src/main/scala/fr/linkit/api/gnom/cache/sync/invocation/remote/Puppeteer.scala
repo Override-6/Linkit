@@ -52,7 +52,6 @@ trait Puppeteer[S <: AnyRef] {
     trait RMIDispatcher {
         def broadcast(args: Array[Any]): Unit
 
-        def foreachEngines(action: Engine => Array[Any]): Unit
     }
 
 }

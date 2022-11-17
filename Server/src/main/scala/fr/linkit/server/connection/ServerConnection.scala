@@ -16,6 +16,7 @@ package fr.linkit.server.connection
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.CentralConnection
 import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.internal.concurrency.WorkerPool
@@ -40,11 +41,11 @@ class ServerConnection(applicationContext: ServerApplication,
 
     Debugger.registerConnection(this)
 
-    override val currentIdentifier : String                     = configuration.identifier
-    override val translator        : ObjectTranslator           = configuration.translatorFactory(applicationContext)
-    override val port              : Int                        = configuration.port
-    private  val workerPool        : WorkerPool                 = VirtualProcrastinator(currentIdentifier)
-    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
+    override val currentName : String           = configuration.identifier
+    override val translator  : ObjectTranslator = configuration.translatorFactory(applicationContext)
+    override val port        : Int              = configuration.port
+    private  val workerPool  : WorkerPool       = VirtualProcrastinator(currentName)
+    private  val serverSocket: ServerSocket     = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     private  val serverTraffic     : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
     override val traffic           : PacketTraffic              = serverTraffic
@@ -61,17 +62,17 @@ class ServerConnection(applicationContext: ServerApplication,
 
         val port = configuration.port
 
-        AppLoggers.Connection.info(s"Server '$currentIdentifier' on port $port prepares to shutdown...")
+        AppLoggers.Connection.info(s"Server '$currentName' on port $port prepares to shutdown...")
         applicationContext.unregister(this)
 
         connectionsManager.close()
-        AppLoggers.Connection.info(s"Server '$currentIdentifier' shutdown.")
+        AppLoggers.Connection.info(s"Server '$currentName' shutdown.")
     }
 
     def start(): Unit = {
         if (alive)
             throw new ServerException(this, "Server is already started.")
-        AppLoggers.Connection.info(s"Server '$currentIdentifier' starts on port ${configuration.port}")
+        AppLoggers.Connection.info(s"Server '$currentName' starts on port ${configuration.port}")
         AppLoggers.Connection.debug(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
         sideNetwork.initialize()
 
@@ -86,7 +87,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def isAlive: Boolean = alive
 
-    override def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
+    override def getConnection(identifier: NameTag): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 
     override def countConnections: Int = connectionsManager.countConnections
 
@@ -183,9 +184,9 @@ class ServerConnection(applicationContext: ServerApplication,
             verdict.concludeRefusal(socket)
             return
         }
-        val identifier = verdict.identifier
-        socket.identifier = identifier
-        handleNewConnection(identifier, socket)
+        val name = verdict.name
+        socket.identifier = name
+        handleNewConnection(NameTag(name), socket)
     }
 
     private def loadSocketListener(): Unit = {
@@ -197,13 +198,13 @@ class ServerConnection(applicationContext: ServerApplication,
         thread.start()
     }
 
-    private def handleNewConnection(identifier: String,
-                                    socket    : SocketContainer): Unit = {
+    private def handleNewConnection(name  : NameTag,
+                                    socket: SocketContainer): Unit = {
 
-        val currentConnection = getConnection(identifier)
+        val currentConnection = getConnection(name)
         //There is no currently connected connection with the same identifier on this network.
         if (currentConnection.isEmpty) {
-            connectionsManager.registerConnection(identifier, socket)
+            connectionsManager.registerConnection(name, socket)
             return
         }
 
@@ -212,11 +213,11 @@ class ServerConnection(applicationContext: ServerApplication,
 
     private def handleConnectionIdAmbiguity(conflicted: ServerExternalConnection,
                                             socket    : SocketContainer): Unit = {
-        val identifier = conflicted.boundIdentifier
+        val identifier = conflicted.boundNT
         if (!conflicted.isConnected) {
             conflicted.updateSocket(socket.getCurrent)
             sendAuthorisedConnection(socket)
-            AppLoggers.Connection.info(s"The connection with '${conflicted.boundIdentifier}' has been resumed.")
+            AppLoggers.Connection.info(s"The connection with '${conflicted.boundNT}' has been resumed.")
             return
         }
         val strategy = configuration.identifierAmbiguityStrategy
@@ -246,7 +247,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     private[connection] def sendAuthorisedConnection(socket: DynamicSocket): Unit = {
         socket.write(Array(Rules.ConnectionAccepted))
-        val bytes = currentIdentifier.getBytes()
+        val bytes = currentName.getBytes()
         socket.write(serializeInt(bytes.length) ++ bytes)
     }
 
@@ -256,15 +257,15 @@ class ServerConnection(applicationContext: ServerApplication,
         socket.write(serializeInt(bytes.length) ++ bytes)
     }
 
-    private case class WelcomePacketVerdict(@Nullable("bad-packet-format") identifier: String,
+    private case class WelcomePacketVerdict(@Nullable("bad-packet-format") name      : String,
                                             accepted                                 : Boolean,
                                             @Nullable("accepted=true") refusalMessage: String = null) {
 
         def concludeRefusal(socket: DynamicSocket): Unit = {
-            if (identifier == null) {
+            if (name == null) {
                 AppLoggers.Connection.error(s"An unknown connection have been discarded: $refusalMessage")
             } else {
-                AppLoggers.Connection.error(s"Connection $identifier has been discarded: $refusalMessage")
+                AppLoggers.Connection.error(s"Connection $name has been discarded: $refusalMessage")
             }
             sendRefusedConnection(socket, s"Connection discarded by the server: $refusalMessage")
         }

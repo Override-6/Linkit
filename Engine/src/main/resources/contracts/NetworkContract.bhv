@@ -5,18 +5,17 @@ import fr.linkit.engine.internal.mapping.*
 import java.nio.file.Path
 import java.net.URI
 
-agreement current_and_origin = discard * -> accept current and owner -> appoint current
+agreement current_and_origin = discard * -> accept current, owner -> appoint current
 agreement broadcast_appoint_owner = accept * -> appoint owner
 
 describe EngineImpl {
-    addTag(EngineTag)    => everyone ; broadcast
-    removeTag(EngineTag) => everyone ; broadcast
+    addTag(EngineTag)    => broadcast
+    removeTag(EngineTag) => broadcast
 }
 describe NetworkDataTrunk {
-    staticAccesses() {
-        sync returnvalue
-    }
-    newEngine(String) => anyone ; accept * -> appoint owner
+    sync staticAccesses
+
+    newEngine(String) => accept * -> appoint owner
     addEngine(sync DefaultEngine) //protected method
 }
 
@@ -25,7 +24,7 @@ describe StaticAccesses {
 }
 
 describe RemoteClassMappings {
-    ensinv addClassToMap(String) => anyone ; only_owner
-    onClassMapped(int)           => anyone ; broadcast
-    requestClassName(int)        => anyone ; only_owner
+    ensinv addClassToMap(String) => only_owner
+    onClassMapped(int)           => broadcast
+    requestClassName(int)        => only_owner
 }

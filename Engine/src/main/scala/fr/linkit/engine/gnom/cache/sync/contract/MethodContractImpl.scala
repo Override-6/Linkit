@@ -17,12 +17,11 @@ import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef}
-import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ModifiableValueContract, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, SyncLevel, ValueContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, InvocationChoreographer, InvocationHandlingMethod, MirroringObjectInvocationException}
-import fr.linkit.api.gnom.cache.sync.tree.ObjectConnector
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.network.tag.{Current, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.internal.concurrency.Procrastinator
@@ -37,8 +36,8 @@ import scala.annotation.switch
 class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHandlingMethod,
                             parentChoreographer                  : InvocationChoreographer,
                             agreement                            : RMIDispatchAgreement,
-                            parameterContracts                   : Array[ModifiableValueContract[Any]],
-                            returnValueContract                  : ModifiableValueContract[Any],
+                            parameterContracts                   : Array[ValueContract],
+                            returnValueContract                  : ValueContract,
                             override val description             : MethodDescription,
                             override val hideMessage             : Option[String],
                             @Nullable override val procrastinator: Procrastinator) extends MethodContract[R] {
@@ -83,14 +82,8 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         var result = initialResult
         val kind   = returnValueContract.registrationKind
         if (kind != NotRegistered && !result.isInstanceOf[ConnectedObject[_]]) {
-            val modifier = returnValueContract.modifier.orNull
-            if (modifier != null)
-                result = modifier.toRemote(result, remote)
-            return {
-                if (kind.isConnectable)
-                    syncObj(result, kind, syncAction)
-                else result
-            }
+            if (kind.isConnectable)
+                result = syncObj(result, kind, syncAction)
         }
         result
     }
@@ -124,7 +117,6 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             throw new HiddenMethodInvocationException(hideMessage.get)
         if (isMirroring(obj))
             throw new MirroringObjectInvocationException(s"Attempted to call a method on a distant object representation. This object is mirroring distant object ${obj.reference} on engine ${obj.owner}")
-        modifyArgsIn(origin, args)
         val method = description.javaMethod
         AppLoggers.COInv.debug {
             val name        = method.getName
@@ -145,24 +137,6 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     private def isMirroring(obj: ChippedObject[_]): Boolean = obj match {
         case s: SynchronizedObject[_] => s.isMirroring
         case _                        => false
-    }
-
-    private def modifyArgsIn(engine: Engine, params: Array[Any]): Unit = {
-        val pcLength = parameterContracts.length
-        if (pcLength == 0)
-            return
-        if (params.length != pcLength)
-            throw new IllegalArgumentException("Params array length is not equals to parameter contracts length.")
-        for (i <- 0 until pcLength) {
-            val contract = parameterContracts(i)
-
-            val modifier = contract.modifier.orNull
-            var result   = params(i)
-            if (modifier != null) {
-                result = modifier.fromRemote(result, engine)
-            }
-            params(i) = result
-        }
     }
 
     private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {
@@ -231,45 +205,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     private def makeDispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher,
                              invocation: LocalMethodInvocation[_]): Unit = {
         val args = invocation.methodArguments
-        if (parameterContracts.isEmpty) {
-            dispatcher.broadcast(args)
-            return
-        }
-        val buff = args.clone()
-        dispatcher.foreachEngines(target => {
-            modifyArgsOut(buff, target, invocation.objectNode.reference, invocation.connector)
-            buff
-        })
-    }
-
-    private def modifyArgsOut(args: Array[Any], target: Engine, objRef: ConnectedObjectReference, connector: ObjectConnector): Unit = {
-        def modifyParamOut(idx: Int, param: Any): Any = {
-            var result = param
-            if (parameterContracts.nonEmpty) {
-                val paramContract = parameterContracts(idx)
-
-                val modifier = paramContract.modifier.orNull
-
-                if (modifier != null) {
-                    result = modifier.toRemote(result, target)
-                    if (paramContract.registrationKind != NotRegistered) result match {
-                        //The modification could return a non synchronized object even if the contract wants it to be synchronized.
-                        case ref: AnyRef if !ref.isInstanceOf[ConnectedObject[AnyRef]] =>
-                            result = connector.createConnectedObj(objRef)(ref, paramContract.registrationKind).connected
-                        case _                                                         =>
-                    }
-                }
-            }
-            result
-        }
-
-        for (i <- args.indices) {
-            var finalRef = args(i)
-            if (finalRef != null) {
-                finalRef = modifyParamOut(i, finalRef)
-            }
-            args(i) = finalRef
-        }
+        dispatcher.broadcast(args)
     }
 
     override def toString: String = s"method contract ${description.javaMethod}"

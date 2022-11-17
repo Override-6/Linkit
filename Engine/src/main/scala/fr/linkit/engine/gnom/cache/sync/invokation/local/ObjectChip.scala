@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, MirroringObjectInvocationException}
-import fr.linkit.api.gnom.network.tag.{Current, EngineResolver}
+import fr.linkit.api.gnom.network.tag.{Current, EngineSelector}
 import fr.linkit.api.gnom.network.{Engine, ExecutorEngine}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -31,7 +31,7 @@ import scala.util.control.NonFatal
 
 class ObjectChip[A <: AnyRef] private(contract     : StructureContract[A],
                                       chippedObject: ChippedObject[A],
-                                      resolver     : EngineResolver,
+                                      resolver     : EngineSelector,
                                       defaultPool  : Procrastinator) extends Chip[A] {
 
     private val chipped   = chippedObject.connected
@@ -99,7 +99,7 @@ class ObjectChip[A <: AnyRef] private(contract     : StructureContract[A],
 object ObjectChip {
 
 
-    def apply[S <: AnyRef](contract: StructureContract[S], resolver: EngineResolver,
+    def apply[S <: AnyRef](contract: StructureContract[S], resolver: EngineSelector,
                            pool    : Procrastinator, chippedObject: ChippedObject[S]): ObjectChip[S] = {
         if (chippedObject == null)
             throw new NullPointerException("chipped object is null !")

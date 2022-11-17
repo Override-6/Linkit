@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.network.tag._
 
 trait ConnectedObjectContext {
 
-    val resolver: EngineResolver
+    val resolver: EngineSelector
     val ownerTag: NameTag
     val classDef: SyncClassDef
     val choreographer: InvocationChoreographer
@@ -28,15 +28,7 @@ trait ConnectedObjectContext {
 
     def translate(tag: UniqueTag): NameTag
 
-    def deepTranslate(tag: EngineTag): NetworkFriendlyEngineTag
-
-    def areEquivalent(a: EngineTag, b: EngineTag): Boolean = a match {
-        case au: UniqueTag => b match {
-            case bu: UniqueTag => translate(au) == translate(bu)
-            case _             => false
-        }
-        case _: GroupTag   => a == b
-    }
+    def deepTranslate(tag: TagSelection[EngineTag]): TagSelection[NetworkFriendlyEngineTag]
 
     def withSyncLevel(syncLevel: SyncLevel): ConnectedObjectContext
 }

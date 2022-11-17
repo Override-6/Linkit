@@ -13,7 +13,6 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.BasicInvocationRule._
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIDispatchAgreement}
@@ -22,12 +21,12 @@ import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureCont
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
-import fr.linkit.api.gnom.network.tag.{Current, Nobody}
+import fr.linkit.api.gnom.network.tag.{Current, Nobody, Server}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.LeveledSBDN.{collectInterfaces, findReasonTypeCantBeSync, getSyncableInterface, listMethodIds}
-import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleModifiableValueContract, StructureContractImpl}
+import fr.linkit.engine.gnom.cache.sync.contract.{BadContractException, MethodContractImpl, SimpleValueContract, StructureContractImpl}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import org.jetbrains.annotations.Nullable
 
@@ -174,7 +173,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             if (!map.contains(id)) {
                 val agreement = desc.agreementBuilder.result(context)
                 verifyAgreement(desc.description.javaMethod, agreement, context)
-                val rvContract = desc.returnValueContract.getOrElse(new SimpleModifiableValueContract[Any](NotRegistered, autochip))
+                val rvContract = desc.returnValueContract.getOrElse(SimpleValueContract(NotRegistered, autochip))
                 val contract   = new MethodContractImpl[Any](
                     desc.invocationHandlingMethod, context.choreographer, agreement, desc.parameterContracts,
                     rvContract, desc.description, desc.hideMessage, desc.procrastinator.orNull)
@@ -288,13 +287,13 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             return
         val desc = if (isStatics) SyncStaticsDescription(clazzDef.mainClass) else SyncObjectDescription(clazzDef)
 
-        def determineContract(clazz: Class[_]): ModifiableValueContract[Any] = {
+        def determineContract(clazz: Class[_]): ValueContract = {
             if (!contextLevel.mustBeMirrored() || clazz.isPrimitive || clazz.isArray || (clazz eq classOf[String]))
-                new SimpleModifiableValueContract[Any](NotRegistered, autochip)
+                SimpleValueContract(NotRegistered, autochip)
             else if (findReasonTypeCantBeSync(clazz).isDefined)
-                new SimpleModifiableValueContract[Any](Chipped, autochip)
+                SimpleValueContract(Chipped, autochip)
             else
-                new SimpleModifiableValueContract[Any](Mirror, autochip)
+                SimpleValueContract(Mirror, autochip)
         }
 
         for (id <- missingIds) {
@@ -303,13 +302,13 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                     val jMethod        = md.javaMethod
                     val builder        = new RMIRulesAgreementGenericBuilder()
                     val agreement      = ((contextLevel: @switch) match {
-                        case Synchronized | Chipped => ONLY_CURRENT(builder)
-                        case Mirror                 => ONLY_ORIGIN(builder)
-                        case Statics                => ONLY_CACHE_OWNER(builder)
+                        case Synchronized | Chipped => builder.selection(Current).appointReturn(Current)//ONLY_CURRENT(builder)
+                        case Mirror                 => builder.selection(OwnerEngine).appointReturn(OwnerEngine)//ONLY_ORIGIN(builder)
+                        case Statics                => builder.selection(Server).appointReturn(Server) //TODO: Be able to use statics of any engine instead of server only.
                     }).result(context)
                     val rvContract     = determineContract(jMethod.getReturnType)
                     var paramsContract = md.javaMethod.getParameterTypes.map(determineContract)
-                    if (paramsContract.forall(c => c.registrationKind == NotRegistered && c.modifier.isEmpty))
+                    if (paramsContract.forall(c => c.registrationKind == NotRegistered))
                         paramsContract = Array()
                     val emergencyContract = new MethodContractImpl[Any](
                         InvocationHandlingMethod.Inherit, context.choreographer,
@@ -321,6 +320,8 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             }
         }
     }
+
+
 }
 
 object LeveledSBDN {

@@ -13,13 +13,11 @@
 
 package fr.linkit.engine.internal.language.bhv
 
-import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, ObjectsProperty}
-import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-import fr.linkit.engine.application.LinkitApplication
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileInterpreter, BehaviorFileLambdaExtractor, LangContractDescriptorData}
+import fr.linkit.engine.internal.language.bhv.interpreter.{BehaviorFile, BehaviorFileInterpreter, LangContractDescriptorData}
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageLexer
 import fr.linkit.engine.internal.language.bhv.parser.BehaviorFileParser
 
@@ -33,10 +31,10 @@ object ContractProvider extends Contract.Provider {
     private val toPrecompute = mutable.HashSet.empty[(String, String)]
     private val center       = DefaultCompilerCenter
 
-    private lazy val app = LinkitApplication.getApplication
-
-    def precompute(application: ApplicationContext): Unit = this.synchronized {
-        toPrecompute.foreach { case (text, filePath) => precompute(text, filePath, application) }
+    precompute()
+    private def precompute(): Unit = this.synchronized {
+        AppLoggers.App.debug("Parsing found behavior contracts...")
+        toPrecompute.foreach { case (text, filePath) => precompute(text, filePath) }
         toPrecompute.clear()
     }
 
@@ -75,29 +73,25 @@ object ContractProvider extends Contract.Provider {
         apply(name, ObjectsProperty.empty)
     }
 
-    private def precompute(text: String, filePath: String, app: ApplicationContext): ContractHandler = {
+    private def precompute(text: String, filePath: String): ContractHandler = {
         val tokens        = BehaviorLanguageLexer.tokenize(new CharSequenceReader(text), filePath)
         val ast           = BehaviorFileParser.parse(tokens)
         val file          = new BehaviorFile(ast, filePath, center)
-        val extractor     = new BehaviorFileLambdaExtractor(file)
-        val callerFactory = extractor.compileLambdas(app)
         val fileName      = ast.fileName
-        val partial       = new ContractHandler(file, callerFactory)
+        val partial       = new ContractHandler(file)
         contracts.put(fileName, partial)
         partial
     }
 
-    private class ContractHandler(file: BehaviorFile, callerFactory: BHVProperties => MethodCaller) {
+    private class ContractHandler(file: BehaviorFile) {
 
-        private val callers   = mutable.HashMap.empty[String, MethodCaller]
         private val contracts = mutable.HashMap.empty[String, LangContractDescriptorData]
 
         def get(propertyName: String): LangContractDescriptorData = {
             contracts.getOrElseUpdate(propertyName, {
                 val bhvProperties = properties.getOrElse(propertyName, throw new NoSuchElementException(s"unknown properties '$propertyName'."))
-                val caller        = callers.getOrElseUpdate(propertyName, callerFactory(bhvProperties))
                 try {
-                    val interpreter = new BehaviorFileInterpreter(file, app, bhvProperties, caller)
+                    val interpreter = new BehaviorFileInterpreter(file, bhvProperties)
                     interpreter.data
                 } catch {
                     case e: BHVLanguageException =>

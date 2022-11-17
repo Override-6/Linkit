@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.cache.CacheSearchMethod._
 import fr.linkit.api.gnom.cache.traffic.handler.{CacheAttachHandler, CacheContentHandler}
 import fr.linkit.api.gnom.cache.{CacheContent, CacheOpenException, CacheSearchMethod}
 import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
@@ -70,8 +71,8 @@ final class ServerSharedCacheManager @Persist()(family : String,
         LocalCachesStore.getContent(cacheID)
     }
 
-    private def handlePreCacheOpeningRequest(cacheID: Int, cacheType: Class[_], senderID: String, response: Submitter[_]): Unit = {
-        Debugger.push(ResponseStep("check if cache can open", senderID, channel.reference))
+    private def handlePreCacheOpeningRequest(cacheID: Int, cacheType: Class[_], senderNT: NameTag, response: Submitter[_]): Unit = {
+        Debugger.push(ResponseStep("check if cache can open", senderNT, channel.reference))
         try {
             def acceptRequest: Unit = {
                 response.addPacket(EmptyPacket).submit()
@@ -98,10 +99,10 @@ final class ServerSharedCacheManager @Persist()(family : String,
                         case None                            => acceptRequest //There is no attach handler set, the cache is free to accept any thing
                         case Some(_) if isSystemCache        => acceptRequest //System Caches are free to access caches content.
                         case Some(value: CacheAttachHandler) =>
-                            val engineOpt = network.getEngine(senderID)
+                            val engineOpt = network.getEngine(senderNT)
                             if (engineOpt.isDefined)
                                 value.inspect(engineOpt.get, registeredCache.cache.getClass, cacheType).fold(acceptRequest)(failRequest)
-                            else failRequest(s"Unknown engine '$senderID'.")
+                            else failRequest(s"Unknown engine '$senderNT'.")
                     }
             }
         } finally {
@@ -115,21 +116,21 @@ final class ServerSharedCacheManager @Persist()(family : String,
         val request  = bundle.packet
         val response = bundle.responseSubmitter
 
-        val senderID: String = coords.senderTag
-        val behavior         = request.getAttribute[CacheSearchMethod]("behavior").get //TODO orElse throw an exception
+        val senderNT = coords.senderTag
+        val behavior = request.getAttribute[CacheSearchMethod]("behavior").get //TODO orElse throw an exception
 
 
         def failRequest(msg: String): Nothing = {
-            AppLoggers.GNOM.error(s"Could not send cache content to $senderID: $msg")
+            AppLoggers.GNOM.error(s"Could not send cache content to $senderNT: $msg")
             response.addPacket(StringPacket(msg))
-                .submit()
+                    .submit()
             break
         }
 
         def sendContent(content: Option[CacheContent]): Unit = {
             AppLoggers.GNOM.trace(s"sending cache content (cacheID: $cacheID, family: $family)")
             response.addPacket(RefPacket[Option[CacheContent]](content))
-                .submit()
+                    .submit()
         }
 
         def handleContentNotAvailable(): Unit = behavior match {
@@ -137,7 +138,7 @@ final class ServerSharedCacheManager @Persist()(family : String,
                 failRequest(s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
             case GET_OR_WAIT  =>
                 //If the requester is not the server, wait the server to open the cache.
-                if (senderID != network.serverName) {
+                if (senderNT != network.serverEngine.nameTag) {
                     channel.storeBundle(bundle)
                     return
                 }
@@ -157,8 +158,8 @@ final class ServerSharedCacheManager @Persist()(family : String,
                     case Some(_) if isSystemCache                         => sendContent(content)
                     case None                                             => sendContent(content) //There is no handler, the engine is by default accepted.
                     case Some(handler: CacheContentHandler[CacheContent]) =>
-                        val engine = network.getEngine(senderID).getOrElse {
-                            failRequest(s"Engine not found: $senderID. (shared cache manager engine: $currentIdentifier)")
+                        val engine = network.getEngine(senderNT).getOrElse {
+                            failRequest(s"Engine not found: $senderNT. (shared cache manager engine: $currentIdentifier)")
                         }
                         if (handler.canAccessToContent(engine)) {
                             sendContent(content)

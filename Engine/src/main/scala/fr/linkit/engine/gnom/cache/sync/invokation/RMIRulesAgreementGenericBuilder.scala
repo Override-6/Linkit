@@ -14,9 +14,9 @@
 package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior._
-import fr.linkit.api.gnom.network.tag.{Current, EngineTag, Nobody, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{Current, EngineTag, Nobody, TagSelection, UniqueTag}
 
-class RMIRulesAgreementGenericBuilder private(private val selectionTag       : EngineTag,
+class RMIRulesAgreementGenericBuilder private(private val selection          : TagSelection[EngineTag],
                                               private val desiredEngineReturn: UniqueTag) extends RMIRulesAgreementBuilder {
 
     def this() {
@@ -24,20 +24,28 @@ class RMIRulesAgreementGenericBuilder private(private val selectionTag       : E
     }
 
     def this(other: RMIRulesAgreementGenericBuilder) {
-        this(other.selectionTag, other.desiredEngineReturn)
+        this(other.selection, other.desiredEngineReturn)
     }
 
 
-    override def selection(tagSelection: EngineTag): RMIRulesAgreementBuilder = {
+    override def selection(selection: TagSelection[EngineTag] => TagSelection[EngineTag]): RMIRulesAgreementBuilder = {
+        new RMIRulesAgreementGenericBuilder(selection(this.selection), desiredEngineReturn)
+    }
+
+    override def selection(tagSelection: TagSelection[EngineTag]): RMIRulesAgreementBuilder = {
         new RMIRulesAgreementGenericBuilder(tagSelection, desiredEngineReturn)
     }
 
     override def appointReturn(target: UniqueTag): RMIRulesAgreementGenericBuilder = {
-        new RMIRulesAgreementGenericBuilder(selectionTag, target)
+        new RMIRulesAgreementGenericBuilder(selection, target)
     }
 
     override def result(context: ConnectedObjectContext): RMIDispatchAgreement = {
-        new UsageRMIDispatchAgreement(context, desiredEngineReturn, context.deepTranslate(selectionTag))
+        new UsageRMIDispatchAgreement(
+            context,
+            context.translate(desiredEngineReturn),
+            context.deepTranslate(selection)
+        )
     }
 
 }

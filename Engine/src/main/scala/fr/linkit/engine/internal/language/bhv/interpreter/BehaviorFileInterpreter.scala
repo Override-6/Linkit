@@ -15,37 +15,31 @@ package fr.linkit.engine.internal.language.bhv.interpreter
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, RMIRulesAgreementBuilder}
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, ModifiableValueContract, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
-import fr.linkit.api.gnom.cache.sync.invocation.MethodCaller
-import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.gnom.network.tag.TagSelection._
+import fr.linkit.api.gnom.network.tag._
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.{ContractDescriptorDataImpl, LeveledSBDN, MethodContractDescriptorImpl, StructureBehaviorDescriptorNodeImpl}
-import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleModifiableValueContract}
+import fr.linkit.engine.gnom.cache.sync.contract.{FieldContractImpl, SimpleValueContract}
 import fr.linkit.engine.gnom.cache.sync.invokation.RMIRulesAgreementGenericBuilder
 import fr.linkit.engine.internal.language.bhv.BHVLanguageException
 import fr.linkit.engine.internal.language.bhv.ast._
-import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileInterpreter.{DefaultAgreements, DefaultBuilder}
-import fr.linkit.engine.internal.util.ClassMap
+import fr.linkit.engine.internal.language.bhv.interpreter.BehaviorFileInterpreter.{DefaultAgreements, DefaultBuilder, EmptyBuilder}
 
 import scala.collection.mutable
 
 class BehaviorFileInterpreter(file         : BehaviorFile,
-                              app          : ApplicationContext,
-                              propertyClass: BHVProperties,
-                              caller       : MethodCaller) {
+                              propertyClass: BHVProperties) {
 
-    private val ast                                                            = file.ast
-    private val autoChip                                                       = computeOptions()
-    private val agreementBuilders: Map[String, RMIRulesAgreementBuilder]       = computeAgreements()
-    private val valueModifiers   : Map[String, (Class[_], ValueModifier[Any])] = computeValueModifiers()
-    private val typeModifiers    : ClassMap[ValueModifier[AnyRef]]             = computeTypeModifiers()
-    private val contracts        : Seq[ContractDescriptorGroup[AnyRef]]        = computeContracts()
+    private val ast                                                      = file.ast
+    private val autoChip                                                 = computeOptions()
+    private val agreementBuilders: Map[String, RMIRulesAgreementBuilder] = computeAgreements()
+    private val contracts        : Seq[ContractDescriptorGroup[AnyRef]]  = computeContracts()
 
     lazy val data = new ContractDescriptorDataImpl(contracts.toArray, ast.fileName) with LangContractDescriptorData {
         override val filePath       = file.filePath
@@ -78,7 +72,6 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
         }
         }.toSeq :+ new ContractDescriptorGroup[AnyRef] {
             override val clazz       = classOf[Object]
-            override val modifier    = None
             override val descriptors = Array(new OverallStructureContractDescriptor[Object] {
                 override val autochip    = BehaviorFileInterpreter.this.autoChip
                 override val targetClass = classOf[Object]
@@ -125,7 +118,6 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
         }
         val group        = new ContractDescriptorGroup[AnyRef] {
             override val clazz      : Class[AnyRef]                              = castedClass
-            override val modifier   : Option[ValueModifier[AnyRef]]              = typeModifiers.get(castedClass)
             override val descriptors: Array[StructureContractDescriptor[AnyRef]] = {
                 (descriptors0 :+ defaultContracts(clazz, descriptors0)).toArray
             }
@@ -187,12 +179,12 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
                         val rvLvl = desc.syncReturnValue.lvl
                         if (rvLvl != NotRegistered) {
                             if (rvLvl.isConnectable && LeveledSBDN.findReasonTypeCantBeSync(method.javaMethod.getReturnType).isDefined)
-                                Some(new SimpleModifiableValueContract[Any](NotRegistered, autoChip, None))
-                            else Some(new SimpleModifiableValueContract[Any](rvLvl, autoChip, None))
+                                Some(SimpleValueContract(NotRegistered, autoChip))
+                            else Some(SimpleValueContract(rvLvl, autoChip))
                         } else None
                     }
 
-                    val agreement      = desc.dispatch.map(ag => getAgreement(ag.agreement)).getOrElse(DefaultBuilder)
+                    val agreement      = desc.agreementOpt.map(getAgreement).getOrElse(DefaultBuilder)
                     val procrastinator = findProcrastinator(desc.properties)
                     MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, desc.invocationHandlingMethod, agreement)
                 case desc: HiddenMethodDescription  =>
@@ -241,17 +233,10 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
         }
 
         def checkParams(): Unit = {
-            if (signature.params.exists(_.syncState.lvl != NotRegistered))
+            if (signature.params.exists(_.tpe.syncType.lvl != NotRegistered))
                 throw new BHVLanguageException("disabled methods can't define connected arguments")
         }
-        /*
-        def extractModifier(mod: CompModifier, valType: String): ValueModifier[Any] = {
-            mod match {
-                case ValueModifierReference(_, ref) => getValueModifier(ref, valType)
-                case ModifierExpression(_, in, out) => makeModifier(
-                    s"method_${encodedIntMethodString(methodDesc.methodId)}", valType, in, out)
-            }
-        }*/
+
 
         val result = (method: MethodDescription) match {
             case _: DisabledMethodDescription  =>
@@ -265,26 +250,25 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
             case desc: EnabledMethodDescription with AttributedEnabledMethodDescription =>
                 val rvContract         = {
                     val returnTypeName = methodDesc.javaMethod.getReturnType.getName
-                    val rvModifier     = desc.modifiers.find(_.target == "returnvalue").map(extractModifier(_, returnTypeName))
                     desc.syncReturnValue match {
-                        case RegistrationState(true, state) => new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
+                        case RegistrationState(true, state) => SimpleValueContract(state, autoChip)
                         case RegistrationState(false, _)    =>
                             val state = referent.flatMap(_.returnValueContract).map(_.registrationKind).getOrElse(NotRegistered)
-                            new SimpleModifiableValueContract[Any](state, autoChip, rvModifier)
+                            SimpleValueContract(state, autoChip)
                     }
                 }
-                val agreement          = desc.dispatch
-                        .map(ag => getAgreement(ag.name))
+                val agreement          = desc.agreementOpt
+                        .map(getAgreement)
                         .orElse(referent.map(_.agreementBuilder))
                         .getOrElse(DefaultBuilder)
                 val procrastinator     = findProcrastinator(desc.properties).orElse(referent.flatMap(_.procrastinator))
                 val parameterContracts = {
-                    val acc: Array[ModifiableValueContract[Any]] = signature.params.map {
-                        case MethodParam(syncState, nameOpt, tpe) =>
-                            val modifier = nameOpt.flatMap(name => desc.modifiers.find(_.target == name).map(extractModifier(_, tpe)))
-                            new SimpleModifiableValueContract[Any](syncState.lvl, autoChip, modifier)
+                    val params: Array[ValueContract] = signature.params.map {
+                        case MethodParam(_, syncState) =>
+                            SimpleValueContract(syncState.syncType.lvl, autoChip)
                     }.toArray
-                    if (acc.exists(x => x.registrationKind != NotRegistered || x.modifier.isDefined)) acc else Array[ModifiableValueContract[Any]]()
+                    //if there is no pertinent information, let's return an empty array in order to inform the system not to worry about the parameters of this method
+                    if (params.forall(_.registrationKind == NotRegistered)) params else Array[ValueContract]()
                 }
                 var invocationMethod   = desc.invocationHandlingMethod
                 if (invocationMethod == Inherit)
@@ -320,14 +304,6 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
         foreachResult.filter(_ != null) ++ result.filter(_ != null)
     }
 
-    private def getValueModifier(name: String, expectedType: String): ValueModifier[Any] = {
-        val (modTypeTarget, mod) = valueModifiers.getOrElse(name, throw new BHVLanguageException(s"Unknown modifier '$name'"))
-        val expectedTypeClass    = file.findClass(expectedType)
-        if (!modTypeTarget.isAssignableFrom(expectedTypeClass))
-            throw new BHVLanguageException(s"trying to apply a modifier '${modTypeTarget.getName}' on value of type '${expectedTypeClass.getName}'")
-        mod
-    }
-
     private def findProcrastinator(properties: Seq[MethodProperty]): Option[Procrastinator] = {
         properties.find(_.name == "executor").map(x => propertyClass.getProcrastinator(x.value))
     }
@@ -339,109 +315,64 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
 
     private def getAgreement(ap: AgreementProvider): RMIRulesAgreementBuilder = {
         ap match {
-            case AgreementBuilder(baseAgreement, instructions) => baseAgreement.map(getAgreement).map()followInstructions(instructions)
+            case AgreementBuilder(baseAgreement, instructions) =>
+                val fib = followInstructionsBased(instructions)(_)
+                baseAgreement.map(getAgreement).map(fib).getOrElse(fib(EmptyBuilder))
             case AgreementReference(name)                      => getAgreement(name)
-            case _                                             => ???
-        }
-    }
-
-    private def computeTypeModifiers(): ClassMap[ValueModifier[AnyRef]] = {
-        val map = ast.typesModifiers.map {
-            case TypeModifier(className, in, out) => {
-                (file.findClass(className), makeModifier[AnyRef]("type", className, in, out))
-            }
-        }.toMap
-        new ClassMap(map)
-    }
-
-    private def computeValueModifiers(): Map[String, (Class[_], ValueModifier[Any])] = {
-        ast.valueModifiers.map {
-            case ValueModifier(name, tpeName, in, out) =>
-                (name, (file.findClass(tpeName), makeModifier[Any](s"value_$name", tpeName, in, out)))
-        }.toMap
-    }
-
-    private def makeModifier[A](tpe: String, valTpeName: String, in: Option[LambdaExpression], out: Option[LambdaExpression]): ValueModifier[A] = {
-        val formattedTpeName = file.formatClassName(file.findClass(valTpeName))
-        val inLambdaName     = s"${tpe}_in_${formattedTpeName}"
-        val outLambdaName    = s"${tpe}_out_${formattedTpeName}"
-        new ValueModifier[A] {
-
-            override def fromRemote(input: A, remote: Engine): A = {
-                if (in.isDefined) {
-                    val result = caller.call(inLambdaName, Array(input, remote))
-                    if (result == ()) input else result.asInstanceOf[A]
-                } else input
-            }
-
-            override def toRemote(input: A, remote: Engine): A = {
-                if (out.isDefined) {
-                    val result = caller.call(outLambdaName, Array(input, remote))
-                    if (result == ()) input else result.asInstanceOf[A]
-                } else input
-            }
         }
     }
 
     private def computeAgreements(): Map[String, RMIRulesAgreementBuilder] = {
         DefaultAgreements ++ ast.agreementBuilders.map(agreement => {
-            (agreement.baseAgreement, followInstructions(agreement.instructions))
-        }).toMap
+            val agName = agreement.agreementName.getOrElse {
+                throw new BHVLanguageException("Declared agreement have no name")
+            }
+            (agName, followInstructions(agreement.instructions))
+        })
     }
 
     private def followInstructions(instructions: Seq[AgreementInstruction]): RMIRulesAgreementBuilder = {
-        def follow(instructions: Seq[AgreementInstruction], base: RMIRulesAgreementBuilder): RMIRulesAgreementBuilder = {
-            instructions.foldLeft(base)((builder, instruction) => {
-                instruction match {
-                    case DiscardAll               => builder.discardAll()
-                    case AcceptAll                => builder.acceptAll()
-                    case AppointEngine(appointed) => builder.appointReturn(appointed)
-                    case AcceptEngines(tags)      => tags.foldLeft(builder) { case (builder, tag) => builder.accept(tag) }
-                    case DiscardEngines(tags)     => tags.foldLeft(builder) { case (builder, tag) => builder.discard(tag) }
+        followInstructionsBased(instructions)(EmptyBuilder)
+    }
 
-                    case Condition(Equals(a, b, false), ifTrue, ifFalse) =>
-                        (builder assuming a isElse b) (follow(ifTrue, _), follow(ifFalse, _))
-                    case Condition(Equals(a, b, true), ifTrue, ifFalse)  =>
-                        (builder assuming a isNotElse b) (follow(ifTrue, _), follow(ifFalse, _))
-                }
-            })
-        }
-
-        follow(instructions, EmptyBuilder)
+    private def followInstructionsBased(instructions: Seq[AgreementInstruction])(base: RMIRulesAgreementBuilder): RMIRulesAgreementBuilder = {
+        instructions.foldLeft(base)((builder, instruction) => {
+            instruction match {
+                case DiscardAll                          => builder.selection(Everyone)
+                case AcceptAll                           => builder.selection(Nobody)
+                case AppointEngine(appointed: UniqueTag) => builder.appointReturn(appointed)
+                case AppointEngine(_)                    => throw new BHVLanguageException("Cannot appoint a group or a selection of multiple engines.")
+                case AcceptEngines(tags)                 => builder.selection(_ U tags.foldLeft(Select(Nobody): TagSelection[EngineTag])(_ U _))
+                case DiscardEngines(tags)                => builder.selection(_ I tags.foldLeft(Select(Nobody): TagSelection[EngineTag])(_ I _))
+            }
+        })
     }
 
 }
 
 object BehaviorFileInterpreter {
 
-    private final val DefaultBuilder    = new RMIRulesAgreementGenericBuilder().accept(CurrentEngine)
+    import TagSelection._
+
+    private final val EmptyBuilder      = new RMIRulesAgreementGenericBuilder()
+    private final val DefaultBuilder    = EmptyBuilder.selection(Current)
     private final val DefaultAgreements = Map(
         "default" -> DefaultBuilder,
         "only_owner" -> EmptyBuilder
-                .accept(OwnerEngine)
+                .selection(OwnerEngine)
                 .appointReturn(OwnerEngine),
         "broadcast" -> EmptyBuilder
-                .acceptAll()
-                .appointReturn(CurrentEngine),
-        "only_cache_owner" -> EmptyBuilder
-                .accept(CacheOwnerEngine)
-                .appointReturn(CacheOwnerEngine),
+                .selection(Everyone)
+                .appointReturn(Current),
+        "server_only" -> EmptyBuilder
+                .selection(Server)
+                .appointReturn(Server),
         "not_current" -> DefaultBuilder
-                .acceptAll()
-                .discard(CurrentEngine)
+                .selection(Everyone - Current)
                 .appointReturn(OwnerEngine),
-        "broadcast_if_owner" -> DefaultBuilder
-                .assuming(CurrentEngine).is(OwnerEngine, _.acceptAll())
-                .accept(CurrentEngine)
-                .appointReturn(CurrentEngine),
-        "broadcast_if_root_owner" -> DefaultBuilder
-                .assuming(CurrentEngine).is(RootOwnerEngine, _.acceptAll())
-                .accept(CurrentEngine)
-                .appointReturn(CurrentEngine),
         "current_and_owner" -> DefaultBuilder
-                .accept(CurrentEngine)
-                .accept(OwnerEngine)
-                .appointReturn(CurrentEngine)
+                .selection(Current U OwnerEngine)
+                .appointReturn(Current)
     )
 
 }

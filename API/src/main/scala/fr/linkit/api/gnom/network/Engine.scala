@@ -13,10 +13,11 @@
 
 package fr.linkit.api.gnom.network
 
-import fr.linkit.api.gnom.network.tag.{EngineTag, GroupTag, IdentifierTag, NameTag, NetworkFriendlyEngineTag}
+import fr.linkit.api.gnom.network.tag.{EngineTag, GroupTag, IdentifierTag, NameTag, NetworkFriendlyEngineTag, TagSelection}
 import fr.linkit.api.gnom.referencing.NetworkObject
 
 import java.sql.Timestamp
+
 /**
  * An engine is an entity that is connected on the network.
  * It can either be the server or any client.
@@ -60,7 +61,9 @@ trait Engine extends NetworkObject[EngineReference] {
     /**
      * @return true if this engine is tagged by the given tag
      * */
-    def isTagged(tag: NetworkFriendlyEngineTag): Boolean
+    def isIncluded(tag: NetworkFriendlyEngineTag): Boolean
+
+    def isIncluded(tag: TagSelection[NetworkFriendlyEngineTag]): Boolean
 
     /**
      * Adds a new tag for this engine <br>

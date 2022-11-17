@@ -33,15 +33,15 @@ class DisabledMethodDescription() extends MethodDescription
 class HiddenMethodDescription(val hideMessage: Option[String]) extends MethodDescription
 
 class EnabledMethodDescription(val invocationHandlingMethod: InvocationHandlingMethod,
-                               val properties: List[MethodProperty],
-                               val dispatch: Option[DispatchAgreement],
-                               val syncReturnValue: RegistrationState) extends MethodDescription
+                               val properties              : List[MethodProperty],
+                               val agreementOpt            : Option[AgreementProvider],
+                               val syncReturnValue         : RegistrationState) extends MethodDescription
 
 object EnabledMethodDescription {
     
     def apply(invocationHandlingMethod: InvocationHandlingMethod,
               properties: List[MethodProperty],
-              dispatch: Option[DispatchAgreement])
+              dispatch: Option[AgreementProvider])
              (sig: MethodSignature): EnabledMethodDescription with AttributedMethodDescription = {
         val rvState = sig.returnType.map(_.syncType).getOrElse(RegistrationState(false, SyncLevel.NotRegistered))
         new EnabledMethodDescription(invocationHandlingMethod, properties, dispatch, rvState) with AttributedEnabledMethodDescription {

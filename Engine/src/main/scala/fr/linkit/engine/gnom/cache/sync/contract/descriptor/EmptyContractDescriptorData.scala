@@ -20,7 +20,6 @@ object EmptyContractDescriptorData extends ContractDescriptorDataImpl(Array(Obje
 private object ObjectContractDescriptorGroup extends ContractDescriptorGroup[Object] {
     
     override val clazz       = classOf[Object]
-    override val modifier    = None
     override val descriptors = Array(new OverallStructureContractDescriptor[Object] {
         override val autochip    = false
         override val targetClass = classOf[Object]

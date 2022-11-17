@@ -35,7 +35,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     //cached values for handleCall
     @transient private final var isNotMirroring: Boolean = _
-    @transient private final var isOrigin      : Boolean = _
+    @transient private final var isOrigin0     : Boolean = _
 
     def originClass: Class[_]
 
@@ -54,7 +54,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         this.choreographer = node.choreographer
         this.connector = node.tree
 
-        this.isOrigin = node.isMirroring
+        this.isOrigin0 = node.isOrigin
         this.isNotMirroring = !node.isMirroring
     }
 
@@ -62,6 +62,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     override def isMirroring: Boolean = !isNotMirroring
 
     override def isMirrored: Boolean = isMirrored0
+
+    override def isOrigin: Boolean = isOrigin0
 
     override def reference: ConnectedObjectReference = location
 

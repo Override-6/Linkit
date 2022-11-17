@@ -17,9 +17,9 @@ import fr.linkit.api.gnom.cache.sync.ChippedObject
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
-import fr.linkit.api.gnom.network.tag.EngineResolver
+import fr.linkit.api.gnom.network.tag.EngineSelector
 
-class ChippedObjectNodeData[A <: AnyRef](val network      : EngineResolver, //Remote invocations
+class ChippedObjectNodeData[A <: AnyRef](val network      : EngineSelector, //Remote invocations
                                          val chip         : Chip[A], //Reflective invocations
                                          val contract     : StructureContract[A],
                                          val choreographer: InvocationChoreographer,

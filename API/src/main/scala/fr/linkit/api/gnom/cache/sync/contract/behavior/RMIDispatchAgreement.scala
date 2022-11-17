@@ -13,11 +13,11 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, TagSelection, UniqueTag}
 
 trait RMIDispatchAgreement {
 
-    val selection: NetworkFriendlyEngineTag
+    val selection: TagSelection[NetworkFriendlyEngineTag]
 
     def getAppointedEngineReturn: UniqueTag with NetworkFriendlyEngineTag
 

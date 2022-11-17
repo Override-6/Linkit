@@ -15,6 +15,7 @@ package fr.linkit.server.connection
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.{ConnectionException, ExternalConnection}
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
@@ -31,14 +32,16 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     import session._
 
-    override val currentIdentifier: String           = server.currentIdentifier
-    override val traffic          : PacketTraffic    = server.traffic
-    override val translator       : ObjectTranslator = server.translator
-    override val network          : Network          = session.network
-    override val port             : Int              = server.port
-    override val boundIdentifier  : String           = session.boundIdentifier
-    @volatile private var alive   : Boolean          = false
-    private  val tnol                                = network.gnol.trafficNOL
+    override val currentName   : String           = server.currentName
+    override val traffic       : PacketTraffic    = server.traffic
+    override val translator    : ObjectTranslator = server.translator
+    override val network       : Network          = session.network
+    override val port          : Int              = server.port
+    override val boundNT       : NameTag          = session.boundNT
+    @volatile private var alive: Boolean          = false
+    private  val currentNT     : NameTag          = NameTag(currentName)
+    private  val tnol                             = network.gnol.trafficNOL
+
 
     override def shutdown(): Unit = {
         alive = false
@@ -46,8 +49,8 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         readThread.close()
         session.close()
 
-        connectionManager.unregister(currentIdentifier)
-        AppLoggers.Connection.info(s"Connection closed for $currentIdentifier")
+        connectionManager.unregister(currentNT)
+        AppLoggers.Connection.info(s"Connection closed for $currentName")
     }
 
     override def isAlive: Boolean = alive
@@ -70,7 +73,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
-        val coords       = DedicatedPacketCoordinates(path, boundIdentifier, currentIdentifier)
+        val coords       = DedicatedPacketCoordinates(path, boundNT, currentNT)
         val config       = traffic.getPersistenceConfig(coords.path)
         val transferInfo = SimpleTransferInfo(coords, attributes, packet, config, network)
         val result       = translator.translate(transferInfo)
@@ -87,7 +90,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         val channelPath = result.coords.path
         channelPath.length == 0 || {
             val reference = new TrafficObjectReference(channelPath)
-            val present   = tnol.isPresentOnEngine(boundIdentifier, reference)
+            val present   = tnol.isPresentOnEngine(boundNT, reference)
             present
         }
     }
@@ -96,7 +99,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         if (!canHandlePacketInjection(result)) {
             val channelPath = result.coords.path
             val reference   = new TrafficObjectReference(channelPath)
-            throw new PacketNotInjectableException(this, s"Engine '$boundIdentifier' does not contains any traffic packet injectable presence at $reference.")
+            throw new PacketNotInjectableException(this, s"Engine '$boundNT' does not contains any traffic packet injectable presence at $reference.")
         }
         session.send(result)
     }

@@ -13,9 +13,11 @@
 
 package fr.linkit.api.application.connection
 
+import fr.linkit.api.gnom.network.tag.NameTag
+
 trait CentralConnection extends ConnectionContext {
 
-    def getConnection(identifier: String): Option[ExternalConnection]
+    def getConnection(identifier: NameTag): Option[ExternalConnection]
 
     def countConnections: Int
 

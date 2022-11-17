@@ -16,20 +16,15 @@ package fr.linkit.server.connection.traffic
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
-import fr.linkit.engine.gnom.packet.traffic.channel.SystemObjectManagementChannel
-import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, ChannelScopes, WriterInfo}
+import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, WriterInfo}
 import fr.linkit.server.connection.ServerConnection
 
 import java.net.URL
 
-class ServerPacketTraffic(override val connection: ServerConnection,
-                          defaultPersistenceConfigScript: Option[URL]) extends AbstractPacketTraffic(connection.currentIdentifier, defaultPersistenceConfigScript) {
+class ServerPacketTraffic(override val connection       : ServerConnection,
+                          defaultPersistenceConfigScript: Option[URL]) extends AbstractPacketTraffic(defaultPersistenceConfigScript) {
 
     override def application: ApplicationContext = connection.getApp
-
-    override val currentEngineName: String = connection.currentIdentifier
-    override val serverName       : String = currentEngineName
 
     override def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter = {
         new ServerPacketWriter(connection, WriterInfo(this, persistenceConfig, path, () => connection.network))

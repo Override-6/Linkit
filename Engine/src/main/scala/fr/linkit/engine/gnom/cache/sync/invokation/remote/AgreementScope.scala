@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.network.tag.{EngineResolver, NetworkFriendlyEngineTag}
+import fr.linkit.api.gnom.network.tag.{EngineSelector, NetworkFriendlyEngineTag, TagSelection}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
@@ -24,7 +24,7 @@ import fr.linkit.engine.gnom.cache.sync.invokation.UsageRMIDispatchAgreement
 import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
 class AgreementScope(override val writer: PacketWriter,
-                     resolver: EngineResolver,
+                     resolver: EngineSelector,
                      agreement: RMIDispatchAgreement) extends AbstractAttributesPresence with ChannelScope {
 
 
@@ -37,13 +37,13 @@ class AgreementScope(override val writer: PacketWriter,
 
     override def sendToAll(packet: Packet): Unit = sendToAll(packet, SimplePacketAttributes.empty)
 
-    override def sendTo(packet: Packet, attributes: PacketAttributes, tag: NetworkFriendlyEngineTag): Unit = {
+    override def sendTo(packet: Packet, attributes: PacketAttributes, tag: TagSelection[NetworkFriendlyEngineTag]): Unit = {
         throw new UnsupportedOperationException("Not supported.")
     }
 
-    override def sendTo(packet: Packet, tag: NetworkFriendlyEngineTag): Unit = sendTo(packet, SimplePacketAttributes.empty, tag)
+    override def sendTo(packet: Packet, tag: TagSelection[NetworkFriendlyEngineTag]): Unit = sendTo(packet, SimplePacketAttributes.empty, tag)
 
-    override def areAuthorised(tag: NetworkFriendlyEngineTag): Boolean = {
+    override def areAuthorised(tag: TagSelection[NetworkFriendlyEngineTag]): Boolean = {
         resolver.isIncluded(tag, selection)
     }
 

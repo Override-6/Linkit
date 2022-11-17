@@ -21,30 +21,15 @@ case object DiscardAll extends AgreementInstruction
 
 case object AcceptAll extends AgreementInstruction
 
-case class AcceptEngines(tags: Seq[EngineTag]) extends AgreementInstruction
+case class AcceptEngines(tags: List[EngineTag]) extends AgreementInstruction
 
-case class DiscardEngines(tags: Seq[EngineTag]) extends AgreementInstruction
+case class DiscardEngines(tags: List[EngineTag]) extends AgreementInstruction
 
 case class AppointEngine(appointed: EngineTag) extends AgreementInstruction
 
-case class Equals(a: EngineTag, b: EngineTag, reverse: Boolean)
 
-object Equals {
+sealed trait AgreementProvider extends Product
 
-    implicit class IsBuilder(a: EngineTag) {
-
-        def is(b: EngineTag) = Equals(a, b, false)
-
-        def isNot(b: EngineTag) = Equals(a, b, true)
-    }
-}
-
-case class Condition(test: Equals, ifTrue: Seq[AgreementInstruction], ifFalse: Seq[AgreementInstruction]) extends AgreementInstruction
-
-trait AgreementProvider extends Product
-
-case class AgreementBuilder(baseAgreement: Option[String], instructions: Seq[AgreementInstruction]) extends AgreementProvider
+case class AgreementBuilder(agreementName: Option[String], instructions: List[AgreementInstruction]) extends AgreementProvider
 
 case class AgreementReference(name: String) extends AgreementProvider
-
-case class DispatchAgreement(authorizedEngines: Seq[EngineTag], agreement: AgreementProvider)

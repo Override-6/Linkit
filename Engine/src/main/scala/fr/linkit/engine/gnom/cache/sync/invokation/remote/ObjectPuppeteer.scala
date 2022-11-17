@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.invokation.remote
 import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationFailedException
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
-import fr.linkit.api.gnom.network.tag.{Current, EngineResolver, NameTag}
+import fr.linkit.api.gnom.network.tag.{Current, EngineSelector, NameTag}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, ResponseHolder}
@@ -34,7 +34,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
                                    override val nodeReference: ConnectedObjectReference) extends Puppeteer[S] {
 
     private val traffic                  = channel.traffic
-    private val resolver: EngineResolver = traffic.connection.network
+    private val resolver: EngineSelector = traffic.connection.network
     private val writer                   = traffic.newWriter(channel.trafficPath)
 
     override def isCurrentEngineOwner: Boolean = resolver.isEquivalent(nodeReference.owner, Current)
@@ -104,17 +104,6 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
         }
 
         protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
-
-        override def foreachEngines(action: NameTag => Array[Any]): Unit = {
-            resolver.listEngines(scope.selection).foreach(engine => runOnContext {
-                val engineNT = engine.nameTag
-                //return engine is processed at last, don't send a request to the current engine
-                if (engineNT != returnEngineTag && !engine.isCurrentEngine)
-                    makeRequest(ChannelScopes(engineNT)(writer), action(engineNT))
-            })
-            if (returnEngineTag != null && resolver.isEquivalent(returnEngineTag, Current))
-                handleResponseHolder(makeRequest(ChannelScopes.apply(returnEngineTag)(writer), action(returnEngineTag)))
-        }
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)

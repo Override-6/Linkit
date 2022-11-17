@@ -14,9 +14,8 @@
 package fr.linkit.engine.gnom.cache.sync.contract.behavior
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.{ObjectContractFactory, ConnectedObjectContext}
+import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, ObjectContractFactory}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.api.gnom.cache.sync.contract.modification.ValueModifier
 
 class SyncObjectContractFactory(override val data: ContractDescriptorData) extends ObjectContractFactory {
 
@@ -25,9 +24,6 @@ class SyncObjectContractFactory(override val data: ContractDescriptorData) exten
         data.getNode[A](clazz).getContract(clazz, context: ConnectedObjectContext)
     }
 
-    override def getInstanceModifier[A <: AnyRef](clazz: Class[A], limit: Class[_ >: A]): ValueModifier[A] = {
-        data.getNode[A](clazz).getInstanceModifier(this, limit)
-    }
 }
 
 object SyncObjectContractFactory {

@@ -14,17 +14,14 @@
 package fr.linkit.engine.gnom.cache.sync.invokation
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIDispatchAgreement}
-import fr.linkit.api.gnom.network.tag.{Current, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{Current, NetworkFriendlyEngineTag, TagSelection, UniqueTag}
 
-class UsageRMIDispatchAgreement private(context              : ConnectedObjectContext,
-                                        appointedEngineReturn: UniqueTag with NetworkFriendlyEngineTag,
-                                        val selection        : NetworkFriendlyEngineTag) extends RMIDispatchAgreement {
+class UsageRMIDispatchAgreement(context              : ConnectedObjectContext,
+                                appointedEngineReturn: UniqueTag with NetworkFriendlyEngineTag,
+                                val selection        : TagSelection[NetworkFriendlyEngineTag]) extends RMIDispatchAgreement {
 
     private val resolver = context.resolver
 
-    def this(context: ConnectedObjectContext, appointedEngineReturn: UniqueTag, selection: NetworkFriendlyEngineTag) {
-        this(context, context.translate(appointedEngineReturn), selection)
-    }
 
     override def getAppointedEngineReturn: UniqueTag with NetworkFriendlyEngineTag = appointedEngineReturn
 

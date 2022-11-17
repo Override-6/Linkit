@@ -17,13 +17,13 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.network.statics.StaticAccess
-import fr.linkit.api.gnom.network.tag.EngineResolver
+import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.referencing.StaticNetworkObject
 import fr.linkit.api.gnom.referencing.linker.GeneralNetworkObjectLinker
 
 import java.sql.Timestamp
 
-trait Network extends StaticNetworkObject[NetworkReference.type] with EngineResolver {
+trait Network extends StaticNetworkObject[NetworkReference.type] with EngineSelector {
 
     val connection: ConnectionContext
 
@@ -33,7 +33,6 @@ trait Network extends StaticNetworkObject[NetworkReference.type] with EngineReso
 
     def globalCaches: SharedCacheManager
 
-    def serverName: String
 
     def serverEngine: Engine
 

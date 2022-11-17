@@ -13,13 +13,13 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.network.tag.{EngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{EngineTag, TagSelection, UniqueTag}
 
 trait RMIRulesAgreementBuilder {
 
-    type AgreementConditionAction = RMIRulesAgreementBuilder => RMIRulesAgreementBuilder
+    def selection(selection: TagSelection[EngineTag]): RMIRulesAgreementBuilder
 
-    def selection(tagSelection: EngineTag): RMIRulesAgreementBuilder
+    def selection(selection: TagSelection[EngineTag] => TagSelection[EngineTag]): RMIRulesAgreementBuilder
 
     def appointReturn(target: UniqueTag): RMIRulesAgreementBuilder
 

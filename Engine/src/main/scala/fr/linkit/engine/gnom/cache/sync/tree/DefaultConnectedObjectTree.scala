@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.cache.sync.contract.{SyncLevel, SyncObjectFieldManipul
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree._
 import fr.linkit.api.gnom.network._
-import fr.linkit.api.gnom.network.tag.{Current, EngineResolver, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{Current, EngineSelector, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.cache.sync.instantiation.{ContentSwitcher, MirroringInstanceCreator}
@@ -31,7 +31,7 @@ import java.util.concurrent.ThreadLocalRandom
 import scala.annotation.switch
 import scala.util.Try
 
-final class DefaultConnectedObjectTree[A <: AnyRef] private(resolver                    : EngineResolver,
+final class DefaultConnectedObjectTree[A <: AnyRef] private(resolver                    : EngineSelector,
                                                             private[sync] val forest    : DefaultSyncObjectForest[A],
                                                             val instantiator            : SyncInstanceInstantiator,
                                                             val dataFactory             : NodeDataFactory,
@@ -40,7 +40,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(resolver            
 
     private var root: RootObjectNodeImpl[A] = _
 
-    def this(resolver    : EngineResolver,
+    def this(resolver    : EngineSelector,
              center      : DefaultSyncObjectForest[A],
              id          : NamedIdentifier,
              instantiator: SyncInstanceInstantiator,

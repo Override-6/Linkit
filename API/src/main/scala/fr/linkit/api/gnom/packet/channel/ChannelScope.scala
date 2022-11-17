@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.packet.channel
 
-import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
+import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, TagSelection}
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketAttributesPresence}
@@ -29,14 +29,14 @@ trait ChannelScope extends PacketAttributesPresence {
 
     def sendToAll(packet: Packet): Unit
 
-    def sendTo(packet: Packet, attributes: PacketAttributes, tag: NetworkFriendlyEngineTag): Unit
+    def sendTo(packet: Packet, attributes: PacketAttributes, tag: TagSelection[NetworkFriendlyEngineTag]): Unit
 
-    def sendTo(packet: Packet, tag: NetworkFriendlyEngineTag): Unit
+    def sendTo(packet: Packet, tag: TagSelection[NetworkFriendlyEngineTag]): Unit
 
-    def areAuthorised(tags: NetworkFriendlyEngineTag): Boolean
+    def areAuthorised(tags: TagSelection[NetworkFriendlyEngineTag]): Boolean
 
 
-    def assertAuthorised(tag: NetworkFriendlyEngineTag): Unit = {
+    def assertAuthorised(tag: TagSelection[NetworkFriendlyEngineTag]): Unit = {
         if (!areAuthorised(tag))
             throw new ForbiddenSelectionException(s"selection $tag is not authorized")
     }

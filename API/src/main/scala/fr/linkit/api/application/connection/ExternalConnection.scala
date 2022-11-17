@@ -14,11 +14,12 @@
 package fr.linkit.api.application.connection
 
 import fr.linkit.api.gnom.network.ExternalConnectionState
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 
 trait ExternalConnection extends ConnectionContext {
 
-    val boundIdentifier: String
+    val boundNT: NameTag
 
     def getState: ExternalConnectionState
 

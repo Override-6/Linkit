@@ -14,8 +14,7 @@
 package fr.linkit.server.connection.traffic
 
 import fr.linkit.api.application.connection.NoSuchConnectionException
-import fr.linkit.api.gnom.network.tag.{IdentifierTag, Server}
-import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.network.tag.{NameTag, Server}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.engine.gnom.packet.AbstractPacketWriter
@@ -28,22 +27,21 @@ class ServerPacketWriter(serverConnection: ServerConnection,
     override val path   : Array[Int]    = info.path
     override val traffic: PacketTraffic = info.traffic
 
-    override protected lazy val network: Network = serverConnection.network
+    protected val selector = serverConnection.network
 
-
-    override protected def writePackets(packet: Packet, attributes: PacketAttributes, targets: Array[IdentifierTag]): Unit = {
+    override protected def writePackets(packet: Packet, attributes: PacketAttributes, targets: Seq[NameTag]): Unit = {
         targets.foreach(targetTag => {
             /*
              * If the targetID is the same as the server's identifier, that means that we target ourself,
              * so the packet, as it can't be written to a socket that target the current server, will be directly
              * injected into the traffic.
              * */
-            if (network.isEquivalent(targetTag, Server)) {
-                val coords = DedicatedPacketCoordinates(path, targetTag, Server)
+            if (selector.isEquivalent(targetTag, Server)) {
+                val coords = DedicatedPacketCoordinates(path, targetTag, targetTag) //target IS server.
                 traffic.processInjection(packet, attributes, coords)
                 return
             }
-            val opt = serverConnection.getConnection(targetTag.id)
+            val opt = serverConnection.getConnection(targetTag)
             if (opt.isDefined) {
                 opt.get.sendPacket(packet, attributes, path)
             } else {

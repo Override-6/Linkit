@@ -87,8 +87,6 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             throw new AppException("Application is already started")
         }
         alive = true
-        AppLoggers.App.debug("Parsing found behavior contracts...")
-        ContractProvider.precompute(this)
     }
 
 }

@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.internal.concurrency
 
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.packet.traffic.AsyncPacketReader
 import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -26,7 +27,7 @@ import scala.util.control.NonFatal
  * A simple abstract class to easily handle packet reading.
  * */
 class PacketReaderThread(reader: AsyncPacketReader,
-                         bound: String) extends Thread(packetReaderThreadGroup, s"$bound's Read Worker") with JustifiedCloseable {
+                         bound: NameTag) extends Thread(packetReaderThreadGroup, s"$bound's Read Worker") with JustifiedCloseable {
 
     private var open = true
     var onPacketRead   : PacketDownload => Unit = _ => ()

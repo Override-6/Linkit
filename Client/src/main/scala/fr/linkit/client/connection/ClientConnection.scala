@@ -41,13 +41,13 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     initTraffic()
 
-    override val currentIdentifier: String            = configuration.identifier
-    override val port             : Int               = configuration.remoteAddress.getPort
+    override val currentName: String = configuration.identifier
+    override val port       : Int    = configuration.remoteAddress.getPort
     override val translator       : ObjectTranslator  = session.translator
     //override val eventNotifier    : EventNotifier     = session.eventNotifier
-    override val traffic          : PacketTraffic     = session.traffic
-    override val boundIdentifier  : String            = serverIdentifier
-    private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(session.traffic)
+    override val traffic    : PacketTraffic     = session.traffic
+    override val boundNT    : String            = serverIdentifier
+    private  val sideNetwork: ClientSideNetwork = new ClientSideNetwork(session.traffic)
     override val network          : Network           = sideNetwork
     @volatile private var alive                       = true
 
@@ -83,7 +83,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     private def initPacketReader(): Unit = {
         if (alive)
-            throw new IllegalStateException(s"Connection already started ! ($currentIdentifier)")
+            throw new IllegalStateException(s"Connection already started ! ($currentName)")
         alive = true
 
         socket.addConnectionStateListener(tryReconnect)
@@ -91,7 +91,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             try {
                 val coordinates: DedicatedPacketCoordinates = result.coords match {
                     case dedicated: DedicatedPacketCoordinates => dedicated
-                    case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(currentIdentifier)
+                    case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(currentName)
                     case null                                  => throw new PacketException("Received null packet coordinates.")
                     case other                                 => throw new PacketException(s"Unknown packet coordinates of type ${other.getClass.getName}. Only Dedicated and Broadcast packet coordinates are allowed on this client.")
                 }
@@ -115,7 +115,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     }
 
     private def tryReconnect(state: ExternalConnectionState): Unit = {
-        val bytes         = currentIdentifier.getBytes()
+        val bytes         = currentName.getBytes()
         val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
 
         if (state == ExternalConnectionState.CONNECTED && socket.isOpen) runLater {

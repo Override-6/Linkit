@@ -58,7 +58,7 @@ class ClientApplication(configuration: ClientApplicationConfiguration, resources
     override def listConnections: Iterable[ExternalConnection] = connectionCache.values.toSet
     
     override def findConnection(identifier: String): Option[ExternalConnection] = {
-        connectionCache.get(identifier).orElse(connectionCache.find(_._2.boundIdentifier == identifier).map(_._2))
+        connectionCache.get(identifier).orElse(connectionCache.find(_._2.boundNT == identifier).map(_._2))
     }
     
     override def findConnection(port: Int): Option[ExternalConnection] = {
@@ -91,21 +91,21 @@ class ClientApplication(configuration: ClientApplicationConfiguration, resources
         
         connectionCache.put(identifier, connection)
         
-        val serverIdentifier: String = connection.boundIdentifier
+        val serverIdentifier: String = connection.boundNT
         AppLoggers.App.info(s"Connection Sucessfully bound to $address ($serverIdentifier)")
         connection
     }
     
     @throws[NoSuchElementException]("If no connection is found into the application's cache.")
     override def unregister(connectionContext: ExternalConnection): Unit = {
-        import connectionContext.{boundIdentifier, currentIdentifier}
+        import connectionContext.{boundNT, currentName}
         
-        connectionCache.remove(currentIdentifier)
+        connectionCache.remove(currentName)
         connectionCount -= 1
         //val newThreadCount = Math.max(configuration.nWorkerThreadFunction(connectionCount), 1)
         //appPool.setThreadCount(newThreadCount)
         
-        AppLoggers.App.info(s"Connection '$currentIdentifier' bound to $boundIdentifier was detached from application.")
+        AppLoggers.App.info(s"Connection '$currentName' bound to $boundNT was detached from application.")
     }
     
 }

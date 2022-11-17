@@ -39,11 +39,6 @@ sealed trait NetworkFriendlyEngineTag extends EngineTag
 trait UniqueTag extends EngineTag
 
 /**
- * A specific kind of tag that is used to make a specific selection over specific engines (see implementations).
- * */
-sealed trait SelectionTag extends EngineTag
-
-/**
  * an identifier tag is a tag that can only be attributed to one engine.
  * Identifier tags are unique and two engine cannot have the same identifier tag.
  * An engine can have multiple identifier tags.
@@ -63,24 +58,19 @@ case class NameTag(name: String) extends UniqueTag with NetworkFriendlyEngineTag
 
 object Server extends IdentifierTag("server")
 
-/**
- * A Magic tag is a special type of engine tag where the identified engine may change depending on
- * where you are present on the network.
- * Take a look at its implementation to have a better understanding of magic tags.
- * */
 
-trait MagicTag extends EngineTag
 
 /**
- * a Magic tag that identifies the current engine.
+ * a Magic tag that identifies the current engine.<br>
+ * If this tag is sent to an engine, it magically transforms itself to the name tag of the sender
  * */
-object Current extends MagicTag with UniqueTag with NetworkFriendlyEngineTag
+object Current extends UniqueTag with NetworkFriendlyEngineTag
 
 /**
  * A special tag that selects nobody.<br>
  * Nobody <=> !Everyone
  * */
-object Nobody extends MagicTag with NetworkFriendlyEngineTag
+object Nobody extends NetworkFriendlyEngineTag
 
 
 /**
@@ -101,51 +91,4 @@ object Everyone extends GroupTag("everyone")
  * */
 object Clients extends GroupTag("clients")
 
-/**
- * Inverses a tag selection.<br>
- * Example: !Server means Clients,
- * <br> !Everyone means Nobody
- * */
-final case class NotTag(tag: NetworkFriendlyEngineTag) extends SelectionTag with NetworkFriendlyEngineTag {
-    override def toString: String = s"!$tag"
-}
-
-/**
- * Union of all given tags.<br>
- * Example: Server U Clients means Everyone,<br>
- * !(NameTag("client1") U NameTag("client2")) means everyone except client1 and client2
- * */
-final case class UnionTag(tags: List[NetworkFriendlyEngineTag]) extends SelectionTag with NetworkFriendlyEngineTag {
-    override def toString: String = tags.mkString(" U ")
-}
-
-final case class IntersectionTag(tags: List[NetworkFriendlyEngineTag]) extends SelectionTag with NetworkFriendlyEngineTag {
-    override def toString: String = tags.mkString(" ∩ ")
-}
-
-object TagUtils {
-
-    implicit class TagOps(tag: NetworkFriendlyEngineTag) {
-        def unary_!(): NotTag = NotTag(tag)
-
-        def -(other: NetworkFriendlyEngineTag): NetworkFriendlyEngineTag = tag I !other
-
-        def U(other: NetworkFriendlyEngineTag): NetworkFriendlyEngineTag = tag match {
-            case UnionTag(tags) => other match {
-                case UnionTag(tags2) => UnionTag(tags2 ::: tags)
-                case tag             => UnionTag(tag :: tags)
-            }
-            case tag            => UnionTag(other :: tag :: Nil)
-        }
-
-        def I(other: NetworkFriendlyEngineTag): NetworkFriendlyEngineTag = tag match {
-            case IntersectionTag(tags) => other match {
-                case IntersectionTag(tags2) => IntersectionTag(tags2 ::: tags)
-                case tag                    => IntersectionTag(tag :: tags)
-            }
-            case tag                   => IntersectionTag(other :: tag :: Nil)
-        }
-
-    }
-}
 

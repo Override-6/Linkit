@@ -16,6 +16,7 @@ package fr.linkit.server.network
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.cache.sync.instantiation.New
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
@@ -50,7 +51,6 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
         manager
     }
 
-    override def serverName: String = traffic.currentEngineName
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
         val contracts = ContractProvider("NetworkContract", ObjectsProperty.defaults(this))
@@ -58,7 +58,7 @@ class ServerSideNetwork(traffic: AbstractPacketTraffic)
                 .syncObject(0, New[NetworkDataTrunk](this), contracts)
     }
 
-    def removeEngine(identifier: String): Unit = {
+    def removeEngine(identifier: NameTag): Unit = {
         getEngine(identifier).foreach(trunk.removeEngine)
     }
     

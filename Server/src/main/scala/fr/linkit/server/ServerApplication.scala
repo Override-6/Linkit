@@ -58,7 +58,7 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
         var downCount            = 0
 
         listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
-            wrapCloseAction(s"Server connection ${serverConnection.currentIdentifier}") {
+            wrapCloseAction(s"Server connection ${serverConnection.currentName}") {
                 serverConnection.shutdown()
             }
             downCount += 1

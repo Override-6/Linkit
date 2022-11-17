@@ -45,9 +45,10 @@ object ClassParser extends BehaviorLanguageParser {
         }*/
         val dispatcher              = {
             // we can either reference an agreement or define one directly into this method declaration.
-            FatArrow ~> (repsep(identifier, And) <~ Comma) ~ ((identifier ^^ AgreementReference) | AgreementBuilderParser.anonymous) ^^ {
-                case targets ~ agreement => DispatchAgreement(identifier.map(EngineTags.OwnerEngine))
-            }
+            val anb = AgreementBuilderParser.anonymous
+            FatArrow ~> (((((identifier ^^ AgreementReference).? <~ Colon) ~ anb) ^^ {
+                case ref ~ agreement => AgreementBuilder(ref.map(_.name), agreement.instructions)
+            }) | anb)
         }
         val invHandlingTypeParser   = (Ensinv ^^^ EnableSubInvocations | Disinv ^^^ DisableSubInvocations) | success(Inherit)
         val foreachMethodParameters = ParenLeft ~ ParenRight withErrorMessage "generic method definitions cannot contain parameter"

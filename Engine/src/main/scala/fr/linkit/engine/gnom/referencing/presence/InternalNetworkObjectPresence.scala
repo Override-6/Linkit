@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.referencing.presence
 
-import fr.linkit.api.gnom.network.tag.{IdentifierTag, NameTag, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{EngineSelector, NameTag, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
 import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
 import fr.linkit.api.gnom.referencing.presence.{NetworkObjectPresence, ObjectPresenceState}
@@ -21,22 +21,30 @@ import fr.linkit.api.internal.system.log.AppLoggers
 
 import scala.collection.mutable
 
-class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[R], val location: R) extends NetworkObjectPresence {
+class InternalNetworkObjectPresence[R <: NetworkObjectReference](selector    : EngineSelector,
+                                                                 handler     : AbstractNetworkPresenceHandler[R],
+                                                                 val location: R) extends NetworkObjectPresence {
 
     private val presences        = mutable.HashMap.empty[NameTag, ObjectPresenceState]
     private var present: Boolean = false
 
     def isPresentOnCurrent: Boolean = present
-    
-    override def isPresenceKnownFor(engineId: NameTag): Boolean = presences.synchronized {
+
+
+    override def getPresenceFor(tag: UniqueTag with NetworkFriendlyEngineTag): ObjectPresenceState = getPresenceFor(selector(tag).nameTag)
+
+    override def isPresenceKnownFor(tag: UniqueTag with NetworkFriendlyEngineTag): Boolean = isPresenceKnownFor(selector(tag).nameTag)
+
+
+    def isPresenceKnownFor(engineId: NameTag): Boolean = presences.synchronized {
         presences.contains(engineId)
     }
-    
+
     def setPresenceFor(engineId: NameTag, kind: ObjectPresenceState): Unit = presences.synchronized {
         presences.put(engineId, kind)
     }
 
-    override def getPresenceFor(engineId: NameTag): ObjectPresenceState = presences.synchronized {
+    def getPresenceFor(engineId: NameTag): ObjectPresenceState = presences.synchronized {
         presences.getOrElse(engineId, NEVER_ASKED)
     }
 
@@ -46,9 +54,9 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
         //on this current engine.
         present = true
         val enginesID = presences
-            .filter(_._2 eq NOT_PRESENT)
-            .keys
-            .toArray
+                .filter(_._2 eq NOT_PRESENT)
+                .keys
+                .toArray
         AppLoggers.GNOM.debug(s"presence modified for $location to present on this engine. Affected engines : ${enginesID.mkString(", ")}")
         if (enginesID.isEmpty)
             return
@@ -63,9 +71,9 @@ class InternalNetworkObjectPresence[R <: NetworkObjectReference](handler: Abstra
         //on this current engine.
         present = false
         val enginesID = presences
-            .filter(_._2 eq PRESENT)
-            .keys
-            .toArray
+                .filter(_._2 eq PRESENT)
+                .keys
+                .toArray
         if (enginesID.isEmpty)
             return
         handler.informPresence(enginesID, location, NOT_PRESENT)

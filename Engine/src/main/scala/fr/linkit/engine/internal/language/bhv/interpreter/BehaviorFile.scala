@@ -86,7 +86,7 @@ class BehaviorFile(val ast: BehaviorFileAST, val filePath: String, center: Compi
 
     def getMethodDescFromSignature(kind: DescriptionKind, signature: MethodSignature, classDesc: SyncStructureDescription[_]): SMethodDescription = {
         val name   = signature.methodName
-        val params = signature.params.map(param => findClass(param.tpe)).toArray
+        val params = signature.params.map(param => findClass(param.tpe.tpe)).toArray
         if (!classDesc.specs.isInstanceOf[SyncClassDefUnique])
             throw new BHVLanguageException("class description's sync class definition is not 'unique' ")
         val method = {
