@@ -14,19 +14,21 @@
 package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.ChippedObject
-import java.lang.reflect.{Array => RArray}
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
+import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.util.Unwrapper
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
+import fr.linkit.engine.gnom.persistence.ConstantProtocol._
+import fr.linkit.engine.gnom.persistence.PersistenceException
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
-import fr.linkit.engine.gnom.persistence.ConstantProtocol._
+import fr.linkit.engine.internal.util.JavaUtils
 
-import scala.math.Equiv.reference
+import scala.util.control.NonFatal
 
 class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Array[Int](ChunkCount).mapInPlace(_ => -1)) {
 
@@ -161,13 +163,28 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     }
 
     private def addObjectDecomposed(ref: AnyRef): Array[Any] = {
-        val selectedRefType = addTypeOfIfAbsent(ref)
-        val profile         = config.getProfile[AnyRef](ref)
-        val persistence     = profile.getPersistence(ref)
-        val decomposed      = persistence.toArray(ref)
-        val objPool         = getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
+        val profile = config.getProfile[AnyRef](ref)
+        addObjectDecomposed(ref, profile, 0)
+    }
 
-        val obj = new SimpleObject(ref, selectedRefType, decomposed, profile)
+    private def addObjectDecomposed(ref: AnyRef, profile: TypeProfile[AnyRef], serializerFails: Int): Array[Any] = {
+        val persistence = profile.selectPersistor(ref, serializerFails)
+
+        val (decomposed, error) = try (persistence.toArray(ref), false) catch {
+            case NonFatal(e) =>
+                AppLoggers.Persistence.error(s"Persistor error when serializing ${ref.getClass.getName}: " + e)
+                (null, true)
+        }
+        if (error || decomposed.length == 1 && JavaUtils.sameInstance(decomposed(0), ref)) {
+            if (serializerFails >= profile.getPersistences.length) {
+                throw new PersistenceException(s"Could not find a serializer that could successfully decompose $ref")
+            }
+            return addObjectDecomposed(ref, profile, serializerFails + 1)
+        }
+
+        val obj             = new SimpleObject(ref, addTypeOfIfAbsent(ref), decomposed, profile)
+
+        val objPool = getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
         objPool.add(obj)
         //v^ do not swap those two lines
         addAll(decomposed)

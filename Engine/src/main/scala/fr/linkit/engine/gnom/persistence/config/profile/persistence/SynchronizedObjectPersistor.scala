@@ -14,12 +14,12 @@
 package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.SyncObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
 
-class SynchronizedObjectPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T]) extends TypePersistence[T] {
+class SynchronizedObjectPersistor[T <: SynchronizedObject[T]](objectPersistence: TypePersistor[T]) extends TypePersistor[T] {
     
     override val structure: ObjectStructure = new SyncObjectStructure(objectPersistence.structure)
     

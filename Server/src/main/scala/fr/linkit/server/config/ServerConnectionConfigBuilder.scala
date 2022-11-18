@@ -39,8 +39,8 @@ abstract class ServerConnectionConfigBuilder {
         val builder = this
         count += 1
         new ServerConnectionConfiguration {
-            override val identifier                    : String                                 = builder.identifier
-            override val port                          : Int                                    = builder.port
+            override val connectionName: String = builder.identifier
+            override val port          : Int    = builder.port
             override val defaultPersistenceConfigScript: Option[URL]                            = builder.defaultPersistenceConfigScript
             override val maxConnection                 : Int                                    = builder.maxConnection
             override val nWorkerThreadFunction         : Int => Int                             = builder.nWorkerThreadFunction

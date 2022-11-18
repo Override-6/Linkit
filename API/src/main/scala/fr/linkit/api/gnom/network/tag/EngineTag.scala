@@ -15,6 +15,7 @@ package fr.linkit.api.gnom.network.tag
 
 import fr.linkit.api.gnom.cache.sync.contract.OwnerEngine
 import fr.linkit.api.gnom.network.Network
+import fr.linkit.api.gnom.persistence.unstabletype
 
 /**
  * An Engine tag is a tag that represents an engine or a group of engine
@@ -64,6 +65,7 @@ object Server extends IdentifierTag("server")
  * a Magic tag that identifies the current engine.<br>
  * If this tag is sent to an engine, it magically transforms itself to the name tag of the sender
  * */
+@unstabletype
 case object Current extends UniqueTag with NetworkFriendlyEngineTag
 
 /**

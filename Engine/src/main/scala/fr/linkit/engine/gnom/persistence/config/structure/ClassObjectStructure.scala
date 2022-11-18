@@ -18,7 +18,7 @@ import java.lang.reflect.{Field, Modifier}
 
 import scala.collection.mutable
 
-class ClassObjectStructure private(objectClass: Class[_]) extends ArrayObjectStructure {
+class ClassObjectStructure private(val objectClass: Class[_]) extends ArrayObjectStructure {
 
     val fields: Array[Field] = ScalaUtils.retrieveAllFields(objectClass).filterNot(f => Modifier.isTransient(f.getModifiers))
     override val types: Array[Class[_]] = fields.map(_.getType)

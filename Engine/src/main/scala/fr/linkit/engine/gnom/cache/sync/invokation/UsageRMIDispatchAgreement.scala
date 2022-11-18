@@ -21,23 +21,21 @@ class UsageRMIDispatchAgreement(context              : ConnectedObjectContext,
                                 val selection        : TagSelection[NetworkFriendlyEngineTag]) extends RMIDispatchAgreement {
 
     private val resolver = context.resolver
-
+    import resolver._
 
     override def getAppointedEngineReturn: UniqueTag with NetworkFriendlyEngineTag = appointedEngineReturn
 
-    override val currentMustReturn: Boolean = {
-        resolver.isEquivalent(Current, appointedEngineReturn)
-    }
+    override def currentMustReturn: Boolean = Current <=> appointedEngineReturn
 
-    override val mayCallSuper: Boolean = {
+    override def mayCallSuper: Boolean = {
         //call super if the current engine is included in the invocation selection
-        resolver.isIncluded(Current, selection)
+        Current C selection
     }
 
-    override val mayPerformRemoteInvocation: Boolean = {
+    override def mayPerformRemoteInvocation: Boolean = {
         //perform rmi is the selection include another engine that the current engine.
-        //NOTE: selection cannot be empty
-        !resolver.isEquivalent(selection, Current)
+        //NOTE: selection cannot be empty according to verification steps
+        !(selection <=> Current)
     }
 
     override def toString: String = s"RMIAgreement($selection, $appointedEngineReturn)"

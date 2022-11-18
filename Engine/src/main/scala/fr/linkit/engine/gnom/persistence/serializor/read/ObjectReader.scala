@@ -23,7 +23,7 @@ import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.network.EngineImpl
 import fr.linkit.engine.gnom.persistence.MalFormedPacketException
 import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
-import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistence
+import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistor$
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.gnom.persistence.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException, ObjectDeserializationException}
@@ -34,17 +34,17 @@ import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
-class ObjectReader(bundle: PersistenceBundle,
+class ObjectReader(bundle         : PersistenceBundle,
                    syncClassCenter: SyncClassCenter) {
-    
+
     final         val buff: ByteBuffer             = bundle.buff
     private final val selector                     = new ObjectSelector(bundle)
-    private lazy val boundMappings                = bundle.network.getEngine(bundle.boundNT).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
+    private lazy  val boundMappings                = bundle.network.getEngine(bundle.boundNT).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
     private final val config                       = bundle.config
     private       val (packetRefSize, sizes, pool) = readPoolStructure()
     private var isInit                             = false
     val controlBox: ControlBox = new SimpleControlBox()
-    
+
     def readAndInit(): Unit = {
         if (isInit)
             throw new IllegalStateException("This reader is already initialised.")
@@ -61,16 +61,16 @@ class ObjectReader(bundle: PersistenceBundle,
             i = (i + 1).toByte
         }
     }
-    
+
     def getPool: DeserializerObjectPool = pool
-    
+
     @inline
     def readNextRef: Int = (packetRefSize: @switch) match {
         case UByteSize  => buff.get
         case UShortSize => buff.getChar
         case IntSize    => buff.getInt
     }
-    
+
     private def readNextChunk(size: Int, flag: Byte): Unit = {
         if (flag >= Int && flag <= Char) {
             val chunk   = pool.getChunkFromFlag[Any](flag)
@@ -78,7 +78,7 @@ class ObjectReader(bundle: PersistenceBundle,
             System.arraycopy(content, 0, chunk.array, 0, RArray.getLength(content))
             return
         }
-        
+
         @inline
         def collectAndUpdateChunk[T: ClassTag](@inline action: => T): Unit = {
             var i     = 0
@@ -92,7 +92,7 @@ class ObjectReader(bundle: PersistenceBundle,
                 i += 1
             }
         }
-        
+
         (flag: @switch) match {
             case Class   => collectAndUpdateChunk[Class[_]](readClass())
             case SyncDef => collectAndUpdateChunk[SyncClassDef](readSyncDef())
@@ -103,11 +103,11 @@ class ObjectReader(bundle: PersistenceBundle,
             case RNO     => collectAndUpdateChunk[ReferencedPoolObject](readReferencedObject())
         }
     }
-    
+
     private def readReferencedObject(): ReferencedPoolObject = {
         new ReferencedObject(readNextRef, selector, pool)
     }
-    
+
     private def readSyncDef(): SyncClassDef = {
         def readDef(): SyncClassDef = {
             val classCount = buff.getChar.toInt
@@ -124,13 +124,13 @@ class ObjectReader(bundle: PersistenceBundle,
             }
             SyncClassDef(classes.head, classes.tail)
         }
-        
+
         val result = readDef()
         val clazz  = syncClassCenter.getSyncClass(result)
         pool.cacheSyncClass(result, clazz)
         result
     }
-    
+
     private def readClass(): Class[_] = {
         val code  = buff.getInt
         val clazz = ClassMappings.getClass(code)
@@ -147,18 +147,18 @@ class ObjectReader(bundle: PersistenceBundle,
         }
         clazz
     }
-    
+
     private def readEnum[T <: Enum[T]](): Enum[T] = {
         val tpe  = pool.getType(readNextRef)
         val name = readString()
         java.lang.Enum.valueOf[T](tpe.asInstanceOf[Class[T]], name)
     }
-    
+
     private def readPoolStructure(): (Byte, Array[Int], DeserializerObjectPool) = {
         val packetRefSize = buff.get()
         if (packetRefSize > 3 || packetRefSize < 1) throw new MalFormedPacketException(s"packetRefSize is out of bounds: received $packetRefSize, expected: number between 1 and 3")
         val sizes = new Array[Int](ChunkCount)
-        
+
         var i: Int                = 0
         val announcedChunksNumber = buff.getLong
         while (i < ChunkCount) {
@@ -174,7 +174,7 @@ class ObjectReader(bundle: PersistenceBundle,
         }
         (packetRefSize, sizes, new DeserializerObjectPool(sizes))
     }
-    
+
     private def readObject(): NotInstantiatedObject[AnyRef] = {
         val classRef    = readNextRef
         val clazz       = pool.getType(classRef)
@@ -183,7 +183,7 @@ class ObjectReader(bundle: PersistenceBundle,
         val content     = readObjectContent(contentSize)
         new NotInstantiatedObject[AnyRef](profile, clazz, content, controlBox, selector, pool)
     }
-    
+
     private def readObjectContent(length: Int): Array[Int] = {
         var i       = 0
         val content = new Array[Int](length)
@@ -193,7 +193,7 @@ class ObjectReader(bundle: PersistenceBundle,
         }
         content
     }
-    
+
     private def readString(): String = {
         val size  = buff.getInt()
         val array = new Array[Byte](size)

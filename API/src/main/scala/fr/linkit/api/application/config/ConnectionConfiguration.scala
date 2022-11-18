@@ -23,7 +23,7 @@ trait ConnectionConfiguration {
 
     val configName: String
 
-    val identifier: String
+    val connectionName: String
 
     val hasher: BytesHasher
 

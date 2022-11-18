@@ -14,21 +14,26 @@
 package fr.linkit.client.network
 
 import fr.linkit.api.gnom.cache.{CacheSearchMethod, SharedCacheManager}
-import fr.linkit.api.gnom.network.tag.NetworkFriendlyEngineTag
-import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.network.tag.{NameTag, NetworkFriendlyEngineTag, Server, UniqueTag}
 import fr.linkit.client.cache.ClientSharedCacheManager
-import fr.linkit.client.connection.traffic.ClientPacketTraffic
+import fr.linkit.client.connection.ClientConnection
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
-import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
-import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 
-class ClientSideNetwork(traffic: AbstractPacketTraffic) extends AbstractNetwork(traffic) {
+class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
+
+    val serverNameTag = connection.boundNT
+
+    override def retrieveNT(uniqueTag: UniqueTag with NetworkFriendlyEngineTag): NameTag = uniqueTag match {
+        //add Server case (super.retrieveNT would also support the Server case but this override supports Server case during trunk initialization)
+        case Server => serverNameTag
+        case _      => super.retrieveNT(uniqueTag)
+    }
 
     override protected def createNewCache0(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {
         val store = getStore(managerChannelPath)
-        new ClientSharedCacheManager(family, this, objectManagementChannel, store)
+        new ClientSharedCacheManager(family, this, traffic.getObjectManagementChannel, store)
     }
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
@@ -39,6 +44,6 @@ class ClientSideNetwork(traffic: AbstractPacketTraffic) extends AbstractNetwork(
                 }
         trunk
     }
-    override def serverName: String = traffic.serverName
+
 
 }

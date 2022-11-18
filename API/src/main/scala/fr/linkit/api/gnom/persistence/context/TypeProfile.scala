@@ -18,9 +18,16 @@ trait TypeProfile[T <: AnyRef] {
 
     val typeClass: Class[_]
 
-    def getPersistence(t: T): TypePersistence[T]
+    /**
+     * Selects a persistor that could deserialize t.
+     * the returned persistor is the n-th choice among persistor that could handle t
+     *
+     * @param t obj to select a valid deserializer
+     * @param selectionChoice the n-th choice.
+     * */
+    def selectPersistor(t: T, selectionChoice: Int): TypePersistor[T]
 
-    def getPersistence(args: Array[Any]): TypePersistence[T]
+    def selectPersistor(args: Array[Any]): TypePersistor[T]
 
-    def getPersistences: Array[TypePersistence[T]]
+    def getPersistences: Array[TypePersistor[T]]
 }

@@ -19,7 +19,6 @@ import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription
 trait FieldContract[A] extends ValueContract {
 
     val description: FieldDescription
-
     def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manipulation: SyncObjectFieldManipulation): Unit
 
 }

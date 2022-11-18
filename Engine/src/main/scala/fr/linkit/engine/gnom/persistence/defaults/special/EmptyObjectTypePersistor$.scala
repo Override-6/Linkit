@@ -13,12 +13,12 @@
 
 package fr.linkit.engine.gnom.persistence.defaults.special
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.EmptyObjectStructure
 
 //a TP that does nothing (used to create Mirroring objects)
-object EmptyObjectTypePersistence extends TypePersistence[AnyRef] {
+object EmptyObjectTypePersistor$ extends TypePersistor[AnyRef] {
     
     override val structure: ObjectStructure = EmptyObjectStructure
     

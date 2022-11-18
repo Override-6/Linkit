@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.persistence.context
 
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 
-trait TypePersistence[-T] {
+trait TypePersistor[-T] {
 
     val structure: ObjectStructure
 

@@ -14,15 +14,15 @@
 package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
-import fr.linkit.api.gnom.persistence.context.{ControlBox, Deconstructor, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Deconstructor, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.config.profile.persistence.ConstructorTypePersistence.getPersistConstructor
+import fr.linkit.engine.gnom.persistence.config.profile.persistence.ConstructorTypePersistor.getPersistConstructor
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.manipulation.invokation.ConstructorInvoker
 
 import java.lang.reflect.Constructor
 
-class ConstructorTypePersistence[T <: AnyRef](constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
+class ConstructorTypePersistor[T <: AnyRef](constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistor[T]() {
     
     def this(clazz: Class[_], deconstructor: Deconstructor[T]) {
         this(getPersistConstructor[T](clazz), deconstructor.deconstruct(_: T))
@@ -45,7 +45,7 @@ class ConstructorTypePersistence[T <: AnyRef](constructor: Constructor[T], decon
     
 }
 
-object ConstructorTypePersistence {
+object ConstructorTypePersistor {
     
     def getPersistConstructor[T](clazz: Class[_]): Constructor[T] = {
         findPersistConstructor(clazz)

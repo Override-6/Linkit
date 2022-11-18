@@ -156,12 +156,12 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         import resolver._
         val selection = agreement.selection
 
-        if (selection <=> Nobody)
-            throw new BadContractException(s"method agreement $method have nowhere to invoke the method.")
+        //FIXME always passes if network trunk is initializing if (selection <=> Nobody)
+        //    throw new BadContractException(s"method agreement $method have nowhere to invoke the method.")
         if (context.syncLevel == Statics)
             return
 
-        val isMirroring = isMirrorable(descriptor) && context.translate(Current) == context.ownerTag //is mirrorable and is not origin = isMirroring
+        val isMirroring = isMirrorable(descriptor) && context.toNameTag(Current) == context.ownerTag //is mirrorable and is not origin = isMirroring
         if (!isMirroring) return
 
         if (agreement.mayCallSuper)

@@ -26,7 +26,7 @@ import scala.collection.mutable
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
     private               val engines           = mutable.HashMap.empty[String, EngineImpl]
-    private               val caches            = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
+    private               val cacheManagers            = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
     private[network] lazy val staticAccesses    = new StaticAccesses(network)
     private               val onNewEngineEvents = ConsumerContainer[Engine]()
 
@@ -35,7 +35,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     }
 
     def toBundle: NetworkDataBundle = {
-        NetworkDataBundle(engines.keys.toArray, caches.map(p => toCacheData(p._2)).toArray, startUpDate, network)
+        NetworkDataBundle(engines.keys.toArray, cacheManagers.map(p => toCacheData(p._2)).toArray, startUpDate, network)
     }
 
     private def toCacheData(pair: (SharedCacheManager, Array[Int])): CacheManagerInfo = {
@@ -51,8 +51,8 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
 
     def removeEngine(engine: Engine): Unit = engines -= engine.name
 
-    def findCache(family: String): Option[SharedCacheManager] = {
-        caches.get(family).map(_._1)
+    def findCacheManager(family: String): Option[SharedCacheManager] = {
+        cacheManagers.get(family).map(_._1)
     }
 
     /**
@@ -62,9 +62,9 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
      * @param channelPath the traffic path of the manager's channel.
      * */
     private[network] def addCacheManager(manager: SharedCacheManager, channelPath: Array[Int]): Unit = {
-        if (caches.contains(manager.family))
+        if (cacheManagers.contains(manager.family))
             throw new Exception(s"Cache Manager '${manager.family}' already exists")
-        caches.put(manager.family, (manager, channelPath))
+        cacheManagers.put(manager.family, (manager, channelPath))
     }
 
     def findEngine(identifier: IdentifierTag): Option[Engine] = engines.synchronized {
@@ -126,8 +126,8 @@ object NetworkDataTrunk {
         }
         data.caches.foreach(info => {
             import info._
-            if (trunk.findCache(family).isEmpty)
-                trunk.findCache(family).getOrElse {
+            if (trunk.findCacheManager(family).isEmpty)
+                trunk.findCacheManager(family).getOrElse {
                     val cache = network.createNewCache(family, managerChannelPath)
                     trunk.addCacheManager(cache, managerChannelPath)
                 }

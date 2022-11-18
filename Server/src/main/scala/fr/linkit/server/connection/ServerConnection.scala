@@ -41,14 +41,14 @@ class ServerConnection(applicationContext: ServerApplication,
 
     Debugger.registerConnection(this)
 
-    override val currentName : String           = configuration.identifier
-    override val translator  : ObjectTranslator = configuration.translatorFactory(applicationContext)
-    override val port        : Int              = configuration.port
-    private  val workerPool  : WorkerPool       = VirtualProcrastinator(currentName)
-    private  val serverSocket: ServerSocket     = new ServerSocket(configuration.port)
+    override val currentName       : String                     = configuration.connectionName
+    override val translator        : ObjectTranslator           = configuration.translatorFactory(applicationContext)
+    override val port              : Int                        = configuration.port
+    private  val workerPool        : WorkerPool                 = VirtualProcrastinator(currentName)
+    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)
-    private  val serverTraffic     : ServerPacketTraffic        = sideNetwork.traffic
+    private  val serverTraffic     : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript, sideNetwork)
     override val traffic           : PacketTraffic              = serverTraffic
     override val network           : Network                    = sideNetwork
     @volatile private var alive    : Boolean                    = false

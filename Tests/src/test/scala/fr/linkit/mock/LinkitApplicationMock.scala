@@ -79,7 +79,7 @@ class LinkitApplicationMock private(configuration: ApplicationConfiguration,
             case Failure(e)                => throw e
             case Success(serverConnection) =>
                 val port       = config.port
-                val identifier = config.identifier
+                val identifier = config.connectionName
                 connectionsID(identifier) = serverConnection
                 connectionsPort(port) = serverConnection
                 serverConnection
@@ -93,7 +93,7 @@ class LinkitApplicationMock private(configuration: ApplicationConfiguration,
             case Failure(e)                => throw e
             case Success(clientConnection) =>
                 val port       = config.remoteAddress.getPort
-                val identifier = config.identifier
+                val identifier = config.connectionName
                 connectionsID(identifier) = clientConnection
                 connectionsPort(port) = clientConnection
                 clientConnection

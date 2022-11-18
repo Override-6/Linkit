@@ -23,16 +23,16 @@ import scala.reflect.{ClassTag, classTag}
 
 class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
 
-    private val persistors = ListBuffer.empty[TypePersistence[T]]
+    private val persistors = ListBuffer.empty[TypePersistor[T]]
 
-    def addPersistence(persistence: TypePersistence[T]): this.type = {
+    def addPersistence(persistence: TypePersistor[T]): this.type = {
         persistors += persistence
         this
     }
 
     def setTConverter[B : ClassTag](fTo: T => B)(fFrom: B => T): this.type = {
         val clazz = classTag[B].runtimeClass
-        val persistor = new TypePersistence[T] {
+        val persistor = new TypePersistor[T] {
             override val structure: ObjectStructure = new ArrayObjectStructure {
                 override val types: Array[Class[_]] = Array(clazz)
             }

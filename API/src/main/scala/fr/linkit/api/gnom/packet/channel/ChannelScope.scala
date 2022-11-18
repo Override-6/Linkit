@@ -23,7 +23,6 @@ trait ChannelScope extends PacketAttributesPresence {
 
     val writer: PacketWriter
 
-    val traffic: PacketTraffic = writer.traffic
 
     def sendToAll(packet: Packet, attributes: PacketAttributes): Unit
 

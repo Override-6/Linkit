@@ -13,29 +13,27 @@
 
 package fr.linkit.engine.gnom.persistence.config.profile
 
-import fr.linkit.api.gnom.persistence.context.{TypePersistence, TypeProfile, TypeProfileStore}
+import fr.linkit.api.gnom.persistence.context.{TypePersistor, TypeProfile, TypeProfileStore}
+import fr.linkit.engine.gnom.persistence.PersistenceException
 
 class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                                       store: TypeProfileStore,
-                                      private[config] val persists: Array[TypePersistence[T]]) extends TypeProfile[T] {
+                                      private[config] val persists: Array[TypePersistor[T]]) extends TypeProfile[T] {
     
     private lazy val declaredParent: TypeProfile[_ >: T] = {
         val superClass = typeClass.getSuperclass
         if (superClass == null) null else store.getProfile[T](superClass)
     }
     
-    override def getPersistences: Array[TypePersistence[T]] = persists
+    override def getPersistences: Array[TypePersistor[T]] = persists
     
-    override def getPersistence(t: T): TypePersistence[T] = {
-        return persists.head
-        /*//TODO Choose between other compatible persistence (if an error occurred etc...)
-        if (declaredParent ne null)
-            declaredParent.getPersistence(t)
-        else
-            throw new NoSuchElementException(s"Could not find type persistence matching object ${t} (of class ${t.getClass.getName}.")*/
+    override def selectPersistor(t: T, selectionChoice: Int): TypePersistor[T] = {
+        if (selectionChoice > persists.length)
+            throw new PersistenceException(s"Could not select persistor n° $selectionChoice")
+        persists(selectionChoice)
     }
     
-    override def getPersistence(args: Array[Any]): TypePersistence[T] = {
+    override def selectPersistor(args: Array[Any]): TypePersistor[T] = {
         var i   = 0
         val len = persists.length
         while (i < len) {
@@ -44,7 +42,7 @@ class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                 return persist
             i += 1
         }
-        val result = if (declaredParent ne null) declaredParent.getPersistence(args) else null
+        val result = if (declaredParent ne null) declaredParent.selectPersistor(args) else null
         if (result == null)
             throw new NoSuchElementException(errorMsg(args, typeClass))
         result

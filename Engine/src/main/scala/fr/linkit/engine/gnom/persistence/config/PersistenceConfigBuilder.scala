@@ -23,6 +23,7 @@ import fr.linkit.api.gnom.referencing.linker.ContextObjectLinker
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.persistence.config.profile.TypeProfileBuilder
+import fr.linkit.engine.gnom.persistence.config.profile.persistence.GenericTypePersistor
 import fr.linkit.engine.gnom.persistence.config.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.gnom.referencing.linker.NodeContextObjectLinker
@@ -38,7 +39,7 @@ import scala.reflect.{ClassTag, classTag}
 
 class PersistenceConfigBuilder {
     
-    private val persistors     = new ClassMap[TypePersistence[_ <: AnyRef]]
+    private val persistors     = new ClassMap[TypePersistor[_ <: AnyRef]]
     private val referenceStore = mutable.HashMap.empty[Int, AnyRef]
     
     def this(other: PersistenceConfigBuilder) {
@@ -79,8 +80,8 @@ class PersistenceConfigBuilder {
     
     def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A, procrastinator: => Procrastinator = null): this.type = {
         val fromClass                     = classTag[A].runtimeClass
-        val toClass                       = classTag[B].runtimeClass
-        val persistor: TypePersistence[A] = new TypePersistence[A] {
+        val toClass                     = classTag[B].runtimeClass
+        val persistor: TypePersistor[A] = new TypePersistor[A] {
             private def fields(clazz: Class[_]) = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
             
             override val structure: ObjectStructure = new ArrayObjectStructure {
@@ -126,7 +127,7 @@ class PersistenceConfigBuilder {
         referenceStore put(id, ref)
     }
     
-    def putPersistence[T <: AnyRef : ClassTag](persistence: TypePersistence[T]): this.type = {
+    def putPersistence[T <: AnyRef : ClassTag](persistence: TypePersistor[T]): this.type = {
         val clazz = classTag[T].runtimeClass
         if (persistence eq null) {
             persistors.remove(clazz)
@@ -167,15 +168,17 @@ class PersistenceConfigBuilder {
     }
     
     private def collectProfiles(store: TypeProfileStore): ClassMap[TypeProfile[_]] = {
-        val map = profiles.customProfiles
+        val profiles = this.profiles.customProfiles
         
         def cast[X](a: Any): X = a.asInstanceOf[X]
         
         persistors.foreachEntry((clazz, persistence) => {
-            map.getOrElseUpdate(clazz, new TypeProfileBuilder()(ClassTag(clazz)))
+            profiles.getOrElseUpdate(clazz, new TypeProfileBuilder()(ClassTag(clazz)))
                     .addPersistence(cast(persistence))
         })
-        val finalMap = map.toSeq
+        //TODO maybe add an option to let the user choose if it wants a emergency GenericTypePersistor if its persistor did not worked
+        profiles.foreachEntry((clazz, profile) => profile.addPersistence(new GenericTypePersistor(clazz)))
+        val finalMap = profiles.toSeq
                 .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
                 .map(pair => {
                     val clazz   = pair._1

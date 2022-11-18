@@ -13,7 +13,7 @@
 
 package fr.linkit.client.connection.traffic
 
-import fr.linkit.api.gnom.network.tag.NameTag
+import fr.linkit.api.gnom.network.tag.{Current, NameTag, Server}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.ObjectTranslator
@@ -32,27 +32,27 @@ class ClientPacketWriter(socket    : DynamicSocket,
     override      val path             : Array[Int]        = writerInfo.path
     private       val persistenceConfig: PersistenceConfig = writerInfo.persistenceConfig
     override lazy val selector                             = writerInfo.network
-    private lazy  val currentEngineTag                     = selector.currentEngine.nameTag
-    private lazy  val serverEngineTag                      = selector.serverEngine.nameTag
 
+    private lazy val serverNT : NameTag = selector.retrieveNT(Server)
+    private lazy val currentNT: NameTag = selector.retrieveNT(Current)
 
     override protected def writePackets(packet: Packet, attributes: PacketAttributes, targets: Seq[NameTag]): Unit = {
         if (targets.length == 1) {
             val target    = targets.head
-            val dedicated = DedicatedPacketCoordinates(path, target, currentEngineTag)
-            if (target == currentEngineTag) {
+            val dedicated = DedicatedPacketCoordinates(path, target, currentNT)
+            if (target == currentNT) {
                 traffic.processInjection(packet, attributes, dedicated)
                 return
             }
             send(dedicated)(attributes, packet)
         } else {
-            if (targets.contains(currentEngineTag)) {
-                val coords = DedicatedPacketCoordinates(path, serverEngineTag, currentEngineTag)
+            if (targets.contains(currentNT)) {
+                val coords = DedicatedPacketCoordinates(path, serverNT, currentNT)
                 traffic.processInjection(packet, attributes, coords)
             }
 
-            for (target <- targets) if (target != currentEngineTag) {
-                val coords = DedicatedPacketCoordinates(path, target, currentEngineTag)
+            for (target <- targets) if (target != currentNT) {
+                val coords = DedicatedPacketCoordinates(path, target, currentNT)
                 send(coords)(attributes, packet)
             }
         }

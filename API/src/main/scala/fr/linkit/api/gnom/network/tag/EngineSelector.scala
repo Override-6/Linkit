@@ -4,9 +4,11 @@ import fr.linkit.api.gnom.network.Engine
 
 trait EngineSelector {
 
+    type NFETSelect = TagSelection[NetworkFriendlyEngineTag]
+
     implicit def retrieveNT(uniqueTag: UniqueTag with NetworkFriendlyEngineTag): NameTag
 
-    type NFETSelect = TagSelection[NetworkFriendlyEngineTag]
+    def listNameTags(uniqueTag: NFETSelect): List[NameTag]
 
     def apply(tag: UniqueTag with NetworkFriendlyEngineTag): Engine = getEngine(tag).getOrElse {
         throw new NoSuchElementException(s"unable to find engine with tag '$tag' in this network.")
@@ -18,17 +20,10 @@ trait EngineSelector {
      * Returns true if tags a and b points to the same engine.
      * */
     def isEquivalent(a: NFETSelect, b: NFETSelect): Boolean = a == b || {
-        val es = listEngines(b)
-        listEngines(a).forall(es.contains)
+        val tagsA = listNameTags(a)
+        val tagsB = listNameTags(b)
+        tagsA.length == tagsB.length && tagsA.forall(tagsB.contains)
     }
-
-    import TagSelection._
-    (!Current U Clients) <=> (Server I Group("test") - NameTag("david"))
-    (!Current U Clients) <=> Nobody
-    Everyone <=> !Nobody
-    Current C Clients
-
-
 
     /**
      * Verifies that all engines tagged by a are also tagged by b
@@ -48,6 +43,7 @@ trait EngineSelector {
 
     implicit class NFETSelectOps(a: NFETSelect) {
         def <=>(b: NFETSelect): Boolean = isEquivalent(a, b)
+
         def C(b: NFETSelect): Boolean = isIncluded(a, b)
     }
 

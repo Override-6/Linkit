@@ -17,20 +17,24 @@ import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.cache.sync.instantiation.New
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
-import fr.linkit.api.gnom.network.tag.NameTag
+import fr.linkit.api.gnom.network.tag.{NameTag, NetworkFriendlyEngineTag, Server, UniqueTag}
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.server.cache.ServerSharedCacheManager
 import fr.linkit.server.connection.ServerConnection
-import fr.linkit.server.connection.traffic.ServerPacketTraffic
 
 class ServerSideNetwork(connection: ServerConnection)
         extends AbstractNetwork(connection) {
 
-    override lazy val traffic: ServerPacketTraffic = new ServerPacketTraffic(connection, connection.configuration.defaultPersistenceConfigScript, this)
 
     override protected def createNewCache0(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {
         new ServerSharedCacheManager(family, this, traffic.getObjectManagementChannel, getStore(managerChannelPath))
+    }
+
+    override def retrieveNT(uniqueTag: UniqueTag with NetworkFriendlyEngineTag): NameTag = uniqueTag match {
+        //add Server case which (super.retrieveNT would also support the Server case but this override supports Server case during trunk initialization)
+        case Server => currentTag
+        case _      => super.retrieveNT(uniqueTag)
     }
 
     def attachToCacheManager(family: String): SharedCacheManager = {
@@ -40,7 +44,7 @@ class ServerSideNetwork(connection: ServerConnection)
     def declareNewCacheManager(family: String): SharedCacheManager = {
         if (isTrunkInitializing)
             throw new UnsupportedOperationException("Trunk is initializing.")
-        if (trunk.findCache(family).isDefined)
+        if (trunk.findCacheManager(family).isDefined)
             throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
         newCacheManager(family)
     }
@@ -65,9 +69,8 @@ class ServerSideNetwork(connection: ServerConnection)
         getEngine(identifier).foreach(trunk.removeEngine)
     }
 
-    override def initialize(): this.type = {
+    def initialize(): this.type = {
         declareNewCacheManager("StaticAccesses")
-        super.initialize()
         addCacheManager(globalCaches, networkStore.trafficPath :+ globalCaches.family.hashCode)
         this
     }

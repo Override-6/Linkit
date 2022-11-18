@@ -75,7 +75,7 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
     override def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = /*this.synchronized*/ {
 
         ensureAlive()
-        if (configuration.identifier.length > Rules.MaxConnectionIDLength)
+        if (configuration.connectionName.length > Rules.MaxConnectionIDLength)
             throw new IllegalArgumentException(s"Server identifier length > ${Rules.MaxConnectionIDLength}")
 
         securityManager.checkConnectionConfig(configuration)
@@ -87,7 +87,7 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
             serverConnection.start()
             AppLoggers.App.debug("Server started !")
         }.get) match {
-            case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.identifier} on port ${configuration.port}", e)
+            case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.connectionName} on port ${configuration.port}", e)
             case Success(_) =>
         }
 
@@ -102,7 +102,7 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
         }
 
         val port       = configuration.port
-        val identifier = configuration.identifier
+        val identifier = configuration.connectionName
         serverCache.put(port, serverConnection)
         serverCache.put(identifier, serverConnection)
 
@@ -115,7 +115,7 @@ class ServerApplication(configuration: ServerApplicationConfiguration, resources
 
         val configuration = serverConnection.configuration
         val port          = configuration.port
-        val identifier    = configuration.identifier
+        val identifier    = configuration.connectionName
 
         if (!serverCache.contains(port) || !serverCache.contains(identifier))
             throw NoSuchConnectionException(s"Could not unregister server $identifier opened on port $port; connection not found in application context.")

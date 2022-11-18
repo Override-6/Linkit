@@ -13,35 +13,34 @@
 
 package fr.linkit.engine.gnom.persistence.defaults
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
 
 import scala.annotation.tailrec
-import scala.collection.IterableFactory
-import scala.collection.immutable.ArraySeq
+import scala.collection.{IterableFactory, MapFactory}
 import scala.util.control.NonFatal
 
-object ScalaIterableTypePersistence extends TypePersistence[Iterable[Any]] {
+object ScalaMapTypePersistor$ extends TypePersistor[collection.Map[Any, Any]] {
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 
-    override def initInstance(allocatedObject: Iterable[Any], args: Array[Any], box: ControlBox): Unit = {
+    override def initInstance(allocatedObject: collection.Map[Any, Any], args: Array[Any], box: ControlBox): Unit = {
         val factory = companionOf(allocatedObject.getClass, allocatedObject.getClass)
         val result  = factory.newBuilder
-                .addAll(args.head.asInstanceOf[Array[AnyRef]])
+                .addAll(args.head.asInstanceOf[Array[(Any, Any)]])
                 .result()
         ScalaUtils.pasteAllFields(allocatedObject, result)
     }
 
-    override def toArray(t: Iterable[Any]): Array[Any] = Array(t.toArray)
+    override def toArray(t: collection.Map[Any, Any]): Array[Any] = Array(t.toArray)
 
-    private def companionOf(origin: Class[_], clazz: Class[_]): IterableFactory[Iterable] = try {
+    private def companionOf(origin: Class[_], clazz: Class[_]): MapFactory[collection.Map] = try {
         val companionClassName = clazz.getName + "$"
         val companionClass     = Class.forName(companionClassName)
         val moduleField        = companionClass.getField("MODULE$")
-        moduleField.get(null).asInstanceOf[IterableFactory[Iterable]]
+        moduleField.get(null).asInstanceOf[MapFactory[collection.Map]]
     } catch {
         case NonFatal(_) =>
             val superClass = clazz.getSuperclass

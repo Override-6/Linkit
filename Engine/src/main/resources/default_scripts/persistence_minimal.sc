@@ -37,9 +37,9 @@ setTConverter[UniqueTag with NetworkFriendlyEngineTag, UniqueTag with NetworkFri
 
 //putPersistence(new ScalaIterableTypePersistence)
 //putPersistence(new ScalaMapTypePersistence)
-putPersistence(new JavaArrayListTypePersistence)
-putPersistence(new JavaHashMapTypePersistence)
-putPersistence(new JavaHashSetTypePersistence)
+putPersistence(new JavaArrayListTypePersistor)
+putPersistence(new JavaHashMapTypePersistor)
+putPersistence(new JavaHashSetTypePersistor)
 
 
 

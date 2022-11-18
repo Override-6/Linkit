@@ -27,13 +27,10 @@ case class UsageConnectedObjectContext(ownerTag     : NameTag,
                                        resolver     : EngineSelector) extends ConnectedObjectContext {
 
 
-    override def translate(tag: UniqueTag): NameTag = tag match {
+    override def toNameTag(tag: UniqueTag): NameTag = tag match {
         case name: NameTag                              => name //nothing to translate
         case OwnerEngine                                => ownerTag
-        case t: UniqueTag with NetworkFriendlyEngineTag =>
-            resolver.getEngine(t)
-                    .map(_.nameTag)
-                    .getOrElse(throw new IllegalTagException(s"Unable to translate tag '$tag'"))
+        case t: UniqueTag with NetworkFriendlyEngineTag => resolver.retrieveNT(t)
         case _                                          =>
             throw new IllegalTagException(s"Unable to translate tag '$tag'")
     }

@@ -15,6 +15,7 @@ package fr.linkit.client.connection
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.{ConnectionInitialisationException, ExternalConnection}
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet._
 import fr.linkit.api.gnom.packet.traffic._
@@ -22,9 +23,10 @@ import fr.linkit.api.gnom.persistence.{ObjectTranslator, PacketDownload}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
+import fr.linkit.client.connection.traffic.ClientPacketTraffic
 import fr.linkit.client.network.ClientSideNetwork
-import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
+import fr.linkit.engine.gnom.packet.traffic.{DefaultAsyncPacketReader, DynamicSocket}
+import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.engine.internal.debug.Debugger
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.util.{NumberSerializer, ScalaUtils}
@@ -39,21 +41,20 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     import session._
 
-    initTraffic()
 
-    override val currentName: String = configuration.identifier
-    override val port       : Int    = configuration.remoteAddress.getPort
-    override val translator       : ObjectTranslator  = session.translator
-    //override val eventNotifier    : EventNotifier     = session.eventNotifier
-    override val traffic    : PacketTraffic     = session.traffic
-    override val boundNT    : String            = serverIdentifier
-    private  val sideNetwork: ClientSideNetwork = new ClientSideNetwork(session.traffic)
-    override val network          : Network           = sideNetwork
-    @volatile private var alive                       = true
+    override val currentName : String                   = configuration.connectionName
+    override val port        : Int                      = configuration.remoteAddress.getPort
+    override val translator  : ObjectTranslator         = session.translator
+    override val boundNT     : NameTag                  = serverNameTag
+    override val network     : Network                  = new ClientSideNetwork(this)
+    override val traffic     : PacketTraffic            = new ClientPacketTraffic(socket, translator, configuration.defaultPersistenceConfigScript, network, this, appContext)
+    private  val packetReader: DefaultAsyncPacketReader = new DefaultAsyncPacketReader(socket, session.appContext, traffic, translator)
+    private  val readThread  : PacketReaderThread       = new PacketReaderThread(packetReader, boundNT)
 
-    session.traffic.setNetwork(sideNetwork)
-    sideNetwork.initialize()
 
+    private var alive = false
+
+    init()
 
     override def runLater[A](f: => A): Future[A] = session.appContext.runLater(f)
 
@@ -76,12 +77,9 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         alive = false
     }
 
-    private def initTraffic(): Unit = {
-        session.traffic.setConnection(this)
-        initPacketReader()
-    }
+    private def init(): Unit = initReaderThread()
 
-    private def initPacketReader(): Unit = {
+    private def initReaderThread(): Unit = {
         if (alive)
             throw new IllegalStateException(s"Connection already started ! ($currentName)")
         alive = true
@@ -91,7 +89,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             try {
                 val coordinates: DedicatedPacketCoordinates = result.coords match {
                     case dedicated: DedicatedPacketCoordinates => dedicated
-                    case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(currentName)
+                    case _: BroadcastPacketCoordinates         => throw new UnsupportedOperationException("Broadcast unsupported until supported by persistence system.")
                     case null                                  => throw new PacketException("Received null packet coordinates.")
                     case other                                 => throw new PacketException(s"Unknown packet coordinates of type ${other.getClass.getName}. Only Dedicated and Broadcast packet coordinates are allowed on this client.")
                 }
@@ -115,7 +113,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     }
 
     private def tryReconnect(state: ExternalConnectionState): Unit = {
-        val bytes         = currentName.getBytes()
+        //TODO -------------------- AUTOMATIC RECONNECTION MAINTAINED --------------------
+        /*val bytes         = currentName.getBytes()
         val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
 
         if (state == ExternalConnectionState.CONNECTED && socket.isOpen) runLater {
@@ -123,7 +122,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                 socket.write(welcomePacket) //The welcome packet will let the server continue its socket handling
                 systemChannel.nextPacket[BooleanPacket]
             }
-        }
+        }*/
     }
 
     private def handlePacket(result: PacketDownload, coordinates: DedicatedPacketCoordinates): Unit = {
@@ -165,7 +164,7 @@ object ClientConnection {
         val translator = configuration.translatorFactory(context)
 
         //WelcomePacket informational fields
-        val identifier = configuration.identifier
+        val identifier = configuration.connectionName
 
         //Aliases
         val IDbytes   = identifier.getBytes()
@@ -180,15 +179,13 @@ object ClientConnection {
         assertAccepted(socket, socket.read(1))
 
         //The contains the server identifier bytes' string
-        val buff             = socket.read(socket.readInt())
-        val serverIdentifier = new String(buff)
-        socket.identifier = serverIdentifier
+        val buff       = socket.read(socket.readInt())
+        val serverName = new String(buff)
+        socket.identifier = serverName
 
-        //Constructing connection instance session
-        val sessionInfo = ClientConnectionSessionInfo(context, configuration, serverIdentifier, translator)
-        val session     = ClientConnectionSession(socket, sessionInfo)
         //Constructing connection instance...
-        val connection  = new ClientConnection(session)
+        val session    = ClientConnectionSession(socket, context, configuration, NameTag(serverName), translator)
+        val connection = new ClientConnection(session)
         connection
     }
 

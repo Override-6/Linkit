@@ -22,13 +22,12 @@ import fr.linkit.api.gnom.network._
 import fr.linkit.api.gnom.network.statics.StaticAccess
 import fr.linkit.api.gnom.network.tag._
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
-import fr.linkit.api.gnom.referencing.linker.{GeneralNetworkObjectLinker, RemainingNetworkObjectLinker}
+import fr.linkit.api.gnom.referencing.linker.RemainingNetworkObjectLinker
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.SharedCacheManagersLinker
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.descriptor.EmptyContractDescriptorData
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
-import fr.linkit.engine.gnom.network.statics.StaticAccesses
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.gnom.referencing.linker.MapNetworkObjectLinker
 import fr.linkit.engine.internal.language.bhv.ContractProvider
@@ -38,25 +37,48 @@ import java.sql.Timestamp
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    override       val reference                                = NetworkReference
-    protected      val networkStore: PacketInjectableStore      = traffic.createStore(0)
-    private        val currentName : String                     = connection.currentName
-    private        val tnol                                     = traffic.getTrafficObjectLinker
-    private        val rnol                                     = new MapNetworkObjectLinker(traffic.getObjectManagementChannel, this) with RemainingNetworkObjectLinker
-    private        val scnol       : SharedCacheManagersLinker  = new SharedCacheManagersLinker(this, traffic.getObjectManagementChannel)
-    override lazy  val gnol        : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinkerImpl(traffic.getObjectManagementChannel, this, scnol, tnol, rnol)
-    override lazy  val globalCaches: SharedCacheManager         = createNewCache(GlobalCacheID, Array(GlobalCacheID.hashCode))
-    protected lazy val trunk       : NetworkDataTrunk           = initDataTrunk()
-    private var engine0            : Engine                     = _
-    private var staticAccesses     : StaticAccesses             = _
+    override       val reference      = NetworkReference
+    protected      val currentTag     = NameTag(connection.currentName)
+    private lazy   val engine0        = initCurrentEngine()
+    private lazy   val staticAccesses = trunk.staticAccesses
+    lazy           val traffic        = connection.traffic.asInstanceOf[AbstractPacketTraffic] //FIXME Ugly
+    protected lazy val networkStore   = traffic.createStore(0)
+    private lazy   val tnol           = traffic.getTrafficObjectLinker
+    private lazy   val rnol           = new MapNetworkObjectLinker(traffic.getObjectManagementChannel, this) with RemainingNetworkObjectLinker
+    private lazy   val scnol          = new SharedCacheManagersLinker(this, traffic.getObjectManagementChannel)
+    override lazy  val gnol           = new GeneralNetworkObjectLinkerImpl(traffic.getObjectManagementChannel, this, scnol, tnol, rnol)
+    override lazy  val globalCaches   = createNewCache(GlobalCacheID, Array(GlobalCacheID.hashCode))
+    protected lazy val trunk          = initDataTrunk()
+
+    ContractProvider.registerProperties(ObjectsProperty.defaults(this))
 
     private var trunkInitializing = false
 
-    def traffic: AbstractPacketTraffic
 
-    override implicit def retrieveNT(uniqueTag: UniqueTag with NetworkFriendlyEngineTag): NameTag = uniqueTag match {
-        case Current => NameTag(currentName)
-        case _       => apply(uniqueTag).nameTag
+    override def retrieveNT(uniqueTag: UniqueTag with NetworkFriendlyEngineTag): NameTag = uniqueTag match {
+        case Current     => currentTag
+        case nt: NameTag => nt
+        case _           => apply(uniqueTag).nameTag
+    }
+
+    private def listNameTags(tag: NetworkFriendlyEngineTag): List[NameTag] = tag match {
+        case unique: UniqueTag => List(retrieveNT(unique))
+        case Nobody            => Nil
+        case Everyone          => listAllNts
+        case _                 => listEngines(tag).map(_.nameTag)
+    }
+
+    override def listNameTags(uniqueTag: NFETSelect): List[NameTag] = uniqueTag match {
+        case Select(tag: UniqueTag) => List(retrieveNT(tag))
+        case Select(tag)            => listNameTags(tag)
+        case Not(tag)               => listAllNts diff listNameTags(tag)
+        case Union(a, b)            => listNameTags(a) ::: listNameTags(b)
+        case Intersection(a, b)     => listNameTags(a) intersect listNameTags(b)
+    }
+
+    private def listAllNts: List[NameTag] = {
+        if (isTrunkInitializing) List(currentTag)
+        else listEngines.map(_.nameTag)
     }
 
     override def currentEngine: Engine = engine0
@@ -92,7 +114,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
 
     override def isIncluded(a: NFETSelect, b: NFETSelect): Boolean = {
-        //TODO optimize
+        //TODO can optimize
         listEngines(a).forall(_.isIncluded(b))
     }
 
@@ -106,10 +128,11 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
         val allEngines      = listEngines
         val selectedEngines = selection match {
-            case Select(tag)        => findEngines(tag, reverseSelection)
-            case Not(tag)           => findEngines(tag, !reverseSelection)
-            case Union(a, b)        => listEngines(a) ::: listEngines(b)
-            case Intersection(a, b) => listEngines(a) intersect listEngines(b)
+            case Select(tag: UniqueTag) => getEngine(tag).toList
+            case Select(tag)            => findEngines(tag, reverseSelection)
+            case Not(tag)               => findEngines(tag, !reverseSelection)
+            case Union(a, b)            => listEngines(a) ::: listEngines(b)
+            case Intersection(a, b)     => listEngines(a) intersect listEngines(b)
         }
         if (reverseSelection)
             allEngines.diff(selectedEngines)
@@ -127,7 +150,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             return Some(globalCaches)
         if (trunkInitializing)
             return None
-        trunk.findCache(family)
+        trunk.findCacheManager(family)
     }
 
     override def getStaticAccess(id: Int): StaticAccess = {
@@ -146,11 +169,18 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         trunk.addCacheManager(manager, storePath)
     }
 
+    private def initCurrentEngine(): Engine = {
+        val engine = trunk.newEngine(currentTag.name)
+        ExecutorEngine.initDefaultEngine(engine)
+        engine
+    }
+
     private def initDataTrunk(): NetworkDataTrunk = {
         AppLoggers.GNOM.debug("Initialising Network Trunk.")
         trunkInitializing = true
         val trunk = retrieveDataTrunk()
         trunkInitializing = false
+        trunk.reinjectEngines()
         AppLoggers.GNOM.debug("Network Trunk Initialised.")
         trunk
     }
@@ -160,9 +190,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
     protected def isTrunkInitializing: Boolean = trunkInitializing
 
-    protected def registerSCMReference(ref: SharedCacheManagerReference): Unit = {
-        scnol.registerReference(ref)
-    }
+    protected def registerSCMReference(ref: SharedCacheManagerReference): Unit = scnol.registerReference(ref)
 
     protected def getStore(path: Array[Int]): PacketInjectableStore = {
         var store: PacketInjectableStore = traffic
@@ -177,22 +205,6 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         store
     }
 
-    def initialize(): this.type = {
-        //init those lazy vals, do not change the order!
-        AppLoggers.Connection.info("Initialising Network.")
-        ContractProvider.registerProperties(ObjectsProperty.defaults(this))
-        AppLoggers.Connection.debug("Initialising GNOL and Global Cache.")
-        gnol
-
-        AppLoggers.Connection.debug("Finalizing Network Initialisation.")
-        engine0 = trunk.newEngine(currentName)
-        trunk.reinjectEngines()
-        staticAccesses = trunk.staticAccesses
-
-        ExecutorEngine.initDefaultEngine(currentEngine)
-        AppLoggers.Connection.debug("Network Initialised.")
-        this
-    }
 
     private var isMappingCacheInitialising                                          = false
     private var mappingsCacheOpt: Option[ConnectedObjectCache[RemoteClassMappings]] = None

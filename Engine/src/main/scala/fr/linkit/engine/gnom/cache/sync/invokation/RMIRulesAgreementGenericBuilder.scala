@@ -43,7 +43,7 @@ class RMIRulesAgreementGenericBuilder private(private val selection          : T
     override def result(context: ConnectedObjectContext): RMIDispatchAgreement = {
         new UsageRMIDispatchAgreement(
             context,
-            context.translate(desiredEngineReturn),
+            context.toNameTag(desiredEngineReturn),
             context.deepTranslate(selection)
         )
     }

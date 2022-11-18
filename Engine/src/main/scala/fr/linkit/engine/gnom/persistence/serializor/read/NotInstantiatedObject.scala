@@ -79,7 +79,7 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
             }
             i += 1
         }
-        profile.getPersistence(args).initInstance(obj, args, controlBox)
+        profile.selectPersistor(args).initInstance(obj, args, controlBox)
     }
     
 }

@@ -13,7 +13,6 @@
 
 package fr.linkit.engine.internal.language.bhv.interpreter
 
-import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, RMIRulesAgreementBuilder}
@@ -338,12 +337,12 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
     private def followInstructionsBased(instructions: Seq[AgreementInstruction])(base: RMIRulesAgreementBuilder): RMIRulesAgreementBuilder = {
         instructions.foldLeft(base)((builder, instruction) => {
             instruction match {
-                case DiscardAll                          => builder.selection(Everyone)
-                case AcceptAll                           => builder.selection(Nobody)
+                case DiscardAll                          => builder.selection(Nobody)
+                case AcceptAll                           => builder.selection(Everyone)
                 case AppointEngine(appointed: UniqueTag) => builder.appointReturn(appointed)
                 case AppointEngine(_)                    => throw new BHVLanguageException("Cannot appoint a group or a selection of multiple engines.")
                 case AcceptEngines(tags)                 => builder.selection(_ U tags.foldLeft(Select(Nobody): TagSelection[EngineTag])(_ U _))
-                case DiscardEngines(tags)                => builder.selection(_ I tags.foldLeft(Select(Nobody): TagSelection[EngineTag])(_ I _))
+                case DiscardEngines(tags)                => builder.selection(_ I tags.foldLeft(Select(Everyone): TagSelection[EngineTag])(_ I _))
             }
         })
     }

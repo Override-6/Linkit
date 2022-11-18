@@ -13,11 +13,11 @@
 
 package fr.linkit.engine.gnom.persistence.defaults.lambda
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.EmptyObjectStructure
 
-object NotSerializableLambdasTypePersistence extends TypePersistence[AnyRef] {
+object NotSerializableLambdasTypePersistor$ extends TypePersistor[AnyRef] {
     
     //private       val lookup     = MethodHandles.lookup()
     //private final val LambdaMark = "$$Lambda$"

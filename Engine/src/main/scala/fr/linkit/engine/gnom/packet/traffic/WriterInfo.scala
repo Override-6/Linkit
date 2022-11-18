@@ -17,10 +17,9 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 
-case class WriterInfo(traffic: PacketTraffic,
+case class WriterInfo(traffic          : PacketTraffic,
                       persistenceConfig: PersistenceConfig,
-                      path: Array[Int],
-                      private val network0: () => Network) { //awful
+                      path             : Array[Int],
+                      network          : Network) {
 
-    lazy val network: Network = network0.apply()
 }

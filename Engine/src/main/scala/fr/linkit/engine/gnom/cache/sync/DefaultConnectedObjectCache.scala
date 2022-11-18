@@ -243,7 +243,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
 
     override def isRegistered(id: NamedIdentifier): Boolean = {
         forest.findTreeLocal(id).isDefined || {
-            val ownerNT = selector(ownerTag).nameTag
+            val ownerNT = selector.retrieveNT(ownerTag)
             val ref     = ConnectedObjectReference(family, cacheID, ownerNT, Array(id))
             forest.isPresentOnEngine(ownerTag, ref)
         }
@@ -251,7 +251,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
 
 
     override def requestTree(id: NamedIdentifier): Unit = {
-        val ownerNT = selector(ownerTag).nameTag
+        val ownerNT = selector.retrieveNT(ownerTag)
         val treeRef = ConnectedObjectReference(family, cacheID, ownerNT, Array(id))
 
         val initLock = NetworkObjectReferencesLocks.getInitializationLock(treeRef)

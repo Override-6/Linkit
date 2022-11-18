@@ -25,7 +25,7 @@ object ChannelScopes {
     final case class SelectiveScope private(override val writer: PacketWriter, selection: TagSelection[NetworkFriendlyEngineTag])
             extends AbstractAttributesPresence with ChannelScope {
 
-        private val resolver: EngineSelector = writer.traffic.connection.network
+        private val resolver = writer.selector
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
             defaultAttributes.drainAttributes(attributes)

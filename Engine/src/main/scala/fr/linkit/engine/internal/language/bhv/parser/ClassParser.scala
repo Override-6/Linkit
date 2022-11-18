@@ -64,9 +64,7 @@ object ClassParser extends BehaviorLanguageParser {
 
             (identifier <~ Dot).? ~ identifier ~ (ParenLeft ~> params <~ ParenRight).? ~ (Colon ~> synchronizedType).? ^^ {
                 case targetClass ~ name ~ params ~ rstpe =>
-                    val s = MethodSignature(targetClass, name, params.getOrElse(Seq()), rstpe)
-                    println(s)
-                    s
+                    MethodSignature(targetClass, name, params.getOrElse(Seq()), rstpe)
             }
         }
 

@@ -26,7 +26,7 @@ trait ConnectedObjectContext {
     val choreographer: InvocationChoreographer
     val syncLevel    : SyncLevel
 
-    def translate(tag: UniqueTag): NameTag
+    def toNameTag(tag: UniqueTag): NameTag
 
     def deepTranslate(tag: TagSelection[EngineTag]): TagSelection[NetworkFriendlyEngineTag]
 

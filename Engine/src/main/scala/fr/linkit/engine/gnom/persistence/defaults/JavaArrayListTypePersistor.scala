@@ -13,14 +13,14 @@
 
 package fr.linkit.engine.gnom.persistence.defaults
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
 
 import java.util
 
-class JavaArrayListTypePersistence extends TypePersistence[util.ArrayList[AnyRef]] {
+class JavaArrayListTypePersistor extends TypePersistor[util.ArrayList[AnyRef]] {
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 

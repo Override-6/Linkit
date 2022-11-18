@@ -13,33 +13,25 @@
 
 package fr.linkit.engine.gnom.persistence.defaults
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistence}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
 
 import java.util
-class JavaHashMapTypePersistence extends TypePersistence[util.HashMap[Any, Any]]{
+
+class JavaHashSetTypePersistor extends TypePersistor[util.HashSet[Any]]{
 
     override val structure: ObjectStructure = ArrayObjectStructure(classOf[Array[AnyRef]])
 
-    override def initInstance(allocatedObject: util.HashMap[Any, Any], args: Array[Any], box: ControlBox): Unit = {
-        val data = new util.HashMap[Any, Any]()
+    override def initInstance(allocatedObject: util.HashSet[Any], args: Array[Any], box: ControlBox): Unit = {
+        val data = new util.HashSet[Any]()
         args.head.asInstanceOf[Array[AnyRef]]
-                .foreach(x => {
-                    val (key, value) = x.asInstanceOf[(Any, Any)]
-                    data.put(key, value)
-                })
+                .foreach(data.add)
         ScalaUtils.pasteAllFields(allocatedObject, data)
     }
 
-    override def toArray(t: util.HashMap[Any, Any]): Array[Any] = {
-        val array = new Array[Any](t.size())
-        val entries = t.entrySet().toArray(new Array[util.Map.Entry[Any, Any]](_))
-        for (i <- array.indices) {
-            val entry = entries(i)
-            array(i) = (entry.getKey, entry.getValue)
-        }
-        Array(array)
+    override def toArray(t: util.HashSet[Any]): Array[Any] = {
+        Array(t.toArray)
     }
 }

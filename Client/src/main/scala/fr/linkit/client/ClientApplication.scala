@@ -31,19 +31,19 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 class ClientApplication(configuration: ClientApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) with ClientApplicationContext {
-    
+
     override protected val appPool             = Procrastinator("Application")
     private            val connectionCache     = mutable.HashMap.empty[Any, ExternalConnection]
     @volatile private var connectionCount: Int = 0
-    
+
     override def countConnections: Int = connectionCount
-    
+
     override val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, Version)
-    
+
     override def shutdown(): Unit = {
         ensureAlive()
         AppLoggers.App.info("Client application is shutting down...")
-        
+
         listConnections.foreach(connection => {
             try {
                 //Connections will unregister themself from connectionCache automatically
@@ -54,24 +54,24 @@ class ClientApplication(configuration: ClientApplicationConfiguration, resources
             }
         })
     }
-    
+
     override def listConnections: Iterable[ExternalConnection] = connectionCache.values.toSet
-    
+
     override def findConnection(identifier: String): Option[ExternalConnection] = {
         connectionCache.get(identifier).orElse(connectionCache.find(_._2.boundNT == identifier).map(_._2))
     }
-    
+
     override def findConnection(port: Int): Option[ExternalConnection] = {
         connectionCache.values.find(_.port == port)
     }
-    
+
     @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
     override def openConnection(config: ClientConnectionConfiguration): ExternalConnection = {
 
-        val identifier = config.identifier
+        val identifier = config.connectionName
         if (!Rules.IdentifierPattern.matcher(identifier).matches())
             throw new ConnectionInitialisationException("Provided identifier does not matches Client's rules.")
-        
+
         connectionCount += 1
 
         AppLoggers.App.info(s"Creating connection to address '${config.remoteAddress}'...")
@@ -80,7 +80,7 @@ class ClientApplication(configuration: ClientApplicationConfiguration, resources
         dynamicSocket.reconnectionPeriod = config.reconnectionMillis
         dynamicSocket.connect("UnknownServerIdentifier")
         AppLoggers.App.trace("Socket accepted !")
-        
+
         val connection = try {
             ClientConnection.open(dynamicSocket, this, config)
         } catch {
@@ -88,40 +88,40 @@ class ClientApplication(configuration: ClientApplicationConfiguration, resources
                 connectionCount -= 1
                 throw new ConnectionInitialisationException(s"Could not open connection with server $address : ${e.getMessage}", e)
         }
-        
+
         connectionCache.put(identifier, connection)
-        
-        val serverIdentifier: String = connection.boundNT
-        AppLoggers.App.info(s"Connection Sucessfully bound to $address ($serverIdentifier)")
+
+        val serverName: String = connection.boundNT.name
+        AppLoggers.App.info(s"Connection Sucessfully bound to $address ($serverName)")
         connection
     }
-    
+
     @throws[NoSuchElementException]("If no connection is found into the application's cache.")
     override def unregister(connectionContext: ExternalConnection): Unit = {
         import connectionContext.{boundNT, currentName}
-        
+
         connectionCache.remove(currentName)
         connectionCount -= 1
         //val newThreadCount = Math.max(configuration.nWorkerThreadFunction(connectionCount), 1)
         //appPool.setThreadCount(newThreadCount)
-        
+
         AppLoggers.App.info(s"Connection '$currentName' bound to $boundNT was detached from application.")
     }
-    
+
 }
 
 object ClientApplication {
-    
+
     val Version: Version = system.Version("Client", "1.0.0", false)
-    
+
     @volatile private var initialized = false
-    
+
     def launch(config: ClientApplicationConfiguration, otherSources: Class[_]*): ClientApplicationContext = {
         if (initialized)
             throw new IllegalStateException("Client Application is already launched.")
-        
+
         val resources = LinkitApplication.prepareApplication(Version, config, otherSources)
-        
+
         val clientApp = try {
             AppLoggers.App.info("Instantiating Client application...")
             new ClientApplication(config, resources)

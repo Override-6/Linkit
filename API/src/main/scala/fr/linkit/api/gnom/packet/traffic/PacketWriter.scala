@@ -13,13 +13,14 @@
 
 package fr.linkit.api.gnom.packet.traffic
 
-import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, TagSelection}
+import fr.linkit.api.gnom.network.tag.{EngineSelector, NetworkFriendlyEngineTag, TagSelection}
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 
 trait PacketWriter {
 
-    val path   : Array[Int]
-    val traffic: PacketTraffic
+    val path    : Array[Int]
+    val traffic : PacketTraffic
+    val selector: EngineSelector
 
     def writePackets(packet: Packet, selection: TagSelection[NetworkFriendlyEngineTag]): Unit
 

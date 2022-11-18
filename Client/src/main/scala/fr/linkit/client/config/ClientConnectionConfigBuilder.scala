@@ -40,9 +40,9 @@ abstract class ClientConnectionConfigBuilder {
             override val reconnectionMillis            : Int                                    = builder.reconnectionMillis
             override val socketFactory                 : InetSocketAddress => Socket            = builder.socketFactory
             override val remoteAddress                 : InetSocketAddress                      = builder.remoteAddress
-            override val configName                    : String                                 = builder.configName
-            override val identifier                    : String                                 = builder.identifier
-            override val hasher                        : BytesHasher                            = builder.hasher
+            override val configName    : String      = builder.configName
+            override val connectionName: String      = builder.identifier
+            override val hasher        : BytesHasher = builder.hasher
             override val translatorFactory             : ApplicationContext => ObjectTranslator = builder.translatorFactory
             override val defaultPersistenceConfigScript: Option[URL]                            = builder.defaultPersistenceConfigScript
         }: ClientConnectionConfiguration

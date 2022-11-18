@@ -22,6 +22,7 @@ import fr.linkit.api.gnom.persistence.context.Deconstructible
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.engine.gnom.cache.AbstractSharedCacheManager
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
@@ -30,23 +31,23 @@ import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.debug.{Debugger, RequestStep, ResponseStep}
 
 final class ClientSharedCacheManager @Persist()(family : String,
-                                                network: Network,
+                                                network: ClientSideNetwork,
                                                 omc    : ObjectManagementChannel,
                                                 store  : PacketInjectableStore) extends AbstractSharedCacheManager(family, network, omc, store) with Deconstructible {
 
-    private            val serverIdentifier = network.serverName
-    @transient private val ownerScope       = prepareScope(ChannelScopes.apply(serverIdentifier))
+    private            val serverNameTag = network.serverNameTag
+    @transient private val ownerScope    = prepareScope(ChannelScopes.apply(serverNameTag))
 
-    override def deconstruct(): Array[Any] = Array(family, serverIdentifier, network, store)
+    override def deconstruct(): Array[Any] = Array(family, serverNameTag, network, store)
 
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchMethod): Option[CacheContent] = {
         AppLoggers.GNOM.trace(s"retrieve cache content id $cacheID ($family)")
-        Debugger.push(RequestStep("cache content retrieval", s"retrieve cache content of cache $cacheID of cache family $family", serverIdentifier, channel.reference))
+        Debugger.push(RequestStep("cache content retrieval", s"retrieve cache content of cache $cacheID of cache family $family", serverNameTag, channel.reference))
         val request = channel
-            .makeRequest(ownerScope)
-            .putAttribute("behavior", behavior)
-            .addPacket(IntPacket(cacheID))
-            .submit()
+                .makeRequest(ownerScope)
+                .putAttribute("behavior", behavior)
+                .addPacket(IntPacket(cacheID))
+                .submit()
 
         val response = request.nextResponse
         Debugger.pop()
@@ -59,13 +60,13 @@ final class ClientSharedCacheManager @Persist()(family : String,
     }
 
     override protected def remoteCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
-        Debugger.push(RequestStep("check if cache can open", s"ensure that cache $family/$cacheID of type '${cacheType.getSimpleName}' is accepted by server.", serverIdentifier, channel.reference))
+        Debugger.push(RequestStep("check if cache can open", s"ensure that cache $family/$cacheID of type '${cacheType.getSimpleName}' is accepted by server.", serverNameTag, channel.reference))
 
         channel.makeRequest(ownerScope)
-               .addPacket(ObjectPacket((cacheID, cacheType)))
-               .submit()
-               .nextResponse
-               .nextPacket[Packet] match {
+                .addPacket(ObjectPacket((cacheID, cacheType)))
+                .submit()
+                .nextResponse
+                .nextPacket[Packet] match {
             case EmptyPacket =>
             // OK, the cache is not open or is open and the given cacheType
             // is assignable and was accepted by the AttachHandler of the owner's cache handler.

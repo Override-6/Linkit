@@ -14,7 +14,7 @@
 package fr.linkit.server.connection.traffic
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.network.tag.EngineSelector
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.gnom.packet.traffic.{AbstractPacketTraffic, WriterInfo}
@@ -24,11 +24,11 @@ import java.net.URL
 
 class ServerPacketTraffic(override val connection       : ServerConnection,
                           defaultPersistenceConfigScript: Option[URL],
-                          selector: EngineSelector) extends AbstractPacketTraffic(defaultPersistenceConfigScript, selector) {
+                          network                       : Network) extends AbstractPacketTraffic(defaultPersistenceConfigScript, network) {
 
     override def application: ApplicationContext = connection.getApp
 
     override def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter = {
-        new ServerPacketWriter(connection, WriterInfo(this, persistenceConfig, path, () => connection.network))
+        new ServerPacketWriter(connection, WriterInfo(this, persistenceConfig, path, network))
     }
 }

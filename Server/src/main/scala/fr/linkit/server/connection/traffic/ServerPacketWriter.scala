@@ -14,7 +14,7 @@
 package fr.linkit.server.connection.traffic
 
 import fr.linkit.api.application.connection.NoSuchConnectionException
-import fr.linkit.api.gnom.network.tag.{NameTag, Server}
+import fr.linkit.api.gnom.network.tag.{EngineSelector, NameTag, Server}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.engine.gnom.packet.AbstractPacketWriter
@@ -24,10 +24,9 @@ import fr.linkit.server.connection.ServerConnection
 class ServerPacketWriter(serverConnection: ServerConnection,
                          info            : WriterInfo) extends AbstractPacketWriter {
 
-    override val path   : Array[Int]    = info.path
-    override val traffic: PacketTraffic = info.traffic
-
-    protected val selector = serverConnection.network
+    override  val path    : Array[Int]     = info.path
+    override  val traffic : PacketTraffic  = info.traffic
+    override val selector: EngineSelector = info.network
 
     override protected def writePackets(packet: Packet, attributes: PacketAttributes, targets: Seq[NameTag]): Unit = {
         targets.foreach(targetTag => {

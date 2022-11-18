@@ -25,9 +25,11 @@ class ExternalNetworkObjectPresence[R <: NetworkObjectReference](selector: Engin
 
     private val presences = mutable.HashMap.empty[NameTag, ObjectPresenceState]
 
-    override def getPresenceFor(tag: UniqueTag with NetworkFriendlyEngineTag): ObjectPresenceState = getPresenceFor(selector(tag).nameTag)
+    import selector._
 
-    override def isPresenceKnownFor(tag: UniqueTag with NetworkFriendlyEngineTag): Boolean = isPresenceKnownFor(selector(tag).nameTag)
+    override def getPresenceFor(tag: UniqueTag with NetworkFriendlyEngineTag): ObjectPresenceState = getPresenceFor(tag: NameTag)
+
+    override def isPresenceKnownFor(tag: UniqueTag with NetworkFriendlyEngineTag): Boolean = isPresenceKnownFor(tag: NameTag)
 
     def isPresenceKnownFor(engineTag: NameTag): Boolean = presences.contains(engineTag)
 

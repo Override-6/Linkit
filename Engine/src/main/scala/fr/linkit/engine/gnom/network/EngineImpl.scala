@@ -22,8 +22,8 @@ import fr.linkit.engine.internal.mapping.RemoteClassMappings
 import java.sql.Timestamp
 import scala.collection.mutable
 
-class EngineImpl(override val name: String,
-                 network0         : AbstractNetwork) extends Engine {
+class EngineImpl private[network](override val name   : String,
+                                  override val network: AbstractNetwork) extends Engine {
 
 
     private val identifierSet                                       = mutable.Set.empty[IdentifierTag]
@@ -33,7 +33,6 @@ class EngineImpl(override val name: String,
 
     override val nameTag  : NameTag         = NameTag(name)
     override val reference: EngineReference = new EngineReference(nameTag)
-    override val network  : Network         = network0
 
     fillInDefaultTags()
 
@@ -100,14 +99,15 @@ class EngineImpl(override val name: String,
             throw new IllegalTagException(s"Cannot remove Current / Nobody tags")
     }
 
+    import network._
 
-    override def isServer: Boolean = network.serverEngine.name == name
+    override def isServer: Boolean = nameTag <=> Server
 
     override def isCurrentEngine: Boolean = network.connection.currentName == name
 
     def classMappings: Option[RemoteClassMappings] = {
         if (mappings.isEmpty && !isMappingsInitializing) {
-            network0.mappingsCache match {
+            network.mappingsCache match {
                 case None        =>
                 case Some(cache) =>
                     isMappingsInitializing = true
