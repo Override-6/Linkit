@@ -47,8 +47,8 @@ class VirtualProcrastinator(val name: String) extends WorkerPool {
         AppLoggers.Debug.trace("Making vThread...")
         val taskID = taskCounter.incrementAndGet()
         val thread = Thread.ofVirtual()
-            .name(name + "'s task #" + taskID)
-            .unstarted(target)
+                .name(name + "'s task #" + taskID)
+                .unstarted(target)
         val worker = new VirtualWorker(this, thread, taskID)
         workers.put(thread, worker)
         thread
@@ -60,6 +60,9 @@ class VirtualProcrastinator(val name: String) extends WorkerPool {
 }
 
 object VirtualProcrastinator extends Procrastinator.Supplier {
+
+
+    override def currentTaskId: Int = currentWorker.map(_.taskID).getOrElse(-1)
 
     private val workers = mutable.HashMap.empty[Thread, VirtualWorker]
 

@@ -68,8 +68,6 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     }
 
     def findEngine(identifier: IdentifierTag): Option[Engine] = engines.synchronized {
-        val opt = engines.get(identifier.id)
-        if (opt.isDefined) return opt
         engines.values.find(_.isIncluded(identifier))
     }
 
@@ -95,11 +93,11 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     }
 
     //When the trunk gets deserialized, due to the TypePersistence that will deserialize the trunk,
-    // the engines in it will not come in their synchronized version,
+    // the engines in it will not come in their connected version,
     // so for each engines already present on the object's creation,
     //we add them in order to apply the NetworkContract.bhv that will synchronize the new engines
 
-    def reinjectEngines(): this.type = engines.synchronized {
+    def reinjectEngines(): this.type =  {
         if (engines.nonEmpty) engines.values.foreach(e => {
             addEngine(e).classMappings
         })

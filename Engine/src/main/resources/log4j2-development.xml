@@ -16,16 +16,16 @@
         </Logger>
 
         <Logger name="GNOM"  additivity="false" includeLocation="false">
+            <AppenderRef ref="Console" level="DEBUG"/>
+            <AppenderRef ref="LogFile" level="ALL"/>
+        </Logger>
+
+        <Logger name="GNOM.ConnObj"  additivity="DEBUG" includeLocation="false">
             <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 
-        <Logger name="GNOM.ConnObj"  additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="INFO"/>
-            <AppenderRef ref="LogFile" level="ALL"/>
-        </Logger>
-
-        <Logger name="GNOM.CO.Inv"  additivity="false" includeLocation="false">
+        <Logger name="GNOM.CO.Inv"  additivity="DEBUG" includeLocation="false">
             <AppenderRef ref="Console" level="INFO"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
@@ -41,7 +41,7 @@
         </Logger>
 
         <Logger name="Traffic" additivity="false" includeLocation="false">
-            <AppenderRef ref="Console" level="INFO"/>
+            <AppenderRef ref="Console" level="ALL"/>
             <AppenderRef ref="LogFile" level="ALL"/>
         </Logger>
 

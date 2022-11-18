@@ -114,7 +114,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
 
     override def isIncluded(a: NFETSelect, b: NFETSelect): Boolean = {
-        //TODO can optimize
+        //TODO can be optimized
         listEngines(a).forall(_.isIncluded(b))
     }
 

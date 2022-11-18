@@ -13,16 +13,16 @@
 
 package fr.linkit.engine.gnom.persistence.defaults.special
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Decomposition, ObjectTranform, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.EmptyObjectStructure
+import fr.linkit.engine.gnom.persistence.config.structure.EmptyObjectStructure
 
 //a TP that does nothing (used to create Mirroring objects)
 object EmptyObjectTypePersistor$ extends TypePersistor[AnyRef] {
-    
+
     override val structure: ObjectStructure = EmptyObjectStructure
-    
+
     override def initInstance(allocatedObject: AnyRef, args: Array[Any], box: ControlBox): Unit = ()
-    
-    override def toArray(t: AnyRef): Array[Any] = Array()
+
+    override def transform(t: AnyRef): ObjectTranform = Decomposition(Array())
 }

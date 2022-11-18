@@ -30,7 +30,7 @@ trait MethodContract[R] {
 
     val description: MethodDescription
 
-    val isRMIActivated: Boolean
+    def isRMIActivated: Boolean
 
     val invocationHandlingMethod: InvocationHandlingMethod
 

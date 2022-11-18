@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 import fr.linkit.api.gnom.cache.sync.ChippedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.persistence.context.TypeProfile
+import fr.linkit.api.gnom.persistence.context.{Decomposition, Replaced, TypeProfile}
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
@@ -168,28 +168,46 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     }
 
     private def addObjectDecomposed(ref: AnyRef, profile: TypeProfile[AnyRef], serializerFails: Int): Array[Any] = {
-        val persistence = profile.selectPersistor(ref, serializerFails)
 
-        val (decomposed, error) = try (persistence.toArray(ref), false) catch {
-            case NonFatal(e) =>
-                AppLoggers.Persistence.error(s"Persistor error when serializing ${ref.getClass.getName}: " + e)
-                (null, true)
-        }
-        if (error || decomposed.length == 1 && JavaUtils.sameInstance(decomposed(0), ref)) {
+        def retry(): Array[Any] = {
             if (serializerFails >= profile.getPersistences.length) {
                 throw new PersistenceException(s"Could not find a serializer that could successfully decompose $ref")
             }
-            return addObjectDecomposed(ref, profile, serializerFails + 1)
+            addObjectDecomposed(ref, profile, serializerFails + 1)
         }
 
-        val obj             = new SimpleObject(ref, addTypeOfIfAbsent(ref), decomposed, profile)
+        val persistence = profile.selectPersistor(ref, serializerFails)
 
+        val transformation = try persistence.transform(ref) catch {
+            case NonFatal(e) =>
+                AppLoggers.Persistence.error(s"Persistor error when serializing ${ref.getClass.getName}: " + e)
+                return retry()
+        }
+
+
+
+        val poolObj = transformation match {
+            case Decomposition(decomposed) =>
+                val decomposedLength = decomposed.length
+                if (decomposedLength == 1 && JavaUtils.sameInstance(decomposed(0), ref))
+                    return retry()
+
+                new SimpleObject(ref, addTypeOfIfAbsent(ref), decomposed, profile)
+
+            case Replaced(replacement)     =>
+                if (JavaUtils.sameInstance(ref, replacement))
+                    return retry()
+
+                new SimpleObject(ref, addTypeOfIfAbsent(replacement), scala.Array(replacement), profile)
+        }
+
+        val subObjs = poolObj.decomposed
         val objPool = getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
-        objPool.add(obj)
+        objPool.add(poolObj)
         //v^ do not swap those two lines
-        addAll(decomposed)
+        addAll(subObjs)
 
-        decomposed
+        subObjs
     }
 
     private def addReferencedObject(ref: AnyRef, nrl: NetworkObjectReference): Unit = {

@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.defaults
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Decomposition, ObjectTranform, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
@@ -31,5 +31,5 @@ class JavaArrayListTypePersistor extends TypePersistor[util.ArrayList[AnyRef]] {
         ScalaUtils.pasteAllFields(allocatedObject, data)
     }
 
-    override def toArray(t: util.ArrayList[AnyRef]): Array[Any] = Array(t.toArray)
+    override def transform(t: util.ArrayList[AnyRef]): ObjectTranform = Decomposition(Array(t.toArray))
 }

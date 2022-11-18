@@ -47,7 +47,9 @@ object ChannelScopes {
         }
 
 
-        override def areAuthorised(tag: TagSelection[NetworkFriendlyEngineTag]): Boolean = resolver.isIncluded(tag, this.selection)
+        override def areAuthorised(tag: TagSelection[NetworkFriendlyEngineTag]): Boolean = {
+            resolver.isIncluded(tag, this.selection)
+        }
 
         override def equals(obj: Any): Boolean = {
             obj match {

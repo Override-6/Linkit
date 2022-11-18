@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Decomposition, ObjectTranform, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.profile.persistence.GenericTypePersistor.{GenericObjectStructure, scrapFields}
 import fr.linkit.engine.internal.manipulation.creation.ObjectCreator
@@ -46,10 +46,10 @@ final class GenericTypePersistor[T](baseClass: Class[_]) extends TypePersistor[T
         ObjectCreator.pasteAllFields(instance, fields, args.asInstanceOf[Array[AnyRef]])
     }
 
-    override def toArray(t: T): Array[Any] = {
+    override def transform(t: T): ObjectTranform = {
         val clazz  = t.getClass
         val fields = if (clazz eq baseClass) defaultFields else getFields(clazz)
-        ObjectCreator.getAllFields(t, fields).asInstanceOf[Array[Any]]
+        Decomposition(ObjectCreator.getAllFields(t, fields).asInstanceOf[Array[Any]])
     }
 }
 

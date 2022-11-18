@@ -21,5 +21,5 @@ trait TypePersistor[-T] {
 
     def initInstance(allocatedObject: T, args: Array[Any], box: ControlBox): Unit
 
-    def toArray(t: T): Array[Any]
+    def transform(t: T): ObjectTranform
 }

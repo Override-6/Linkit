@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.defaults
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Decomposition, ObjectTranform, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
@@ -33,13 +33,13 @@ class JavaHashMapTypePersistor extends TypePersistor[util.HashMap[Any, Any]]{
         ScalaUtils.pasteAllFields(allocatedObject, data)
     }
 
-    override def toArray(t: util.HashMap[Any, Any]): Array[Any] = {
+    override def transform(t: util.HashMap[Any, Any]): ObjectTranform = {
         val array = new Array[Any](t.size())
         val entries = t.entrySet().toArray(new Array[util.Map.Entry[Any, Any]](_))
         for (i <- array.indices) {
             val entry = entries(i)
             array(i) = (entry.getKey, entry.getValue)
         }
-        Array(array)
+        Decomposition(Array(array))
     }
 }

@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, SynchronizedObject}
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Decomposition, ObjectTranform, Replaced, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.SyncObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
@@ -39,6 +39,12 @@ class SynchronizedObjectPersistor[T <: SynchronizedObject[T]](objectPersistence:
         ScalaUtils.setValue(syncObj, field1, isMirrored0)
     }
     
-    override def toArray(t: T): Array[Any] = objectPersistence.toArray(t) :+ t.isMirrored :+ t.reference
+    override def transform(t: T): ObjectTranform = {
+        val decomposed = (objectPersistence.transform(t) match {
+            case Decomposition(decomposed) => decomposed
+            case Replaced(replacement)     => Array(replacement)
+        }) :+ t.isMirrored :+ t.reference
+        Decomposition(decomposed)
+    }
     
 }

@@ -15,7 +15,7 @@ import scala.annotation.StaticAnnotation
  *     case class WeirdClass(tag: Current.type) //Bad & useless
  * }}}
  * */
-trait unstabletype extends StaticAnnotation {
+class unstabletype extends StaticAnnotation {
 
 
 }

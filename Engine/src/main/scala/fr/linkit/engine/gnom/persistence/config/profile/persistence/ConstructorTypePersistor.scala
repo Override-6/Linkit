@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.config.profile.persistence
 
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
-import fr.linkit.api.gnom.persistence.context.{ControlBox, Deconstructor, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Decomposition, Deconstructor, ObjectTranform, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.profile.persistence.ConstructorTypePersistor.getPersistConstructor
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
@@ -39,8 +39,8 @@ class ConstructorTypePersistor[T <: AnyRef](constructor: Constructor[T], deconst
         invoker.invoke(allocatedObject, args)
     }
     
-    override def toArray(t: T): Array[Any] = {
-        deconstructor(t)
+    override def transform(t: T): ObjectTranform = {
+        Decomposition(deconstructor(t))
     }
     
 }

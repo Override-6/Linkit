@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.defaults
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Decomposition, ObjectTranform, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
@@ -35,7 +35,7 @@ object ScalaIterableTypePersistor$ extends TypePersistor[Iterable[Any]] {
         ScalaUtils.pasteAllFields(allocatedObject, result)
     }
 
-    override def toArray(t: Iterable[Any]): Array[Any] = Array(t.toArray)
+    override def transform(t: Iterable[Any]): ObjectTranform = Decomposition(Array(t.toArray))
 
     private def companionOf(origin: Class[_], clazz: Class[_]): IterableFactory[Iterable] = try {
         val companionClassName = clazz.getName + "$"

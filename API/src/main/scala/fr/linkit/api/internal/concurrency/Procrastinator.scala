@@ -29,6 +29,8 @@ object Procrastinator {
     private final val supplier = ImplementationDelegates.defaultProcrastinatorSupplier
 
     private[linkit] trait Supplier {
+        def currentTaskId: Int
+
         def apply(name: String): Procrastinator
 
         def current: Option[Procrastinator]
@@ -36,6 +38,8 @@ object Procrastinator {
         def currentWorker: Option[Worker]
 
     }
+
+    def currentTaskId: Int = supplier.currentTaskId
 
     def currentWorker: Option[Worker] = supplier.currentWorker
 

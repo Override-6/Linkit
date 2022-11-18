@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.defaults.lambda
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, Decomposition, ObjectTranform, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.engine.gnom.persistence.config.structure.ArrayObjectStructure
 import fr.linkit.engine.internal.util.ScalaUtils
@@ -33,14 +33,14 @@ object SerializableLambdasTypePersistor$ extends TypePersistor[AnyRef] {
         ScalaUtils.pasteAllFields(allocatedObject, m.invoke(null, representation))
     }
     
-    override def toArray(lambdaObject: AnyRef): Array[Any] = {
+    override def transform(lambdaObject: AnyRef): ObjectTranform = {
         val lambdaClass = lambdaObject.getClass
         val m           = try lambdaClass.getDeclaredMethod("writeReplace") catch {
             case _: NoSuchMethodException =>
                 throw new NoSuchMethodException(s"Could not find 'writeReplace' instance method for serializable lambda ($lambdaClass)")
         }
         m.setAccessible(true)
-        Array(m.invoke(lambdaObject))
+        Decomposition(Array(m.invoke(lambdaObject)))
     }
     
 }

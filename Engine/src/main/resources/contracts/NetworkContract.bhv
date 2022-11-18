@@ -17,7 +17,7 @@ describe NetworkDataTrunk [sync] {
     sync staticAccesses
 
     newEngine(String) => accept * -> appoint owner
-    addEngine(sync EngineImpl) //protected method
+    addEngine(sync EngineImpl) => accept * //protected method
 }
 
 describe StaticAccesses {

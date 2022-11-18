@@ -51,9 +51,9 @@ class EngineImpl private[network](override val name   : String,
     override def isIncluded(tag: NetworkFriendlyEngineTag): Boolean = tag match {
         case Nobody            => false
         case Everyone          => true
+        case Current           => isCurrentEngine
         case id: IdentifierTag => identifierSet(id)
         case g: Group          => groupSet(g)
-        case Current           => isCurrentEngine
     }
 
     override def isIncluded(tag: TagSelection[NetworkFriendlyEngineTag]): Boolean = tag match {

@@ -42,7 +42,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
                             override val hideMessage             : Option[String],
                             @Nullable override val procrastinator: Procrastinator) extends MethodContract[R] {
 
-    override val isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
+    override def isRMIActivated: Boolean = agreement.mayPerformRemoteInvocation
 
     override val choreographer: InvocationChoreographer = new InvocationChoreographer(parentChoreographer)
 

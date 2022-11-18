@@ -13,9 +13,9 @@
 
 package fr.linkit.engine.gnom.persistence.defaults.lambda
 
-import fr.linkit.api.gnom.persistence.context.{ControlBox, TypePersistor}
+import fr.linkit.api.gnom.persistence.context.{ControlBox, ObjectTranform, TypePersistor}
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.engine.gnom.persistence.EmptyObjectStructure
+import fr.linkit.engine.gnom.persistence.config.structure.EmptyObjectStructure
 
 object NotSerializableLambdasTypePersistor$ extends TypePersistor[AnyRef] {
     
@@ -24,7 +24,7 @@ object NotSerializableLambdasTypePersistor$ extends TypePersistor[AnyRef] {
     
     override val structure: ObjectStructure = EmptyObjectStructure
     
-    override def toArray(t: AnyRef): Array[Any] = {
+    override def transform(t: AnyRef): ObjectTranform = {
         throw new UnsupportedOperationException("Can't serialize non serializable lambdas.")
         /*val clazz              = lambdaObject.getClass
         val fields             = clazz.getDeclaredFields
