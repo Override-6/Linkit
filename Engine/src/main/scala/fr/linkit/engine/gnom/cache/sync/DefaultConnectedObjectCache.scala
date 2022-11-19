@@ -102,7 +102,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
     private def newChippedObjectData[B <: AnyRef](level: SyncLevel, req: ChippedObjectNodeDataRequest[B]): ChippedObjectNodeData[B] = {
         import req._
         val tree            = parent.tree.asInstanceOf[DefaultConnectedObjectTree[B]]
-        val ownerNT         = selector(req.ownerTag).nameTag
+        val ownerNT         = req.ownerTag
         val originClass     = chippedObject.getClassDef.mainClass.asInstanceOf[Class[B]]
         val path            = parent.nodePath :+ id
         val contractFactory = tree.contractFactory
@@ -216,10 +216,10 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         lock.lock()
         val node = try findNode(path) finally lock.unlock()
 
-        val senderID = selector.getEngine(bundle.coords.senderTag).get.identifiers.head
+        val senderTag = bundle.coords.senderTag
         AppLoggers.COInv.trace(s"Handling invocation packet over object ${ip.objRef}. For method with id '${ip.methodID}', expected engine identifier return : '${ip.expectedEngineReturn}'")
         node.fold(AppLoggers.ConnObj.error(s"Could not find sync object node for connected object located at $ref")) {
-            case node: TrafficInterestedNode[_] => node.handlePacket(ip, senderID, bundle.responseSubmitter)
+            case node: TrafficInterestedNode[_] => node.handlePacket(ip, senderTag, bundle.responseSubmitter)
             case _                              =>
                 throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedNode[_]].getSimpleName} in order to handle a member rmi request.")
         }

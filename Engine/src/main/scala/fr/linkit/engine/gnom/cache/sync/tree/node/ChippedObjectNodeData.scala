@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.network.tag.EngineSelector
 
-class ChippedObjectNodeData[A <: AnyRef](val network      : EngineSelector, //Remote invocations
+class ChippedObjectNodeData[A <: AnyRef](val selector     : EngineSelector, //Remote invocations
                                          val chip         : Chip[A], //Reflective invocations
                                          val contract     : StructureContract[A],
                                          val choreographer: InvocationChoreographer,
@@ -27,7 +27,7 @@ class ChippedObjectNodeData[A <: AnyRef](val network      : EngineSelector, //Re
                                         (private val data: NodeData[A]) extends NodeData[A](data) {
 
     def this(other: ChippedObjectNodeData[A]) = {
-        this(other.network, other.chip, other.contract, other.choreographer, other.obj)(other.data)
+        this(other.selector, other.chip, other.contract, other.choreographer, other.obj)(other.data)
     }
 
     def obj: ChippedObject[A] = chippedObject

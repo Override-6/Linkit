@@ -21,9 +21,6 @@ object TestUtils {
     val HomeProperty   : String = "LINKIT_HOME"
     val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
 
-    implicit def toThrowingSupplier[T](action: => T): ThrowingSupplier[T] = () => action
-
-    implicit def toExecutable[T](action: => T): Executable = () => action
 
     def getDefaultLinkitHome: String = {
         val homePath = System.getenv(HomeProperty)

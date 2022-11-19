@@ -31,7 +31,7 @@ import java.util.concurrent.ThreadLocalRandom
 import scala.annotation.switch
 import scala.util.Try
 
-final class DefaultConnectedObjectTree[A <: AnyRef] private(resolver                    : EngineSelector,
+final class DefaultConnectedObjectTree[A <: AnyRef] private(selector                    : EngineSelector,
                                                             private[sync] val forest    : DefaultSyncObjectForest[A],
                                                             val instantiator            : SyncInstanceInstantiator,
                                                             val dataFactory             : NodeDataFactory,
@@ -39,6 +39,8 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(resolver            
                                                             override val contractFactory: ObjectContractFactory) extends ConnectedObjectTree[A] with ObjectConnector {
 
     private var root: RootObjectNodeImpl[A] = _
+
+    import selector._
 
     def this(resolver    : EngineSelector,
              center      : DefaultSyncObjectForest[A],
@@ -203,7 +205,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(resolver            
     private def initChippedObject[B <: AnyRef](parent : MutableNode[_ <: AnyRef],
                                                id     : NamedIdentifier,
                                                adapter: ChippedObjectAdapter[B]): ChippedObjectNode[B] = {
-        val currentNT = resolver(Current).nameTag
+        val currentNT = selector.retrieveNT(Current)
         val data      = dataFactory.newNodeData(new ChippedObjectNodeDataRequest[B](parent, id, adapter, currentNT))
         val node      = new ChippedObjectNodeImpl[B](data)
         parent.addChild(node)
@@ -215,19 +217,19 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(resolver            
                                                     id         : NamedIdentifier,
                                                     syncObject : B with SynchronizedObject[B],
                                                     origin     : Option[B],
-                                                    ownerID    : UniqueTag with NetworkFriendlyEngineTag,
+                                                    ownerTag   : UniqueTag with NetworkFriendlyEngineTag,
                                                     isMirroring: Boolean): ObjectSyncNodeImpl[B] = {
         if (syncObject.isInitialized)
             throw new ConnectedObjectAlreadyInitialisedException(s"Could not register synchronized object '${syncObject.getClass.getName}' : Object already initialized.")
 
         val level   = if (isMirroring) Mirror else Synchronized
-        val ownerNT = resolver(ownerID).nameTag
+        val ownerNT = selector.retrieveNT(ownerTag)
         val data    = dataFactory.newNodeData(new SyncNodeDataRequest[B](parent.asInstanceOf[MutableNode[AnyRef]], id, syncObject, origin, ownerNT, level))
         val node    = new ObjectSyncNodeImpl[B](data)
         forest.registerReference(node.reference)
         parent.addChild(node)
 
-        scanSyncObjectFields(node, ownerID, syncObject)
+        scanSyncObjectFields(node, ownerTag, syncObject)
         node
     }
 
@@ -235,10 +237,7 @@ final class DefaultConnectedObjectTree[A <: AnyRef] private(resolver            
     private def scanSyncObjectFields[B <: AnyRef](node      : ObjectSyncNodeImpl[B],
                                                   ownerID   : UniqueTag with NetworkFriendlyEngineTag,
                                                   syncObject: B with SynchronizedObject[B]): Unit = {
-        val isCurrentOwner = resolver.getEngine(ownerID).exists(_.isServer)
-        val engine0        = if (!isCurrentOwner) Try(resolver.getEngine(ownerID).get).getOrElse(null) else null
-        val manipulation   = new SyncObjectFieldManipulation {
-            override val engine: Engine = engine0
+        val manipulation = new SyncObjectFieldManipulation {
 
             override def findConnectedVersion(origin: Any): Option[ConnectedObject[AnyRef]] = {
                 cast(findMatchingSyncNode(cast(origin)).map(_.obj))

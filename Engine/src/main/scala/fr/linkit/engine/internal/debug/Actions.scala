@@ -54,9 +54,9 @@ case class MethodInvocationComputeStep(methodID: Int, triggerEngine: UniqueTag, 
     }
 }
 
-case class MethodInvocationExecutionStep(method: MethodDescription, triggerEngine: String, isWaiting: Boolean) extends AbstractStep("rmi - execute") {
+case class MethodInvocationExecutionStep(method: MethodDescription, triggerEngine: String) extends AbstractStep("rmi - execute") {
     override def insights: String = s"Executing method $method triggered by $triggerEngine." + {
-        if (!isWaiting) "" else s" remote is waiting this method to return or throw."
+        "" //if (!isWaiting) "" else s" remote is waiting this method to return or throw."
     }
 }
 

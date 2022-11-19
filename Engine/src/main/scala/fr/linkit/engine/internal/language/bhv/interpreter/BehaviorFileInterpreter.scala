@@ -172,7 +172,7 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
         methods.map { method =>
             desc match {
                 case _: DisabledMethodDescription   =>
-                    MethodContractDescriptorImpl(method, false, None, None, Array.empty, None, Inherit, DefaultBuilder)
+                    MethodContractDescriptorImpl(method, None, None, Array.empty, None, Inherit, DefaultBuilder)
                 case desc: EnabledMethodDescription =>
                     val rvContract = {
                         val rvLvl = desc.syncReturnValue.lvl
@@ -185,17 +185,12 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
 
                     val agreement      = desc.agreementOpt.map(getAgreement).getOrElse(DefaultBuilder)
                     val procrastinator = findProcrastinator(desc.properties)
-                    MethodContractDescriptorImpl(method, false, procrastinator, rvContract, Array(), None, desc.invocationHandlingMethod, agreement)
+                    MethodContractDescriptorImpl(method, procrastinator, rvContract, Array(), None, desc.invocationHandlingMethod, agreement)
                 case desc: HiddenMethodDescription  =>
                     val msg = Some(desc.hideMessage.getOrElse(s"${method.javaMethod} is hidden"))
-                    MethodContractDescriptorImpl(method, false, None, None, Array(), msg, Inherit, DefaultBuilder)
+                    MethodContractDescriptorImpl(method, None, None, Array(), msg, Inherit, DefaultBuilder)
             }
         }.toArray
-    }
-
-    private def encodedIntMethodString(i: Int): String = {
-        if (i > 0) i.toString
-        else "_" + i.abs.toString
     }
 
     private def describeAttributedMethods(classDesc    : SyncStructureDescription[_], kind: DescriptionKind,
@@ -240,15 +235,14 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
         val result = (method: MethodDescription) match {
             case _: DisabledMethodDescription  =>
                 checkParams()
-                MethodContractDescriptorImpl(methodDesc, true, None, None, Array.empty, None, Inherit, DefaultBuilder)
+                MethodContractDescriptorImpl(methodDesc, None, None, Array.empty, None, Inherit, DefaultBuilder)
             case desc: HiddenMethodDescription =>
                 checkParams()
                 val msg = Some(desc.hideMessage.getOrElse(s"${methodDesc.javaMethod} is hidden"))
-                MethodContractDescriptorImpl(methodDesc, true, None, None, Array(), msg, Inherit, DefaultBuilder)
+                MethodContractDescriptorImpl(methodDesc, None, None, Array(), msg, Inherit, DefaultBuilder)
 
             case desc: EnabledMethodDescription with AttributedEnabledMethodDescription =>
                 val rvContract         = {
-                    val returnTypeName = methodDesc.javaMethod.getReturnType.getName
                     desc.syncReturnValue match {
                         case RegistrationState(true, state) => SimpleValueContract(state, autoChip)
                         case RegistrationState(false, _)    =>
@@ -267,12 +261,12 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
                             SimpleValueContract(syncState.syncType.lvl, autoChip)
                     }.toArray
                     //if there is no pertinent information, let's return an empty array in order to inform the system not to worry about the parameters of this method
-                    if (params.forall(_.registrationKind == NotRegistered)) params else Array[ValueContract]()
+                    if (params.forall(_.registrationKind == NotRegistered)) Array[ValueContract]() else params
                 }
                 var invocationMethod   = desc.invocationHandlingMethod
                 if (invocationMethod == Inherit)
                     invocationMethod = referent.map(_.invocationHandlingMethod).getOrElse(Inherit)
-                MethodContractDescriptorImpl(methodDesc, true, procrastinator, Some(rvContract), parameterContracts, None, invocationMethod, agreement)
+                MethodContractDescriptorImpl(methodDesc, procrastinator, Some(rvContract), parameterContracts, None, invocationMethod, agreement)
         }
         result
     }

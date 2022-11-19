@@ -25,6 +25,9 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
 
     val serverNameTag = connection.boundNT
 
+
+    override protected def listInitialNTs: List[NameTag] = serverNameTag :: currentTag :: Nil
+
     override def retrieveNT(uniqueTag: UniqueTag with NetworkFriendlyEngineTag): NameTag = uniqueTag match {
         //add Server case (super.retrieveNT would also support the Server case but this override supports Server case during trunk initialization)
         case Server => serverNameTag

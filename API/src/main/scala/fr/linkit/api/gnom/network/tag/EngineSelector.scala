@@ -11,7 +11,9 @@ trait EngineSelector {
     def listNameTags(uniqueTag: NFETSelect): List[NameTag]
 
     def apply(tag: UniqueTag with NetworkFriendlyEngineTag): Engine = getEngine(tag).getOrElse {
+
         throw new NoSuchElementException(s"unable to find engine with tag '$tag' in this network.")
+
     }
 
     def getEngine(identifier: UniqueTag with NetworkFriendlyEngineTag): Option[Engine]

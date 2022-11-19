@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.network
 
+import fr.linkit.api.gnom.cache.sync.ConnectedObject
 import fr.linkit.api.gnom.cache.sync.instantiation.New
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.gnom.network.tag._
@@ -51,6 +52,7 @@ class EngineImpl private[network](override val name   : String,
     override def isIncluded(tag: NetworkFriendlyEngineTag): Boolean = tag match {
         case Nobody            => false
         case Everyone          => true
+        case n: NameTag        => n == nameTag
         case Current           => isCurrentEngine
         case id: IdentifierTag => identifierSet(id)
         case g: Group          => groupSet(g)
@@ -106,7 +108,7 @@ class EngineImpl private[network](override val name   : String,
     override def isCurrentEngine: Boolean = network.connection.currentName == name
 
     def classMappings: Option[RemoteClassMappings] = {
-        if (mappings.isEmpty && !isMappingsInitializing) {
+        if (this.isInstanceOf[ConnectedObject[_]] && mappings.isEmpty && !isMappingsInitializing) {
             network.mappingsCache match {
                 case None        =>
                 case Some(cache) =>

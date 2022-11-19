@@ -21,7 +21,6 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 
 trait MethodContractDescriptor {
 
-    val forced                  : Boolean
     val description             : MethodDescription
     val parameterContracts      : Array[ValueContract]
     val procrastinator          : Option[Procrastinator]

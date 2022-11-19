@@ -109,7 +109,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         //Arguments that must be synchronized wil be synchronized according to method contract.
         methodContract.connectArgs(args, connector.createConnectedObj(location))
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
-        if (!methodContract.isRMIActivated || choreographer.isMethodExecutionForcedToLocal) {
+        if (choreographer.isMethodExecutionForcedToLocal || !methodContract.isRMIActivated) {
             return methodContract.applyReturnValue(superCall(args), connector.createConnectedObj(location)).asInstanceOf[R]
         }
         val data = new methodContract.RemoteInvocationExecution {

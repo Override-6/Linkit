@@ -176,9 +176,9 @@ class PersistenceConfigBuilder {
         private def err: Nothing = throw new UnsupportedOperationException("Cannot use replacement persistor for deserialization")
 
         override val structure: ObjectStructure = new ObjectStructure {
-            override def isAssignable(args: Array[Class[_]], from: Int, to: Int): Boolean = err
+            override def isAssignable(args: Array[Class[_]], from: Int, to: Int): Boolean = false
 
-            override def isAssignable(args: Array[Any], from: Int, to: Int): Boolean = err
+            override def isAssignable(args: Array[Any], from: Int, to: Int): Boolean = false
         }
 
         override def initInstance(allocatedObject: A, args: Array[Any], box: ControlBox): Unit = err

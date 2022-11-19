@@ -50,7 +50,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
             throw new IllegalAccessException("the agreement states that the method should not be called on a remote engine")
         val appointedEngineReturn = agreement.getAppointedEngineReturn
 
-        val appointedEngineReturnNT = resolver(appointedEngineReturn).nameTag
+        val appointedEngineReturnNT = resolver.retrieveNT(appointedEngineReturn)
         if (resolver.isEquivalent(appointedEngineReturnNT, Current))
             throw new UnsupportedOperationException("invocation's desired engine return is this engine.")
 
@@ -97,9 +97,9 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
         }
     }
 
-    class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngineTag: NameTag) extends RMIDispatcher {
+    class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, returnEngineTag: NameTag) extends RMIDispatcher {
 
-        override def broadcast(args: Array[Any]): Unit = {
+        override def sendToSelection(args: Array[Any]): Unit = {
             handleResponseHolder(makeRequest(scope, args))
         }
 

@@ -50,7 +50,7 @@ trait Puppeteer[S <: AnyRef] {
     def sendInvoke(invocation: DispatchableRemoteMethodInvocation[_]): Unit
 
     trait RMIDispatcher {
-        def broadcast(args: Array[Any]): Unit
+        def sendToSelection(args: Array[Any]): Unit
 
     }
 

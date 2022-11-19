@@ -22,12 +22,12 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.invocation.{HiddenMethodInvocationException, InvocationChoreographer, InvocationHandlingMethod, MirroringObjectInvocationException}
-import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.network.tag.{Current, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
-import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationExecutionStep, MethodInvocationSendStep}
+import fr.linkit.engine.gnom.network.NetworkDataTrunk
+import fr.linkit.engine.internal.debug.{Debugger, MethodInvocationSendStep}
 import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
 import org.jetbrains.annotations.Nullable
 
@@ -77,7 +77,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         else rv
     }
 
-    override def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
+    override def handleInvocationResult(initialResult: Any)(syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
         if (initialResult == null) return null
         var result = initialResult
         val kind   = returnValueContract.registrationKind
@@ -105,12 +105,10 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
                 }
             }
         }
-        handleRMI(data.puppeteer, localInvocation)
+        handleInvocation(data.puppeteer, localInvocation)
     }
 
-    override def executeMethodInvocation(origin: Engine, data: InvocationExecution): Any = try {
-        val callerID = if (origin == null) null else origin.name
-        Debugger.push(MethodInvocationExecutionStep(description, callerID, origin != null && (origin eq origin.network.currentEngine)))
+    override def executeMethodInvocation(data: InvocationExecution): Any =  {
         val args = data.arguments
         val obj  = data.obj
         if (hideMessage.isDefined)
@@ -132,23 +130,28 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             //TODO can be optimised (cache the MethodInvoker)
             new MethodInvoker(method).invoke(target, args)
         }
-    } finally Debugger.pop()
+    }
 
     private def isMirroring(obj: ChippedObject[_]): Boolean = obj match {
         case s: SynchronizedObject[_] => s.isMirroring
         case _                        => false
     }
 
-    private def handleRMI(puppeteer: Puppeteer[_], localInvocation: CallableLocalMethodInvocation[R]): R = {
-        val objectNode    = localInvocation.objectNode
+    private val isContractOfNetworkTrunk = description.javaMethod.getDeclaringClass == classOf[NetworkDataTrunk]
+    def mayCallSuper: Boolean = {
+        isContractOfNetworkTrunk || agreement.mayCallSuper
+    }
+
+    private def handleInvocation(puppeteer: Puppeteer[_], invocation: CallableLocalMethodInvocation[R]): R = {
+        val objectNode    = invocation.objectNode
         val obj           = objectNode.obj
         val mayPerformRMI = agreement.mayPerformRemoteInvocation
-        val connector     = localInvocation.connector
+        val connector     = invocation.connector
 
         var result     : Any = null
         var localResult: Any = null
-        if (agreement.mayCallSuper && !isMirroring(obj)) {
-            localResult = localInvocation.callSuper()
+        if (mayCallSuper && !isMirroring(obj)) {
+            localResult = invocation.callSuper()
         }
 
         def syncValue(v: Any) = {
@@ -164,22 +167,23 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             return (if (currentMustReturn) syncValue(localResult) else null).asInstanceOf[R]
         }
 
-        val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with DispatchableRemoteMethodInvocation[R] {
+        val remoteInvocation = new AbstractMethodInvocation[R](invocation) with DispatchableRemoteMethodInvocation[R] {
             override val agreement: RMIDispatchAgreement = MethodContractImpl.this.agreement
 
             override def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit = {
-                makeDispatch(dispatcher, localInvocation)
+                val args = invocation.methodArguments
+                dispatcher.sendToSelection(args)
             }
         }
         if (currentMustReturn) {
             Debugger.push(MethodInvocationSendStep(agreement, description, null))
-            AppLoggers.COInv.debug(debugMsg(Current, localInvocation))
+            AppLoggers.COInv.debug(debugMsg(Current, invocation))
             puppeteer.sendInvoke(remoteInvocation)
             result = localResult
             Debugger.pop()
         } else {
             Debugger.push(MethodInvocationSendStep(agreement, description, appointedEngine))
-            AppLoggers.COInv.debug(debugMsg(appointedEngine, localInvocation))
+            AppLoggers.COInv.debug(debugMsg(appointedEngine, invocation))
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
             Debugger.pop()
         }
@@ -201,13 +205,6 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         }
         s"Sending method invocation ($methodID) $className.$name($params) (on object: ${obj.reference}) " + expectedEngineReturn
     }
-
-    private def makeDispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher,
-                             invocation: LocalMethodInvocation[_]): Unit = {
-        val args = invocation.methodArguments
-        dispatcher.broadcast(args)
-    }
-
     override def toString: String = s"method contract ${description.javaMethod}"
 
 }

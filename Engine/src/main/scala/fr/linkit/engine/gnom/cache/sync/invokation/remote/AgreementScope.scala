@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.network.tag.{EngineSelector, NetworkFriendlyEngineTag, TagSelection}
+import fr.linkit.api.gnom.network.tag.{Current, EngineSelector, NetworkFriendlyEngineTag, TagSelection}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter
@@ -28,7 +28,7 @@ class AgreementScope(override val writer: PacketWriter,
                      agreement: RMIDispatchAgreement) extends AbstractAttributesPresence with ChannelScope {
 
 
-    val selection = agreement.selection
+    val selection = agreement.selection - Current //cannot send a distant request to current engine
 
     override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
         defaultAttributes.drainAttributes(attributes)

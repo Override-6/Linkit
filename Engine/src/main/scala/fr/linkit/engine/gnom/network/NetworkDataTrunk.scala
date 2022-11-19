@@ -25,8 +25,9 @@ import scala.collection.mutable
 
 class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timestamp) {
 
+
     private               val engines           = mutable.HashMap.empty[String, EngineImpl]
-    private               val cacheManagers            = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
+    private               val cacheManagers     = mutable.HashMap.empty[String, (SharedCacheManager, Array[Int])]
     private[network] lazy val staticAccesses    = new StaticAccesses(network)
     private               val onNewEngineEvents = ConsumerContainer[Engine]()
 
@@ -43,7 +44,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
         CacheManagerInfo(manager.family, storePath)
     }
 
-    def newEngine(engineIdentifier: String): Engine = engines.synchronized {
+    def newEngine(engineIdentifier: String): Engine = {
         if (engines.contains(engineIdentifier))
             throw new IllegalArgumentException("This engine already exists !")
         addEngine(new EngineImpl(engineIdentifier, network))
@@ -83,12 +84,12 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
 
     def countConnection: Int = engines.size
 
-    protected def addEngine(engine: EngineImpl): EngineImpl = {
+    protected def addEngine(engine: EngineImpl): EngineImpl = engine.synchronized {
         engines.put(engine.name, engine) match {
             case None    => onNewEngineEvents.applyAll(engine)
             case Some(_) =>
         }
-
+        engine.classMappings // init mappings
         engine
     }
 
@@ -97,7 +98,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
     // so for each engines already present on the object's creation,
     //we add them in order to apply the NetworkContract.bhv that will synchronize the new engines
 
-    def reinjectEngines(): this.type =  {
+    def reinjectEngines(): this.type = {
         if (engines.nonEmpty) engines.values.foreach(e => {
             addEngine(e).classMappings
         })

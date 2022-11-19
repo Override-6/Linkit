@@ -21,7 +21,6 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.internal.concurrency.Procrastinator
 
 case class MethodContractDescriptorImpl(description             : MethodDescription,
-                                        forced                  : Boolean,
                                         procrastinator          : Option[Procrastinator],
                                         returnValueContract     : Option[ValueContract],
                                         parameterContracts      : Array[ValueContract],
@@ -30,7 +29,7 @@ case class MethodContractDescriptorImpl(description             : MethodDescript
                                         agreementBuilder        : RMIRulesAgreementBuilder) extends MethodContractDescriptor {
 
     def this(description: MethodDescription, other: MethodContractDescriptor) {
-        this(description, other.forced, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.invocationHandlingMethod, other.agreementBuilder)
+        this(description, other.procrastinator, other.returnValueContract, other.parameterContracts, other.hideMessage, other.invocationHandlingMethod, other.agreementBuilder)
     }
 
 }

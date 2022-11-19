@@ -18,8 +18,7 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.tree.{ConnectedObjectNode, NoSuchSyncNodeException}
 import fr.linkit.api.gnom.cache.sync.{CannotConnectException, ChippedObject, ConnectedObjectReference}
-import fr.linkit.api.gnom.network._
-import fr.linkit.api.gnom.network.tag.{Current, IdentifierTag, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag._
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
@@ -59,6 +58,10 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
      * */
     override  val objectPresence: NetworkObjectPresence                   = data.presence
 
+    private val selector: EngineSelector = data.selector
+
+    import selector._
+
     override def obj: ChippedObject[A] = data.obj
 
     override def parent: ConnectedObjectNode[_] = parent0
@@ -86,7 +89,7 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
             case Some(value) => value match {
                 case _: UnknownObjectSyncNode    => put()
                 case _: ChippedObjectNodeImpl[_] =>
-                    throw new IllegalStateException(s"An Object Node already exists at ${reference.nodePath.mkString("/") + s"/$id"}")
+                    throw new IllegalStateException(s"An Object Node already exists at ${reference + s"/$id"}")
             }
             case None        => put()
         }
@@ -98,9 +101,9 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
         (childs.get(id): Any).asInstanceOf[Option[MutableNode[B]]]
     }
 
-    override def handlePacket(packet: InvocationPacket,
-                              senderTag: IdentifierTag,
-                              response: Submitter[Unit]): Unit = {
+    override def handlePacket(packet   : InvocationPacket,
+                              senderTag: NameTag,
+                              response : Submitter[Unit]): Unit = {
         val ref  = packet.objRef
         val path = ref.nodePath
         if (!(path sameElements nodePath)) {
@@ -117,34 +120,24 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
     }
 
     private def makeMemberInvocation(packet  : InvocationPacket,
-                                     senderID: UniqueTag with NetworkFriendlyEngineTag,
+                                     senderNT: NameTag,
                                      response: Submitter[Unit]): Unit = {
-        val network = data.network
-        val executor               = network.getEngine(senderID).orNull
-        val params                 = packet.params
+        val params               = packet.params
         val expectedEngineReturn = packet.expectedEngineReturn
-        scanParams(params)
 
         def handleException(e: Throwable): Unit = {
             e.printStackTrace()
             val ex = if (e.isInstanceOf[InvocationTargetException]) e.getCause else e
-            if (network.getEngine(expectedEngineReturn).exists(_.isCurrentEngine))
+            if (expectedEngineReturn != null && expectedEngineReturn <=> Current)
                 handleRemoteInvocationException(response, ex)
         }
 
-        chip.callMethod(packet.methodID, params, executor)(handleException, result => try {
-            handleInvocationResult(result.asInstanceOf[AnyRef], executor, packet, response)
+        chip.callMethod(packet.methodID, params, senderNT)(handleException, result => try {
+            handleInvocationResult(result.asInstanceOf[AnyRef], senderNT, packet, response)
         } catch {
             case NonFatal(e) => handleException(e)
         })
 
-    }
-
-    private def scanParams(params: Array[Any]): Unit = {
-        /*params.mapInPlace { case param: AnyRef => if (tree.forest.isObjectLinked(param)) {
-            ??? //tree.insertObject(this, param, currentIdentifier).obj
-        } else param
-        }*/
     }
 
     private def handleRemoteInvocationException(response: Submitter[Unit], t: Throwable): Unit = {
@@ -159,19 +152,22 @@ class ChippedObjectNodeImpl[A <: AnyRef](data: ChippedObjectNodeData[A]) extends
         response.addPacket(RMIExceptionString(sb.toString)).submit()
     }
 
-    private def handleInvocationResult(initialResult: AnyRef, engine: Engine, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
+    private def handleInvocationResult(initialResult: AnyRef,
+                                       callerNT     : NameTag,
+                                       packet       : InvocationPacket,
+                                       response     : Submitter[Unit]): Unit = {
         var result: Any = initialResult
 
         result = if (initialResult == null) null else {
             val methodContract = contract.findMethodContract[Any](packet.methodID).getOrElse {
                 throw new NoSuchElementException(s"Could not find method contract with identifier #$id for ${contract.clazz}.")
             }
-            methodContract.handleInvocationResult(initialResult, engine)((ref, registrationLevel) => {
+            methodContract.handleInvocationResult(initialResult)((ref, registrationLevel) => {
                 tree.insertObject(this, ref.asInstanceOf[AnyRef], ownerTag, registrationLevel).obj
             })
         }
         val expectedEngineReturn = packet.expectedEngineReturn
-        if (engine.network.getEngine(expectedEngineReturn).exists(_.isCurrentEngine)) {
+        if (expectedEngineReturn != null && Current <=> expectedEngineReturn) {
             Debugger.push(ResponseStep("rmi", Current, null)) //TODO replace null by the channel's reference
             response
                     .addPacket(RefPacket[Any](result))

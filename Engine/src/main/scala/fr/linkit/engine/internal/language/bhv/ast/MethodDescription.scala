@@ -25,7 +25,7 @@ trait AttributedMethodDescription extends MethodDescription {
 
 trait AttributedEnabledMethodDescription extends AttributedMethodDescription {
 
-   // val modifiers: List[CompModifier]
+    // val modifiers: List[CompModifier]
 }
 
 class DisabledMethodDescription() extends MethodDescription
@@ -40,8 +40,8 @@ class EnabledMethodDescription(val invocationHandlingMethod: InvocationHandlingM
 object EnabledMethodDescription {
 
     def apply(invocationHandlingMethod: InvocationHandlingMethod,
-              properties: List[MethodProperty],
-              dispatch: Option[AgreementProvider])
+              properties              : List[MethodProperty],
+              dispatch                : Option[AgreementProvider])
              (sig: MethodSignature): EnabledMethodDescription with AttributedMethodDescription = {
         val rvState = sig.returnType.map(_.syncType).getOrElse(RegistrationState(false, SyncLevel.NotRegistered))
         new EnabledMethodDescription(invocationHandlingMethod, properties, dispatch, rvState) with AttributedEnabledMethodDescription {

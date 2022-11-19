@@ -148,9 +148,9 @@ class GeneralNetworkObjectLinkerImpl(omc                    : ObjectManagementCh
         def findObject(location: SystemObjectReference): Option[NetworkObject[_ <: SystemObjectReference]] = {
             location match {
                 case NetworkConnectionReference => Some(connection)
+                case er: EngineReference        => network.getEngine(er.name)
                 case NetworkReference           => Some(network)
                 case ApplicationReference       => Some(application)
-                case er: EngineReference        => network.getEngine(er.name)
                 case TrafficReference           => Some(connection.traffic.asInstanceOf[NetworkObject[_ <: SystemObjectReference]]) //TODO remove
                 case _                          => None
             }

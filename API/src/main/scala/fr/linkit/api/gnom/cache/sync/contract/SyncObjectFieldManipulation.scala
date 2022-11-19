@@ -18,7 +18,6 @@ import fr.linkit.api.gnom.network.Engine
 
 trait SyncObjectFieldManipulation {
 
-    val engine: Engine
 
     def findConnectedVersion(origin: Any): Option[ConnectedObject[AnyRef]]
 

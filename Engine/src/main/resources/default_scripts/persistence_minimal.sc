@@ -1,6 +1,6 @@
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.network.Network
-import fr.linkit.api.gnom.network.tag.{Current, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.{Current, NameTag, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.engine.gnom.network.NetworkDataTrunk
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.NetworkDataBundle
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
@@ -31,7 +31,8 @@ setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.
 setTConverter[LangContractDescriptorData, (String, String)](d => (d.fileName, d.propertiesName)) { case (name, propName) => ContractProvider(name, propName) }
 
 //handle special case of the `Current` magic tag
-setReplacement[Current.type](_ => network.currentEngine.nameTag) //we change 'Current' tag to the identifier tag of the current engine when we serialize it
+lazy val currentNameTag = NameTag(network.connection.currentName)
+setReplacement[Current.type](_ => currentNameTag) //we change 'Current' tag to the identifier tag of the current engine when we serialize it
 
 //putPersistence(new ScalaIterableTypePersistence)
 //putPersistence(new ScalaMapTypePersistence)

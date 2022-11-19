@@ -17,6 +17,7 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.{SharedCacheManager, SharedCacheManagerReference}
 import fr.linkit.api.gnom.network._
 import fr.linkit.api.gnom.network.statics.StaticAccess
@@ -52,8 +53,14 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
     ContractProvider.registerProperties(ObjectsProperty.defaults(this))
 
-    private var trunkInitializing = false
+    private var trunkInitializing        = false
+    private var currentEngineInitializing = false
 
+
+    def initialize(): Unit = {
+        currentEngine //retrieving current engine will start all systems (trunk/gnol/cache management) by cascading
+        //serverEngine
+    }
 
     override def retrieveNT(uniqueTag: UniqueTag with NetworkFriendlyEngineTag): NameTag = uniqueTag match {
         case Current     => currentTag
@@ -77,14 +84,18 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def listAllNts: List[NameTag] = {
-        if (isTrunkInitializing) List(currentTag)
+        if (isTrunkInitializing || currentEngineInitializing) listInitialNTs
         else listEngines.map(_.nameTag)
     }
+
+    protected def listInitialNTs: List[NameTag]
 
     override def currentEngine: Engine = engine0
 
     override def serverEngine: Engine = trunk.findEngine(Server).getOrElse {
+
         throw new NoSuchElementException("Server Engine not found.")
+
     }
 
     override def startUpDate: Timestamp = trunk.startUpDate
@@ -170,8 +181,12 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def initCurrentEngine(): Engine = {
+        val trunk = this.trunk
+
+        currentEngineInitializing = true
         val engine = trunk.newEngine(currentTag.name)
         ExecutorEngine.initDefaultEngine(engine)
+        currentEngineInitializing = false
         engine
     }
 
@@ -179,8 +194,8 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         AppLoggers.GNOM.debug("Initialising Network Trunk.")
         trunkInitializing = true
         val trunk = retrieveDataTrunk()
-        trunkInitializing = false
         trunk.reinjectEngines()
+        trunkInitializing = false
         AppLoggers.GNOM.debug("Network Trunk Initialised.")
         trunk
     }

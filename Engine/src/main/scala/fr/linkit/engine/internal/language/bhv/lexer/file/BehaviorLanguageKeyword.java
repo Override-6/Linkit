@@ -19,7 +19,7 @@ public enum BehaviorLanguageKeyword implements BehaviorLanguageToken, Keyword {
     Import,
     Describe, Code, Stub, Name,
     Mirror, Statics,
-    Method, Enable, Disable, Hide, Ensinv, Disinv,
+    Method, Enable, Disable, Hide, Ensinv, Disinv, Await,
     Sync, Chip, Regular,
     /*Modifier,*/ In, Out,
     //Agreements

@@ -14,6 +14,7 @@
 package fr.linkit.engine.internal.debug
 
 import fr.linkit.api.application.connection.ConnectionContext
+import fr.linkit.api.gnom.network.tag.Server
 import fr.linkit.api.internal.concurrency.Worker
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.engine.internal.debug.cli.SectionedPrinter
@@ -73,7 +74,7 @@ object Debugger {
     def dumpTraffic(out: PrintStream = System.out): Unit = connections.foreach(dumpConnectionTraffic(_, out))
 
     def dumpConnectionTraffic(connection: ConnectionContext, out: PrintStream = System.out): Unit = {
-        val connectionServerID = connection.network.serverEngine.name
+        val connectionServerID = connection.network.retrieveNT(Server)
         val printer = new SectionedPrinter(out)
         connection.traffic match {
             case traffic: AbstractPacketTraffic =>

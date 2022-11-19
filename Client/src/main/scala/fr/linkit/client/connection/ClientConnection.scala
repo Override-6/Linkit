@@ -42,14 +42,14 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     import session._
 
 
-    override val currentName : String                   = configuration.connectionName
-    override val port        : Int                      = configuration.remoteAddress.getPort
-    override val translator  : ObjectTranslator         = session.translator
-    override val boundNT     : NameTag                  = serverNameTag
-    override val network     : Network                  = new ClientSideNetwork(this)
-    override val traffic     : PacketTraffic            = new ClientPacketTraffic(socket, translator, configuration.defaultPersistenceConfigScript, network, this, appContext)
-    private  val packetReader: DefaultAsyncPacketReader = new DefaultAsyncPacketReader(socket, session.appContext, traffic, translator)
-    private  val readThread  : PacketReaderThread       = new PacketReaderThread(packetReader, boundNT)
+    override val currentName  = configuration.connectionName
+    override val port         = configuration.remoteAddress.getPort
+    override val translator   = session.translator
+    override val boundNT      = serverNameTag
+    override val network      = new ClientSideNetwork(this)
+    override val traffic      = new ClientPacketTraffic(socket, translator, configuration.defaultPersistenceConfigScript, network, this, appContext)
+    private  val packetReader = new DefaultAsyncPacketReader(socket, session.appContext, traffic, translator)
+    private  val readThread   = new PacketReaderThread(packetReader, boundNT)
 
 
     private var alive = false
@@ -77,7 +77,10 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         alive = false
     }
 
-    private def init(): Unit = initReaderThread()
+    private def init(): Unit = {
+        initReaderThread()
+        network.initialize()
+    }
 
     private def initReaderThread(): Unit = {
         if (alive)

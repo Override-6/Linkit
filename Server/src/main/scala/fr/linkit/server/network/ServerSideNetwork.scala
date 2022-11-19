@@ -27,6 +27,8 @@ class ServerSideNetwork(connection: ServerConnection)
         extends AbstractNetwork(connection) {
 
 
+    override protected def listInitialNTs: List[NameTag] = List(currentTag)
+
     override protected def createNewCache0(family: String, managerChannelPath: Array[Int]): SharedCacheManager = {
         new ServerSharedCacheManager(family, this, traffic.getObjectManagementChannel, getStore(managerChannelPath))
     }
@@ -69,9 +71,9 @@ class ServerSideNetwork(connection: ServerConnection)
         getEngine(identifier).foreach(trunk.removeEngine)
     }
 
-    def initialize(): this.type = {
+    override def initialize(): Unit = {
+        super.initialize()
         declareNewCacheManager("StaticAccesses")
         addCacheManager(globalCaches, networkStore.trafficPath :+ globalCaches.family.hashCode)
-        this
     }
 }

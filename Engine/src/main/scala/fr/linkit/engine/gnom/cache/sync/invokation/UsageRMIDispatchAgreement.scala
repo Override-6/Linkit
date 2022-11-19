@@ -33,7 +33,7 @@ class UsageRMIDispatchAgreement(context              : ConnectedObjectContext,
     }
 
     override def mayPerformRemoteInvocation: Boolean = {
-        //perform rmi is the selection include another engine that the current engine.
+        //perform rmi is the selection include another engine than the current engine.
         //NOTE: selection cannot be empty according to verification steps
         !(selection <=> Current)
     }

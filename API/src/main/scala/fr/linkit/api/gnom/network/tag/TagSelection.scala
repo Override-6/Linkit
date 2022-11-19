@@ -36,7 +36,11 @@ object TagSelection {
 
 
 
-    implicit def toSelect[A <: EngineTag](tag: A): TagSelection[A] = Select(tag)
+    implicit def toSelect[A <: EngineTag](tag: A): TagSelection[A] = {
+        if (tag == null)
+            throw new NullPointerException()
+        Select(tag)
+    }
 
     implicit class TagOps[A <: EngineTag](tag: A) {
 

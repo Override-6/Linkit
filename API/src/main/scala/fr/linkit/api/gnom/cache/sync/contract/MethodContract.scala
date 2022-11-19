@@ -19,6 +19,7 @@ import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.ObjectConnector
 import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.internal.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 
@@ -36,7 +37,7 @@ trait MethodContract[R] {
 
     val choreographer: InvocationChoreographer
 
-    def handleInvocationResult(initialResult: Any, remote: Engine)(syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any
+    def handleInvocationResult(initialResult: Any)(syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any
 
     def connectArgs(args: Array[Any], syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Unit
 
@@ -44,7 +45,7 @@ trait MethodContract[R] {
 
     def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R
 
-    def executeMethodInvocation(sender: Engine, data: InvocationExecution): Any
+    def executeMethodInvocation(data: InvocationExecution): Any
 
     trait InvocationExecution {
 
