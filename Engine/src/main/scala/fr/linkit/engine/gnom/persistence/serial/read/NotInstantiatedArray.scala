@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.read
+package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 

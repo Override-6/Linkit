@@ -23,7 +23,7 @@ import fr.linkit.api.internal.system.{ApiConstants, AppException, Version}
 import fr.linkit.engine.application.LinkitApplication.setInstance
 import fr.linkit.engine.application.resource.local.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.application.resource.{ResourceFolderMaintainer, SimpleResourceListener}
-import fr.linkit.engine.gnom.persistence.ConstantProtocol
+import fr.linkit.engine.gnom.persistence.ProtocolConstants
 import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.language.bhv.ContractProvider
 import fr.linkit.engine.internal.mapping.{ClassMappings, MappingEngine}
@@ -153,7 +153,7 @@ object LinkitApplication {
 
         AppLoggers.App.info("-------------------------------------- Linkit Framework --------------------------------------")
         AppLoggers.App.info(s"\tApi Version            | ${ApiConstants.Version}")
-        AppLoggers.App.info(s"\tEngine Version         | ${EngineConstants.Version} - Packet protocol version: ${ConstantProtocol.ProtocolVersion}")
+        AppLoggers.App.info(s"\tEngine Version         | ${EngineConstants.Version} - Packet protocol version: ${ProtocolConstants.ProtocolVersion}")
         AppLoggers.App.info(s"\tImplementation Version | ${implVersion}")
         AppLoggers.App.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
 

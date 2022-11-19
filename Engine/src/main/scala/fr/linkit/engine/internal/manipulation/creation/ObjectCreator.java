@@ -21,7 +21,7 @@ public class ObjectCreator {
 
     public static void pasteAllFields(Object target, Field[] fields, Object[] fieldValues) {
         if (fields.length != fieldValues.length) {
-            throw new IllegalArgumentException("Field names, field types and field values arrays must have the same length.");
+            throw new IllegalArgumentException("fields and fields value arrays must have the same length.");
         }
         String[] fieldReturnTypes = new String[fields.length];
         for (int i = 0; i < fields.length; i++) {

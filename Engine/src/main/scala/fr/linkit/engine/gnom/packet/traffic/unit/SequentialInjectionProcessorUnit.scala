@@ -164,7 +164,7 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
     private def deserializeAndInject(result: PacketDownload): Unit = {
         AppLoggers.Traffic.trace(s"(SIPU $reference): handling packet deserialization and injection (ord: ${result.ordinal})")
         result.makeDeserialization()
-        AppLoggers.Traffic.trace("(SIPU $reference): now injecting...")
+        AppLoggers.Traffic.trace(s"(SIPU $reference): now injecting...")
         val bundle = SimplePacketBundle(result)
         injectable.inject(bundle)
         AppLoggers.Traffic.trace("(SIPU $reference): inject done")

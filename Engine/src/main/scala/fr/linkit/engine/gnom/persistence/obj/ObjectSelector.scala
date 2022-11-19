@@ -60,7 +60,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
             val opt = findNonNetworkObjectReference(obj).map(OriginReferencedConnectedObjectReference(reference, _))
             if (opt.isEmpty) {
                 presence match {
-                    case presence: ExternalNetworkObjectPresence[_] =>
+                    case presence: ExternalNetworkObjectPresence[_] if !presence.isPresentOn(boundId) =>
                         //As no reference has been found, the object will be send to the target, so we manually
                         // set it as present for the bound identifier (the target identifier)
                         // in order to avoid sending the same object several times when the same
@@ -96,11 +96,12 @@ class ObjectSelector(bundle: PersistenceBundle) {
             val opt = findNonNetworkObjectReference(obj) //send a reference to the object we want to synchronize
             if (opt.isEmpty) {
                 presence match {
-                    case presence: ExternalNetworkObjectPresence[_] =>
+                    case presence: ExternalNetworkObjectPresence[_] if !presence.isPresentOn(boundId) =>
                         //As no reference has been found, the object will be send to the target, so we manually
                         // set it as present for the bound identifier (the target identifier)
                         // in order to avoid sending the same object several times when the same
                         // object is present in several successive packets
+
                         presence.setToPresent(boundId)
                         AppLoggers.Persistence.trace(s"Presence at '$reference' automatically presumed to be present on engine $boundId as the object will be send to the engine")
 
@@ -123,6 +124,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
     }
 
     def findObject(reference: NetworkObjectReference): Option[AnyRef] = {
+        AppLoggers.Persistence.trace(s"Finding object at $reference")
         gnol.findObject(reference) match {
             case Some(value: ContextObject) =>
                 Some(value.obj)
@@ -132,7 +134,7 @@ class ObjectSelector(bundle: PersistenceBundle) {
 
     def handleObject(obj: NetworkObject[NetworkObjectReference]): Unit = {
         val reference = obj.reference
-        val lock = NetworkObjectReferencesLocks.getInitializationLock(reference)
+        val lock      = NetworkObjectReferencesLocks.getInitializationLock(reference)
         lock.lock()
         try {
             gnol.findRootLinker(reference) match {

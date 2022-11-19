@@ -13,10 +13,7 @@
 
 package fr.linkit.api.gnom.persistence.obj
 
-import fr.linkit.api.gnom.persistence.context.TypeProfile
-
 trait ProfilePoolObject[T <: AnyRef] extends PoolObject[T] {
 
-    val profile: TypeProfile[_]
 
 }

@@ -58,11 +58,11 @@ import java.lang.ref.WeakReference
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                      : CachePacketChannel,
-                                                         classCenter                  : SyncClassCenter,
-                                                         override val defaultContracts: ContractDescriptorData,
-                                                         selector                     : EngineSelector,
-                                                         omc                          : ObjectManagementChannel)
+class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                     : CachePacketChannel,
+                                                         classCenter                 : SyncClassCenter,
+                                                         override val defaultContract: ContractDescriptorData,
+                                                         selector                    : EngineSelector,
+                                                         omc                         : ObjectManagementChannel)
         extends AbstractSharedCache(channel) with InternalConnectedObjectCache[A] {
 
     override val forest: DefaultSyncObjectForest[A] = {
@@ -89,7 +89,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         }
         val tree        = createNewTree(treeID, Current, creator.asInstanceOf[SyncInstanceCreator[A]], mirror, contracts)
         val treeProfile = ObjectTreeProfile(treeID, tree.getRoot.obj, Current, mirror, contracts)
-        AppLoggers.ConnObj.debug(s"Notifying other caches located on '$reference' that a new connected object has been added on the cache.")
+        AppLoggers.ConnObj.debug(s"Notifying owner that a new connected object has been added on the cache.")
         channel.makeRequest(ChannelScopes.apply(ownerTag))
                 .addPacket(ObjectPacket(treeProfile))
                 .submit()
@@ -161,7 +161,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
                               rootObjectOwner: UniqueTag with NetworkFriendlyEngineTag,
                               creator        : SyncInstanceCreator[A],
                               mirror         : Boolean,
-                              contracts      : ContractDescriptorData = defaultContracts): DefaultConnectedObjectTree[A] = {
+                              contracts      : ContractDescriptorData = defaultContract): DefaultConnectedObjectTree[A] = {
         precompileClasses(contracts)
 
         if (forest.findTreeLocal(id).isDefined)
@@ -236,7 +236,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
                 })
     }
 
-    private def handleNewTree(profile: ObjectTreeProfile[A]): Unit = if (forest.findTreeLocal(profile.treeID).isEmpty) {
+    private def importTree(profile: ObjectTreeProfile[A]): Unit = if (forest.findTreeLocal(profile.treeID).isEmpty) {
         import profile._
         createNewTree(treeID, treeOwner, new InstanceWrapper[A](rootObject), mirror, contracts)
     }
@@ -263,7 +263,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
         //if another thread was already performing this request, the current thread had to wait for the
         //above locks to get released, which means that the requested three has been added.
         //We check the second state by checking if the requested tree is finally present on this engine.
-        if (!forest.isPresentOnEngine(ownerTag, treeRef) || forest.findTreeLocal(id).isDefined) {
+        if (!forest.isPresentOnEngine(ownerNT, treeRef) || forest.findTreeLocal(id).isDefined) {
             refLock.unlock()
             initLock.unlock()
             return
@@ -286,7 +286,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
             Debugger.pop()
             response.nextPacket[Packet] match {
                 case ObjectPacket(profile: ObjectTreeProfile[A]) =>
-                    handleNewTree(profile)
+                    importTree(profile)
                 case EmptyPacket                                 => //the tree does not exists, do nothing.
             }
             AppLoggers.Debug.info("Ended Tree retrieval execution")
@@ -365,7 +365,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel                
                 case AnyRefPacket(id: NamedIdentifier)           =>
                     handleTreeRetrieval(id, bundle.responseSubmitter)
                 case ObjectPacket(profile: ObjectTreeProfile[A]) =>
-                    handleNewTree(profile)
+                    importTree(profile)
             }
         }
 
@@ -411,9 +411,9 @@ object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
         })
     }
 
-    private def apply[A <: AnyRef : ClassTag](channel  : CachePacketChannel,
-                                              contracts: ContractDescriptorData,
-                                              network  : Network): ConnectedObjectCache[A] = {
+    private def apply[A <: AnyRef : ClassTag](channel : CachePacketChannel,
+                                              contract: ContractDescriptorData,
+                                              network : Network): ConnectedObjectCache[A] = {
         val app       = channel.manager.network.connection.getApp
         val resources = app.getAppResources.getOrOpen[LocalFolder](ClassesResourceDirectory)
                 .getEntry
@@ -425,7 +425,7 @@ object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
             case _                        => throw new UnsupportedOperationException("Cannot retrieve object management channel.")
         }
 
-        new DefaultConnectedObjectCache[A](channel, generator, contracts, network, omc)
+        new DefaultConnectedObjectCache[A](channel, generator, contract, network, omc)
     }
 
     case class ObjectTreeProfile[A <: AnyRef](treeID    : NamedIdentifier,

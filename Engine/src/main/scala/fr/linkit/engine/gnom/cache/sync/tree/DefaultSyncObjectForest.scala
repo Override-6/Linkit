@@ -91,7 +91,7 @@ class DefaultSyncObjectForest[A <: AnyRef](center: InternalConnectedObjectCache[
         val path = reference.nodePath
         if (unknownTrees.contains(path.head))
             return None
-        val node = findTreeInternal(path.head)
+        val node = trees.get(path.head)
         node.flatMap(_.findNode(path).map((_: MutableNode[_]).obj))
     }
     

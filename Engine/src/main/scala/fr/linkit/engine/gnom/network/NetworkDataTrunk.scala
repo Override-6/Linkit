@@ -100,7 +100,7 @@ class NetworkDataTrunk private(network: AbstractNetwork, val startUpDate: Timest
 
     def reinjectEngines(): this.type = {
         if (engines.nonEmpty) engines.values.foreach(e => {
-            addEngine(e).classMappings
+            addEngine(e)
         })
         this
     }

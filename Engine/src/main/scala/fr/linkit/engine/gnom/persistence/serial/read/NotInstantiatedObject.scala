@@ -11,15 +11,15 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.read
+package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.persistence.context.{ControlBox, TypeProfile}
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, ProfilePoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
-import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
+import fr.linkit.engine.gnom.persistence.obj.{NetworkObjectReferencesLocks, ObjectSelector}
 import fr.linkit.engine.internal.util.{JavaUtils, ScalaUtils}
 
-class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
+class NotInstantiatedObject[T <: AnyRef](profile: TypeProfile[T],
                                          clazz: Class[_],
                                          content: Array[Int],
                                          controlBox: ControlBox,
@@ -52,8 +52,12 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
     override def toString: String = s"Uninstantiated $clazz"
     
     override def value: T = {
-        if (!isInit)
+        if (!isInit) {
+            if (classOf[NetworkObject[_]].isAssignableFrom(clazz)) {
+                NetworkObjectReferencesLocks.getLock(reference)
+            }
             buildObject()
+        }
         obj
     }
     

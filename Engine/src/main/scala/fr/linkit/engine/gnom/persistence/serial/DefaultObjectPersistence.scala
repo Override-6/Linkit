@@ -11,16 +11,16 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor
+package fr.linkit.engine.gnom.persistence.serial
 
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
 import fr.linkit.api.internal.system.log.AppLoggers
-import fr.linkit.engine.gnom.persistence.ConstantProtocol
-import fr.linkit.engine.gnom.persistence.serializor.read.ObjectReader
-import fr.linkit.engine.gnom.persistence.serializor.write.{ObjectWriter, SerializerObjectPool}
+import fr.linkit.engine.gnom.persistence.ProtocolConstants
+import fr.linkit.engine.gnom.persistence.serial.read.ObjectReader
+import fr.linkit.engine.gnom.persistence.serial.write.{ObjectWriter, SerializerObjectPool}
 import fr.linkit.engine.internal.debug.{Debugger, PacketDeserializationStep, PacketSerializationStep}
 
 import java.nio.ByteBuffer
@@ -43,7 +43,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         val buffer = bundle.buff
         try {
             buffer.put(signature.toArray)
-            buffer.putShort(ConstantProtocol.ProtocolVersion)
+            buffer.putShort(ProtocolConstants.ProtocolVersion)
             val writer = new ObjectWriter(bundle)
             writer.addObjects(objects)
             buffer.limit(buffer.capacity())
@@ -111,8 +111,8 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         if (!signature.forall(buff.get.equals))
             throw new IllegalArgumentException("Signature mismatches !")
         val protocolVersion = buff.getShort
-        if (protocolVersion != ConstantProtocol.ProtocolVersion)
-            throw new IllegalArgumentException(s"Can't handle this packet: protocol signature mismatches ! (received: v$protocolVersion, can only read v${ConstantProtocol.ProtocolVersion}).")
+        if (protocolVersion != ProtocolConstants.ProtocolVersion)
+            throw new IllegalArgumentException(s"Can't handle this packet: protocol signature mismatches ! (received: v$protocolVersion, can only read v${ProtocolConstants.ProtocolVersion}).")
     }
 
 }

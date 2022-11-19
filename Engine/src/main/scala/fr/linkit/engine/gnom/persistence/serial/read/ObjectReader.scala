@@ -11,22 +11,22 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.read
+package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
-import fr.linkit.api.gnom.persistence.obj.{PoolObject, ReferencedPoolObject}
+import fr.linkit.api.gnom.persistence.obj.{PoolObject, ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.network.EngineImpl
 import fr.linkit.engine.gnom.persistence.MalFormedPacketException
 import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
 import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistor$
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
-import fr.linkit.engine.gnom.persistence.ConstantProtocol._
-import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException, ObjectDeserializationException}
+import fr.linkit.engine.gnom.persistence.ProtocolConstants._
+import fr.linkit.engine.gnom.persistence.serial.{ArrayPersistence, ClassNotMappedException, ObjectDeserializationException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.lang.reflect.{Array => RArray}
@@ -99,7 +99,7 @@ class ObjectReader(bundle         : PersistenceBundle,
             case Enum    => collectAndUpdateChunk[Enum[_]](readEnum())
             case String  => collectAndUpdateChunk[String](readString())
             case Array   => collectAndUpdateChunk[PoolObject[_ <: AnyRef]](ArrayPersistence.readArray(this))
-            case Object  => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
+            case Object  => collectAndUpdateChunk[ProfilePoolObject[_]](readObject())
             case RNO     => collectAndUpdateChunk[ReferencedPoolObject](readReferencedObject())
         }
     }
@@ -175,12 +175,16 @@ class ObjectReader(bundle         : PersistenceBundle,
         (packetRefSize, sizes, new DeserializerObjectPool(sizes))
     }
 
-    private def readObject(): NotInstantiatedObject[AnyRef] = {
+    private def readObject(): ProfilePoolObject[AnyRef] = {
         val classRef    = readNextRef
         val clazz       = pool.getType(classRef)
         val profile     = config.getProfile[AnyRef](clazz)
-        val contentSize = buff.getInt
-        val content     = readObjectContent(contentSize)
+        val contentArraySize = buff.getInt
+        if (contentArraySize == -1 ) {
+            val replacementIndex = readNextRef
+            return new ReplacedObject(replacementIndex, pool)
+        }
+        val content     = readObjectContent(contentArraySize)
         new NotInstantiatedObject[AnyRef](profile, clazz, content, controlBox, selector, pool)
     }
 

@@ -11,12 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor
+package fr.linkit.engine.gnom.persistence.serial
 
 import fr.linkit.api.gnom.persistence.obj.PoolObject
-import fr.linkit.engine.gnom.persistence.ConstantProtocol._
-import fr.linkit.engine.gnom.persistence.serializor.read.{NotInstantiatedArray, ObjectReader}
-import fr.linkit.engine.gnom.persistence.serializor.write.ObjectWriter
+import fr.linkit.engine.gnom.persistence.ProtocolConstants._
+import fr.linkit.engine.gnom.persistence.serial.read.{NotInstantiatedArray, ObjectReader}
+import fr.linkit.engine.gnom.persistence.serial.write.ObjectWriter
 import java.lang
 import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer

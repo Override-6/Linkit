@@ -11,16 +11,17 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.write
+package fr.linkit.engine.gnom.persistence.serial.write
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
+import fr.linkit.api.gnom.persistence.context.{Decomposition, ObjectTranform, Replaced}
 import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
 import fr.linkit.engine.gnom.network.EngineImpl
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
-import fr.linkit.engine.gnom.persistence.ConstantProtocol._
-import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
+import fr.linkit.engine.gnom.persistence.ProtocolConstants._
+import fr.linkit.engine.gnom.persistence.serial.{ArrayPersistence, PacketPoolTooLongException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.nio.ByteBuffer
@@ -179,23 +180,20 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
 
     private def writeObject(poolObj: SimpleObject): Unit = {
         poolObj.valueClassRef match {
-            case Left(clazz)    => writeObject(clazz, poolObj.decomposed)
-            case Right(syncDef) => writeObject(syncDef, poolObj.decomposed)
+            case Left(clazz)    =>
+                putTypeRef(clazz)
+            case Right(syncDef) =>
+                putSyncTypeRef(syncDef)
         }
-    }
-
-    private def writeObject(objectType: Class[_], decomposed: Array[Any]): Unit = {
-        //writing object's class
-        putTypeRef(objectType)
-        //writing object content
-        ArrayPersistence.writeArrayContent(this, decomposed)
-    }
-
-    private def writeObject(objectType: SyncClassDef, decomposed: Array[Any]): Unit = {
-        //writing object's class
-        putSyncTypeRef(objectType)
-        //writing object content
-        ArrayPersistence.writeArrayContent(this, decomposed)
+        poolObj.transform match {
+            case Decomposition(decomposed) =>
+                //writing object content in an array
+                ArrayPersistence.writeArrayContent(this, decomposed)
+            case Replaced(replacement)     =>
+                //write array's length to -1 to specify that the object is located at another pool index
+                buff.putInt(-1)
+                putPoolRef(replacement)
+        }
     }
 
     @inline

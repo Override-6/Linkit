@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.write
+package fr.linkit.engine.gnom.persistence.serial.write
 
 import fr.linkit.api.gnom.persistence.obj.LambdaObject
 

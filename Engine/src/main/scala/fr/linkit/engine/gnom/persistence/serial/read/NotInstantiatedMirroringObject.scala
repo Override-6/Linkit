@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.read
+package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.cache.NoSuchCacheException
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.persistence.obj.{SyncPoolObject, ProfilePoolObject}
 import fr.linkit.engine.gnom.cache.sync.tree.{DefaultConnectedObjectTree, NoSuchConnectedObjectTreeException}
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
-import fr.linkit.engine.gnom.persistence.ConstantProtocol.Object
+import fr.linkit.engine.gnom.persistence.ProtocolConstants.Object
 
 class MirroringObject(override val referenceIdx: Int,
                       override val stubClassDef: SyncClassDef,

@@ -11,11 +11,12 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.read
+package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.engine.gnom.persistence.obj.ObjectPool
-import fr.linkit.engine.gnom.persistence.ConstantProtocol._
+import fr.linkit.engine.gnom.persistence.ProtocolConstants._
 
 import scala.collection.mutable
 
@@ -58,7 +59,6 @@ class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
         clazzChunk.get(globalPos)
     }
 
-    @inline
     def getAny(globalPos: Int): Any = {
         if (globalPos == 0)
             return null

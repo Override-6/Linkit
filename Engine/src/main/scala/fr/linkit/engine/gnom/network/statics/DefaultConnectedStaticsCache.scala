@@ -36,12 +36,12 @@ import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 
 //this class is used by the statics synchronization side.
 //It is not directly used by the user and must uses a specific sync instance creator.
-class DefaultConnectedStaticsCache @Persist()(channel                      : CachePacketChannel,
-                                              classCenter                  : SyncClassCenter,
-                                              override val defaultContracts: ContractDescriptorData,
-                                              resolver                     : EngineSelector,
-                                              omc                          : ObjectManagementChannel)
-        extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContracts, resolver, omc) with SynchronizedStaticsCache {
+class DefaultConnectedStaticsCache @Persist()(channel                     : CachePacketChannel,
+                                              classCenter                 : SyncClassCenter,
+                                              override val defaultContract: ContractDescriptorData,
+                                              resolver                    : EngineSelector,
+                                              omc                         : ObjectManagementChannel)
+        extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContract, resolver, omc) with SynchronizedStaticsCache {
 
     //ensuring that the creator is of the right type
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {

@@ -15,8 +15,8 @@ package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.persistence.Freezable
-import fr.linkit.api.gnom.persistence.obj.{LambdaObject, SyncPoolObject, ProfilePoolObject, ReferencedPoolObject}
-import fr.linkit.engine.gnom.persistence.ConstantProtocol._
+import fr.linkit.api.gnom.persistence.obj.{LambdaObject, NetworkPoolObject, ProfilePoolObject, ReferencedPoolObject, SyncPoolObject}
+import fr.linkit.engine.gnom.persistence.ProtocolConstants._
 
 import java.lang
 
@@ -42,9 +42,10 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
         // Objects
         new PoolChunk[Enum[_]](Enum, true, this, sizes(Enum)),
         new PoolChunk[ProfilePoolObject[AnyRef]](Object, false, this, sizes(Object)),
+        new PoolChunk[NetworkPoolObject](NetworkObject, false, this, sizes(NetworkObject)),
         // Arrays
         new ArrayPoolChunk(Array, this, sizes(Array)),
-        // Context Objects Locations
+        // Context Objects References
         new PoolChunk[ReferencedPoolObject](RNO, false, this, sizes(RNO))
         )
     
@@ -57,8 +58,7 @@ abstract class ObjectPool(sizes: Array[Int]) extends Freezable {
         chunks(idx).asInstanceOf[PoolChunk[T]]
     }
     
-    def getContextRefChunk: PoolChunk[ReferencedPoolObject] = getChunkFromFlag(RNO)
-    
+
     def getChunks: Array[PoolChunk[Any]] = chunks.asInstanceOf[Array[PoolChunk[Any]]]
     
 }

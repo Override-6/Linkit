@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.obj.PoolObject
-import fr.linkit.engine.gnom.persistence.serializor.read.DeserializerObjectPool
+import fr.linkit.engine.gnom.persistence.serial.read.DeserializerObjectPool
 
 import java.lang.reflect.{Array => RArray}
 

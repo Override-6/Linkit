@@ -14,6 +14,6 @@
 package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.gnom.packet.PacketException
-import fr.linkit.engine.gnom.persistence.serializor.ObjectDeserializationException
+import fr.linkit.engine.gnom.persistence.serial.ObjectDeserializationException
 
 class NotDeserializedException(msg: String, cause: Throwable = null) extends ObjectDeserializationException(msg, cause)

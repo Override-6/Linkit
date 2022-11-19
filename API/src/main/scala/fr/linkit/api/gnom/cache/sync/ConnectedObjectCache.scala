@@ -68,11 +68,11 @@ trait ConnectedObjectCache[A <: AnyRef] extends SharedCache with PacketAttribute
      * "the behavior of a tree" is simply a set of [[fr.linkit.api.gnom.cache.sync.contract.behavior.SynchronizedStructureBehavior]]
      * that will set the behavior of each objects of a tree.
      * */
-    val defaultContracts: ContractDescriptorData
+    val defaultContract: ContractDescriptorData
 
     /**
      * posts an object in the cache.
-     * The behavior of the object and sub objects will depends on the [[defaultContracts]]
+     * The behavior of the object and sub objects will depends on the [[defaultContract]]
      *
      * @throws CannotConnectException If the given object is a synchronized object.
      *                                    (No matters if the object is handled by this cache or not)
@@ -80,7 +80,7 @@ trait ConnectedObjectCache[A <: AnyRef] extends SharedCache with PacketAttribute
      * @param creator         the creator that will create the synchronized object.
      * @return the synchronized object.
      * */
-    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = syncObject(id, creator, defaultContracts)
+    def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = syncObject(id, creator, defaultContract)
 
     /**
      * @param id              the identifier of the root object
@@ -92,7 +92,7 @@ trait ConnectedObjectCache[A <: AnyRef] extends SharedCache with PacketAttribute
 
     def mirrorObject(id: Int, creator: SyncInstanceCreator[_ <: A], contracts: ContractDescriptorData): A with SynchronizedObject[A]
 
-    def mirrorObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = mirrorObject(id, creator, defaultContracts)
+    def mirrorObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = mirrorObject(id, creator, defaultContract)
 
     /**
      * Finds a synchronized object in the cache.

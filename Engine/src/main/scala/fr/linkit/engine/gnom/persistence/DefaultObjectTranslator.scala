@@ -24,7 +24,7 @@ import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncClassStorageResource}
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.{BroadcastedFlag, DedicatedFlag}
-import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
+import fr.linkit.engine.gnom.persistence.serial.DefaultObjectPersistence
 
 import java.nio.ByteBuffer
 import scala.annotation.switch

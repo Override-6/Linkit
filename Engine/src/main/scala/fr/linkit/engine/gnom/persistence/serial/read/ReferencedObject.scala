@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.read
+package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, OriginReferencedConnectedObjectReference}
@@ -20,11 +20,11 @@ import fr.linkit.api.gnom.referencing.NetworkObjectReference
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.{NetworkObjectReferencesLocks, ObjectSelector}
-import fr.linkit.engine.gnom.persistence.ConstantProtocol.Object
+import fr.linkit.engine.gnom.persistence.ProtocolConstants.Object
 
 class ReferencedObject(override val referenceIdx: Int,
-                       selector: ObjectSelector,
-                       pool: DeserializerObjectPool) extends ReferencedPoolObject {
+                       selector                 : ObjectSelector,
+                       pool                     : DeserializerObjectPool) extends ReferencedPoolObject {
 
     override lazy val reference: NetworkObjectReference = pool
             .getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
@@ -60,9 +60,13 @@ class ReferencedObject(override val referenceIdx: Int,
             }.getOrElse(throw new NoSuchElementException(s"Could not find any shared cache at $cacheRef"))
 
         case loc =>
-            selector.findObject(loc).getOrElse {
-                throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
+            selector.findObject(loc) match {
+                case Some(value) => value
+                case None        =>
+                    selector.findObject(loc) //for debugger purposes
+                    throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
             }
+
     }) match {
         case c: ConnectedObject[AnyRef] =>
             c.connected

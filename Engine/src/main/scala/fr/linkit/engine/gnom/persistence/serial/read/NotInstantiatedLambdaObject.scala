@@ -11,11 +11,11 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor.read
+package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.persistence.context.LambdaTypePersistence
 import fr.linkit.api.gnom.persistence.obj.LambdaObject
-import fr.linkit.engine.gnom.persistence.serializor.ObjectDeserializationException
+import fr.linkit.engine.gnom.persistence.serial.ObjectDeserializationException
 
 import scala.util.control.NonFatal
 

@@ -11,10 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.serializor
+package fr.linkit.engine.gnom.persistence.serial
 
 import fr.linkit.api.gnom.packet.PacketException
 
-class ObjectDeserializationException(msg: String, cause: Throwable = null) extends PacketException(msg, cause) {
+class PacketPoolTooLongException(msg: String) extends PacketException(msg) {
 
 }
