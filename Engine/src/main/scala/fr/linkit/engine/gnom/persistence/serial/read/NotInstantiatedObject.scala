@@ -52,12 +52,8 @@ class NotInstantiatedObject[T <: AnyRef](profile: TypeProfile[T],
     override def toString: String = s"Uninstantiated $clazz"
     
     override def value: T = {
-        if (!isInit) {
-            if (classOf[NetworkObject[_]].isAssignableFrom(clazz)) {
-                NetworkObjectReferencesLocks.getLock(reference)
-            }
+        if (!isInit)
             buildObject()
-        }
         obj
     }
     

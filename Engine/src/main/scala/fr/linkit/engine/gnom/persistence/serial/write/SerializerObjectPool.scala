@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.serial.write
 
-import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject}
+import fr.linkit.api.gnom.cache.sync.ChippedObject
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple}
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.context.{Decomposition, Replaced, TypeProfile}
@@ -22,8 +22,8 @@ import fr.linkit.api.gnom.referencing.{NetworkObject, NetworkObjectReference}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.api.internal.util.Unwrapper
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
-import fr.linkit.engine.gnom.persistence.ProtocolConstants._
 import fr.linkit.engine.gnom.persistence.PersistenceException
+import fr.linkit.engine.gnom.persistence.ProtocolConstants._
 import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk}
 import fr.linkit.engine.gnom.persistence.serial.ArrayPersistence
 import fr.linkit.engine.internal.util.JavaUtils
@@ -154,7 +154,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
             ref match {
                 case no: NetworkObject[_] =>
                     AppLoggers.Persistence.trace(s"Writing Network object (reference: ${no.reference}) to ${bundle.boundNT}.")
-                case _                      =>
+                case _                    =>
             }
             addObjectDecomposed(ref)
         } else {

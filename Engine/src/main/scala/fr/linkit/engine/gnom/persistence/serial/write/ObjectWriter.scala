@@ -15,12 +15,13 @@ package fr.linkit.engine.gnom.persistence.serial.write
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.persistence.context.{Decomposition, ObjectTranform, Replaced}
+import fr.linkit.api.gnom.persistence.context.{Decomposition, Replaced}
 import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
+import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.engine.gnom.network.EngineImpl
-import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.ProtocolConstants._
+import fr.linkit.engine.gnom.persistence.obj.PoolChunk
 import fr.linkit.engine.gnom.persistence.serial.{ArrayPersistence, PacketPoolTooLongException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
@@ -61,7 +62,7 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
         packetRefSize = {
             if (poolSize > (java.lang.Short.MAX_VALUE * 2 + 1)) IntSize
             else if (poolSize > java.lang.Byte.MAX_VALUE * 2 + 1) UShortSize
-                 else UByteSize
+            else UByteSize
         }
 
         //Informs the deserializer if we send a wide packet or not.
@@ -185,13 +186,20 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
             case Right(syncDef) =>
                 putSyncTypeRef(syncDef)
         }
+
+        poolObj.value match {
+            case no: NetworkObject[_] =>
+                buff.putInt(NetworkObjectFlag)
+                putPoolRef(no.reference)
+            case _ =>
+        }
         poolObj.transform match {
             case Decomposition(decomposed) =>
                 //writing object content in an array
                 ArrayPersistence.writeArrayContent(this, decomposed)
             case Replaced(replacement)     =>
                 //write array's length to -1 to specify that the object is located at another pool index
-                buff.putInt(-1)
+                buff.putInt(ReplacementFlag)
                 putPoolRef(replacement)
         }
     }

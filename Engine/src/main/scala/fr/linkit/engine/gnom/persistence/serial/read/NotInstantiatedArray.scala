@@ -15,7 +15,9 @@ package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 
-class NotInstantiatedArray[T <: AnyRef](pool: DeserializerObjectPool, arrayContent: Array[Int], emptyArray: Array[T]) extends RegistrablePoolObject[Array[T]] {
+class NotInstantiatedArray[T <: AnyRef](pool: DeserializerObjectPool,
+                                        arrayContent: Array[Int],
+                                        emptyArray: Array[T]) extends RegistrablePoolObject[Array[T]] {
 
     private val contentObjects = new Array[RegistrablePoolObject[T]](arrayContent.length)
 

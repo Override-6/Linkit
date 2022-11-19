@@ -176,15 +176,28 @@ class ObjectReader(bundle         : PersistenceBundle,
     }
 
     private def readObject(): ProfilePoolObject[AnyRef] = {
-        val classRef    = readNextRef
-        val clazz       = pool.getType(classRef)
-        val profile     = config.getProfile[AnyRef](clazz)
-        val contentArraySize = buff.getInt
-        if (contentArraySize == -1 ) {
+        val classRef         = readNextRef
+        val clazz            = pool.getType(classRef)
+        val profile          = config.getProfile[AnyRef](clazz)
+        val flag = buff.getInt
+
+        def replacement() = {
             val replacementIndex = readNextRef
-            return new ReplacedObject(replacementIndex, pool)
+            new ReplacedObject(replacementIndex, pool)
         }
-        val content     = readObjectContent(contentArraySize)
+
+        if (flag == NetworkObjectFlag) {
+            val refIdx  = readNextRef
+            val content = readObjectContent(buff.getInt)
+            val replaced = buff.getInt(buff.position()) == ReplacementFlag
+            if (replaced) buff.getInt
+            val obj     = if (replaced) replacement() else new NotInstantiatedObject[AnyRef](profile, clazz, content, controlBox, selector, pool)
+            return new NotInstantiatedNetworkObject[AnyRef](refIdx, pool, obj)
+        }
+        if (flag == ReplacementFlag) return replacement()
+
+        //if flag is positive, it's the object's content length
+        val content = readObjectContent(flag)
         new NotInstantiatedObject[AnyRef](profile, clazz, content, controlBox, selector, pool)
     }
 
