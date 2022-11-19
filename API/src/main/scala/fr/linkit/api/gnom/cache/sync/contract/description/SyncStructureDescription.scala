@@ -25,6 +25,8 @@ import fr.linkit.api.internal.compilation.CompilationContext
  * */
 trait SyncStructureDescription[A <: AnyRef] extends CompilationContext {
 
+    val structureHash: Int
+
     /**
      * The super class's type (for java reflection api)
      * */

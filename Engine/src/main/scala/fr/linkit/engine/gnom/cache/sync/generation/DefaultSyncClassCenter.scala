@@ -14,12 +14,13 @@
 package fr.linkit.engine.gnom.cache.sync.generation
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefMultiple, SyncStructureDescription}
-import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
+import fr.linkit.api.gnom.cache.sync.generation.{GeneratedClassLoader, SyncClassCenter}
 import fr.linkit.api.gnom.cache.sync.{InvalidClassDefinitionError, SynchronizedObject}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
 import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.api.internal.compilation.CompilerCenter
 import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsCallerDescription}
 import fr.linkit.engine.internal.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.internal.mapping.ClassMappings

@@ -14,7 +14,9 @@
 package fr.linkit.engine.gnom.cache.sync.contract.description
 
 import fr.linkit.api.gnom.cache.sync.contract.description._
+import fr.linkit.engine.gnom.cache.sync.contract.description.AbstractSyncStructureDescription.computeHash
 import fr.linkit.engine.gnom.cache.sync.generation.SyncClassStorageResource.{GeneratedClassesPackage, SyncSuffixName}
+import fr.linkit.engine.internal.util.ScalaUtils.setAccessible
 
 import java.lang.reflect._
 import scala.collection.mutable
@@ -25,10 +27,13 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val specs:
     private val methodDescriptions: Map[Int, MethodDescription] = collectMethods()
     private val fieldDescriptions : Map[Int, FieldDescription]  = collectFields()
 
+
+    override val structureHash: Int = computeHash(this)
+
     //The generated class name
     override def classPackage: String = GeneratedClassesPackage + specs.mainClass.getPackageName
 
-    override def className: String = specs.mainClass.getSimpleName + SyncSuffixName + s"_${specs.id}"
+    override def className: String = specs.mainClass.getSimpleName + SyncSuffixName + (if (structureHash < 0) "_" else "") + s"_${structureHash.abs}"
 
     override def parentLoader: ClassLoader = specs.mainClass.getClassLoader
 
@@ -107,14 +112,18 @@ abstract class AbstractSyncStructureDescription[A <: AnyRef](override val specs:
                 .toMap
     }
 
-    private def setAccessible(f: Field): Boolean = {
-        try {
-            f.setAccessible(true)
-            true
-        } catch {
-            case _: InaccessibleObjectException => false
-        }
+}
+
+object AbstractSyncStructureDescription {
+    private def computeHash(struct: AbstractSyncStructureDescription[_]): Int = {
+        val hash = struct.specs.hashCode() + struct.methodDescriptions.values.map(_.javaMethod).map(methodHashcode).sum
+        hash
     }
+
+    private def methodHashcode(m: Method): Int = {
+        31 * m.hashCode() + m.getModifiers + m.getParameters.map(_.getType.getName.hashCode()).sum * m.getReturnType.getName.hashCode()
+    }
+
 
 }
 

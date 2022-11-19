@@ -16,7 +16,7 @@ package fr.linkit.engine.internal.script
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile}
 import fr.linkit.engine.internal.script.SimpleScriptHandler.{CBResourcePath, ScriptName, ScriptPackage}
 
-class SimpleScriptHandler[S <: ScriptFile] extends LinkitScriptHandler[S] {
+class SimpleScriptHandler[S <: ScriptFile] extends AbstractScriptHandler[S] {
 
     override val scriptClassBlueprintResourcePath: String = CBResourcePath
 

@@ -210,22 +210,11 @@ object ScalaUtils {
     def setAccessible(field: AccessibleObject): Boolean = {
         try {
             field.setAccessible(true)
-            //if (ref != null) field.canAccess(ref) else
             true
         } catch {
             case _: InaccessibleObjectException =>
                 false
         }
-    }
-    
-    private[util] def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
-        
-        val sb = new mutable.StringBuilder("(")
-        params.foreach { clazz =>
-            sb.append(typeStringClass(clazz))
-        }
-        sb.append(')').append(typeStringClass(returnType))
-        sb.toString()
     }
     
 }

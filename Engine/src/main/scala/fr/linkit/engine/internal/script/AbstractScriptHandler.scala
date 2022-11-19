@@ -19,7 +19,7 @@ import java.io.InputStream
 
 import fr.linkit.engine.application.LinkitApplication
 
-abstract class LinkitScriptHandler[S <: ScriptFile] extends ScriptHandler[S] {
+abstract class AbstractScriptHandler[S <: ScriptFile] extends ScriptHandler[S] {
 
     override def scriptClassBlueprint: InputStream = classOf[LinkitApplication].getResourceAsStream(scriptClassBlueprintResourcePath)
 
