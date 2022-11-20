@@ -14,11 +14,11 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.engine.gnom.cache.CacheArrayContent
-import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.ObjectTreeProfile
+import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache.FirstFloorObjectProfile
 
-class CacheRepoContent[A <: AnyRef](content: Array[ObjectTreeProfile[A]]) extends CacheArrayContent[ObjectTreeProfile[A]](content)
+class CacheRepoContent[A <: AnyRef](content: Array[FirstFloorObjectProfile[A]]) extends CacheArrayContent[FirstFloorObjectProfile[A]](content)
 
 object CacheRepoContent {
 
-    def apply[A <: AnyRef](content: Array[ObjectTreeProfile[A]]): CacheRepoContent[A] = new CacheRepoContent(content)
+    def apply[A <: AnyRef](content: Array[FirstFloorObjectProfile[A]]): CacheRepoContent[A] = new CacheRepoContent(content)
 }

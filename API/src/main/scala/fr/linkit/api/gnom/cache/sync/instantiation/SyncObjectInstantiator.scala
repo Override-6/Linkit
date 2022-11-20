@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 
-trait SyncInstanceInstantiator {
+trait SyncObjectInstantiator {
 
     def newSynchronizedInstance[A <: AnyRef](creator: SyncInstanceCreator[A]): A with SynchronizedObject[A]
 

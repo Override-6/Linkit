@@ -34,10 +34,5 @@ trait Chip[S] {
      * @see [[fr.linkit.api.gnom.cache.sync.contract.description.SyncStructureDescription]]
      * */
     def callMethod(methodID: Int, params: Array[Any], callerNT: NameTag)(onException: Throwable => Unit, onResult: Any => Unit): Unit
-    /**
-     * this method will transfer to the chipped object every fields
-     * values of the given object.
-     * @param obj the obj in where fields values will be pasted to the chipped object.
-     * */
-    def updateObject(obj: S): Unit
+
 }

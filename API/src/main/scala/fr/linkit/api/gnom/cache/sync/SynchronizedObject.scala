@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.ObjectSyncNode
+import fr.linkit.api.gnom.cache.sync.env.SyncObjectCompanion
 
 /**
  * This interface depicts a synchronized object. <br>
@@ -34,11 +34,6 @@ trait SynchronizedObject[A <: AnyRef] extends ChippedObject[A] {
      * @see Puppeteer
      */
     def getPuppeteer: Puppeteer[A]
-
-    /**
-     * this object's node.
-     * */
-    override def getNode: ObjectSyncNode[A]
 
     /**
      * @return true if this object is a distant object that is mirroring on current engine a distant implementation

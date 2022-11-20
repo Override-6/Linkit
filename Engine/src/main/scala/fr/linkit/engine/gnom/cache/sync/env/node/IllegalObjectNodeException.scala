@@ -11,6 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync
+package fr.linkit.engine.gnom.cache.sync.env.node
 
-class ObjectTreeAlreadyRegisteredException(msg: String) extends SyncObjectException(msg)
+import fr.linkit.engine.gnom.cache.sync.env.SynchronizedObjectException
+
+class IllegalObjectNodeException(msg: String, cause: Throwable = null) extends SynchronizedObjectException(msg, cause) {
+
+}

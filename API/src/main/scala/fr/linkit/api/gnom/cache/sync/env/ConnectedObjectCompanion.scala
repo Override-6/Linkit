@@ -11,27 +11,21 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.tree
+package fr.linkit.api.gnom.cache.sync.env
 
-import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
-import org.jetbrains.annotations.Nullable
-
-import scala.collection.mutable.ListBuffer
 
 /**
  * The node of a synchronized object.
  *
  * @tparam A the super type of the synchronized object
  */
-trait ConnectedObjectNode[A <: AnyRef] {
+trait ConnectedObjectCompanion[A <: AnyRef] {
 
-    val tree: ConnectedObjectTree[_]
-
-    val objectPresence: NetworkObjectPresence
+    val presence: NetworkObjectPresence
 
     val reference: ConnectedObjectReference
 
@@ -46,20 +40,6 @@ trait ConnectedObjectNode[A <: AnyRef] {
      */
     val ownerTag: UniqueTag with NetworkFriendlyEngineTag
 
-    /**
-     * This node's parent (null if this node is a root node)
-     */
-    @Nullable def parent: ConnectedObjectNode[_]
-
     def obj: ConnectedObject[A]
 
-    lazy val nodePath: Array[NamedIdentifier] = {
-        var parent: ConnectedObjectNode[_] = this
-        val buff                = ListBuffer.empty[NamedIdentifier]
-        while (parent != null) {
-            buff += parent.id
-            parent = parent.parent
-        }
-        buff.toArray.reverse
-    }
 }

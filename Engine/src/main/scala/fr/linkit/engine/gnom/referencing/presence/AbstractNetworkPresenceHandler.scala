@@ -13,6 +13,7 @@
 
 package fr.linkit.engine.gnom.referencing.presence
 
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.network.tag._
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.referencing.presence.ObjectPresenceState._
@@ -41,6 +42,7 @@ abstract class AbstractNetworkPresenceHandler[R <: NetworkObjectReference](paren
     private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
 
     import selector._
+
 
     @inline
     def getPresence(ref: R): NetworkObjectPresence = getPresence0(ref)

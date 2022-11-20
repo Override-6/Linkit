@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.description
 
-import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
+import fr.linkit.api.gnom.cache.sync.instantiation.SyncObjectInstantiator
 import fr.linkit.api.internal.compilation.CompilationContext
 
 /**
@@ -21,7 +21,7 @@ import fr.linkit.api.internal.compilation.CompilationContext
  *
  * @see [[fr.linkit.api.gnom.cache.sync.SynchronizedObject]]
  * @see [[fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter]]
- * @see [[SyncInstanceInstantiator]]
+ * @see [[SyncObjectInstantiator]]
  * */
 trait SyncStructureDescription[A <: AnyRef] extends CompilationContext {
 

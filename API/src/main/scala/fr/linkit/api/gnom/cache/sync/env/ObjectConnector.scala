@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.tree
+package fr.linkit.api.gnom.cache.sync.env
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
@@ -25,7 +25,7 @@ trait ObjectConnector {
 
     /**
      *
-     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
+     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectCompanion]]
      *
      * @throws CannotConnectException if the object is already synchronized.
      * @throws IllegalArgumentException   if the given parent does not belongs to this tree.
@@ -38,14 +38,14 @@ trait ObjectConnector {
      * @return the created node
      */
     //TODO may not be accessible that publicly
-    def insertObject[B <: AnyRef](parent       : ConnectedObjectNode[_],
+    def insertObject[B <: AnyRef](parent       : ConnectedObjectCompanion[_],
                                   source       : AnyRef,
                                   ownerID      : UniqueTag with NetworkFriendlyEngineTag,
-                                  insertionKind: SyncLevel): ConnectedObjectNode[B]
+                                  insertionKind: SyncLevel): ConnectedObjectCompanion[B]
 
     /**
      *
-     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectNode]]
+     * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[ConnectedObjectCompanion]]
      *
      * @throws CannotConnectException if the object is already synchronized.
      * @throws IllegalArgumentException   if the given parent is does not belongs to this tree.
@@ -60,7 +60,7 @@ trait ObjectConnector {
     def insertObject[B <: AnyRef](parentPath   : Array[NamedIdentifier],
                                   source       : AnyRef,
                                   ownerID      : UniqueTag with NetworkFriendlyEngineTag,
-                                  insertionKind: SyncLevel): ConnectedObjectNode[B] = {
+                                  insertionKind: SyncLevel): ConnectedObjectCompanion[B] = {
         insertObject(parentPath, source, ownerID, insertionKind, ThreadLocalRandom.current().nextInt())
     }
 
@@ -68,12 +68,12 @@ trait ObjectConnector {
                                   source       : AnyRef,
                                   ownerID      : UniqueTag with NetworkFriendlyEngineTag,
                                   insertionKind: SyncLevel,
-                                  id           : Int): ConnectedObjectNode[B]
+                                  id           : Int): ConnectedObjectCompanion[B]
 
     def createMirroredObject[B <: AnyRef](parentPath: Array[NamedIdentifier],
                                           classDef  : SyncClassDef,
                                           ownerID   : UniqueTag with NetworkFriendlyEngineTag,
-                                          id        : Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectNode[B]
+                                          id        : Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectCompanion[B]
 
     def createConnectedObj(parentRef: ConnectedObjectReference)(obj: Any, kind: SyncLevel): ConnectedObject[AnyRef] = {
         createConnectedObj(parentRef, ThreadLocalRandom.current().nextInt())(obj, kind)

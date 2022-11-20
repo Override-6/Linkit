@@ -40,10 +40,6 @@ class ObjectChip[A <: AnyRef] private(contract     : StructureContract[A],
 
     import resolver._
 
-    override def updateObject(obj: A): Unit = {
-        ScalaUtils.pasteAllFields(chipped, obj)
-    }
-
     override def callMethod(methodID: Int, params: Array[Any], callerNT: NameTag)(onException: Throwable => Unit, onResult: Any => Unit): Unit = try {
         Debugger.push(MethodInvocationComputeStep(methodID, callerNT, callerNT <=> Current))
 

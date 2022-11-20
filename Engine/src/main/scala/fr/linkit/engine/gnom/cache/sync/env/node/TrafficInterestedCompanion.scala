@@ -11,15 +11,15 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree.node
+package fr.linkit.engine.gnom.cache.sync.env.node
 
-import fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectNode
+import fr.linkit.api.gnom.cache.sync.env.ConnectedObjectCompanion
 import fr.linkit.api.gnom.network.tag.{IdentifierTag, NameTag}
 import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.packet.traffic.channel.request.ResponseSubmitter
 
-trait TrafficInterestedNode[A <: AnyRef] extends ConnectedObjectNode[A] {
+trait TrafficInterestedCompanion[A <: AnyRef] extends ConnectedObjectCompanion[A] {
 
     def handlePacket(packet: InvocationPacket, senderTag: NameTag, response: Submitter[Unit]): Unit
 

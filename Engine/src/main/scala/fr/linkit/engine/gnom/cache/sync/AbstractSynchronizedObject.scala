@@ -17,10 +17,10 @@ import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
-import fr.linkit.api.gnom.cache.sync.tree.{ObjectConnector, ObjectSyncNode}
+import fr.linkit.api.gnom.cache.sync.env.{ObjectConnector, SyncObjectCompanion}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectAlreadyInitialisedException, ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
-import fr.linkit.engine.gnom.cache.sync.tree.node.ObjectSyncNodeImpl
+import fr.linkit.engine.gnom.cache.sync.env.node.SyncObjectCompanionImpl
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
@@ -29,9 +29,9 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient private final var puppeteer        : Puppeteer[A]             = _
     @transient private final var contract         : StructureContract[A]     = _
     @transient private final var choreographer    : InvocationChoreographer  = _
-    @transient private final var presenceOnNetwork: NetworkObjectPresence    = _
-    @transient private final var node             : ObjectSyncNode[A]        = _
-    @transient private final var connector        : ObjectConnector          = _
+    @transient private final var presenceOnNetwork: NetworkObjectPresence  = _
+    @transient private final var node             : SyncObjectCompanion[A] = _
+    @transient private final var connector        : ObjectConnector        = _
 
     //cached values for handleCall
     @transient private final var isNotMirroring: Boolean = _
@@ -39,7 +39,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     def originClass: Class[_]
 
-    def initialize(node: ObjectSyncNodeImpl[A]): Unit = {
+    def initialize(node: SyncObjectCompanionImpl[A]): Unit = {
         if (isInitialized)
             throw new ConnectedObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
         //if (location != null && location != node.reference)
@@ -49,7 +49,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
         this.puppeteer = node.puppeteer
         this.contract = node.contract
-        this.presenceOnNetwork = node.objectPresence
+        this.presenceOnNetwork = node.presence
         this.node = node
         this.choreographer = node.choreographer
         this.connector = node.tree
@@ -75,7 +75,6 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getPuppeteer: Puppeteer[A] = puppeteer
 
-    override def getNode: ObjectSyncNode[A] = node
 
     @transient private lazy val classDef = {
         var interfaces = getClass.getInterfaces.tail

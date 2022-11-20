@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.cache.sync.tree.ChippedObjectNode
+import fr.linkit.api.gnom.cache.sync.env.ChippedObjectCompanion
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectReference}
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter.addChippedObject
@@ -28,8 +28,8 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
 
     private var choreographer: InvocationChoreographer  = _
     private var reference0   : ConnectedObjectReference = _
-    private var presence0    : NetworkObjectPresence    = _
-    private var node         : ChippedObjectNode[A]     = _
+    private var presence0    : NetworkObjectPresence     = _
+    private var node         : ChippedObjectCompanion[A] = _
 
     override val isMirrored: Boolean = true //pure chipped objects are always mirrored.
 
@@ -42,7 +42,7 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
     /**
      * this object's node.
      * */
-    override def getNode: ChippedObjectNode[A] = node
+    override def getCompanion: ChippedObjectCompanion[A] = node
 
     /**
      * @return the invocation choreographer of this object
@@ -59,12 +59,12 @@ final class ChippedObjectAdapter[A <: AnyRef](override val connected: A) extends
 
     override def presence: NetworkObjectPresence = presence0
 
-    def initialize(node: ChippedObjectNode[A]): Unit = {
+    def initialize(node: ChippedObjectCompanion[A]): Unit = {
         if (node.contract.mirroringInfo.isEmpty)
             throw new IllegalConnectedObjectException("Pure chipped object's contract must define mirroring information.")
         this.choreographer = node.choreographer
         this.reference0 = node.reference
-        this.presence0 = node.objectPresence
+        this.presence0 = node.presence
         this.node = node
         addChippedObject(this)
     }

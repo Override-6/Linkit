@@ -11,15 +11,15 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.tree
+package fr.linkit.api.gnom.cache.sync.env
 
-import fr.linkit.api.gnom.cache.sync.ChippedObject
-import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
+import fr.linkit.api.gnom.cache.sync.SyncObjectException
 
-trait ChippedObjectNode[A <: AnyRef] extends ConnectedObjectNode[A] {
+class NoSuchSyncNodeException(msg: String) extends SyncObjectException(msg) {
 
-    val choreographer: InvocationChoreographer
-    val contract: StructureContract[A]
-    def obj     : ChippedObject[A]
+}
+
+object NoSuchSyncNodeException {
+
+    def apply(msg: String): NoSuchSyncNodeException = new NoSuchSyncNodeException(msg)
 }

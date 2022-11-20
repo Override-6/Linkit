@@ -11,8 +11,6 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree
+package fr.linkit.api.gnom.cache.sync
 
-class NoSuchConnectedObjectTreeException(msg: String, cause: Throwable = null) extends SynchronizedObjectException(msg, cause) {
-
-}
+class ConnectedObjectAlreadyRegisteredException(msg: String) extends SyncObjectException(msg)

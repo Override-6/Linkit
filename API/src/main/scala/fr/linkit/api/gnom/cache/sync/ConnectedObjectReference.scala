@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
-import fr.linkit.api.gnom.network.tag.{NameTag, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 import java.util
@@ -25,24 +25,25 @@ import java.util
  * @param cacheID the object cache identifier
  * @param owner the owner of the object (the engine's name that created the object)<br>
  *                NOTE: The value of this field have no influence on the reference location linking, it's just informal.
- * @param nodePath the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectTree]]
+ * @param identifier the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.env.ConnectedObjectTree]]
  */
-class ConnectedObjectReference(family      : String,
-                               cacheID     : Int,
-                               val owner   : NameTag,
-                               val nodePath: Array[NamedIdentifier]) extends SharedCacheReference(family, cacheID) {
+class ConnectedObjectReference(family        : String,
+                               cacheID       : Int,
+                               val owner     : NameTag,
+                               val firstFloor: Boolean,
+                               val identifier: NamedIdentifier) extends SharedCacheReference(family, cacheID) {
 
     override def asSuper: Option[SharedCacheReference] = Some(new SharedCacheReference(family, cacheID))
 
-    override def toString: String = super.toString + s"/~${nodePath.mkString("/")}"
+    override def toString: String = super.toString + s"/~$identifier"
 
-    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, nodePath))
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, firstFloor, identifier))
 
     override def equals(obj: Any): Boolean = obj match {
         case ref: ConnectedObjectReference => ref.family == family &&
                 ref.cacheID == cacheID &&
-                //ref.ownerID == ownerID &&
-                (ref.nodePath sameElements nodePath)
+                ref.firstFloor == firstFloor &&
+                (ref.identifier == identifier)
         case _                             => false
     }
 
@@ -50,7 +51,7 @@ class ConnectedObjectReference(family      : String,
 
 object ConnectedObjectReference {
 
-    def apply(family: String, cacheID: Int, owner: NameTag, nodePath: Array[NamedIdentifier]): ConnectedObjectReference = {
-        new ConnectedObjectReference(family, cacheID, owner, nodePath)
+    def apply(family: String, cacheID: Int, owner: NameTag, firstFloor: Boolean, id: NamedIdentifier): ConnectedObjectReference = {
+        new ConnectedObjectReference(family, cacheID, owner, firstFloor, id)
     }
 }

@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.cache.sync
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
 
 case class OriginReferencedConnectedObjectReference(syncReference: ConnectedObjectReference, originReference: NetworkObjectReference)
-        extends ConnectedObjectReference(syncReference.family, syncReference.cacheID, syncReference.owner, syncReference.nodePath) {
+        extends ConnectedObjectReference(syncReference.family, syncReference.cacheID, syncReference.owner, syncReference.firstFloor, syncReference.identifier) {
 
     override def toString: String = s"sync: ${super.toString} origin: $originReference"
 }

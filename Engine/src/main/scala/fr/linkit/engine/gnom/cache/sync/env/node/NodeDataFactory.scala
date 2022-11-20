@@ -11,36 +11,33 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree.node
+package fr.linkit.engine.gnom.cache.sync.env.node
 
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, SynchronizedObject}
-import fr.linkit.api.gnom.network.tag.{NameTag, NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 trait NodeDataFactory {
 
-    def newNodeData[A <: AnyRef, N <: NodeData[A]](req: NodeDataRequest[A, N]): N
+    def newNodeData[A <: AnyRef, N <: CompanionData[A]](req: NodeDataRequest[A, N]): N
 }
 
-sealed trait NodeDataRequest[A <: AnyRef, +N <: NodeData[A]] {
-    val parent: MutableNode[_ <: AnyRef]
-}
+sealed trait NodeDataRequest[A <: AnyRef, +N <: CompanionData[A]]
 
-class NormalNodeDataRequest[A <: AnyRef](val parent : MutableNode[_ <: AnyRef],
-                                         val path   : Array[NamedIdentifier],
-                                         val ownerID: NameTag) extends NodeDataRequest[A, NodeData[A]]
+class NormalNodeDataRequest[A <: AnyRef](val parent    : MutableCompanion[_ <: AnyRef],
+                                         val identifier: NamedIdentifier,
+                                         val firstFloor: Boolean,
+                                         val ownerID   : NameTag) extends NodeDataRequest[A, CompanionData[A]]
 
-class SyncNodeDataRequest[A <: AnyRef](parent        : MutableNode[_ <: AnyRef],
-                                       id            : NamedIdentifier,
+class SyncNodeDataRequest[A <: AnyRef](id            : NamedIdentifier,
                                        val syncObject: A with SynchronizedObject[A],
                                        val origin    : Option[A],
                                        ownerID       : NameTag,
                                        val syncLevel : SyncLevel)
-        extends ChippedObjectNodeDataRequest[A](parent, id, syncObject, ownerID) with NodeDataRequest[A, SyncObjectNodeData[A]]
+        extends ChippedObjectNodeDataRequest[A](id, syncObject, ownerID) with NodeDataRequest[A, SyncObjectCompanionData[A]]
 
-class ChippedObjectNodeDataRequest[A <: AnyRef](val parent       : MutableNode[_ <: AnyRef],
-                                                val id           : NamedIdentifier,
+class ChippedObjectNodeDataRequest[A <: AnyRef](val id           : NamedIdentifier,
                                                 val chippedObject: ChippedObject[A],
                                                 val ownerTag     : NameTag)
-        extends NodeDataRequest[A, ChippedObjectNodeData[A]]
+        extends NodeDataRequest[A, ChippedObjectCompanionData[A]]

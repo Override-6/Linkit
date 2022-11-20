@@ -11,21 +11,21 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree.node
+package fr.linkit.engine.gnom.cache.sync.env.node
 
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{ChippedObjectNode, ConnectedObjectNode, ObjectSyncNode}
+import fr.linkit.api.gnom.cache.sync.env.{ChippedObjectCompanion, ConnectedObjectCompanion, SyncObjectCompanion}
 
-sealed trait InternalNode[A <: AnyRef] extends MutableNode[A] with TrafficInterestedNode[A] with ConnectedObjectNode[A] {
+sealed trait InternalCompanion[A <: AnyRef] extends TrafficInterestedCompanion[A] with ConnectedObjectCompanion[A] {
 
 }
 
-trait InternalChippedObjectNode[A <: AnyRef] extends InternalNode[A] with ChippedObjectNode[A] {
+trait InternalChippedObjectCompanion[A <: AnyRef] extends InternalCompanion[A] with ChippedObjectCompanion[A] {
     val chip: Chip[A]
 }
 
-trait InternalObjectSyncNode[A <: AnyRef] extends InternalChippedObjectNode[A] with ObjectSyncNode[A] with MutableSyncNode[A] {
+trait InternalSyncObjectCompanion[A <: AnyRef] extends InternalChippedObjectCompanion[A] with SyncObjectCompanion[A] with MutableSyncCompanion[A] {
     val puppeteer: Puppeteer[A]
 }
 

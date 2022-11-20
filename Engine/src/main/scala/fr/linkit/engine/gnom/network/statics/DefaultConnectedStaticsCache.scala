@@ -36,12 +36,12 @@ import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 
 //this class is used by the statics synchronization side.
 //It is not directly used by the user and must uses a specific sync instance creator.
-class DefaultConnectedStaticsCache @Persist()(channel                     : CachePacketChannel,
-                                              classCenter                 : SyncClassCenter,
-                                              override val defaultContract: ContractDescriptorData,
-                                              resolver                    : EngineSelector,
-                                              omc                         : ObjectManagementChannel)
-        extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, defaultContract, resolver, omc) with SynchronizedStaticsCache {
+class DefaultConnectedStaticsCache @Persist()(channel              : CachePacketChannel,
+                                              classCenter          : SyncClassCenter,
+                                              override val contract: ContractDescriptorData,
+                                              resolver             : EngineSelector,
+                                              omc                  : ObjectManagementChannel)
+        extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, contract, resolver, omc) with SynchronizedStaticsCache {
 
     //ensuring that the creator is of the right type
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {
@@ -49,18 +49,13 @@ class DefaultConnectedStaticsCache @Persist()(channel                     : Cach
         super.syncObject(id, creator)
     }
 
-    override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller], contracts: ContractDescriptorData): StaticsCaller with SynchronizedObject[StaticsCaller] = {
-        checkCreator(creator)
-        super.syncObject(id, creator, contracts)
-    }
-
-    override protected def getRootContract(factory: SyncObjectContractFactory)(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
+    override protected def getContract(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator     =>
-                factory.getContract(creator.targetedClass.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
+                contractFactory.getContract(creator.targetedClass.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
             case InstanceWrapper(methodCaller: StaticsCaller) =>
                 val cl = methodCaller.staticsTarget
-                factory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
+                contractFactory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
             case _                                            =>
                 throwUOE()
         }

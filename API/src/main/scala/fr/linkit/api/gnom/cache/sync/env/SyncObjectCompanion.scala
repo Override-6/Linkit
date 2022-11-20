@@ -11,11 +11,11 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.cache.sync.tree
+package fr.linkit.api.gnom.cache.sync.env
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 
-trait ObjectSyncNode[A <: AnyRef] extends ChippedObjectNode[A] {
+trait SyncObjectCompanion[A <: AnyRef] extends ChippedObjectCompanion[A] {
 
     val isMirroring: Boolean
     val isMirror   : Boolean

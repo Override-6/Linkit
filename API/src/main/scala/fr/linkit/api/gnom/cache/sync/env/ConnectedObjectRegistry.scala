@@ -11,8 +11,17 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree
+package fr.linkit.api.gnom.cache.sync.env
 
-class InvalidNodePathException(msg: String, cause: Throwable = null) extends SynchronizedObjectException(msg, cause) {
+import fr.linkit.api.gnom.referencing.NamedIdentifier
+
+/**
+ * Used by [[fr.linkit.api.gnom.cache.sync.ConnectedObjectCache]] to store its trees
+ * @tparam A the type of the tree's root object (it's the same type for SynchronizedObjectCenter[A])
+ */
+trait ConnectedObjectRegistry[A <: AnyRef] {
+
+
+    def getUserObjectCompanion()
 
 }

@@ -11,22 +11,24 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree.node
+package fr.linkit.engine.gnom.cache.sync.env.node
 
 import fr.linkit.api.gnom.cache.sync.ChippedObject
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.local.Chip
 import fr.linkit.api.gnom.network.tag.EngineSelector
+import fr.linkit.engine.gnom.cache.sync.env.SecondRegistryLayer
 
-class ChippedObjectNodeData[A <: AnyRef](val selector     : EngineSelector, //Remote invocations
-                                         val chip         : Chip[A], //Reflective invocations
-                                         val contract     : StructureContract[A],
-                                         val choreographer: InvocationChoreographer,
-                                         chippedObject    : ChippedObject[A]) //The synchronized object's origin (the same object before it was converted to its synchronized version, if any).
-                                        (private val data: NodeData[A]) extends NodeData[A](data) {
+class ChippedObjectCompanionData[A <: AnyRef](val selector     : EngineSelector, //Remote invocations
+                                              val chip         : Chip[A], //Reflective invocations
+                                              val contract     : StructureContract[A],
+                                              val choreographer: InvocationChoreographer,
+                                              chippedObject    : ChippedObject[A],
+                                              registry         : SecondRegistryLayer) //The synchronized object's origin (the same object before it was converted to its synchronized version, if any).
+                                             (private val data: CompanionData[A]) extends CompanionData[A](data) {
 
-    def this(other: ChippedObjectNodeData[A]) = {
+    def this(other: ChippedObjectCompanionData[A]) = {
         this(other.selector, other.chip, other.contract, other.choreographer, other.obj)(other.data)
     }
 

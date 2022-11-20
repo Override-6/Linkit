@@ -90,7 +90,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
 
     override def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R = {
         val id                                                = description.methodId
-        val node                                              = data.obj.getNode
+        val node                                              = data.obj.getCompanion
         val args                                              = data.arguments
         val choreographer                                     = data.obj.getChoreographer
         val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, node, data.connector) with CallableLocalMethodInvocation[R] {

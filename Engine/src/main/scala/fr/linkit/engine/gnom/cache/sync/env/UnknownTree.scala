@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree
+package fr.linkit.engine.gnom.cache.sync.env
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.referencing.NamedIdentifier

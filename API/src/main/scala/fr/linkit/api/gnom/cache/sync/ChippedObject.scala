@@ -14,11 +14,10 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.cache.sync.tree.ChippedObjectNode
+import fr.linkit.api.gnom.cache.sync.env.ChippedObjectCompanion
 
 trait ChippedObject[A <: AnyRef] extends ConnectedObject[A] {
 
-    override def getNode: ChippedObjectNode[A]
 
     /**
      * @return the invocation choreographer of this object

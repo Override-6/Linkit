@@ -244,7 +244,7 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     }
 
     private def addTypeOfChippedIfAbsent(chi: ChippedObject[_]): SyncClassDef = {
-        val implClassDef = chi.getNode.contract.mirroringInfo.fold[SyncClassDef](chi.getClassDef)(_.stubSyncClass)
+        val implClassDef = chi.getCompanion.contract.mirroringInfo.fold[SyncClassDef](chi.getClassDef)(_.stubSyncClass)
 
         val idx = getChunkFromFlag(SyncDef).addIfAbsent(implClassDef)
         if (idx < 0) {

@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree.node
+package fr.linkit.engine.gnom.cache.sync.env.node
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
@@ -21,7 +21,7 @@ import fr.linkit.api.gnom.network.tag.Current
 import fr.linkit.engine.gnom.cache.sync.{AbstractSynchronizedObject, IllegalSynchronizedObjectException}
 import org.jetbrains.annotations.Nullable
 
-class ObjectSyncNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends ChippedObjectNodeImpl[A](data) with InternalObjectSyncNode[A] {
+class SyncObjectCompanionImpl[A <: AnyRef](data: SyncObjectCompanionData[A]) extends ChippedObjectCompanionImpl[A](data) with InternalSyncObjectCompanion[A] {
 
     override val puppeteer: Puppeteer[A] = data.puppeteer
 
@@ -38,13 +38,13 @@ class ObjectSyncNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends Chipp
     override def toString: String = s"node $reference for sync object ${obj.getClass.getName}"
 
     @Nullable
-    override def getMatchingSyncNode(nonSyncObject: AnyRef): MutableSyncNode[_ <: AnyRef] = InvocationChoreographer.disinv {
+    override def getMatchingSyncNode(nonSyncObject: AnyRef): MutableSyncCompanion[_ <: AnyRef] = InvocationChoreographer.disinv {
         val origin = if (originRef == null) null else originRef.get()
         if (origin != null && (nonSyncObject eq origin))
             return this
 
         for (child <- childs.values) child match {
-            case child: MutableSyncNode[_] =>
+            case child: MutableSyncCompanion[_] =>
                 val found = child.getMatchingSyncNode(nonSyncObject)
                 if (found != null)
                     return found

@@ -11,10 +11,15 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree.node
+package fr.linkit.api.gnom.cache.sync.env
 
-class RootObjectNodeImpl[A <: AnyRef](data: SyncObjectNodeData[A]) extends ObjectSyncNodeImpl[A](data) {
-    override def discoverParent(node: ObjectSyncNodeImpl[_]): Unit = {
-        throw new UnsupportedOperationException("Can't set any parent to root object node.")
-    }
+import fr.linkit.api.gnom.cache.sync.ChippedObject
+import fr.linkit.api.gnom.cache.sync.contract.StructureContract
+import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
+
+trait ChippedObjectCompanion[A <: AnyRef] extends ConnectedObjectCompanion[A] {
+
+    val choreographer: InvocationChoreographer
+    val contract: StructureContract[A]
+    def obj     : ChippedObject[A]
 }

@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, InvocationHandlingMethod}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.ObjectConnector
+import fr.linkit.api.gnom.cache.sync.env.ObjectConnector
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.internal.concurrency.Procrastinator

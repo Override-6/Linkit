@@ -11,10 +11,8 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.cache.sync.tree
+package fr.linkit.engine.gnom.cache.sync.env
 
-import fr.linkit.api.internal.system.AppException
-
-class IllegalConnectedObjectRegistration(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+class NoSuchConnectedObjectTreeException(msg: String, cause: Throwable = null) extends SynchronizedObjectException(msg, cause) {
 
 }

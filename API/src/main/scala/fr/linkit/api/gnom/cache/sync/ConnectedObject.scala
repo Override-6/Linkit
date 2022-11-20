@@ -14,7 +14,7 @@
 package fr.linkit.api.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.api.gnom.cache.sync.tree.ConnectedObjectNode
+import fr.linkit.api.gnom.cache.sync.env.ConnectedObjectCompanion
 import fr.linkit.api.gnom.referencing.DynamicNetworkObject
 
 trait ConnectedObject[A <: AnyRef] extends DynamicNetworkObject[ConnectedObjectReference] {
@@ -26,10 +26,6 @@ trait ConnectedObject[A <: AnyRef] extends DynamicNetworkObject[ConnectedObjectR
      * */
     def reference: ConnectedObjectReference
 
-    /**
-     * this object's node.
-     * */
-    def getNode: ConnectedObjectNode[A]
 
     /**
      * @return true if this object is the original among other copies of the same object on other clients.<br>

@@ -13,9 +13,11 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.referencing.NetworkObject
+import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 
 trait ContractDescriptorData {
-    
+
+    def precompile(classCenter: SyncClassCenter): Unit
+
     def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A]
 }
