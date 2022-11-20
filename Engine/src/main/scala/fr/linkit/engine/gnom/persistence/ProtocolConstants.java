@@ -16,10 +16,9 @@ package fr.linkit.engine.gnom.persistence;
 public class ProtocolConstants {
 
     //increment each time the protocol changes
-    public static final short ProtocolVersion = 6;
+    public static final short ProtocolVersion = 7;
 
     public static final byte ReplacementFlag = -1;
-    public static final byte NetworkObjectFlag = -2;
 
     public static final byte UByteSize = 1;
     public static final byte UShortSize = 2;

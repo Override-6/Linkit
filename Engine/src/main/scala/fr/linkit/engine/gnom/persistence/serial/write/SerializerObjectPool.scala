@@ -28,6 +28,7 @@ import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolCh
 import fr.linkit.engine.gnom.persistence.serial.ArrayPersistence
 import fr.linkit.engine.internal.util.JavaUtils
 
+import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Array[Int](ChunkCount).mapInPlace(_ => -1)) {
@@ -35,6 +36,8 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
     private         val config          = bundle.config
     private         val selector        = new ObjectSelector(bundle)
     protected final val chunksPositions = new Array[Int](chunks.length)
+
+    private val locks =  ListBuffer.empty[Int]
 
     def size: Int = {
         var s = 0
@@ -63,6 +66,8 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
             case _                         => getChunkFromFlag(Object)
         }
     }
+
+    def getLocks: List[Int] = locks.toList
 
     override def freeze(): Unit = {
         super.freeze()
@@ -153,7 +158,9 @@ class SerializerObjectPool(bundle: PersistenceBundle) extends ObjectPool(new Arr
         if (nrlOpt.isEmpty) {
             ref match {
                 case no: NetworkObject[_] =>
-                    AppLoggers.Persistence.trace(s"Writing Network object (reference: ${no.reference}) to ${bundle.boundNT}.")
+                    val refHash = no.reference.hashCode()
+                    locks += refHash
+                    AppLoggers.Persistence.trace(s"Writing Network object (referenceHash: $refHash) to ${bundle.boundNT}.")
                 case _                    =>
             }
             addObjectDecomposed(ref)

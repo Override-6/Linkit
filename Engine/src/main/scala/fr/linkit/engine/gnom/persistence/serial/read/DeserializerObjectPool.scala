@@ -20,7 +20,7 @@ import fr.linkit.engine.gnom.persistence.ProtocolConstants._
 
 import scala.collection.mutable
 
-class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
+class DeserializerObjectPool(private[read] val sizes: Array[Int]) extends ObjectPool(sizes) {
 
     freeze() //Deserializer can't append objects, because sizes are already defined
     chunks.foreach(_.freeze())

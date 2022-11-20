@@ -38,7 +38,7 @@ class ReferencedObject(override val referenceIdx: Int,
     override val identity: Int = referenceIdx
 
     override lazy val value: AnyRef = {
-        val lock = NetworkObjectReferencesLocks.get(reference)
+        val lock = NetworkObjectReferencesLocks.getInitializationLock(reference)
         lock.lock()
         try {
             retrieveObject()
@@ -63,7 +63,7 @@ class ReferencedObject(override val referenceIdx: Int,
             selector.findObject(loc) match {
                 case Some(value) => value
                 case None        =>
-                    selector.findObject(loc) //for debugger purposes
+                    val n = selector.findObject(loc) //for debugger purposes
                     throw new NoSuchElementException(s"Could not find network object referenced at $loc.")
             }
 

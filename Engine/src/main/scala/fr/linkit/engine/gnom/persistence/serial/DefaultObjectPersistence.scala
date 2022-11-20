@@ -19,8 +19,8 @@ import fr.linkit.api.gnom.persistence.obj.{PoolObject, RegistrablePoolObject}
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.ProtocolConstants
-import fr.linkit.engine.gnom.persistence.serial.read.ObjectReader
-import fr.linkit.engine.gnom.persistence.serial.write.{ObjectWriter, SerializerObjectPool}
+import fr.linkit.engine.gnom.persistence.serial.read.PacketReader
+import fr.linkit.engine.gnom.persistence.serial.write.{PacketWriter, SerializerObjectPool}
 import fr.linkit.engine.internal.debug.{Debugger, PacketDeserializationStep, PacketSerializationStep}
 
 import java.nio.ByteBuffer
@@ -44,10 +44,10 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         try {
             buffer.put(signature.toArray)
             buffer.putShort(ProtocolConstants.ProtocolVersion)
-            val writer = new ObjectWriter(bundle)
+            val writer = new PacketWriter(bundle)
             writer.addObjects(objects)
             buffer.limit(buffer.capacity())
-            writer.writePool()
+            writer.writeAll()
             val pool = writer.getPool
             writeEntries(objects, writer, pool)
         } catch {
@@ -59,7 +59,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         }
     }
 
-    private def writeEntries(objects: Array[AnyRef], writer: ObjectWriter,
+    private def writeEntries(objects: Array[AnyRef], writer: PacketWriter,
                              pool   : SerializerObjectPool): Unit = {
         //Write the number of root objects
         writer.putRef(objects.length)
@@ -80,22 +80,23 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         try {
             val t0 = System.currentTimeMillis()
 
-            val reader = new ObjectReader(bundle, center)
-            reader.readAndInit()
-            val contentSize = reader.readNextRef
-            val pool        = reader.getPool
-            for (_ <- 0 until contentSize) {
-                val pos = reader.readNextRef
-                val obj = pool.getAny(pos) match {
-                    case o: RegistrablePoolObject[AnyRef] =>
-                        val value = o.value
-                        o.register()
-                        value
-                    case o: PoolObject[AnyRef]            => o.value
-                    case o: AnyRef                        => o
+            val reader = new PacketReader(bundle, center)
+            reader.read {
+                val contentSize = reader.readNextRef
+                val pool        = reader.getPool
+                for (_ <- 0 until contentSize) {
+                    val pos = reader.readNextRef
+                    val obj = pool.getAny(pos) match {
+                        case o: RegistrablePoolObject[AnyRef] =>
+                            val value = o.value
+                            o.register()
+                            value
+                        case o: PoolObject[AnyRef]            => o.value
+                        case o: AnyRef                        => o
+                    }
+                    reader.controlBox.join()
+                    forEachObjects(obj)
                 }
-                reader.controlBox.join()
-                forEachObjects(obj)
             }
             val t1 = System.currentTimeMillis()
             AppLoggers.Persistence.debug(s"Objects deserialized (took ${t1 - t0} ms).")

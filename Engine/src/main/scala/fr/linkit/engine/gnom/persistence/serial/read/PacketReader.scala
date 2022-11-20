@@ -17,38 +17,62 @@ import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.PersistenceBundle
-import fr.linkit.api.gnom.persistence.context.{ControlBox, LambdaTypePersistence}
+import fr.linkit.api.gnom.persistence.context.ControlBox
 import fr.linkit.api.gnom.persistence.obj.{PoolObject, ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.network.EngineImpl
 import fr.linkit.engine.gnom.persistence.MalFormedPacketException
-import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
-import fr.linkit.engine.gnom.persistence.defaults.lambda.SerializableLambdasTypePersistor$
-import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.gnom.persistence.ProtocolConstants._
+import fr.linkit.engine.gnom.persistence.config.SimpleControlBox
+import fr.linkit.engine.gnom.persistence.obj.{NetworkObjectReferencesLocks, ObjectSelector}
 import fr.linkit.engine.gnom.persistence.serial.{ArrayPersistence, ClassNotMappedException, ObjectDeserializationException}
 import fr.linkit.engine.internal.mapping.ClassMappings
 
 import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer
+import java.util.concurrent.locks.Lock
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
-class ObjectReader(bundle         : PersistenceBundle,
+class PacketReader(bundle         : PersistenceBundle,
                    syncClassCenter: SyncClassCenter) {
 
-    final         val buff: ByteBuffer             = bundle.buff
-    private final val selector                     = new ObjectSelector(bundle)
-    private lazy  val boundMappings                = bundle.network.getEngine(bundle.boundNT).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
-    private final val config                       = bundle.config
-    private       val (packetRefSize, sizes, pool) = readPoolStructure()
-    private var isInit                             = false
+    final         val buff   : ByteBuffer             = bundle.buff
+    private final val selector                        = new ObjectSelector(bundle)
+    private lazy  val boundMappings                   = bundle.network.getEngine(bundle.boundNT).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
+    private final val config                          = bundle.config
+    private var packetRefSize: Int                    = -1
+    private var pool         : DeserializerObjectPool = _
+    private var isInit                                = false
     val controlBox: ControlBox = new SimpleControlBox()
 
-    def readAndInit(): Unit = {
+    def read(readExecution: => Unit): Unit = {
         if (isInit)
             throw new IllegalStateException("This reader is already initialised.")
         isInit = true
+        val locks = readLocksAndAcquire()
+        readPool()
+        readExecution
+        locks.foreach(_.unlock())
+    }
+
+    private def readLocksAndAcquire(): List[Lock] = {
+        var locks: List[Lock] = Nil
+        val len               = buff.getInt
+        var i                 = 0
+        while (i < len) {
+            val lockCode = buff.getInt
+            val lock = NetworkObjectReferencesLocks.getInitializationLock(lockCode)
+            lock.lock()
+            locks ::= lock
+            i += 1
+        }
+        locks
+    }
+
+    private def readPool(): Unit = {
+        readPoolStructure()
+        val sizes = pool.sizes
         var i: Byte = 0
         //println(s"Read chunks : ${buff.array().mkString(", ")}")
         while (i < ChunkCount) {
@@ -139,7 +163,7 @@ class ObjectReader(bundle         : PersistenceBundle,
             if (name != null) try {
                 return ClassMappings.putClass(name)
             } catch {
-                case e: ClassNotMappedException =>
+                case _: ClassNotMappedException =>
                     AppLoggers.Persistence.warn(s"Could not map class '$name' received from packet '${bundle.packetID}': class is not present in classpath. Will now determine if this class name corresponds to a generated class.")
                     boundMappings.requestGenerationInstructions(name)
             }
@@ -154,8 +178,8 @@ class ObjectReader(bundle         : PersistenceBundle,
         java.lang.Enum.valueOf[T](tpe.asInstanceOf[Class[T]], name)
     }
 
-    private def readPoolStructure(): (Byte, Array[Int], DeserializerObjectPool) = {
-        val packetRefSize = buff.get()
+    private def readPoolStructure(): Unit = {
+        packetRefSize = buff.get()
         if (packetRefSize > 3 || packetRefSize < 1) throw new MalFormedPacketException(s"packetRefSize is out of bounds: received $packetRefSize, expected: number between 1 and 3")
         val sizes = new Array[Int](ChunkCount)
 
@@ -164,37 +188,23 @@ class ObjectReader(bundle         : PersistenceBundle,
         while (i < ChunkCount) {
             val chunkBit = (announcedChunksNumber >> i) & 1
             if (chunkBit == 1) {
-                sizes(i) = (packetRefSize: @switch) match {
-                    case UByteSize  => buff.get
-                    case UShortSize => buff.getChar
-                    case IntSize    => buff.getInt
-                }
+                sizes(i) = readNextRef
             }
             i += 1
         }
-        (packetRefSize, sizes, new DeserializerObjectPool(sizes))
+        this.pool = new DeserializerObjectPool(sizes)
     }
 
     private def readObject(): ProfilePoolObject[AnyRef] = {
-        val classRef         = readNextRef
-        val clazz            = pool.getType(classRef)
-        val profile          = config.getProfile[AnyRef](clazz)
-        val flag = buff.getInt
+        val classRef = readNextRef
+        val clazz    = pool.getType(classRef)
+        val profile  = config.getProfile[AnyRef](clazz)
+        val flag     = buff.getInt
 
-        def replacement() = {
+        if (flag == ReplacementFlag) {
             val replacementIndex = readNextRef
-            new ReplacedObject(replacementIndex, pool)
+            return new ReplacedObject(replacementIndex, pool)
         }
-
-        if (flag == NetworkObjectFlag) {
-            val refIdx  = readNextRef
-            val content = readObjectContent(buff.getInt)
-            val replaced = buff.getInt(buff.position()) == ReplacementFlag
-            if (replaced) buff.getInt
-            val obj     = if (replaced) replacement() else new NotInstantiatedObject[AnyRef](profile, clazz, content, controlBox, selector, pool)
-            return new NotInstantiatedNetworkObject[AnyRef](refIdx, pool, obj)
-        }
-        if (flag == ReplacementFlag) return replacement()
 
         //if flag is positive, it's the object's content length
         val content = readObjectContent(flag)

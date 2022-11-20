@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, ConnectedObjectCache}
 import fr.linkit.api.gnom.persistence.obj.{SyncPoolObject, ProfilePoolObject}
-import fr.linkit.engine.gnom.cache.sync.tree.{DefaultConnectedObjectTree, NoSuchConnectedObjectTreeException}
+import fr.linkit.engine.gnom.cache.sync.tree.{InitializedConnectedObjectTree, NoSuchConnectedObjectTreeException}
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
 import fr.linkit.engine.gnom.persistence.ProtocolConstants.Object
@@ -51,8 +51,8 @@ class MirroringObject(override val referenceIdx: Int,
                 val treeId    = nodePath.head
                 val tree      = cache.forest.findTree(treeId).getOrElse {
                     throw new NoSuchConnectedObjectTreeException(s"$errPrefix Could not find object tree $treeId in cache ${cacheRef}")
-                }.asInstanceOf[DefaultConnectedObjectTree[_]]
-                val connected = tree.insertObject(nodePath.dropRight(1), stubClassDef, ref.owner, SyncLevel.Mirror, nodePath.last.id).obj
+                }.asInstanceOf[InitializedConnectedObjectTree[_]]
+                val connected = tree.connectObject(nodePath.dropRight(1), stubClassDef, ref.owner, SyncLevel.Mirror, nodePath.last.id).obj
                 connected
         }
     }

@@ -18,7 +18,6 @@ import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.context.{Decomposition, Replaced}
 import fr.linkit.api.gnom.persistence.obj.ReferencedPoolObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
-import fr.linkit.api.gnom.referencing.NetworkObject
 import fr.linkit.engine.gnom.network.EngineImpl
 import fr.linkit.engine.gnom.persistence.ProtocolConstants._
 import fr.linkit.engine.gnom.persistence.obj.PoolChunk
@@ -29,7 +28,7 @@ import java.nio.ByteBuffer
 import java.util.ConcurrentModificationException
 import scala.annotation.switch
 
-class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
+class PacketWriter(bundle: PersistenceBundle) extends Freezable {
 
     val buff: ByteBuffer = bundle.buff
     private final val boundClassMappings = bundle.network.getEngine(bundle.boundNT).flatMap(_.asInstanceOf[EngineImpl].classMappings).orNull
@@ -53,10 +52,25 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
      * Will writes the chunks contained in the pool
      * This is a terminal action:
      */
-    def writePool(): Unit = {
+    def writeAll(): Unit = {
+        writeLocks()
+        writePool()
+    }
+
+    private def writeLocks(): Unit = {
+        val locks = pool.getLocks
+        buff.putInt(locks.length)
+        var i = 0
+        while (i < locks.length) {
+            buff.putInt(locks(i))
+            i += 1
+        }
+    }
+
+    private def writePool(): Unit = {
         if (pool.isFrozen)
             throw new IllegalStateException("Pool is frozen.")
-        pool.freeze() //Ensure that the pool is no more susceptible to be updated.
+        pool.freeze() //Ensure that the pool isn't susceptible to be updated.
 
         val poolSize = pool.size
         packetRefSize = {
@@ -187,12 +201,6 @@ class ObjectWriter(bundle: PersistenceBundle) extends Freezable {
                 putSyncTypeRef(syncDef)
         }
 
-        poolObj.value match {
-            case no: NetworkObject[_] =>
-                buff.putInt(NetworkObjectFlag)
-                putPoolRef(no.reference)
-            case _ =>
-        }
         poolObj.transform match {
             case Decomposition(decomposed) =>
                 //writing object content in an array
