@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.ast
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 
 trait MethodDescription
@@ -43,7 +43,7 @@ object EnabledMethodDescription {
               properties              : List[MethodProperty],
               dispatch                : Option[AgreementProvider])
              (sig: MethodSignature): EnabledMethodDescription with AttributedMethodDescription = {
-        val rvState = sig.returnType.map(_.syncType).getOrElse(RegistrationState(false, SyncLevel.NotRegistered))
+        val rvState = sig.returnType.map(_.syncType).getOrElse(RegistrationState(false, ConcreteSyncLevel.NotRegistered))
         new EnabledMethodDescription(invocationHandlingMethod, properties, dispatch, rvState) with AttributedEnabledMethodDescription {
             override val signature = sig
         }
@@ -77,9 +77,9 @@ case class SynchronizedType(syncType: RegistrationState, tpe: Option[String]) {
 case class MethodParam(name: Option[String], tpe: SynchronizedType) {
 
     override def toString: String = (tpe.syncType.lvl match {
-        case SyncLevel.NotRegistered => ""
-        case SyncLevel.Chipped       => "chip "
-        case SyncLevel.Synchronized  => "sync "
+        case ConcreteSyncLevel.NotRegistered => ""
+        case ConcreteSyncLevel.Chipped       => "chip "
+        case ConcreteSyncLevel.Synchronized  => "sync "
     }) + name.map(n => s"$n: ").getOrElse("") + tpe.tpe.get
 }
 

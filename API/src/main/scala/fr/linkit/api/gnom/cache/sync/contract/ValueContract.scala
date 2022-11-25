@@ -13,10 +13,12 @@
 
 package fr.linkit.api.gnom.cache.sync.contract
 
+import fr.linkit.api.gnom.cache.sync.contract.level.SyncLevel
+
 trait ValueContract {
 
-    val registrationKind: SyncLevel
-    
+    val kind: SyncLevel
+
     //if true, and if the registrationKind is for a connectable object,
     // the contracted value of the contract will automatically get chipped if the runtime
     // class of the value don't support manipulations performed by the sync class generation system.

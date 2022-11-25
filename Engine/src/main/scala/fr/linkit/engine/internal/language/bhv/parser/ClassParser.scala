@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.internal.language.bhv.parser
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.engine.internal.language.bhv.ast._
 import fr.linkit.engine.internal.language.bhv.lexer.file.BehaviorLanguageKeyword
@@ -25,7 +25,7 @@ object ClassParser extends BehaviorLanguageParser {
 
     private val classParser = {
         val syncParser = {
-            val options = Sync ^^^ Synchronized | Chip ^^^ Chipped | BehaviorLanguageKeyword.Mirror ^^^ SyncLevel.Mirror | Regular ^^^ NotRegistered
+            val options = Sync ^^^ Synchronized | Chip ^^^ Chipped | BehaviorLanguageKeyword.Mirror ^^^ ConcreteSyncLevel.Mirror | Regular ^^^ NotRegistered
             options.? ^^ (opt => RegistrationState(opt.isDefined, opt.getOrElse(NotRegistered)))
         }
         val properties = {

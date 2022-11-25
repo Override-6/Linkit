@@ -13,11 +13,12 @@
 
 package fr.linkit.engine.internal.language.bhv.interpreter
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, RMIRulesAgreementBuilder}
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.network.tag.TagSelection._
 import fr.linkit.api.gnom.network.tag._
@@ -129,9 +130,9 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
         scd(missingLevels: _*)(clazz, Array(), Array())
     }
 
-    private def scd(levels: SyncLevel*)(implicit clazz0: Class[AnyRef],
-                                        methods0       : Array[MethodContractDescriptor],
-                                        fields0        : Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
+    private def scd(levels: ConcreteSyncLevel*)(implicit clazz0: Class[AnyRef],
+                                                methods0       : Array[MethodContractDescriptor],
+                                                fields0        : Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
         if (levels.isEmpty) return new OverallStructureContractDescriptor[AnyRef] {
             override val autochip    = BehaviorFileInterpreter.this.autoChip
             override val targetClass = clazz0
@@ -246,7 +247,7 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
                     desc.syncReturnValue match {
                         case RegistrationState(true, state) => SimpleValueContract(state, autoChip)
                         case RegistrationState(false, _)    =>
-                            val state = referent.flatMap(_.returnValueContract).map(_.registrationKind).getOrElse(NotRegistered)
+                            val state = referent.flatMap(_.returnValueContract).map(_.kind).getOrElse(NotRegistered)
                             SimpleValueContract(state, autoChip)
                     }
                 }
@@ -261,7 +262,7 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
                             SimpleValueContract(syncState.syncType.lvl, autoChip)
                     }.toArray
                     //if there is no pertinent information, let's return an empty array in order to inform the system not to worry about the parameters of this method
-                    if (params.forall(_.registrationKind == NotRegistered)) Array[ValueContract]() else params
+                    if (params.forall(_.kind == NotRegistered)) Array[ValueContract]() else params
                 }
                 var invocationMethod   = desc.invocationHandlingMethod
                 if (invocationMethod == Inherit)
@@ -286,7 +287,7 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
                     foreachResult(referentPos) = null //removing old version
                 field.state match {
                     case RegistrationState(true, isSync) => new FieldContractImpl[Any](desc, autoChip, isSync)
-                    case RegistrationState(false, _)     => new FieldContractImpl[Any](desc, autoChip, referent.map(_.registrationKind).getOrElse(NotRegistered))
+                    case RegistrationState(false, _)     => new FieldContractImpl[Any](desc, autoChip, referent.map(_.kind).getOrElse(NotRegistered))
                 }
             } else {
                 if (!unhandledFields.getOrElse(field, false))

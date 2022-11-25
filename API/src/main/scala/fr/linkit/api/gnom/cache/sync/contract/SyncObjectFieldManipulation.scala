@@ -14,6 +14,7 @@
 package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.ConnectedObject
+import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, SyncLevel}
 import fr.linkit.api.gnom.network.Engine
 
 trait SyncObjectFieldManipulation {

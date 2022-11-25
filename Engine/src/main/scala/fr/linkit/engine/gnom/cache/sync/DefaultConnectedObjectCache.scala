@@ -14,12 +14,14 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.application.resource.local.LocalFolder
+import fr.linkit.api.gnom.cache.SharedCache.CacheInfo
 import fr.linkit.api.gnom.cache.sync._
+import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.level.{MirrorableSyncLevel, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncObjectInstantiator, SyncObjectInstantiationException}
+import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncObjectInstantiationException, SyncObjectInstantiator}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{CacheAttachHandler, CacheContentHandler}
@@ -30,7 +32,9 @@ import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.gnom.referencing.linker.NetworkObjectLinker
+import fr.linkit.api.gnom.referencing.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.referencing.traffic.{ObjectManagementChannel, TrafficInterestedNPH}
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
@@ -47,11 +51,9 @@ import fr.linkit.engine.gnom.cache.sync.invokation.remote.{InvocationPacket, Obj
 import fr.linkit.engine.gnom.network.AbstractNetwork
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
-import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.persistence.obj.NetworkObjectReferencesLocks
-import fr.linkit.engine.internal.debug.{ConnectedObjectCreationStep, ConnectedObjectTreeRetrievalStep, Debugger, RequestStep}
+import fr.linkit.engine.internal.debug.{ConnectedObjectCreationStep, Debugger}
 
-import java.lang.ref.WeakReference
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -59,19 +61,19 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
                                                          classCenter          : SyncClassCenter,
                                                          override val contract: ContractDescriptorData,
                                                          selector             : EngineSelector,
+                                                         defaultPool          : Procrastinator,
+                                                         cacheManagerLinker   : NetworkPresenceHandler[SharedCacheReference],
                                                          omc                  : ObjectManagementChannel)
         extends AbstractSharedCache(channel) with InternalConnectedObjectCache[A] {
 
 
-    protected val contractFactory                 = new SyncObjectContractFactory(contract)
-    private   val registry: FirstFloorRegistry[A] = {
-        new FirstFloorRegistry[A](this, channel.manager.getCachesLinker, omc, selector)
-    }
+    override  val info            = CacheInfo(channel.manager.family, channel.cacheID, channel.ownerTag)
+    protected val contractFactory = new SyncObjectContractFactory(contract)
+    private   val registry        = new ConnectedObjectRegistry[A](cacheManagerLinker, omc, defaultPool, channel, DefaultInstantiator, this, info, selector)
 
     contract.precompile(classCenter)
     channel.setHandler(CacheCenterHandler)
 
-    override val defaultInstantiator = DefaultInstantiator
 
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: A]): A with SynchronizedObject[A] = {
         AppLoggers.ConnObj.debug(s"Creating connected object at $reference with id $id.")
@@ -83,14 +85,32 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
         makeSyncObject(id, creator, true)
     }
 
+
+    override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
+        registry.firstLayer.findCompanion(id).map(_.obj)
+    }
+
+    override def isRegistered(id: Int): Boolean = {
+        registry.firstLayer.findCompanionLocal(id).isDefined || {
+            val ownerNT = selector.retrieveNT(info.ownerTag)
+            val ref     = ConnectedObjectReference(info.family, info.cacheID, ownerNT, true, id)
+            registry.isPresentOnEngine(info.ownerTag, ref)
+        }
+    }
+
+    override def getContract[B <: AnyRef](creator: SyncInstanceCreator[B],
+                                          context: ConnectedObjectContext): StructureContract[B] = {
+        contractFactory.getContract[B](creator.syncClassDef.mainClass.asInstanceOf[Class[B]], context)
+    }
+
     private def makeSyncObject(id: Int, creator: SyncInstanceCreator[_ <: A], mirror: Boolean): A with SynchronizedObject[A] = {
         val identifier = NamedIdentifier(creator.syncClassDef.mainClass.getSimpleName, id)
 
         Debugger.push {
             val currentNT = selector.retrieveNT(Current)
-            ConnectedObjectCreationStep(ConnectedObjectReference(family, cacheID, currentNT, true, identifier))
+            ConnectedObjectCreationStep(ConnectedObjectReference(info.family, info.cacheID, currentNT, true, identifier))
         }
-        val node = registry.register(identifier, Current, creator.asInstanceOf[SyncInstanceCreator[A]], mirror)
+        val node = registry.firstLayer.register(identifier, Current, creator.asInstanceOf[SyncInstanceCreator[A]], mirror)
         Debugger.pop()
         node.obj
     }
@@ -98,30 +118,29 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
     private def newChippedObjectData[B <: AnyRef](level: SyncLevel, req: ChippedObjectNodeDataRequest[B]): ChippedObjectCompanionData[B] = {
         import req._
         val ownerNT       = req.ownerTag
-        val originClass   = chippedObject.getClassDef.mainClass.asInstanceOf[Class[B]]
+        val originClass   = connectedObject.getClassDef.mainClass.asInstanceOf[Class[B]]
         val choreographer = new InvocationChoreographer()
-        val reference     = ConnectedObjectReference(family, cacheID, ownerNT, id)
+        val reference     = ConnectedObjectReference(info.family, info.cacheID, ownerNT, req.firstFloor, identifier)
         val presence      = registry.getPresence(reference)
-        val context       = UsageConnectedObjectContext(ownerNT, chippedObject.getClassDef, level, choreographer, selector)
+        val context       = UsageConnectedObjectContext(ownerNT, connectedObject.getClassDef, level, choreographer, selector)
         val contract      = contractFactory.getContract[B](originClass, context)
-        val chip          = ObjectChip[B](contract, selector, channel.traffic.connection, chippedObject)
+        val chip          = ObjectChip[B](contract, selector, channel.traffic.connection, connectedObject)
         new ChippedObjectCompanionData[B](
-            selector, chip, contract, choreographer, chippedObject,
+            selector, chip, contract, choreographer, registry.secondLayer, connectedObject,
         )(new CompanionData[B](reference, presence, req.ownerTag, selector))
     }
 
     private def newSyncObjectData[B <: AnyRef](req: SyncNodeDataRequest[B]): SyncObjectCompanionData[B] = {
         val chippedData = newChippedObjectData[B](req.syncLevel, req)
         val puppeteer   = new ObjectPuppeteer[B](channel, chippedData.reference)
-        val originRef   = req.origin.map(new WeakReference[B](_))
-        new SyncObjectCompanionData[B](puppeteer, req.syncObject, req.syncLevel, originRef)(chippedData)
+        new SyncObjectCompanionData[B](puppeteer, req.connectedObject, req.syncLevel)(chippedData)
     }
 
     private def newRegularNodeData[B <: AnyRef](req: NormalNodeDataRequest[B]): CompanionData[B] = {
         import req._
-        val reference = new ConnectedObjectReference(family, cacheID, req.ownerID, req.firstFloor, identifier)
+        val reference = new ConnectedObjectReference(info.family, info.cacheID, req.ownerTag, req.firstFloor, identifier)
         val presence  = registry.getPresence(reference)
-        new CompanionData[B](reference, presence, req.ownerID, selector)
+        new CompanionData[B](reference, presence, req.ownerTag, selector)
     }
 
     override def newNodeData[B <: AnyRef, N <: CompanionData[B]](req: NodeDataRequest[B, N]): N = {
@@ -130,29 +149,19 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
         req match {
             case req: NormalNodeDataRequest[B]        => newRegularNodeData[B](req)
             case req: SyncNodeDataRequest[B]          => newSyncObjectData[B](req)
-            case req: ChippedObjectNodeDataRequest[B] => newChippedObjectData[B](SyncLevel.Chipped, req)
+            case req: ChippedObjectNodeDataRequest[B] => newChippedObjectData[B](MirrorableSyncLevel.Chipped, req)
         }
-    }
-
-    override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
-        registry.findNode(id).map(_.obj)
-    }
-
-    override def getContract(creator: SyncInstanceCreator[A],
-                             context: ConnectedObjectContext): StructureContract[A] = {
-        contractFactory.getContract[A](creator.syncClassDef.mainClass.asInstanceOf[Class[A]], context)
     }
 
 
     private def handleInvocationPacket(ip: InvocationPacket, bundle: RequestPacketBundle): Unit = {
         val ref = ip.objRef
-        if (ref.family != family || ref.cacheID != cacheID)
+        if (ref.family != info.family || ref.cacheID != info.cacheID)
             throw new IllegalArgumentException(s"Invocation Packet's targeted object reference is not contained in this cache. (targeted: $ref, current cache location is $reference)")
-        val id   = ref.identifier
         val lock = NetworkObjectReferencesLocks.getLock(ref)
 
         lock.lock()
-        val node = try registry.findNode(id) finally lock.unlock()
+        val node = try registry.findCompanion(ref) finally lock.unlock()
 
         val senderTag = bundle.coords.senderTag
         AppLoggers.COInv.trace(s"Handling invocation packet over object ${ip.objRef}. For method with id '${ip.methodID}', expected engine identifier return : '${ip.expectedEngineReturn}'")
@@ -163,70 +172,9 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
         }
     }
 
-    private def importFirstFloorNode(profile: FirstFloorObjectProfile[A]): Unit = if (registry.findNodeLocal(profile.identifier).isEmpty) {
-        import profile._
-        registry.register(identifier, owner, new InstanceWrapper[A](obj), mirror)
-    }
-
-    override def isRegistered(id: Int): Boolean = {
-        registry.findNodeLocal(NamedIdentifier(id)).isDefined || {
-            val ownerNT = selector.retrieveNT(ownerTag)
-            val ref     = ConnectedObjectReference(family, cacheID, ownerNT, id)
-            registry.isPresentOnEngine(ownerTag, ref)
-        }
-    }
-
-
-    override def requestFirstFloorNode(id: NamedIdentifier): Unit = {
-        val ownerNT = selector.retrieveNT(ownerTag)
-        val treeRef = ConnectedObjectReference(family, cacheID, ownerNT, id)
-
-        val initLock = NetworkObjectReferencesLocks.getInitializationLock(treeRef)
-        val refLock  = NetworkObjectReferencesLocks.getLock(treeRef)
-        initLock.lock() //locked only during computation: the lock is released while waiting for the response.
-        refLock.lock() //locked during all the request process
-
-        //if the tree is not present on the owner side, the tree is simply not present so we abort the request
-        //if another thread was already performing this request, the current thread had to wait for the
-        //above locks to get released, which means that the requested three has been added.
-        //We check the second state by checking if the requested tree is finally present on this engine.
-        if (!registry.isPresentOnEngine(ownerNT, treeRef) || registry.findNodeLocal(id).isDefined) {
-            refLock.unlock()
-            initLock.unlock()
-            return
-        }
-        try {
-            //registry.putUnknownTree(id)
-
-            Debugger.push(ConnectedObjectTreeRetrievalStep(treeRef))
-            AppLoggers.ConnObj.trace(s"Requesting root object $treeRef.")
-            AppLoggers.Debug.info(s"Requesting root object $treeRef.")
-
-
-            Debugger.push(RequestStep("CO tree retrieval", s"retrieve tree $treeRef", ownerTag, channel.reference))
-            val req = channel.makeRequest(ChannelScopes.apply(ownerTag))
-                    .addPacket(AnyRefPacket(id))
-                    .submit()
-
-            val depth    = initLock.release()
-            val response = req.nextResponse
-            initLock.depthLock(depth)
-            Debugger.pop()
-            response.nextPacket[Packet] match {
-                case ObjectPacket(profile: FirstFloorObjectProfile[A]) =>
-                    importFirstFloorNode(profile)
-                case EmptyPacket                                       => //the tree does not exists, do nothing.
-            }
-            AppLoggers.Debug.info("Ended Tree retrieval execution")
-        } finally {
-            Debugger.pop()
-            initLock.unlock()
-            refLock.unlock()
-        }
-    }
 
     private def handleFirstFloorNodeRequest(id: NamedIdentifier, response: Submitter[Unit]): Unit = {
-        registry.findNodeLocal(id) match {
+        registry.firstLayer.findCompanionLocal(id) match {
             case Some(node) =>
                 val treeProfile = FirstFloorObjectProfile(id, node.obj, node.ownerTag, node.isMirror)
                 response.addPacket(ObjectPacket(treeProfile)).submit()
@@ -258,7 +206,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
 
         override def getInitialContent: CacheRepoContent[A] = CacheRepoContent(Array())
 
-        override def getContent: CacheRepoContent[A] = registry.snapshotContent
+        override def getContent: CacheRepoContent[A] = registry.firstLayer.snapshotContent
 
         override def initializeContent(content: CacheRepoContent[A]): Unit = {
             val array = content.array
@@ -270,7 +218,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
                 val owner      = profile.owner
                 val treeID     = profile.identifier
                 val mirror     = profile.mirror
-                registry.register(treeID, owner, new InstanceWrapper[A](rootObject), mirror)
+                registry.firstLayer.register(treeID, owner, new InstanceWrapper[A](rootObject), mirror)
             })
         }
 
@@ -278,12 +226,13 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
             //AppLogger.debug(s"Processing bundle : ${bundle}")
             val response = bundle.packet
             response.nextPacket[Packet] match {
-                case ip: InvocationPacket                            =>
+                case ip: InvocationPacket              =>
                     handleInvocationPacket(ip, bundle)
-                case AnyRefPacket(id: NamedIdentifier)                 =>
+                case AnyRefPacket(id: NamedIdentifier) =>
                     handleFirstFloorNodeRequest(id, bundle.responseSubmitter)
-                case ObjectPacket(profile: FirstFloorObjectProfile[A]) =>
-                    importFirstFloorNode(profile)
+
+                case ObjectPacket(FirstFloorObjectProfile(profile, obj, owner, mirror)) =>
+                    registry.firstLayer.register(profile, owner, new InstanceWrapper[A](obj.asInstanceOf[A with SynchronizedObject[A]]), mirror)
             }
         }
 
@@ -343,7 +292,9 @@ object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
             case _                        => throw new UnsupportedOperationException("Cannot retrieve object management channel.")
         }
 
-        new DefaultConnectedObjectCache[A](channel, generator, contract, network, omc)
+        val cml                         = channel.manager.getCachesLinker
+        val defaultPool: Procrastinator = network.connection
+        new DefaultConnectedObjectCache[A](channel, generator, contract, network, defaultPool, cml, omc)
     }
 
     case class FirstFloorObjectProfile[A <: AnyRef](identifier: NamedIdentifier,

@@ -14,10 +14,12 @@
 package fr.linkit.engine.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync._
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.level.MirrorableSyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.RMIDispatchAgreement
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef}
-import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, SyncLevel, ValueContract}
+import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, MirrorableSyncLevel, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.{MethodContract, ValueContract}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.cache.sync.invocation.local.{CallableLocalMethodInvocation, LocalMethodInvocation}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
@@ -46,7 +48,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
 
     override val choreographer: InvocationChoreographer = new InvocationChoreographer(parentChoreographer)
 
-    override def connectArgs(args: Array[Any], syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Unit = {
+    override def connectArgs(args: Array[Any], syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Unit = {
         if (parameterContracts.isEmpty)
             return
         var i = 0
@@ -54,46 +56,48 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
             val contract = parameterContracts(i)
             args(i) = {
                 val obj = args(i)
-                if (contract.registrationKind != NotRegistered)
-                    syncObj(obj, contract.registrationKind, syncAction)
+                if (contract.kind != NotRegistered)
+                    syncObj(obj, contract.kind, syncAction)
                 else obj
             }
             i += 1
         }
     }
 
-    private def syncObj(obj: Any, level: SyncLevel, syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
+    private def syncObj(obj: Any, level: SyncLevel, syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any = {
         if (obj.isInstanceOf[ConnectedObject[_]]) return obj //object is already connected
-        if ((level == SyncLevel.Chipped) || SyncClassDef(obj.getClass).isOverrideable)
+        if ((level == MirrorableSyncLevel.Chipped) || SyncClassDef(obj.getClass).isOverrideable)
             syncAction(obj.asInstanceOf[AnyRef], level).connected
-        else if (level.isConnectable && returnValueContract.autoChip)
+        else if (level.isInstanceOf[MirrorableSyncLevel] && returnValueContract.autoChip)
             syncAction(obj.asInstanceOf[AnyRef], Chipped).connected
         else
             throw new CannotConnectException(s"Attempted to connect object '$obj', but object's class (${obj.getClass}) is not overrideable.")
     }
 
-    override def applyReturnValue(rv: Any, syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
-        if (rv != null && returnValueContract.registrationKind != NotRegistered) syncObj(rv, returnValueContract.registrationKind, syncAction)
+    override def applyReturnValue(rv: Any, syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any = {
+        if (rv != null && returnValueContract.kind != NotRegistered) syncObj(rv, returnValueContract.kind, syncAction)
         else rv
     }
 
-    override def handleInvocationResult(initialResult: Any)(syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any = {
+    override def handleInvocationResult(initialResult: Any)(syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any = {
         if (initialResult == null) return null
         var result = initialResult
-        val kind   = returnValueContract.registrationKind
+        val kind   = returnValueContract.kind
         if (kind != NotRegistered && !result.isInstanceOf[ConnectedObject[_]]) {
-            if (kind.isConnectable)
+            if (kind.isInstanceOf[MirrorableSyncLevel])
                 result = syncObj(result, kind, syncAction)
         }
         result
     }
 
     override def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R = {
-        val id                                                = description.methodId
-        val node                                              = data.obj.getCompanion
-        val args                                              = data.arguments
-        val choreographer                                     = data.obj.getChoreographer
-        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, node, data.connector) with CallableLocalMethodInvocation[R] {
+        val id            = description.methodId
+        val args          = data.arguments
+        val companion     = data.objCompanion
+        val obj           = companion.obj
+        val choreographer = obj.getChoreographer
+
+        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, companion, data.connector) with CallableLocalMethodInvocation[R] {
             override val methodArguments: Array[Any] = args
 
             override def callSuper(): R = {
@@ -108,9 +112,9 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         handleInvocation(data.puppeteer, localInvocation)
     }
 
-    override def executeMethodInvocation(data: InvocationExecution): Any =  {
+    override def executeMethodInvocation(data: InvocationExecution): Any = {
         val args = data.arguments
-        val obj  = data.obj
+        val obj  = data.objCompanion.obj
         if (hideMessage.isDefined)
             throw new HiddenMethodInvocationException(hideMessage.get)
         if (isMirroring(obj))
@@ -138,12 +142,13 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     private val isContractOfNetworkTrunk = description.javaMethod.getDeclaringClass == classOf[NetworkDataTrunk]
+
     def mayCallSuper: Boolean = {
         isContractOfNetworkTrunk || agreement.mayCallSuper
     }
 
     private def handleInvocation(puppeteer: Puppeteer[_], invocation: CallableLocalMethodInvocation[R]): R = {
-        val objectNode    = invocation.objectNode
+        val objectNode    = invocation.objectCompanion
         val obj           = objectNode.obj
         val mayPerformRMI = agreement.mayPerformRemoteInvocation
         val connector     = invocation.connector
@@ -155,9 +160,9 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         }
 
         def syncValue(v: Any) = {
-            val level = returnValueContract.registrationKind
+            val level = returnValueContract.kind
             if (v != null && level != NotRegistered && !v.isInstanceOf[ConnectedObject[AnyRef]]) {
-                syncObj(v, level, connector.createConnectedObj(obj.reference)(_, _))
+                syncObj(v, level, connector.connectObject(_, Current, _).obj)
             } else v
         }
 
@@ -195,7 +200,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         val method    = description.javaMethod
         val name      = method.getName
         val methodID  = description.methodId
-        val obj       = invocation.objectNode.obj
+        val obj       = invocation.objectCompanion.obj
         val className = obj.getClassDef.mainClass.getName
         val params    = invocation.methodArguments.map(i => if (i == null) "null" else i.getClass.getSimpleName).mkString(", ")
 
@@ -205,6 +210,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         }
         s"Sending method invocation ($methodID) $className.$name($params) (on object: ${obj.reference}) " + expectedEngineReturn
     }
+
     override def toString: String = s"method contract ${description.javaMethod}"
 
 }

@@ -14,15 +14,16 @@
 package fr.linkit.engine.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.description.FieldDescription
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncLevel, SyncObjectFieldManipulation}
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncObjectFieldManipulation}
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, SynchronizedObject}
 import fr.linkit.engine.internal.util.ScalaUtils
 
 class FieldContractImpl[A](val description: FieldDescription,
-                           val autoChip: Boolean,
-                           val registrationKind: SyncLevel) extends FieldContract[A] {
+                           val autoChip   : Boolean,
+                           val kind       : ConcreteSyncLevel) extends FieldContract[A] {
 
-    private val isRegistered = registrationKind != SyncLevel.NotRegistered
+    private val isRegistered = kind != ConcreteSyncLevel.NotRegistered
 
     override def applyContract(obj: AnyRef with SynchronizedObject[AnyRef], manip: SyncObjectFieldManipulation): Unit = {
         val field      = description.javaField
@@ -40,7 +41,7 @@ class FieldContractImpl[A](val description: FieldDescription,
                     manip.initObject(conn)
                 }
                 conn
-            case fieldValue: AnyRef if isRegistered => manip.createConnectedObject(fieldValue, registrationKind)
+            case fieldValue: AnyRef if isRegistered => manip.createConnectedObject(fieldValue, kind)
             case _                                  => fieldValue
         }
         if (fieldValue != null && !field.getType.isAssignableFrom(fieldValue.getClass))

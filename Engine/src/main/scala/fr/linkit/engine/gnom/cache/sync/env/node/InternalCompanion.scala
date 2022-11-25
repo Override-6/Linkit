@@ -25,7 +25,7 @@ trait InternalChippedObjectCompanion[A <: AnyRef] extends InternalCompanion[A] w
     val chip: Chip[A]
 }
 
-trait InternalSyncObjectCompanion[A <: AnyRef] extends InternalChippedObjectCompanion[A] with SyncObjectCompanion[A] with MutableSyncCompanion[A] {
+trait InternalSyncObjectCompanion[A <: AnyRef] extends InternalChippedObjectCompanion[A] with SyncObjectCompanion[A] {
     val puppeteer: Puppeteer[A]
 }
 

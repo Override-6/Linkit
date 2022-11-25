@@ -17,12 +17,12 @@ import fr.linkit.api.gnom.cache.sync.invocation.MethodInvocation
 import fr.linkit.api.gnom.cache.sync.invocation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.env.{ChippedObjectCompanion, ObjectConnector, SyncObjectCompanion}
 
-abstract class AbstractMethodInvocation[R](override val methodID: Int,
-                                           override val objectNode: ChippedObjectCompanion[_],
-                                           override val connector: ObjectConnector) extends MethodInvocation[R] {
+abstract class AbstractMethodInvocation[R](override val methodID       : Int,
+                                           override val objectCompanion: ChippedObjectCompanion[_],
+                                           override val connector      : ObjectConnector) extends MethodInvocation[R] {
 
     def this(local: LocalMethodInvocation[R]) = {
-        this(local.methodID, local.objectNode, local.connector)
+        this(local.methodID, local.objectCompanion, local.connector)
     }
 
 }

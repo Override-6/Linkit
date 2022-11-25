@@ -24,12 +24,12 @@ class ChippedObjectCompanionData[A <: AnyRef](val selector     : EngineSelector,
                                               val chip         : Chip[A], //Reflective invocations
                                               val contract     : StructureContract[A],
                                               val choreographer: InvocationChoreographer,
-                                              chippedObject    : ChippedObject[A],
-                                              registry         : SecondRegistryLayer) //The synchronized object's origin (the same object before it was converted to its synchronized version, if any).
+                                              val secondLayer  : SecondRegistryLayer,
+                                              chippedObject    : ChippedObject[A])
                                              (private val data: CompanionData[A]) extends CompanionData[A](data) {
 
     def this(other: ChippedObjectCompanionData[A]) = {
-        this(other.selector, other.chip, other.contract, other.choreographer, other.obj)(other.data)
+        this(other.selector, other.chip, other.contract, other.choreographer, other.secondLayer, other.obj)(other.data)
     }
 
     def obj: ChippedObject[A] = chippedObject

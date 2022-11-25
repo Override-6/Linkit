@@ -34,7 +34,7 @@ class ObjectChip[A <: AnyRef] private(contract     : StructureContract[A],
                                       resolver     : EngineSelector,
                                       defaultPool  : Procrastinator) extends Chip[A] {
 
-    private val chipped   = chippedObject.connected
+    //private val chipped   = chippedObject.connected
     private val isDistant = contract.mirroringInfo.isDefined
     private val isOrigin  = chippedObject.isOrigin
 
@@ -67,14 +67,14 @@ class ObjectChip[A <: AnyRef] private(contract     : StructureContract[A],
         val invKind = contract.invocationHandlingMethod
 
         def call() = contract.choreographer.disinv {
-            val initial = resolver.getEngine(callerNT).map(ExecutorEngine.setCurrentEngine).getOrElse(ExecutorEngine.currentEngine)
-            val data    = new contract.InvocationExecution {
+            val initial     = resolver.getEngine(callerNT).map(ExecutorEngine.setCurrentEngine).getOrElse(ExecutorEngine.currentEngine)
+            val data        = new contract.InvocationExecution {
                 override val obj      : ChippedObject[_] = ObjectChip.this.chippedObject
                 override val arguments: Array[Any]       = params
             }
             val description = contract.description
             Debugger.push(MethodInvocationExecutionStep(description, callerNT.name))
-            val result  = try {
+            val result = try {
                 contract.executeMethodInvocation(data)
             } catch {
                 case NonFatal(e) =>

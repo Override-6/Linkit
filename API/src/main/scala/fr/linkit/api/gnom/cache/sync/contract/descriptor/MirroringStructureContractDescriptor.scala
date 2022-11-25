@@ -13,13 +13,14 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.{MirroringInfo, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.MirroringInfo
+import fr.linkit.api.gnom.cache.sync.contract.level.MirrorableSyncLevel
 
 trait MirroringStructureContractDescriptor[A <: AnyRef] extends UniqueStructureContractDescriptor[A] {
 
-    override final val syncLevel = SyncLevel.Mirror
+    override final val kind = MirrorableSyncLevel.Mirror
     val mirroringInfo: MirroringInfo
 
-    override def toString: String = s"Mirroring $syncLevel (${targetClass.getName}, $mirroringInfo)"
+    override def toString: String = s"Mirroring $kind (${targetClass.getName}, $mirroringInfo)"
 
 }

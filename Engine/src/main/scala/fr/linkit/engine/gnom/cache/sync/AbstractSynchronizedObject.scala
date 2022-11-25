@@ -15,10 +15,11 @@ package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.cache.sync.env.{ObjectConnector, SyncObjectCompanion}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
-import fr.linkit.api.gnom.cache.sync.env.{ObjectConnector, SyncObjectCompanion}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectAlreadyInitialisedException, ConnectedObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.network.tag.Current
 import fr.linkit.api.gnom.referencing.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.env.node.SyncObjectCompanionImpl
 
@@ -29,9 +30,9 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient private final var puppeteer        : Puppeteer[A]             = _
     @transient private final var contract         : StructureContract[A]     = _
     @transient private final var choreographer    : InvocationChoreographer  = _
-    @transient private final var presenceOnNetwork: NetworkObjectPresence  = _
-    @transient private final var node             : SyncObjectCompanion[A] = _
-    @transient private final var connector        : ObjectConnector        = _
+    @transient private final var presenceOnNetwork: NetworkObjectPresence    = _
+    @transient private final var node             : SyncObjectCompanion[A]   = _
+    @transient private final var connector        : ObjectConnector          = _
 
     //cached values for handleCall
     @transient private final var isNotMirroring: Boolean = _
@@ -52,7 +53,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         this.presenceOnNetwork = node.presence
         this.node = node
         this.choreographer = node.choreographer
-        this.connector = node.tree
+        this.connector = node.connector
 
         this.isOrigin0 = node.isOrigin
         this.isNotMirroring = !node.isMirroring
@@ -106,10 +107,10 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         }
         val choreographer  = methodContract.choreographer
         //Arguments that must be synchronized wil be synchronized according to method contract.
-        methodContract.connectArgs(args, connector.createConnectedObj(location))
+        methodContract.connectArgs(args, connector.connectObject(_, Current, _).obj)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
         if (choreographer.isMethodExecutionForcedToLocal || !methodContract.isRMIActivated) {
-            return methodContract.applyReturnValue(superCall(args), connector.createConnectedObj(location)).asInstanceOf[R]
+            return methodContract.applyReturnValue(superCall(args), connector.connectObject(_, Current, _).obj).asInstanceOf[R]
         }
         val data = new methodContract.RemoteInvocationExecution {
             override val obj      : ChippedObject[_] = AbstractSynchronizedObject.this

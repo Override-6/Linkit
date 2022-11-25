@@ -13,8 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.behavior
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
+import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.network.tag._
 

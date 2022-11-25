@@ -13,9 +13,10 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract
 
-import fr.linkit.api.gnom.cache.sync.contract.{SyncLevel, ValueContract}
+import fr.linkit.api.gnom.cache.sync.contract.ValueContract
+import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, SyncLevel}
 
-case class SimpleValueContract(override val registrationKind: SyncLevel,
-                          override val autoChip        : Boolean) extends ValueContract {
+case class SimpleValueContract(override val kind    : SyncLevel,
+                               override val autoChip: Boolean) extends ValueContract {
 
 }

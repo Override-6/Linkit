@@ -27,22 +27,22 @@ import java.util
  *                NOTE: The value of this field have no influence on the reference location linking, it's just informal.
  * @param identifier the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.env.ConnectedObjectTree]]
  */
-class ConnectedObjectReference(family        : String,
-                               cacheID       : Int,
-                               val owner     : NameTag,
-                               val firstFloor: Boolean,
-                               val identifier: NamedIdentifier) extends SharedCacheReference(family, cacheID) {
+class ConnectedObjectReference(family          : String,
+                               cacheID         : Int,
+                               val owner       : NameTag,
+                               val isFirstLayer: Boolean,
+                               val identifier  : NamedIdentifier) extends SharedCacheReference(family, cacheID) {
 
     override def asSuper: Option[SharedCacheReference] = Some(new SharedCacheReference(family, cacheID))
 
     override def toString: String = super.toString + s"/~$identifier"
 
-    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, firstFloor, identifier))
+    override def hashCode(): Int = util.Arrays.deepHashCode(Array(family, cacheID, isFirstLayer, identifier))
 
     override def equals(obj: Any): Boolean = obj match {
         case ref: ConnectedObjectReference => ref.family == family &&
                 ref.cacheID == cacheID &&
-                ref.firstFloor == firstFloor &&
+                ref.isFirstLayer == isFirstLayer &&
                 (ref.identifier == identifier)
         case _                             => false
     }

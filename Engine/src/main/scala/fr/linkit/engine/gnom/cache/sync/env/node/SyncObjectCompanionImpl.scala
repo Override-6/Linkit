@@ -14,7 +14,8 @@
 package fr.linkit.engine.gnom.cache.sync.env.node
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, MirrorableSyncLevel}
+import fr.linkit.api.gnom.cache.sync.env.ObjectConnector
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.network.tag.Current
@@ -27,32 +28,15 @@ class SyncObjectCompanionImpl[A <: AnyRef](data: SyncObjectCompanionData[A]) ext
 
     override def obj: A with SynchronizedObject[A] = data.obj
 
-    private val originRef = data.origin.orNull
-
-    override val isMirror   : Boolean = data.syncLevel == SyncLevel.Mirror
+    override val isMirror   : Boolean = data.syncLevel == MirrorableSyncLevel.Mirror
     override val isOrigin   : Boolean = data.resolver.isEquivalent(Current, ownerTag)
     override val isMirroring: Boolean = isMirror && !isOrigin
+
+    val connector: ObjectConnector = data.secondLayer
 
     initSyncObject()
 
     override def toString: String = s"node $reference for sync object ${obj.getClass.getName}"
-
-    @Nullable
-    override def getMatchingSyncNode(nonSyncObject: AnyRef): MutableSyncCompanion[_ <: AnyRef] = InvocationChoreographer.disinv {
-        val origin = if (originRef == null) null else originRef.get()
-        if (origin != null && (nonSyncObject eq origin))
-            return this
-
-        for (child <- childs.values) child match {
-            case child: MutableSyncCompanion[_] =>
-                val found = child.getMatchingSyncNode(nonSyncObject)
-                if (found != null)
-                    return found
-
-            case _ =>
-        }
-        null
-    }
 
     private def initSyncObject(): Unit = {
         obj match {

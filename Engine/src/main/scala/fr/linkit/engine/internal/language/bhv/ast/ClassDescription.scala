@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.ast
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
 
 sealed trait DescriptionKind
 
@@ -24,19 +24,19 @@ object RegularDescription extends DescriptionKind
 object StaticsDescription extends DescriptionKind
 
 sealed trait DescriptionLevel {
-    val syncLevel: SyncLevel
+    val syncLevel: ConcreteSyncLevel
 }
 
 case object SynchronizeLevel extends DescriptionLevel {
-    override val syncLevel: SyncLevel = SyncLevel.Synchronized
+    override val syncLevel: ConcreteSyncLevel = ConcreteSyncLevel.Synchronized
 }
 
 case object ChipLevel extends DescriptionLevel {
-    override val syncLevel: SyncLevel = SyncLevel.Chipped
+    override val syncLevel: ConcreteSyncLevel = ConcreteSyncLevel.Chipped
 }
 
 case class MirroringLevel(stub: Option[String]) extends DescriptionLevel {
-    override val syncLevel: SyncLevel = SyncLevel.Mirror
+    override val syncLevel: ConcreteSyncLevel = ConcreteSyncLevel.Mirror
 }
 
 case class ClassDescriptionHead(kind: DescriptionKind, classNames: List[String])

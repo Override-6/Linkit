@@ -25,10 +25,8 @@ import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.cache.sync.contract.description.SyncObjectDescription
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket
-import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.debug.{Debugger, RequestStep}
 import fr.linkit.engine.internal.util.JavaUtils
-import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChannel,
                                    override val nodeReference: ConnectedObjectReference) extends Puppeteer[S] {
@@ -64,7 +62,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
                         .nextResponse
                         .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
-                        val method = SyncObjectDescription(invocation.objectNode.obj.getClassDef).findMethodDescription(methodId).getOrElse(s"<unknown method $methodId>")
+                        val method = SyncObjectDescription(invocation.objectCompanion.obj.getClassDef).findMethodDescription(methodId).getOrElse(s"<unknown method $methodId>")
                         throw new InvocationFailedException(s"Remote Method Invocation for method $method on object $nodeReference, executed on engine '$appointedEngineReturn' failed :\n$exceptionString")
                     case p: RefPacket[R]                     =>
                         requestResult = p.value

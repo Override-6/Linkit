@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
@@ -59,15 +59,15 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
                     addClass(clazz)
             }
 
-            desc.fields.filter(_.registrationKind == Synchronized).foreach(f => addClass(f.description.javaField.getType))
+            desc.fields.filter(_.kind == Synchronized).foreach(f => addClass(f.description.javaField.getType))
             desc.methods.foreach(method => {
                 val javaMethod = method.description.javaMethod
-                if (method.returnValueContract.exists(_.registrationKind == Synchronized))
+                if (method.returnValueContract.exists(_.kind == Synchronized))
                     addClass(javaMethod.getReturnType)
                 val paramsContracts = method.parameterContracts
                 if (paramsContracts.nonEmpty)
                     paramsContracts.zip(javaMethod.getParameterTypes)
-                            .foreach { case (desc, paramType) => if (desc.registrationKind == Synchronized) addClass(paramType) }
+                            .foreach { case (desc, paramType) => if (desc.kind == Synchronized) addClass(paramType) }
             })
         })
         classes -= classOf[Object]

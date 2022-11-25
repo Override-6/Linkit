@@ -13,15 +13,17 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{ConnectedObjectContext, RMIDispatchAgreement}
 import fr.linkit.api.gnom.cache.sync.contract.description.{MethodDescription, SyncClassDef, SyncClassDefMultiple, SyncClassDefUnique}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.{MirroringStructureContractDescriptor, UniqueStructureContractDescriptor}
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.level.MirrorableSyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.level.MirrorableSyncLevel._
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject, SynchronizedObject}
 import fr.linkit.api.gnom.network.statics.StaticsCaller
-import fr.linkit.api.gnom.network.tag.{Current, Nobody, Server}
+import fr.linkit.api.gnom.network.tag.{Current, Server}
 import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.gnom.cache.sync.contract.description.{SyncObjectDescription, SyncStaticsDescription}
@@ -54,28 +56,28 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
     }
 
     private def ensureNoSyncValueIsStaticOrMirroring(): Unit = {
-        val level = descriptor.syncLevel
-        if (descriptor.fields.exists(fc => fc.registrationKind != NotRegistered && (level == Mirror || Modifier.isStatic(fc.description.javaField.getModifiers)))) {
+        val level = descriptor.kind
+        if (descriptor.fields.exists(fc => fc.kind != NotRegistered && (level == Mirror || Modifier.isStatic(fc.description.javaField.getModifiers)))) {
             if (level == Mirror)
                 throw new BadContractException(s"Contract for $clazz: synchronized fields in mirroring objects are not supported.")
             throw new BadContractException(s"Contract for $clazz: static synchronized fields are not supported.")
         }
         for (md <- descriptor.methods) {
-            if (md.returnValueContract.exists(_.registrationKind == Statics))
+            if (md.returnValueContract.exists(_.kind == Statics))
                 throw new BadContractException(s"Contract for $clazz: method '${md.description.getName}' return value's synchronisation level is set to Statics.")
-            if (md.parameterContracts.exists(_.registrationKind == Statics))
+            if (md.parameterContracts.exists(_.kind == Statics))
                 throw new BadContractException(s"Contract for $clazz: method '${md.description.getName}' contains a parameter whose synchronisation level is set to Statics.")
         }
     }
 
     private def ensureFieldsAndMethodsCorrespondToTheRightLevel(): Unit = {
-        val isStatic = descriptor.syncLevel == Statics
+        val isStatic = descriptor.kind == Statics
 
         def ensureMemberIsCorrect(member: Member): Unit = {
             val isCompStatic = Modifier.isStatic(member.getModifiers)
             if (isCompStatic != isStatic) {
                 throw new BadContractException(s"descriptor for $clazz contains $member that is ${if (isCompStatic) "static" else "non static"}" +
-                        s" but the descriptor's sync level '${descriptor.syncLevel}' can only accept ${if (isStatic) "statics" else "non statics"} methods and fields")
+                        s" but the descriptor's sync level '${descriptor.kind}' can only accept ${if (isStatic) "statics" else "non statics"} methods and fields")
             }
         }
 
@@ -101,15 +103,15 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
             val paramCount         = javaMethod.getParameterCount
             val paramContractCount = paramsContracts.length
             if (!paramsContracts.isEmpty && paramCount != paramContractCount)
-                throw new BadContractException(s"Contract of method $javaMethod for $clazz contains a list of the method's arguments contracts with a different length as the method's parameter count (method parameter count: $paramCount vs method's params contracts count: $paramContractCount). (${descriptor.syncLevel})")
-            method.parameterContracts.filter(_.registrationKind.isConnectable)
+                throw new BadContractException(s"Contract of method $javaMethod for $clazz contains a list of the method's arguments contracts with a different length as the method's parameter count (method parameter count: $paramCount vs method's params contracts count: $paramContractCount). (${descriptor.kind})")
+            method.parameterContracts.filter(_.kind ne NotRegistered)
                     .zip(javaMethod.getParameters)
                     .foreach { case (_, param) =>
-                        val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' for parameter '${param.getName}' of type ${param.getType.getName}: ${kind} cannot be synchronized. (${descriptor.syncLevel})"
+                        val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' for parameter '${param.getName}' of type ${param.getType.getName}: ${kind} cannot be synchronized. (${descriptor.kind})"
                         ensureTypeCanBeSync(param.getType, msg)
                     }
-            if (method.returnValueContract.exists(_.registrationKind.isConnectable)) {
-                val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' with return type ${javaMethod.getReturnType.getName}: ${kind} cannot be synchronized. (${descriptor.syncLevel})"
+            if (method.returnValueContract.exists(_.kind ne NotRegistered)) {
+                val msg: String => String = kind => s"descriptor for $clazz contains an illegal method description '${javaMethod.getName}' with return type ${javaMethod.getReturnType.getName}: ${kind} cannot be synchronized. (${descriptor.kind})"
                 ensureTypeCanBeSync(javaMethod.getReturnType, msg)
             }
         })
@@ -117,7 +119,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
 
     private def ensureNoSyncFieldIsPrimitive(): Unit = {
         descriptor.fields
-                .filter(_.registrationKind.isConnectable)
+                .filter(_.kind ne NotRegistered)
                 .foreach { field =>
                     val javaField             = field.description.javaField
                     val fieldType             = javaField.getType
@@ -131,7 +133,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
     }
 
     def getContract(clazz: Class[_ <: A], context: ConnectedObjectContext): StructureContract[A] = {
-        val level = this.descriptor.syncLevel
+        val level = this.descriptor.kind
         if (context.syncLevel != level)
             throw new IllegalArgumentException(s"context.syncLevel != descriptor.syncLevel (${context.syncLevel} / ${level})")
         val methodMap = mutable.HashMap.empty[Int, MethodContract[Any]]
@@ -144,7 +146,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         val mirroringInfo = descriptor match {
             case descriptor: MirroringStructureContractDescriptor[_] => Some(descriptor.mirroringInfo)
             case _                                                   =>
-                if (context.syncLevel.mustBeMirrored()) Some(autoDefineMirroringInfo(clazz)) else None
+                if (context.syncLevel.isInstanceOf[MirrorableSyncLevel]) Some(autoDefineMirroringInfo(clazz)) else None
         }
         //set a context-specific description for all methods that are not bound with any contract.
         fixUndescribedMethods(methodMap, context)
@@ -153,7 +155,6 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
 
     private def verifyAgreement(method: Method, agreement: RMIDispatchAgreement, context: ConnectedObjectContext): Unit = {
         val resolver  = context.resolver
-        import resolver._
         val selection = agreement.selection
 
         //FIXME always passes if network trunk is initializing if (selection <=> Nobody)
@@ -289,7 +290,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
         val desc = if (isStatics) SyncStaticsDescription(clazzDef.mainClass) else SyncObjectDescription(clazzDef)
 
         def determineContract(clazz: Class[_]): ValueContract = {
-            if (!contextLevel.mustBeMirrored() || clazz.isPrimitive || clazz.isArray || (clazz eq classOf[String]))
+            if (!contextLevel.isInstanceOf[MirrorableSyncLevel] || clazz.isPrimitive || clazz.isArray || (clazz eq classOf[String]))
                 SimpleValueContract(NotRegistered, autochip)
             else if (findReasonTypeCantBeSync(clazz).isDefined)
                 SimpleValueContract(Chipped, autochip)
@@ -309,7 +310,7 @@ class LeveledSBDN[A <: AnyRef](@Nullable val descriptor: UniqueStructureContract
                     }).result(context)
                     val rvContract     = determineContract(jMethod.getReturnType)
                     var paramsContract = md.javaMethod.getParameterTypes.map(determineContract)
-                    if (paramsContract.forall(c => c.registrationKind == NotRegistered))
+                    if (paramsContract.forall(c => c.kind == NotRegistered))
                         paramsContract = Array()
                     val emergencyContract = new MethodContractImpl[Any](
                         InvocationHandlingMethod.Inherit, context.choreographer,

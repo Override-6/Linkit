@@ -18,7 +18,8 @@ import fr.linkit.api.gnom.cache.SharedCacheFactory
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
-import fr.linkit.api.gnom.cache.sync.contract.{StructureContract, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.StructureContract
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceCreator
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
@@ -52,10 +53,10 @@ class DefaultConnectedStaticsCache @Persist()(channel              : CachePacket
     override protected def getContract(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator     =>
-                contractFactory.getContract(creator.targetedClass.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
+                contractFactory.getContract(creator.targetedClass.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(ConcreteSyncLevel.Statics))
             case InstanceWrapper(methodCaller: StaticsCaller) =>
                 val cl = methodCaller.staticsTarget
-                contractFactory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(SyncLevel.Statics))
+                contractFactory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(ConcreteSyncLevel.Statics))
             case _                                            =>
                 throwUOE()
         }

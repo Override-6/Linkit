@@ -14,19 +14,6 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
-import fr.linkit.api.gnom.cache.sync.contract.StructureContract
-import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
-import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncObjectInstantiator}
-import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
-import fr.linkit.api.gnom.referencing.NamedIdentifier
-import fr.linkit.engine.gnom.cache.sync.env.node.NodeDataFactory
+import fr.linkit.engine.gnom.cache.sync.env.node.ConnectedObjectDataSupplier
 
-trait InternalConnectedObjectCache[A <: AnyRef] extends ConnectedObjectCache[A] with NodeDataFactory {
-    def requestFirstFloorNode(id: NamedIdentifier): Unit
-
-    def getContract(creator: SyncInstanceCreator[A],
-                    context: ConnectedObjectContext): StructureContract[A]
-
-    val channel            : RequestPacketChannel
-    val defaultInstantiator: SyncObjectInstantiator
-}
+trait InternalConnectedObjectCache[A <: AnyRef] extends ConnectedObjectCache[A] with ConnectedObjectDataSupplier

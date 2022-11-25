@@ -13,7 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.FieldContract
+import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, SyncLevel}
 
 sealed trait StructureContractDescriptor[A <: AnyRef] {
     
@@ -30,15 +31,15 @@ trait OverallStructureContractDescriptor[A <: AnyRef] extends StructureContractD
 
 trait UniqueStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A] {
 
-    val syncLevel: SyncLevel
+    val kind: SyncLevel
 
-    override def toString: String = s"Unique $syncLevel (${targetClass.getName})"
+    override def toString: String = s"Unique $kind (${targetClass.getName})"
 
 }
 
 trait MultiStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A] {
 
-    val syncLevels: Set[SyncLevel]
+    val syncLevels: Set[ConcreteSyncLevel]
 
     override def toString: String = s"Multi (${syncLevels.mkString(", ")}) (${targetClass.getName})"
 

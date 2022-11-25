@@ -13,9 +13,10 @@
 
 package fr.linkit.engine.gnom.cache.sync.contract.descriptor
 
-import fr.linkit.api.gnom.cache.sync.contract.SyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
-import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, SyncLevel}
+import fr.linkit.api.gnom.cache.sync.contract.{FieldContract, MirroringInfo}
 import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 
 import scala.collection.mutable.ListBuffer
@@ -40,16 +41,16 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
                 }
             case unique: UniqueStructureContractDescriptor[A]   => descriptors += unique
             case overall: OverallStructureContractDescriptor[A] =>
-                SyncLevel.values()
-                        .filter(s => s != Statics && s.isConnectable)
+                ConcreteSyncLevel.values()
+                        .filter(s => s != Statics && s != NotRegistered)
                         .foreach(descriptors += uscd(_, overall))
         }
     }
 
-    private def uscd(lvl: SyncLevel, d: StructureContractDescriptor[A]): UniqueStructureContractDescriptor[A] = {
+    private def uscd(lvl: ConcreteSyncLevel, d: StructureContractDescriptor[A]): UniqueStructureContractDescriptor[A] = {
         new UniqueStructureContractDescriptor[A] {
-            override val syncLevel  : SyncLevel                       = lvl
-            override val autochip   : Boolean                         = d.autochip
+            override val kind    : ConcreteSyncLevel = lvl
+            override val autochip: Boolean           = d.autochip
             override val targetClass: Class[A]                        = d.targetClass
             override val methods    : Array[MethodContractDescriptor] = d.methods
             override val fields     : Array[FieldContract[Any]]       = d.fields
@@ -85,9 +86,9 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
         implicit val t = (a, b)
         new UniqueStructureContractDescriptor[A] {
             override val targetClass = t._1.targetClass
-            override val autochip    = fusion[D, Boolean](_.autochip, _ != _, (a, _) => a, "autochip")
-            override val syncLevel   = fusion[D, SyncLevel](_.syncLevel, _ != _, (a, _) => a, "contract at sync level")
-            override val methods     = fusion[D, Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(ia => b.exists(ib => ia != ib && ia.description == ib.description)), _ ++ _, "method contract")
+            override val autochip = fusion[D, Boolean](_.autochip, _ != _, (a, _) => a, "autochip")
+            override val kind     = fusion[D, SyncLevel](_.kind, _ != _, (a, _) => a, "contract at sync level")
+            override val methods  = fusion[D, Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(ia => b.exists(ib => ia != ib && ia.description == ib.description)), _ ++ _, "method contract")
             override val fields      = fusion[D, Array[FieldContract[Any]]](_.fields, (a, b) => a.exists(ia => b.exists(ib => ia != ib && ia.description == ib.description)), _ ++ _, "field contract")
         }
     }
@@ -103,7 +104,7 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
     def asNode: StructureBehaviorDescriptorNodeImpl[A] = {
         if (!nodeInitialized) {
             val nextSuperNode = if (nextSuperRelation == null) null else nextSuperRelation.asNode
-            val descs         = descriptors.groupBy(_.syncLevel).map { case (_, descriptors) =>
+            val descs         = descriptors.groupBy(_.kind).map { case (_, descriptors) =>
                 descriptors.foldLeft(null: UniqueStructureContractDescriptor[A])((a, b) => {
                     if (a == null) b else (a, b) match {
                         case (a: MirroringStructureContractDescriptor[A], b: MirroringStructureContractDescriptor[A]) =>

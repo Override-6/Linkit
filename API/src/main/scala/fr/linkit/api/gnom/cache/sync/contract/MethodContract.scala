@@ -14,12 +14,11 @@
 package fr.linkit.api.gnom.cache.sync.contract
 
 import fr.linkit.api.gnom.cache.sync.contract.description.MethodDescription
+import fr.linkit.api.gnom.cache.sync.contract.level.SyncLevel
+import fr.linkit.api.gnom.cache.sync.env.{ChippedObjectCompanion, ObjectConnector}
+import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, InvocationHandlingMethod}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObject}
-import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.env.ObjectConnector
-import fr.linkit.api.gnom.network.Engine
-import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.internal.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 
@@ -37,20 +36,19 @@ trait MethodContract[R] {
 
     val choreographer: InvocationChoreographer
 
-    def handleInvocationResult(initialResult: Any)(syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any
+    def handleInvocationResult(initialResult: Any)(syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any
 
-    def connectArgs(args: Array[Any], syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Unit
+    def connectArgs(args: Array[Any], syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Unit
 
-    def applyReturnValue(rv: Any, syncAction: (Any, SyncLevel) => ConnectedObject[AnyRef]): Any
+    def applyReturnValue(rv: Any, syncAction: (AnyRef, SyncLevel) => ConnectedObject[AnyRef]): Any
 
     def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R
 
     def executeMethodInvocation(data: InvocationExecution): Any
 
     trait InvocationExecution {
-
-        val obj      : ChippedObject[_]
-        val arguments: Array[Any]
+        val objCompanion: ChippedObjectCompanion[_]
+        val arguments   : Array[Any]
     }
 
     trait RemoteInvocationExecution extends InvocationExecution {
