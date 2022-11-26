@@ -34,8 +34,8 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
     private var precompiled: Boolean = false
 
     def precompile(center: SyncClassCenter): Unit = {
-        if (isPrecompiled) {
-            throw new IllegalStateException("This contract descriptor data has already been pre compiled")
+        if (precompiled) {
+            return
         }
         precompileClasses(center)
         precompiled = true
@@ -84,7 +84,6 @@ class ContractDescriptorDataImpl(groups: Array[ContractDescriptorGroup[AnyRef]],
         center.preGenerateClasses(classes.toList.map(SyncClassDef(_)))
     }
 
-    def isPrecompiled: Boolean = precompiled
 
     override def getNode[A <: AnyRef](clazz: Class[_]): StructureBehaviorDescriptorNode[A] = {
         nodeMap(clazz).asInstanceOf[StructureBehaviorDescriptorNode[A]]

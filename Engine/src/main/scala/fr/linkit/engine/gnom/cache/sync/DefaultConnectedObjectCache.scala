@@ -67,7 +67,6 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
         extends AbstractSharedCache(channel) with InternalConnectedObjectCache[A] {
 
 
-    override  val info            = CacheInfo(channel.manager.family, channel.cacheID, channel.ownerTag)
     protected val contractFactory = new SyncObjectContractFactory(contract)
     override  val registry        = new ConnectedObjectRegistry[A](cacheManagerLinker, omc, defaultPool, channel, DefaultInstantiator, this, info, selector)
 
@@ -232,7 +231,9 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
                     handleFirstFloorNodeRequest(id, bundle.responseSubmitter)
 
                 case ObjectPacket(FirstFloorObjectProfile(profile, obj, owner, mirror)) =>
-                    registry.firstLayer.register(profile, owner, new InstanceWrapper[A](obj.asInstanceOf[A with SynchronizedObject[A]]), mirror)
+                    registry
+                            .firstLayer
+                            .register(profile, owner, new InstanceWrapper[A](obj.asInstanceOf[A with SynchronizedObject[A]]), mirror)
             }
         }
 
@@ -267,9 +268,7 @@ object DefaultConnectedObjectCache extends ConnectedObjectCacheFactories {
         })
     }
 
-    private[linkit] def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[ConnectedObjectCache[A]] = {
-        apply[A](null, network)
-    }
+
 
     private[linkit] def apply[A <: AnyRef : ClassTag](contract: ContractDescriptorData,
                                                       network : Network): SharedCacheFactory[ConnectedObjectCache[A]] = {

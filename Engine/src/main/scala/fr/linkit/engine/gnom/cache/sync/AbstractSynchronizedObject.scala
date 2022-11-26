@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.contract.StructureContract
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.api.gnom.cache.sync.env.{ObjectConnector, SyncObjectCompanion}
+import fr.linkit.api.gnom.cache.sync.env.{ChippedObjectCompanion, ObjectConnector, SyncObjectCompanion}
 import fr.linkit.api.gnom.cache.sync.invocation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.invocation.{InvocationChoreographer, MirroringObjectInvocationException}
 import fr.linkit.api.gnom.cache.sync.{ChippedObject, ConnectedObjectAlreadyInitialisedException, ConnectedObjectReference, SynchronizedObject}
@@ -31,7 +31,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient private final var contract         : StructureContract[A]     = _
     @transient private final var choreographer    : InvocationChoreographer  = _
     @transient private final var presenceOnNetwork: NetworkObjectPresence    = _
-    @transient private final var node             : SyncObjectCompanion[A]   = _
+    @transient private final var companion             : SyncObjectCompanion[A]   = _
     @transient private final var connector        : ObjectConnector          = _
 
     //cached values for handleCall
@@ -40,24 +40,26 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     def originClass: Class[_]
 
-    def initialize(node: SyncObjectCompanionImpl[A]): Unit = {
+    def initialize(comp: SyncObjectCompanionImpl[A]): Unit = {
         if (isInitialized)
             throw new ConnectedObjectAlreadyInitialisedException(s"This synchronized object is already initialized !")
         //if (location != null && location != node.reference)
         //    throw new IllegalArgumentException(s"Synchronized Object Network Reference of given node mismatches from the actual object's location ($location vs ${node.reference})")
-        this.location = node.reference
-        this.isMirrored0 = node.isMirror
+        this.location = comp.reference
+        this.isMirrored0 = comp.isMirror
 
-        this.puppeteer = node.puppeteer
-        this.contract = node.contract
-        this.presenceOnNetwork = node.presence
-        this.node = node
-        this.choreographer = node.choreographer
-        this.connector = node.connector
+        this.puppeteer = comp.puppeteer
+        this.contract = comp.contract
+        this.presenceOnNetwork = comp.presence
+        this.companion = comp
+        this.choreographer = comp.choreographer
+        this.connector = comp.connector
 
-        this.isOrigin0 = node.isOrigin
-        this.isNotMirroring = !node.isMirroring
+        this.isOrigin0 = comp.isOrigin
+        this.isNotMirroring = !comp.isMirroring
     }
+
+    override def getCompanion: ChippedObjectCompanion[A] = companion
 
 
     override def isMirroring: Boolean = !isNotMirroring
@@ -131,6 +133,6 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         s"Attempted to call a method on a distant object representation. This object is mirroring $reference on engine ${location.owner}"
     }
 
-    @inline override def isInitialized: Boolean = node != null
+    @inline override def isInitialized: Boolean = companion != null
 
 }

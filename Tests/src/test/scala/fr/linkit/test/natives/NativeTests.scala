@@ -1,13 +1,11 @@
 package fr.linkit.test.natives
 
 import fr.linkit.engine.internal.manipulation.invokation.MethodInvoker
-import fr.linkit.test.TestEngine
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 
 @TestInstance(Lifecycle.PER_CLASS)
 class NativeTests {
-    TestEngine.launchMockingNetwork() //load the class
 
     private val method = getClass.getDeclaredMethods.find(_.getName == "foo").get
     private val invoker = new MethodInvoker(method)

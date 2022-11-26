@@ -6,7 +6,7 @@ import fr.linkit.api.gnom.cache.sync.contract.level.MirrorableSyncLevel
 import fr.linkit.api.gnom.cache.sync.env.SyncObjectCompanion
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncObjectInstantiator}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectAlreadyRegisteredException, ConnectedObjectReference, SynchronizedObject}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObjectAlreadyRegisteredException, ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.network.tag.{EngineSelector, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 import fr.linkit.api.gnom.referencing.NamedIdentifier
@@ -59,13 +59,29 @@ abstract class ConnectedObjectRegistryLayer[A <: AnyRef](nph         : CORNPH,
                  creator        : SyncInstanceCreator[A],
                  mirror         : Boolean): SyncObjectCompanion[A] = {
 
-        if (companions.contains(id))
-            throw new ConnectedObjectAlreadyRegisteredException(s"Tree '$id' already registered.")
 
+        creator match {
+            case InstanceWrapper(obj) =>
+                companions.get(id) match {
+                    case Some(companion) =>
+                        if (companion.obj eq obj)
+                            companion
+                        else
+                            throw new ConnectedObjectAlreadyRegisteredException(s"object '$id' already registered.")
+                    case None            => registerNew(id, rootObjectOwner, creator, mirror)
+                }
+            case _ => registerNew(id, rootObjectOwner, creator, mirror)
+        }
+    }
+
+    private def registerNew(id             : NamedIdentifier,
+                            rootObjectOwner: UniqueTag with NetworkFriendlyEngineTag,
+                            creator        : SyncInstanceCreator[A],
+                            mirror         : Boolean): SyncObjectCompanion[A] = {
         val rootObjectOwnerNT = selector.retrieveNT(rootObjectOwner)
         val nodeReference     = ConnectedObjectReference(cacheInfo.family, cacheInfo.cacheID, rootObjectOwnerNT, true, id)
 
-        val lock = NetworkObjectReferencesLocks.getLock(nodeReference)
+        val lock = NetworkObjectReferencesLocks.getInitializationLock(nodeReference)
         lock.lock()
         try {
             val choreographer = new InvocationChoreographer()

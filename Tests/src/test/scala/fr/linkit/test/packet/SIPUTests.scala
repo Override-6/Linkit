@@ -1,25 +1,29 @@
 package fr.linkit.test.packet
 
+import fr.linkit.api.gnom.network.tag.NameTag
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, PacketBundle}
 import fr.linkit.api.gnom.persistence.PacketDownload
 import fr.linkit.api.internal.concurrency.Procrastinator
+import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.packet.traffic.PacketInjectionException
 import fr.linkit.engine.gnom.packet.traffic.unit.SequentialInjectionProcessorUnit
 import fr.linkit.mock.{AbstractPacketChannelMock, PacketDownloadAbstractMock}
 import fr.linkit.test.packet.SIPUTests._
+import org.apache.logging.log4j.LogManager
 import org.junit.jupiter.api.{Assertions, Test}
 import org.opentest4j.AssertionFailedError
 
 import java.util.concurrent.locks.LockSupport
-import scala.collection.mutable.ListBuffer
-import scala.io.StdIn
 import scala.util.Random
 
 class SIPUTests {
 
     private var injectedOrdinal: Int = 1
     private val mainThread           = Thread.currentThread()
-    private val InjectionSize        = 1_000_000
+    private val InjectionSize        = 50000
+
+    AppLoggers
+    LogManager.shutdown()
 
     @Test
     def injectSameOrdinal(): Unit = {
@@ -34,28 +38,66 @@ class SIPUTests {
     def injectAsyncReverse(): Unit = {
         val sipu = newSIPU(ensureOrderedInjection)
 
+        var ex: Throwable = null
         for (i <- InjectionSize to 1 by -1) {
             val x = i
             pool.runLater {
-                sipu.post(simulPacket(x))
+                try {
+                    sipu.post(simulPacket(x))
+                } catch {
+                    case e =>
+                        ex = e
+                        LockSupport.unpark(mainThread)
+                }
             }
         }
         LockSupport.park()
+        if (ex != null)
+            throw ex
     }
 
 
     @Test
     def injectAsync(): Unit = {
         val sipu = newSIPU(ensureOrderedInjection)
-
+        var ex: Throwable = null
         for (i <- 1 to InjectionSize) pool.runLater {
-            val x = i
-            if ((x % (InjectionSize / 20)) == 0)
-                println("sent: " + x)
-            sipu.post(simulPacket(x))
+            try {
+                val x = i
+                if ((x % (InjectionSize / 20)) == 0)
+                    println("sent: " + x)
+                sipu.post(simulPacket(x))
+            } catch {
+                case e =>
+                    ex = e
+                    LockSupport.unpark(mainThread)
+            }
         }
-        dumpVThreads()
         LockSupport.park()
+        if (ex != null)
+            throw ex
+    }
+
+    @Test
+    def injectAsyncChaos(): Unit = {
+        val sipu = newSIPU(ensureOrderedInjection)
+        var ex: Throwable = null
+        for (i <- 1 to InjectionSize) pool.runLater {
+            Thread.sleep(0L, (System.nanoTime() % 5000).toInt)
+            try {
+                val x = i
+                if ((x % (InjectionSize / 20)) == 0)
+                    println("sent: " + x)
+                sipu.post(simulPacket(x))
+            } catch {
+                case e =>
+                    ex = e
+                    LockSupport.unpark(mainThread)
+            }
+        }
+        LockSupport.park()
+        if (ex != null)
+            throw ex
     }
 
     private def dumpVThreads(): Unit = {
@@ -75,13 +117,22 @@ class SIPUTests {
     def injectAsyncShuffled(): Unit = {
         val sipu = newSIPU(ensureOrderedInjection)
         val list = Random.shuffle((1 to InjectionSize).toList)
+        var ex: Throwable = null
         for (i <- list) {
             val x = i
             pool.runLater {
-                sipu.post(simulPacket(x))
+                try {
+                    sipu.post(simulPacket(x))
+                } catch {
+                    case e =>
+                        ex = e
+                        LockSupport.unpark(mainThread)
+                }
             }
         }
         LockSupport.park()
+        if (ex != null)
+            throw ex
     }
 
     private def ensureOrderedInjection(bundle: PacketBundle): Unit = {
@@ -113,6 +164,6 @@ class SIPUTests {
 }
 
 object SIPUTests {
-    private val coords = DedicatedPacketCoordinates(Array(1, 2, 3), "server", "client")
+    private val coords = DedicatedPacketCoordinates(Array(1, 2, 3), NameTag("server"), NameTag("client"))
     private val pool   = Procrastinator("SIPUTests")
 }

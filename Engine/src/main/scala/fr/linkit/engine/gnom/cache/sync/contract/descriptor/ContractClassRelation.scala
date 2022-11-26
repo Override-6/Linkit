@@ -41,8 +41,7 @@ class ContractClassRelation[A <: AnyRef](val targetClass  : Class[A],
                 }
             case unique: UniqueStructureContractDescriptor[A]   => descriptors += unique
             case overall: OverallStructureContractDescriptor[A] =>
-                ConcreteSyncLevel.values()
-                        .filter(s => s != Statics && s != NotRegistered)
+                StructureBehaviorDescriptorNodeImpl.MandatoryLevels
                         .foreach(descriptors += uscd(_, overall))
         }
     }

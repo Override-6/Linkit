@@ -53,9 +53,9 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
     override val shortname: String = "SIPU"
 
     override def post(result: PacketDownload): Unit = {
-        AppLoggers.Traffic.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderTag}) Current unit executor: ${executor}.")
 
         contentLock.synchronized {
+            AppLoggers.Traffic.trace(s"(SIPU $reference): adding packet (ord: ${result.ordinal}: ${result.coords.senderTag}) Current unit executor: ${executor}.")
             val senderId = result.coords.senderTag
             queues.getOrElseUpdate(senderId, new OrdinalQueue).offer(result)
             if (refocusShift > 0) {
@@ -64,10 +64,10 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
                 refocusShift = 0
                 contentLock.notifyAll() //will notify the executor
             }
-        }
 
-        if (shouldInject())
-            injectAll()
+            if (shouldInject())
+                injectAll()
+        }
     }
 
     /**
@@ -138,7 +138,6 @@ class SequentialInjectionProcessorUnit(private val injectable: PacketInjectable)
             deserializeAndInject(next)
             next = pollNext()
         }
-
         accessLock.synchronized {
             //everything deserialized, now realising this unit.
             executor = null

@@ -15,6 +15,7 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
+import fr.linkit.api.gnom.cache.sync.contract.Contract
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ObjectsProperty
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
@@ -227,7 +228,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private[network] def mappingsCache = {
         if (mappingsCacheOpt.isEmpty && !isMappingCacheInitialising) {
             isMappingCacheInitialising = true
-            val contract = ContractProvider("NetworkContract", ObjectsProperty.defaults(this))
+            val contract = Contract("NetworkContract", ObjectsProperty.defaults(this))
             mappingsCacheOpt = Some(globalCaches.attachToCache(2, DefaultConnectedObjectCache[RemoteClassMappings](contract)))
             isMappingCacheInitialising = false
         }

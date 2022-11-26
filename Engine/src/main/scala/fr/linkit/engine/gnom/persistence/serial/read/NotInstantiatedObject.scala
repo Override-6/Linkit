@@ -74,7 +74,8 @@ class NotInstantiatedObject[T <: AnyRef](profile: TypeProfile[T],
                 case o: RegistrablePoolObject[AnyRef] =>
                     contentObjects(i) = o
                     o.value
-                case o: PoolObject[AnyRef]            => o.value
+                case o: PoolObject[AnyRef]            =>
+                    o.value
                 case o                                => o
             }
             i += 1

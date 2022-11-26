@@ -30,5 +30,5 @@ trait ReferencedPoolObject extends PoolObject[AnyRef] {
         }
     }
 
-    override val identity: Int = System.identityHashCode(value)
+    override def identity: Int = System.identityHashCode(value)
 }

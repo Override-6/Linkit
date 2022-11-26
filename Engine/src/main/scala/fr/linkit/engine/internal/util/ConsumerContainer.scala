@@ -59,17 +59,7 @@ class ConsumerContainer[A]@Persist()() extends Deconstructible {
     /**
      * alias for [[ConsumerContainer#addOnce()]]
      * */
-    def +:+=(consumer: A => Unit): this.type = addOnce(consumer)
-
-    def applyAllLater(t: A, onException: Throwable => Unit = throw _): this.type = {
-        if (consumers.isEmpty)
-            return this
-        val pool = Procrastinator.current.getOrElse(throw new IllegalThreadException("Async execution is impossible for this consumer container in a non worker execution thread."))
-        pool.runLater {
-            applyAll(t, onException)
-        }
-        this
-    }
+    def +!+=(consumer: A => Unit): this.type = addOnce(consumer)
 
     def applyAll(t: A, onException: Throwable => Unit = throw _): this.type = {
         if (consumers.isEmpty)

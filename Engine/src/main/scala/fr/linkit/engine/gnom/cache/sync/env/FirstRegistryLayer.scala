@@ -14,10 +14,10 @@
 package fr.linkit.engine.gnom.cache.sync.env
 
 import fr.linkit.api.gnom.cache.SharedCache.CacheInfo
+import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
 import fr.linkit.api.gnom.cache.sync.env._
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncObjectInstantiator
-import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference, SynchronizedObject}
-import fr.linkit.api.gnom.network.tag.EngineSelector
+import fr.linkit.api.gnom.network.tag.{Current, EngineSelector}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 import fr.linkit.api.gnom.referencing.NamedIdentifier
@@ -44,10 +44,11 @@ class FirstRegistryLayer[A <: AnyRef](nph         : CORNPH,
         extends ConnectedObjectRegistryLayer[A](nph, selector, defaultPool, channel, instantiator, dataSupp, cacheInfo) {
 
 
+    import selector._
 
-    override def findCompanion(id: NamedIdentifier): Option[SyncObjectCompanion[A]] = findCompanion(id).orElse {
+    override def findCompanion(id: NamedIdentifier): Option[SyncObjectCompanion[A]] = findCompanionLocal(id).orElse {
         requestFirstLayerObject(id)
-        findCompanion(id)
+        findCompanionLocal(id)
     }
 
     def snapshotContent: CacheRepoContent[A] = {
@@ -88,7 +89,6 @@ class FirstRegistryLayer[A <: AnyRef](nph         : CORNPH,
 
             Debugger.push(ConnectedObjectTreeRetrievalStep(treeRef))
             AppLoggers.ConnObj.trace(s"Requesting root object $treeRef.")
-            AppLoggers.Debug.info(s"Requesting root object $treeRef.")
 
 
             Debugger.push(RequestStep("CO tree retrieval", s"retrieve tree $treeRef", ownerTag, channel.reference))
@@ -102,7 +102,11 @@ class FirstRegistryLayer[A <: AnyRef](nph         : CORNPH,
             Debugger.pop()
             response.nextPacket[Packet] match {
                 case ObjectPacket(profile: FirstFloorObjectProfile[A]) =>
-                    register(profile.identifier, profile.owner, new InstanceWrapper[A](profile.obj), profile.mirror)
+                    if (findCompanionLocal(profile.identifier).isEmpty) {
+                        //TODO replace id with network reference
+                        //TODO explain why we check if the object is registered after request rather that registering it after the response
+                        throw new IllegalStateException(s"requested object '$id' received but not registered during deserialization")
+                    }
                 case EmptyPacket                                       => //the tree does not exists, do nothing.
             }
             AppLoggers.Debug.info("Ended Tree retrieval execution")
@@ -114,7 +118,9 @@ class FirstRegistryLayer[A <: AnyRef](nph         : CORNPH,
     }
 
     override protected def onCompanionRegistered(comp: SyncObjectCompanion[A]): Unit = {
-        val ownerTag    = comp.ownerTag
+        val ownerTag = comp.ownerTag
+        if (ownerTag <=> Current)
+            return //if the owner is this engine, reuturn
         val treeProfile = FirstFloorObjectProfile(comp.id, comp.obj, ownerTag, comp.isMirror)
         AppLoggers.ConnObj.debug(s"Notifying owner that a new connected object has been added on the cache.")
         channel.makeRequest(ChannelScopes.apply(ownerTag))

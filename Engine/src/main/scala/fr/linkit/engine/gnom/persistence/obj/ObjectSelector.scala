@@ -23,8 +23,6 @@ import fr.linkit.engine.gnom.cache.sync.ChippedObjectAdapter
 import fr.linkit.engine.gnom.referencing.ContextObject
 import fr.linkit.engine.gnom.referencing.presence.ExternalNetworkObjectPresence
 
-import java.util.concurrent.locks.ReentrantReadWriteLock
-
 class ObjectSelector(bundle: PersistenceBundle) {
 
     private val gnol       = bundle.network.gnol

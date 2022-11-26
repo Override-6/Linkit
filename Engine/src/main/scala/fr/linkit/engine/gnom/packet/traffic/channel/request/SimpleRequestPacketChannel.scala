@@ -45,7 +45,7 @@ class SimpleRequestPacketChannel(scope: ChannelScope) extends AbstractPacketChan
                 val channelBundle  = DefaultRequestPacketChannelBundle(this, request, coords, submitter, bundle.ordinal)
                 Procrastinator.current match {
                     case Some(_) =>
-                        requestConsumers.applyAllLater(channelBundle)
+                        requestConsumers.applyAll(channelBundle)
                     case None    =>
                         requestConsumers.applyAll(channelBundle)
                 }
