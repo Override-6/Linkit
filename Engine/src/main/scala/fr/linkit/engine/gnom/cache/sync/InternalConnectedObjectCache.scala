@@ -14,6 +14,9 @@
 package fr.linkit.engine.gnom.cache.sync
 
 import fr.linkit.api.gnom.cache.sync.ConnectedObjectCache
+import fr.linkit.engine.gnom.cache.sync.env.ConnectedObjectRegistry
 import fr.linkit.engine.gnom.cache.sync.env.node.ConnectedObjectDataSupplier
 
-trait InternalConnectedObjectCache[A <: AnyRef] extends ConnectedObjectCache[A] with ConnectedObjectDataSupplier
+trait InternalConnectedObjectCache[A <: AnyRef] extends ConnectedObjectCache[A] with ConnectedObjectDataSupplier {
+    val registry: ConnectedObjectRegistry[A]
+}

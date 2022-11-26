@@ -13,12 +13,12 @@
 
 package fr.linkit.engine.internal.language.bhv.interpreter
 
-import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel._
 import fr.linkit.api.gnom.cache.sync.contract._
 import fr.linkit.api.gnom.cache.sync.contract.behavior.{BHVProperties, RMIRulesAgreementBuilder}
 import fr.linkit.api.gnom.cache.sync.contract.description.{SyncClassDef, SyncStructureDescription}
 import fr.linkit.api.gnom.cache.sync.contract.descriptor._
-import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel._
+import fr.linkit.api.gnom.cache.sync.contract.level.{MirrorableSyncLevel, SyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod._
 import fr.linkit.api.gnom.network.tag.TagSelection._
 import fr.linkit.api.gnom.network.tag._
@@ -97,10 +97,10 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
                 def cast[X](y: Any): X = y.asInstanceOf[X]
 
                 kind match {
-                    case StaticsDescription         => List(scd(Statics))
-                    case RegularDescription         => List(scd())
+                    case StaticsDescription         => List(scd(Statics :: Nil))
+                    case RegularDescription         => List(scd(Nil))
                     case LeveledDescription(levels) =>
-                        val result = List(scd(levels.map(_.syncLevel).filter(_ != Mirror): _*))
+                        val result = List(scd(levels.map(_.syncLevel).filter(_ != MirrorableSyncLevel.Mirror)))
                         val r      = levels.find(_.isInstanceOf[MirroringLevel]) match {
                             case None                       => result
                             case Some(MirroringLevel(stub)) =>
@@ -127,12 +127,12 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
 
     private def defaultContracts(clazz: Class[AnyRef], usedDescs: List[StructureContractDescriptor[AnyRef]]): StructureContractDescriptor[AnyRef] = {
         val missingLevels = StructureBehaviorDescriptorNodeImpl.MandatoryLevels.filterNot(usedDescs.contains)
-        scd(missingLevels: _*)(clazz, Array(), Array())
+        scd(missingLevels)(clazz, Array(), Array())
     }
 
-    private def scd(levels: ConcreteSyncLevel*)(implicit clazz0: Class[AnyRef],
-                                                methods0       : Array[MethodContractDescriptor],
-                                                fields0        : Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
+    private def scd(levels: List[SyncLevel])(implicit clazz0: Class[AnyRef],
+                                             methods0       : Array[MethodContractDescriptor],
+                                             fields0        : Array[FieldContract[Any]]): StructureContractDescriptor[AnyRef] = {
         if (levels.isEmpty) return new OverallStructureContractDescriptor[AnyRef] {
             override val autochip    = BehaviorFileInterpreter.this.autoChip
             override val targetClass = clazz0
@@ -178,7 +178,7 @@ class BehaviorFileInterpreter(file         : BehaviorFile,
                     val rvContract = {
                         val rvLvl = desc.syncReturnValue.lvl
                         if (rvLvl != NotRegistered) {
-                            if (rvLvl.isConnectable && LeveledSBDN.findReasonTypeCantBeSync(method.javaMethod.getReturnType).isDefined)
+                            if (LeveledSBDN.findReasonTypeCantBeSync(method.javaMethod.getReturnType).isDefined)
                                 Some(SimpleValueContract(NotRegistered, autoChip))
                             else Some(SimpleValueContract(rvLvl, autoChip))
                         } else None

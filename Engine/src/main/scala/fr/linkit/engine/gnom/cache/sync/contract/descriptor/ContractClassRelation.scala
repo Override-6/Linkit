@@ -21,7 +21,7 @@ import fr.linkit.engine.gnom.cache.sync.contract.BadContractException
 
 import scala.collection.mutable.ListBuffer
 
-class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
+class ContractClassRelation[A <: AnyRef](val targetClass  : Class[A],
                                          nextSuperRelation: ContractClassRelation[_ >: A]) {
     relation =>
 
@@ -47,10 +47,10 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
         }
     }
 
-    private def uscd(lvl: ConcreteSyncLevel, d: StructureContractDescriptor[A]): UniqueStructureContractDescriptor[A] = {
+    private def uscd(lvl: SyncLevel, d: StructureContractDescriptor[A]): UniqueStructureContractDescriptor[A] = {
         new UniqueStructureContractDescriptor[A] {
-            override val kind    : ConcreteSyncLevel = lvl
-            override val autochip: Boolean           = d.autochip
+            override val kind       : SyncLevel                       = lvl
+            override val autochip   : Boolean                         = d.autochip
             override val targetClass: Class[A]                        = d.targetClass
             override val methods    : Array[MethodContractDescriptor] = d.methods
             override val fields     : Array[FieldContract[Any]]       = d.fields
@@ -86,9 +86,9 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
         implicit val t = (a, b)
         new UniqueStructureContractDescriptor[A] {
             override val targetClass = t._1.targetClass
-            override val autochip = fusion[D, Boolean](_.autochip, _ != _, (a, _) => a, "autochip")
-            override val kind     = fusion[D, SyncLevel](_.kind, _ != _, (a, _) => a, "contract at sync level")
-            override val methods  = fusion[D, Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(ia => b.exists(ib => ia != ib && ia.description == ib.description)), _ ++ _, "method contract")
+            override val autochip    = fusion[D, Boolean](_.autochip, _ != _, (a, _) => a, "autochip")
+            override val kind        = fusion[D, SyncLevel](_.kind, _ != _, (a, _) => a, "contract at sync level")
+            override val methods     = fusion[D, Array[MethodContractDescriptor]](_.methods, (a, b) => a.exists(ia => b.exists(ib => ia != ib && ia.description == ib.description)), _ ++ _, "method contract")
             override val fields      = fusion[D, Array[FieldContract[Any]]](_.fields, (a, b) => a.exists(ia => b.exists(ib => ia != ib && ia.description == ib.description)), _ ++ _, "field contract")
         }
     }
@@ -109,11 +109,11 @@ class ContractClassRelation[A <: AnyRef](val targetClass: Class[A],
                     if (a == null) b else (a, b) match {
                         case (a: MirroringStructureContractDescriptor[A], b: MirroringStructureContractDescriptor[A]) =>
                             mirroringFusion(a, b)
-                        case (a: MirroringStructureContractDescriptor[A], b) =>
+                        case (a: MirroringStructureContractDescriptor[A], b)                                          =>
                             mirroringFusionUnequal(a, b)
-                        case (a, b: MirroringStructureContractDescriptor[A]) =>
+                        case (a, b: MirroringStructureContractDescriptor[A])                                          =>
                             mirroringFusionUnequal(b, a)
-                        case _                                                  =>
+                        case _                                                                                        =>
                             regularFusion(a, b)
                     }
                 })

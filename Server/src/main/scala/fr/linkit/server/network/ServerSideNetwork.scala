@@ -62,9 +62,9 @@ class ServerSideNetwork(connection: ServerConnection)
 
 
     override protected def retrieveDataTrunk(): NetworkDataTrunk = {
-        val contracts = Contract("NetworkContract", ObjectsProperty.defaults(this))
-        globalCaches.attachToCache(0, DefaultConnectedObjectCache[NetworkDataTrunk](this))
-                .syncObject(0, New[NetworkDataTrunk](this), contracts)
+        val contract = Contract("NetworkContract", ObjectsProperty.defaults(this))
+        globalCaches.attachToCache(0, DefaultConnectedObjectCache[NetworkDataTrunk](contract, this))
+                .syncObject(0, New[NetworkDataTrunk](this))
     }
 
     def removeEngine(identifier: NameTag): Unit = {

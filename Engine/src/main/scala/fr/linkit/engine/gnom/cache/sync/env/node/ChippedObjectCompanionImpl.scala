@@ -76,7 +76,7 @@ class ChippedObjectCompanionImpl[A <: AnyRef](data: ChippedObjectCompanionData[A
         }
 
         chip.callMethod(packet.methodID, params, senderNT)(handleException, result => try {
-            handleInvocationResult(result.asInstanceOf[AnyRef], senderNT, packet, response)
+            handleInvocationResult(result.asInstanceOf[AnyRef], packet, response)
         } catch {
             case NonFatal(e) => handleException(e)
         })
@@ -96,7 +96,6 @@ class ChippedObjectCompanionImpl[A <: AnyRef](data: ChippedObjectCompanionData[A
     }
 
     private def handleInvocationResult(initialResult: AnyRef,
-                                       callerNT     : NameTag,
                                        packet       : InvocationPacket,
                                        response     : Submitter[Unit]): Unit = {
         var result: Any = initialResult
@@ -106,7 +105,7 @@ class ChippedObjectCompanionImpl[A <: AnyRef](data: ChippedObjectCompanionData[A
                 throw new NoSuchElementException(s"Could not find method contract with identifier #$id for ${contract.clazz}.")
             }
             methodContract.handleInvocationResult(initialResult)((ref, registrationLevel) => {
-                tree.insertObject(this, ref.asInstanceOf[AnyRef], ownerTag, registrationLevel).obj
+                data.secondLayer.connectObject(ref, ownerTag, registrationLevel).obj
             })
         }
         val expectedEngineReturn = packet.expectedEngineReturn

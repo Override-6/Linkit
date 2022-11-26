@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.cache.sync.CannotConnectException
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
 import fr.linkit.api.gnom.cache.sync.contract.level.SyncLevel
 import fr.linkit.api.gnom.network.tag.{NetworkFriendlyEngineTag, UniqueTag}
+import fr.linkit.api.gnom.referencing.NamedIdentifier
 
 import java.util.concurrent.ThreadLocalRandom
 
@@ -37,18 +38,18 @@ trait ObjectConnector {
      * @return the created node
      */
     def connectObject[B <: AnyRef](source : B,
-                                  ownerID: UniqueTag with NetworkFriendlyEngineTag,
-                                  kind   : SyncLevel): ConnectedObjectCompanion[B] = {
+                                   ownerID: UniqueTag with NetworkFriendlyEngineTag,
+                                   kind   : SyncLevel): ConnectedObjectCompanion[B] = {
         connectObject(source, ownerID, kind, ThreadLocalRandom.current().nextInt())
     }
 
     def connectObject[B <: AnyRef](source       : B,
                                    ownerID      : UniqueTag with NetworkFriendlyEngineTag,
                                    insertionKind: SyncLevel,
-                                   id           : Int): ConnectedObjectCompanion[B]
+                                   id           : NamedIdentifier): ConnectedObjectCompanion[B]
 
     def makeMirroredObject[B <: AnyRef](classDef: SyncClassDef,
                                         ownerID : UniqueTag with NetworkFriendlyEngineTag,
-                                        id      : Int = ThreadLocalRandom.current().nextInt()): ConnectedObjectCompanion[B]
+                                        id      : NamedIdentifier = ThreadLocalRandom.current().nextInt()): ConnectedObjectCompanion[B]
 
 }

@@ -44,7 +44,7 @@ class StaticAccesses(network: Network) {
             case Some(_) =>
                 throw new CacheAlreadyDeclaredException(s"Static access already exists for id '$id'")
             case None    =>
-                staCache.syncObject(id, New[StaticAccessImpl](id, cacheManager, contract), contract)
+                staCache.syncObject(id, New[StaticAccessImpl](id, cacheManager, contract))
         }
     }
 }

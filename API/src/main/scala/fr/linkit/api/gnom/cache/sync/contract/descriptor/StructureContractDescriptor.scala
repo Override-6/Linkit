@@ -17,10 +17,10 @@ import fr.linkit.api.gnom.cache.sync.contract.FieldContract
 import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, SyncLevel}
 
 sealed trait StructureContractDescriptor[A <: AnyRef] {
-    
+
     //enable auto chipping for objects expected as being synchronized / mirrored
     //but whose runtime class can't support generated 'Sync' class generation / overriding.
-    val autochip: Boolean
+    val autochip   : Boolean
     val targetClass: Class[A]
 
     val methods: Array[MethodContractDescriptor]
@@ -39,7 +39,7 @@ trait UniqueStructureContractDescriptor[A <: AnyRef] extends StructureContractDe
 
 trait MultiStructureContractDescriptor[A <: AnyRef] extends StructureContractDescriptor[A] {
 
-    val syncLevels: Set[ConcreteSyncLevel]
+    val syncLevels: Set[SyncLevel]
 
     override def toString: String = s"Multi (${syncLevels.mkString(", ")}) (${targetClass.getName})"
 

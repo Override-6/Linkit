@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.cache.sync.env
 import fr.linkit.api.gnom.cache.SharedCache.CacheInfo
 import fr.linkit.api.gnom.cache.sync.env._
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncObjectInstantiator
-import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
@@ -42,6 +42,7 @@ class FirstRegistryLayer[A <: AnyRef](nph         : CORNPH,
                                       cacheInfo   : CacheInfo)
                                      (override val secondLayer: SecondRegistryLayer)
         extends ConnectedObjectRegistryLayer[A](nph, selector, defaultPool, channel, instantiator, dataSupp, cacheInfo) {
+
 
 
     override def findCompanion(id: NamedIdentifier): Option[SyncObjectCompanion[A]] = findCompanion(id).orElse {
@@ -121,8 +122,4 @@ class FirstRegistryLayer[A <: AnyRef](nph         : CORNPH,
                 .submit()
     }
 
-
-    override protected def initObject(obj: ConnectedObject[A]): Unit = {
-
-    }
 }

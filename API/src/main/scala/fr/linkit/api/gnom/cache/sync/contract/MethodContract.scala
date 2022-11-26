@@ -47,8 +47,8 @@ trait MethodContract[R] {
     def executeMethodInvocation(data: InvocationExecution): Any
 
     trait InvocationExecution {
-        val objCompanion: ChippedObjectCompanion[_]
-        val arguments   : Array[Any]
+        val obj      : ChippedObject[_]
+        val arguments: Array[Any]
     }
 
     trait RemoteInvocationExecution extends InvocationExecution {

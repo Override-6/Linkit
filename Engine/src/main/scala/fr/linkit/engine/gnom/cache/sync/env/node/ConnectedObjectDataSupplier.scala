@@ -34,15 +34,15 @@ class NormalNodeDataRequest[A <: AnyRef](val identifier: NamedIdentifier,
                                          val firstFloor: Boolean,
                                          val ownerTag  : NameTag) extends NodeDataRequest[A, CompanionData[A]]
 
-class SyncNodeDataRequest[A <: AnyRef](id            : NamedIdentifier,
-                                       ownerID       : NameTag,
-                                       firstFloor    : Boolean,
-                                       override val connectedObject: A with SynchronizedObject[A],
-                                       val syncLevel : SyncLevel)
-        extends ChippedObjectNodeDataRequest[A](id, ownerID, firstFloor, connectedObject) with NodeDataRequest[A, SyncObjectCompanionData[A]]
+class SyncNodeDataRequest[A <: AnyRef](id                          : NamedIdentifier,
+                                       ownerID                     : NameTag,
+                                       firstFloor                  : Boolean,
+                                       val syncObject: A with SynchronizedObject[A],
+                                       val syncLevel               : SyncLevel)
+        extends ChippedObjectNodeDataRequest[A](id, ownerID, firstFloor, syncObject) with NodeDataRequest[A, SyncObjectCompanionData[A]]
 
-class ChippedObjectNodeDataRequest[A <: AnyRef](id           : NamedIdentifier,
-                                                ownerTag     : NameTag,
-                                                firstFloor   : Boolean,
+class ChippedObjectNodeDataRequest[A <: AnyRef](val id                 : NamedIdentifier,
+                                                val ownerTag           : NameTag,
+                                                val firstFloor         : Boolean,
                                                 val connectedObject: ChippedObject[A])
-        extends NormalNodeDataRequest(id, firstFloor, ownerTag) with NodeDataRequest[A, ChippedObjectCompanionData[A]]
+        extends NodeDataRequest[A, ChippedObjectCompanionData[A]]

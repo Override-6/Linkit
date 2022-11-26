@@ -93,11 +93,10 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     override def executeRemoteMethodInvocation(data: RemoteInvocationExecution): R = {
         val id            = description.methodId
         val args          = data.arguments
-        val companion     = data.objCompanion
-        val obj           = companion.obj
+        val obj           = data.obj
         val choreographer = obj.getChoreographer
 
-        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, companion, data.connector) with CallableLocalMethodInvocation[R] {
+        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](id, obj, data.connector) with CallableLocalMethodInvocation[R] {
             override val methodArguments: Array[Any] = args
 
             override def callSuper(): R = {
@@ -114,7 +113,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
 
     override def executeMethodInvocation(data: InvocationExecution): Any = {
         val args = data.arguments
-        val obj  = data.objCompanion.obj
+        val obj  = data.obj
         if (hideMessage.isDefined)
             throw new HiddenMethodInvocationException(hideMessage.get)
         if (isMirroring(obj))
@@ -148,8 +147,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
     }
 
     private def handleInvocation(puppeteer: Puppeteer[_], invocation: CallableLocalMethodInvocation[R]): R = {
-        val objectNode    = invocation.objectCompanion
-        val obj           = objectNode.obj
+        val obj    = invocation.obj
         val mayPerformRMI = agreement.mayPerformRemoteInvocation
         val connector     = invocation.connector
 
@@ -200,7 +198,7 @@ class MethodContractImpl[R](override val invocationHandlingMethod: InvocationHan
         val method    = description.javaMethod
         val name      = method.getName
         val methodID  = description.methodId
-        val obj       = invocation.objectCompanion.obj
+        val obj       = invocation.obj
         val className = obj.getClassDef.mainClass.getName
         val params    = invocation.methodArguments.map(i => if (i == null) "null" else i.getClass.getSimpleName).mkString(", ")
 

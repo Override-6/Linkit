@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.internal.language.bhv.ast
 
-import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
+import fr.linkit.api.gnom.cache.sync.contract.level.{ConcreteSyncLevel, MirrorableSyncLevel}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationHandlingMethod
 
 trait MethodDescription
@@ -78,7 +78,7 @@ case class MethodParam(name: Option[String], tpe: SynchronizedType) {
 
     override def toString: String = (tpe.syncType.lvl match {
         case ConcreteSyncLevel.NotRegistered => ""
-        case ConcreteSyncLevel.Chipped       => "chip "
+        case MirrorableSyncLevel.Chipped     => "chip "
         case ConcreteSyncLevel.Synchronized  => "sync "
     }) + name.map(n => s"$n: ").getOrElse("") + tpe.tpe.get
 }

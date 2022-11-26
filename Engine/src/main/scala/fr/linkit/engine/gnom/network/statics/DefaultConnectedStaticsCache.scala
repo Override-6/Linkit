@@ -14,7 +14,7 @@
 package fr.linkit.engine.gnom.network.statics
 
 import fr.linkit.api.application.resource.local.LocalFolder
-import fr.linkit.api.gnom.cache.SharedCacheFactory
+import fr.linkit.api.gnom.cache.{SharedCacheFactory, SharedCacheReference}
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.contract.behavior.ConnectedObjectContext
 import fr.linkit.api.gnom.cache.sync.contract.descriptor.ContractDescriptorData
@@ -27,7 +27,9 @@ import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.network.statics.{StaticsCaller, SynchronizedStaticsCache}
 import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.persistence.context.Deconstructible.Persist
+import fr.linkit.api.gnom.referencing.presence.NetworkPresenceHandler
 import fr.linkit.api.gnom.referencing.traffic.ObjectManagementChannel
+import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.application.LinkitApplication
 import fr.linkit.engine.gnom.cache.sync.DefaultConnectedObjectCache
 import fr.linkit.engine.gnom.cache.sync.contract.behavior.SyncObjectContractFactory
@@ -40,9 +42,11 @@ import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 class DefaultConnectedStaticsCache @Persist()(channel              : CachePacketChannel,
                                               classCenter          : SyncClassCenter,
                                               override val contract: ContractDescriptorData,
-                                              resolver             : EngineSelector,
+                                              selector             : EngineSelector,
+                                              val defaultPool      : Procrastinator,
+                                              cacheManagerLinker   : NetworkPresenceHandler[SharedCacheReference],
                                               omc                  : ObjectManagementChannel)
-        extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, contract, resolver, omc) with SynchronizedStaticsCache {
+        extends DefaultConnectedObjectCache[StaticsCaller](channel, classCenter, contract, selector, defaultPool, cacheManagerLinker, omc) with SynchronizedStaticsCache {
 
     //ensuring that the creator is of the right type
     override def syncObject(id: Int, creator: SyncInstanceCreator[_ <: StaticsCaller]): StaticsCaller with SynchronizedObject[StaticsCaller] = {
@@ -50,13 +54,13 @@ class DefaultConnectedStaticsCache @Persist()(channel              : CachePacket
         super.syncObject(id, creator)
     }
 
-    override protected def getContract(creator: SyncInstanceCreator[StaticsCaller], context: ConnectedObjectContext): StructureContract[StaticsCaller] = {
+    override def getContract[B <: AnyRef](creator: SyncInstanceCreator[B], context: ConnectedObjectContext): StructureContract[B] = {
         creator match {
             case creator: SyncStaticAccessInstanceCreator     =>
                 contractFactory.getContract(creator.targetedClass.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(ConcreteSyncLevel.Statics))
             case InstanceWrapper(methodCaller: StaticsCaller) =>
                 val cl = methodCaller.staticsTarget
-                contractFactory.getContract(cl.asInstanceOf[Class[StaticsCaller]], context.withSyncLevel(ConcreteSyncLevel.Statics))
+                contractFactory.getContract[B](cl.asInstanceOf[Class[B]], context.withSyncLevel(ConcreteSyncLevel.Statics))
             case _                                            =>
                 throwUOE()
         }
@@ -98,11 +102,13 @@ object DefaultConnectedStaticsCache {
                 .getOrAttachRepresentation[SyncClassStorageResource]("lambdas")
         val generator = new DefaultSyncClassCenter(resources, app.compilerCenter)
         //FIXME ugly
-        val omc       = network.connection.traffic match {
+        val omc = network.connection.traffic match {
             case traffic: AbstractPacketTraffic => traffic.getObjectManagementChannel
             case _                              => throw new UnsupportedOperationException("Cannot retrieve object management channel.")
         }
-        new DefaultConnectedStaticsCache(channel, generator, contracts, network, omc)
+        val cml       = channel.manager.getCachesLinker
+        val defaultPool: Procrastinator = network.connection
+        new DefaultConnectedStaticsCache(channel, generator, contracts, network, defaultPool, cml, omc)
     }
 
 }

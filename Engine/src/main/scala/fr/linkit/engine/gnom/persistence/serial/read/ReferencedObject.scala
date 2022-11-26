@@ -14,6 +14,7 @@
 package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.cache.SharedCacheReference
+import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
 import fr.linkit.api.gnom.cache.sync.{ConnectedObject, OriginReferencedConnectedObjectReference}
 import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, ReferencedPoolObject}
 import fr.linkit.api.gnom.referencing.NetworkObjectReference
@@ -53,7 +54,7 @@ class ReferencedObject(override val referenceIdx: Int,
                     val origin = selector.findObject(originRef).getOrElse {
                         throw new NoSuchElementException(s"Could not find network object referenced at $reference.")
                     }
-                    cache.forest.linkWithReference(origin, syncRef)
+                    cache.registry.connector.connectObject(origin, syncRef.owner, ConcreteSyncLevel.Synchronized, syncRef.identifier)
                     origin
                 case cache                                      =>
                     throw new UnsupportedOperationException(s"Could not deserialize referenced sync object: $cacheRef referer to a shared cache of type '${cache.getClass.getName}', expected: ${classOf[DefaultConnectedObjectCache[_]].getName}. ")

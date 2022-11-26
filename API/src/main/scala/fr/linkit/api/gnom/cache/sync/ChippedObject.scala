@@ -18,6 +18,7 @@ import fr.linkit.api.gnom.cache.sync.env.ChippedObjectCompanion
 
 trait ChippedObject[A <: AnyRef] extends ConnectedObject[A] {
 
+    def getCompanion: ChippedObjectCompanion[A]
 
     /**
      * @return the invocation choreographer of this object

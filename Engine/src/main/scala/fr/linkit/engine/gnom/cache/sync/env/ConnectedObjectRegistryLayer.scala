@@ -6,12 +6,13 @@ import fr.linkit.api.gnom.cache.sync.contract.level.MirrorableSyncLevel
 import fr.linkit.api.gnom.cache.sync.env.SyncObjectCompanion
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceCreator, SyncObjectInstantiator}
 import fr.linkit.api.gnom.cache.sync.invocation.InvocationChoreographer
-import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectAlreadyRegisteredException, ConnectedObjectReference}
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectAlreadyRegisteredException, ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.network.tag.{EngineSelector, NetworkFriendlyEngineTag, UniqueTag}
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 import fr.linkit.api.gnom.referencing.NamedIdentifier
 import fr.linkit.api.internal.concurrency.Procrastinator
 import fr.linkit.engine.gnom.cache.sync.env.node._
+import fr.linkit.engine.gnom.cache.sync.instantiation.InstanceWrapper
 import fr.linkit.engine.gnom.cache.sync.invokation.UsageConnectedObjectContext
 import fr.linkit.engine.gnom.cache.sync.invokation.local.ObjectChip
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.ObjectPuppeteer
@@ -45,7 +46,10 @@ abstract class ConnectedObjectRegistryLayer[A <: AnyRef](nph         : CORNPH,
         onCompanionRegistered(comp)
     }
 
-    def initObject(obj: ConnectedObject[A]): Unit
+    def initObject(obj: A with SynchronizedObject[A]): Unit = {
+        val reference = obj.reference
+        register(reference.identifier, reference.owner, InstanceWrapper[A](obj), obj.isMirrored)
+    }
 
     protected def onCompanionRegistered(comp: SyncObjectCompanion[A]): Unit = ()
 

@@ -2,9 +2,9 @@ package fr.linkit.engine.gnom.cache.sync.env
 
 import fr.linkit.api.gnom.cache.SharedCache.CacheInfo
 import fr.linkit.api.gnom.cache.SharedCacheReference
-import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
-import fr.linkit.api.gnom.cache.sync.env.SyncObjectCompanion
+import fr.linkit.api.gnom.cache.sync.env.{ObjectConnector, SyncObjectCompanion}
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncObjectInstantiator
+import fr.linkit.api.gnom.cache.sync.{ConnectedObject, ConnectedObjectReference, SynchronizedObject}
 import fr.linkit.api.gnom.network.tag.EngineSelector
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 import fr.linkit.api.gnom.referencing.NetworkObject
@@ -29,10 +29,20 @@ class ConnectedObjectRegistry[A <: AnyRef](nphParent   : NetworkPresenceHandler[
     private[sync] val secondLayer = new SecondRegistryLayer(this, selector, defaultPool, channel, instantiator, dataSupp, cacheInfo)
     private[sync] val firstLayer  = new FirstRegistryLayer[A](this, selector, defaultPool, channel, instantiator, dataSupp, cacheInfo)(secondLayer)
 
+    val connector: ObjectConnector = secondLayer
 
     override def initializeObject(obj: NetworkObject[_ <: ConnectedObjectReference]): Unit = {
+        obj match {
+            case co: A with SynchronizedObject[A] if obj.reference.isFirstLayer => firstLayer.initObject(co)
+            case co: SynchronizedObject[AnyRef]                                 => secondLayer.initObject(co)
+        }
 
     }
+
+
+    override def registerReference(ref: ConnectedObjectReference): Unit = super.registerReference(ref)
+
+    override def unregisterReference(ref: ConnectedObjectReference): Unit = super.unregisterReference(ref)
 
     def findCompanion(reference: ConnectedObjectReference): Option[SyncObjectCompanion[AnyRef]] = {
         if (reference.cacheID != cacheInfo.cacheID || reference.family != cacheInfo.family)

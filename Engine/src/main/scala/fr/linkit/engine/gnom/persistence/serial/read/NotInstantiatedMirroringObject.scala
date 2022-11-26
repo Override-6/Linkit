@@ -14,19 +14,18 @@
 package fr.linkit.engine.gnom.persistence.serial.read
 
 import fr.linkit.api.gnom.cache.NoSuchCacheException
+import fr.linkit.api.gnom.cache.sync.ConnectedObjectReference
 import fr.linkit.api.gnom.cache.sync.contract.description.SyncClassDef
-import fr.linkit.api.gnom.cache.sync.contract.level.ConcreteSyncLevel
-import fr.linkit.api.gnom.cache.sync.{ConnectedObjectReference, ConnectedObjectCache}
-import fr.linkit.api.gnom.persistence.obj.{SyncPoolObject, ProfilePoolObject}
-import fr.linkit.engine.gnom.cache.sync.env.{InitializedConnectedObjectTree, NoSuchConnectedObjectTreeException}
+import fr.linkit.api.gnom.persistence.obj.{ProfilePoolObject, SyncPoolObject}
+import fr.linkit.engine.gnom.cache.sync.InternalConnectedObjectCache
+import fr.linkit.engine.gnom.persistence.ProtocolConstants.Object
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.obj.ObjectSelector
-import fr.linkit.engine.gnom.persistence.ProtocolConstants.Object
 
 class MirroringObject(override val referenceIdx: Int,
                       override val stubClassDef: SyncClassDef,
-                      selector: ObjectSelector,
-                      pool: DeserializerObjectPool) extends SyncPoolObject {
+                      selector                 : ObjectSelector,
+                      pool                     : DeserializerObjectPool) extends SyncPoolObject {
 
     override lazy val reference: ConnectedObjectReference = pool
             .getChunkFromFlag[ProfilePoolObject[AnyRef]](Object)
@@ -46,13 +45,9 @@ class MirroringObject(override val referenceIdx: Int,
         selector.findObject(cacheRef).getOrElse {
             throw new NoSuchCacheException(s"$errPrefix cache '$cacheRef' not found.")
         } match {
-            case cache: ConnectedObjectCache[_] =>
-                val nodePath  = ref.identifier
-                val treeId    = nodePath.head
-                val tree      = cache.forest.findTree(treeId).getOrElse {
-                    throw new NoSuchConnectedObjectTreeException(s"$errPrefix Could not find object tree $treeId in cache ${cacheRef}")
-                }.asInstanceOf[InitializedConnectedObjectTree[_]]
-                val connected = tree.connectObject(nodePath.dropRight(1), stubClassDef, ref.owner, ConcreteSyncLevel.Mirror, nodePath.last.id).obj
+            case cache: InternalConnectedObjectCache[_] =>
+                val connector = cache.registry.connector
+                val connected = connector.makeMirroredObject(stubClassDef, ref.owner, ref.identifier).obj
                 connected
         }
     }

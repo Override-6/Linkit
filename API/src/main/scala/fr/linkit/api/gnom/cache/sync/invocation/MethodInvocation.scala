@@ -13,7 +13,8 @@
 
 package fr.linkit.api.gnom.cache.sync.invocation
 
-import fr.linkit.api.gnom.cache.sync.env.{ChippedObjectCompanion, ObjectConnector}
+import fr.linkit.api.gnom.cache.sync.ChippedObject
+import fr.linkit.api.gnom.cache.sync.env.ObjectConnector
 
 /**
  * The invocation information for a synchronized object's method.
@@ -25,7 +26,7 @@ trait MethodInvocation[R] {
     /**
      * The synchronized object on which the method is called.
      * */
-    val objectCompanion: ChippedObjectCompanion[_]
+    val obj: ChippedObject[_]
 
     /**
      * The method's identifier.

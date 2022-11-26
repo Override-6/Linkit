@@ -69,7 +69,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
 
     override  val info            = CacheInfo(channel.manager.family, channel.cacheID, channel.ownerTag)
     protected val contractFactory = new SyncObjectContractFactory(contract)
-    private   val registry        = new ConnectedObjectRegistry[A](cacheManagerLinker, omc, defaultPool, channel, DefaultInstantiator, this, info, selector)
+    override  val registry        = new ConnectedObjectRegistry[A](cacheManagerLinker, omc, defaultPool, channel, DefaultInstantiator, this, info, selector)
 
     contract.precompile(classCenter)
     channel.setHandler(CacheCenterHandler)
@@ -120,7 +120,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
         val ownerNT       = req.ownerTag
         val originClass   = connectedObject.getClassDef.mainClass.asInstanceOf[Class[B]]
         val choreographer = new InvocationChoreographer()
-        val reference     = ConnectedObjectReference(info.family, info.cacheID, ownerNT, req.firstFloor, identifier)
+        val reference     = ConnectedObjectReference(info.family, info.cacheID, ownerNT, req.firstFloor, id)
         val presence      = registry.getPresence(reference)
         val context       = UsageConnectedObjectContext(ownerNT, connectedObject.getClassDef, level, choreographer, selector)
         val contract      = contractFactory.getContract[B](originClass, context)
@@ -133,7 +133,7 @@ class DefaultConnectedObjectCache[A <: AnyRef] protected(channel              : 
     private def newSyncObjectData[B <: AnyRef](req: SyncNodeDataRequest[B]): SyncObjectCompanionData[B] = {
         val chippedData = newChippedObjectData[B](req.syncLevel, req)
         val puppeteer   = new ObjectPuppeteer[B](channel, chippedData.reference)
-        new SyncObjectCompanionData[B](puppeteer, req.connectedObject, req.syncLevel)(chippedData)
+        new SyncObjectCompanionData[B](puppeteer, req.syncObject, req.syncLevel)(chippedData)
     }
 
     private def newRegularNodeData[B <: AnyRef](req: NormalNodeDataRequest[B]): CompanionData[B] = {

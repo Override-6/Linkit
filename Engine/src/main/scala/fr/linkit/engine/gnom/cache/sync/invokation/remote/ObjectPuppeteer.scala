@@ -62,7 +62,7 @@ class ObjectPuppeteer[S <: AnyRef](channel                   : RequestPacketChan
                         .nextResponse
                         .nextPacket[Packet] match {
                     case RMIExceptionString(exceptionString) =>
-                        val method = SyncObjectDescription(invocation.objectCompanion.obj.getClassDef).findMethodDescription(methodId).getOrElse(s"<unknown method $methodId>")
+                        val method = SyncObjectDescription(invocation.obj.getClassDef).findMethodDescription(methodId).getOrElse(s"<unknown method $methodId>")
                         throw new InvocationFailedException(s"Remote Method Invocation for method $method on object $nodeReference, executed on engine '$appointedEngineReturn' failed :\n$exceptionString")
                     case p: RefPacket[R]                     =>
                         requestResult = p.value

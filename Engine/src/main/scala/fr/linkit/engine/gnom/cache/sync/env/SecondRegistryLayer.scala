@@ -33,15 +33,10 @@ class SecondRegistryLayer(nph         : CORNPH,
 
     override def secondLayer: SecondRegistryLayer = this
 
-    override def initObject(obj: ConnectedObject[AnyRef]): Unit = {
-
-    }
-
-
     override def connectObject[B <: AnyRef](source : B,
                                             ownerID: UniqueTag with NetworkFriendlyEngineTag,
                                             kind   : SyncLevel,
-                                            id     : Int): ConnectedObjectCompanion[B] = {
+                                            id     : NamedIdentifier): ConnectedObjectCompanion[B] = {
         (kind: @switch) match {
             case ConcreteSyncLevel.NotRegistered => throw new IllegalArgumentException("insertionKind = NotRegistered.")
             case Chipped | Synchronized | Mirror =>
@@ -51,7 +46,7 @@ class SecondRegistryLayer(nph         : CORNPH,
 
     override def makeMirroredObject[B <: AnyRef](classDef: SyncClassDef,
                                                  ownerID : UniqueTag with NetworkFriendlyEngineTag,
-                                                 id      : Int): ConnectedObjectCompanion[B] = {
+                                                 id      : NamedIdentifier): ConnectedObjectCompanion[B] = {
         val syncObject = instantiator.newSynchronizedInstance[B](new MirroringInstanceCreator[B](classDef))
         initSynchronizedObject[B](id, syncObject, ownerID, true)
     }
@@ -98,7 +93,8 @@ class SecondRegistryLayer(nph         : CORNPH,
     private def initChippedObject[B <: AnyRef](id     : NamedIdentifier,
                                                adapter: ChippedObjectAdapter[B]): ChippedObjectCompanion[B] = {
         val currentNT = selector.retrieveNT(Current)
-        val data      = dataSupp.newNodeData(new ChippedObjectNodeDataRequest[B](id, currentNT, false, adapter))
+        val request   = new ChippedObjectNodeDataRequest[B](id, currentNT, false, adapter)
+        val data      = dataSupp.newNodeData(request)
         val node      = new ChippedObjectCompanionImpl[B](data)
         adapter.initialize(node)
         node

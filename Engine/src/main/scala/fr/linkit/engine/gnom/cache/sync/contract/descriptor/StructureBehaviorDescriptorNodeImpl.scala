@@ -55,7 +55,7 @@ class StructureBehaviorDescriptorNodeImpl[A <: AnyRef](private val clazz       :
             case Some(desc) =>
                 throw new BadContractException(s"Contract for '$clazz' have a structure descriptor contract that describes a behavior contract at a non-contractable level (${desc.kind})")
         }
-        MandatoryLevels.filter(lvl => !descriptors.exists(_.kind eq lvl)).toList match {
+        MandatoryLevels.filter(lvl => !descriptors.exists(_.kind eq lvl)) match {
             case Nil =>
             case lst =>
                 throw new BadContractException(s"Contract for '$clazz' does not describes behavior to apply for synchronization levels: ${lst.mkString(", ")}.")
