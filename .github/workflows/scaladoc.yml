@@ -21,7 +21,7 @@ jobs:
         uses: actions/setup-java@v3.4.1
         with:
           distribution: 'adopt' # See 'Supported distributions' for available options
-          java-version: '19'
+          java-version: '16'
       - name: prepare Temp dirs result
         run: |
            cd /home/runner/work
