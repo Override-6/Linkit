@@ -62,7 +62,7 @@ class PacketReader(bundle         : PersistenceBundle,
         var i                 = 0
         while (i < len) {
             val lockCode = buff.getInt
-            val lock = NetworkObjectReferencesLocks.getInitializationLock(lockCode)
+            val lock = NetworkObjectReferencesLocks.getComputationLock(lockCode)
             lock.lock()
             locks ::= lock
             i += 1

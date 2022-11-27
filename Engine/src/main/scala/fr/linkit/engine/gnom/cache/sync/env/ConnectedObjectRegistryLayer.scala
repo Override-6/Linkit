@@ -81,7 +81,7 @@ abstract class ConnectedObjectRegistryLayer[A <: AnyRef](nph         : CORNPH,
         val rootObjectOwnerNT = selector.retrieveNT(rootObjectOwner)
         val nodeReference     = ConnectedObjectReference(cacheInfo.family, cacheInfo.cacheID, rootObjectOwnerNT, true, id)
 
-        val lock = NetworkObjectReferencesLocks.getInitializationLock(nodeReference)
+        val lock = NetworkObjectReferencesLocks.getComputationLock(nodeReference)
         lock.lock()
         try {
             val choreographer = new InvocationChoreographer()

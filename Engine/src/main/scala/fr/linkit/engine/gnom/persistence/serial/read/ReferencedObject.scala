@@ -39,7 +39,7 @@ class ReferencedObject(override val referenceIdx: Int,
     override val identity: Int = referenceIdx
 
     override lazy val value: AnyRef = {
-        val lock = NetworkObjectReferencesLocks.getInitializationLock(reference)
+        val lock = NetworkObjectReferencesLocks.getComputationLock(reference)
         lock.lock()
         try {
             retrieveObject()

@@ -70,7 +70,7 @@ class FirstRegistryLayer[A <: AnyRef](nph         : CORNPH,
         val ownerNT  = selector.retrieveNT(ownerTag)
         val treeRef  = ConnectedObjectReference(cacheInfo.family, cacheInfo.cacheID, ownerNT, true, id)
 
-        val initLock = NetworkObjectReferencesLocks.getInitializationLock(treeRef)
+        val initLock = NetworkObjectReferencesLocks.getComputationLock(treeRef)
         val refLock  = NetworkObjectReferencesLocks.getLock(treeRef)
         initLock.lock() //locked only during computation: the lock is released while waiting for the response.
         refLock.lock() //locked during all the request process
@@ -92,13 +92,10 @@ class FirstRegistryLayer[A <: AnyRef](nph         : CORNPH,
 
 
             Debugger.push(RequestStep("CO tree retrieval", s"retrieve tree $treeRef", ownerTag, channel.reference))
-            val req = channel.makeRequest(ChannelScopes.apply(ownerTag))
+            val response = channel.makeRequest(ChannelScopes.apply(ownerTag))
                     .addPacket(AnyRefPacket(id))
                     .submit()
-
-            val depth    = initLock.release()
-            val response = req.nextResponse
-            initLock.depthLock(depth)
+                    .nextResponse
             Debugger.pop()
             response.nextPacket[Packet] match {
                 case ObjectPacket(profile: FirstFloorObjectProfile[A]) =>

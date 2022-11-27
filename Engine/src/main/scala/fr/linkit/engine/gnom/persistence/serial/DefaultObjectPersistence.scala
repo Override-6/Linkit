@@ -21,6 +21,7 @@ import fr.linkit.api.internal.system.log.AppLoggers
 import fr.linkit.engine.gnom.persistence.ProtocolConstants
 import fr.linkit.engine.gnom.persistence.serial.read.PacketReader
 import fr.linkit.engine.gnom.persistence.serial.write.{PacketWriter, SerializerObjectPool}
+import fr.linkit.engine.internal.concurrency.ComputationReleasableReentrantLock
 import fr.linkit.engine.internal.debug.{Debugger, PacketDeserializationStep, PacketSerializationStep}
 
 import java.nio.ByteBuffer
@@ -36,26 +37,28 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         result
     }
 
-    override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = InvocationChoreographer.disinv {
-        AppLoggers.Persistence.debug("Starting Serializing objects...")
-        Debugger.push(PacketSerializationStep(bundle.packetID, bundle.boundNT))
-        val t0     = System.currentTimeMillis()
-        val buffer = bundle.buff
-        try {
-            buffer.put(signature.toArray)
-            buffer.putShort(ProtocolConstants.ProtocolVersion)
-            val writer = new PacketWriter(bundle)
-            writer.addObjects(objects)
-            buffer.limit(buffer.capacity())
-            writer.writeAll()
-            val pool = writer.getPool
-            writeEntries(objects, writer, pool)
-        } catch {
-            case e: Throwable => throw e
-        } finally {
-            val t1 = System.currentTimeMillis()
-            Debugger.pop()
-            AppLoggers.Persistence.debug(s"Objects serialized (took ${t1 - t0} ms) - resulting buff length = ${buffer.position()}.")
+    override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = {
+        InvocationChoreographer.disinv {
+            AppLoggers.Persistence.debug("Starting Serializing objects...")
+            Debugger.push(PacketSerializationStep(bundle.packetID, bundle.boundNT))
+            val t0     = System.currentTimeMillis()
+            val buffer = bundle.buff
+            try {
+                buffer.put(signature.toArray)
+                buffer.putShort(ProtocolConstants.ProtocolVersion)
+                val writer = new PacketWriter(bundle)
+                writer.addObjects(objects)
+                buffer.limit(buffer.capacity())
+                writer.writeAll()
+                val pool = writer.getPool
+                writeEntries(objects, writer, pool)
+            } catch {
+                case e: Throwable => throw e
+            } finally {
+                val t1 = System.currentTimeMillis()
+                Debugger.pop()
+                AppLoggers.Persistence.debug(s"Objects serialized (took ${t1 - t0} ms) - resulting buff length = ${buffer.position()}.")
+            }
         }
     }
 

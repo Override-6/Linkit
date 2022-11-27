@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketSender, PacketSyncReceiver}
 import fr.linkit.api.gnom.packet.{ChannelPacketBundle, Packet, PacketAttributes}
 import fr.linkit.api.internal.system.Reason
-import fr.linkit.engine.internal.concurrency.PacketReaderThread
+import fr.linkit.engine.internal.concurrency.{PacketReaderThread, RequestReleasedReentrantLock}
 import fr.linkit.engine.internal.util.ScalaUtils.ensurePacketType
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
@@ -48,7 +48,7 @@ class SyncPacketChannel protected(scope: ChannelScope) extends AbstractPacketCha
         queue.clear()
     }
 
-    override def nextPacket[P <: Packet : ClassTag]: P = {
+    override def nextPacket[P <: Packet : ClassTag]: P = RequestReleasedReentrantLock.runReleased {
         if (queue.isEmpty)
             PacketReaderThread.checkNotCurrent()
 

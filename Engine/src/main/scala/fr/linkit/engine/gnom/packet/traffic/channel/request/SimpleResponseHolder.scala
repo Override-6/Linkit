@@ -14,18 +14,18 @@
 package fr.linkit.engine.gnom.packet.traffic.channel.request
 
 import fr.linkit.api.gnom.packet.channel.request.{ResponseHolder, SubmitterPacket}
-import fr.linkit.api.internal.system.log.AppLoggers
+import fr.linkit.engine.internal.concurrency.RequestReleasedReentrantLock
 import fr.linkit.engine.internal.util.ConsumerContainer
 
 import java.util.concurrent.BlockingQueue
 
 case class SimpleResponseHolder(override val id: Int,
-                                queue: BlockingQueue[AbstractSubmitterPacket],
-                                handler: SimpleRequestPacketChannel) extends ResponseHolder {
+                                queue          : BlockingQueue[AbstractSubmitterPacket],
+                                handler        : SimpleRequestPacketChannel) extends ResponseHolder {
 
     private val responseConsumer = ConsumerContainer[AbstractSubmitterPacket]()
 
-    override def nextResponse: SubmitterPacket = {
+    override def nextResponse: SubmitterPacket = RequestReleasedReentrantLock.runReleased {
         val response = queue.take()
         if (response == null)
             throw new NullPointerException("queue returned null response")
