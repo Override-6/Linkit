@@ -12,23 +12,6 @@
  */
 rootProject.name = "Linkit"
 
-include 'API'
-include 'Engine'
-include 'Client'
-include 'Server'
-include 'Tests'
 
-include 'Examples:RemoteAPIImplementationControl:ServerSide'
-include 'Examples:RemoteAPIImplementationControl:ClientSide'
-include 'Examples:RemoteAPIImplementationControl:API'
-include 'Examples:RemoteFileSystemControl:ServerStorage'
-include 'Examples:RemoteFileSystemControl:ClientSide'
-include 'Examples:RemoteFileSystemControl:Common'
-
-project(':Examples:RemoteAPIImplementationControl:ServerSide').name = 'ServerSide'
-project(':Examples:RemoteAPIImplementationControl:ClientSide').name = 'ClientSide'
-project(':Examples:RemoteAPIImplementationControl:API').name = 'API'
-project(':Examples:RemoteFileSystemControl:ServerStorage').name = 'ServerStorage'
-project(':Examples:RemoteFileSystemControl:ClientSide').name = 'ClientSide'
-project(':Examples:RemoteFileSystemControl:Common').name = 'Common'
+include 'Playground'
 
