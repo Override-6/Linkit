@@ -11,4 +11,9 @@ In this branch we
 ## Connected objects
 * How do we handle objects that interracts with other objects that are under a different contract ? 
 * We should certainly give up the fact that objects can be connected dynamically
-*
+* I think we should generate proxy classes using only javassist/bytecode manipulation libraries  
+  and give up first compilation step that used scalac because it would generate practically no compilation error and be significantly faster.
+
+## GNOM
+* If a client can connect to multiple servers at once, how do we handle GNOLinkage between those two servers ? 
+* 

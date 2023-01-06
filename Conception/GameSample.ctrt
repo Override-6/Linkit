@@ -1,0 +1,53 @@
+name "GameSample"
+
+import com.foo.*; //imports all class in `com.foo` package
+import com.foo.internal.InternalClass; //imports the InternalClass
+import com.foo.game.**; //imports all class in `com.foo` package and sub packages
+
+/*
+* GameServerPortal is a portal implemented by a server.
+* Any client can ask to the portal to open a connection with one of the game server cluster.
+*
+* Only the portal server implements this interface.
+*/
+//@remote_implementation directive informs that the GameServerPortal interface is intended to be implemented only on plateform_server side
+@remote_implementation(#portal_server)
+contract GameServerPortal {
+    /**
+    * this method finds an available server among the server cluster and returns a GameSession the client is connected to
+    */
+    GameSession connect():
+        //only clients are allowed to call this method remotely
+        allowed_caller(@client)
+        //the invocation will only be made on the portal server.
+        call_diffusion(#portal_server)
+        //the return value sent back to the caller will be the return value of the portal_server
+        //(note: returner selection must be unique and included in call_diffusion)
+        returner(#portal_server)
+}
+
+/**
+* a GameSession handles players's connections
+*/
+@remote_implementation(#game_server)
+contract GameSession {
+    /**
+    *
+    */
+    void disconnect():
+        //only clients can disconnect to a GameSession (naturally because only clients can connect to a GameSession threw portal
+        allowed_caller(@client)
+}
+
+contract GameMap {
+    void addEntity(Entity):
+        //if an invocation is performed by this method onto a connected object of type Entity or GameMap,
+        // the RMI will be ignored
+        block_rmi(Entity, GameMap) //why not block_rmi(auto) too ? (only connected objects that are passed by parameter will be rmi blocked)
+
+        allowed_caller(#server)
+        returner(#server)
+
+    void removeEntity(Entity):
+
+}
