@@ -1,0 +1,31 @@
+name "NetworkContract"
+
+import fr.linkit.api.gnom.**
+import fr.linkit.engine.gnom.**
+import fr.linkit.engine.internal.mapping.*
+import java.nio.file.Path
+import java.net.URI
+
+agreement current_and_origin = discard * -> accept current, owner -> appoint current
+agreement broadcast_appoint_owner = accept * -> appoint owner
+
+describe EngineImpl {
+    addTag(NetworkFriendlyEngineTag)    => broadcast
+    removeTag(NetworkFriendlyEngineTag) => broadcast
+}
+describe NetworkDataTrunk [sync] {
+    sync staticAccesses
+
+    newEngine(String)
+    addEngine(sync EngineImpl) => accept * -> appoint server //protected method
+}
+
+describe StaticAccesses {
+    newStaticAccess0(int, ContractDescriptorData) => broadcast
+}
+
+describe RemoteClassMappings {
+    ensinv addClassToMap(String) => only_owner
+    onClassMapped(int)           => broadcast
+    requestClassName(int)        => only_owner
+}

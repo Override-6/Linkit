@@ -1,0 +1,16 @@
+sourceSets {
+    main {
+        resources {
+            srcDirs += rootProject.projectDir.toString() + "/Natives/bins"
+        }
+    }
+}
+
+dependencies {
+    implementation group: 'org.scala-lang', name: 'scala-compiler', version: '2.13.7'
+    implementation group: 'org.scala-lang.modules', name: 'scala-parser-combinators_2.13', version: '2.1.0'
+    implementation group: 'org.javassist', name: 'javassist', version: '3.28.0-GA'
+    implementation 'com.google.code.gson:gson:2.10'
+
+//    api project(':API')
+}

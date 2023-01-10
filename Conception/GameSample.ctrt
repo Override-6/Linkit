@@ -32,7 +32,7 @@ contract GameServerPortal {
 @remote_implementation(#game_server)
 contract GameSession {
     /**
-    *
+    * disconnects current client from the GameSession
     */
     void disconnect():
         //only clients can disconnect to a GameSession (naturally because only clients can connect to a GameSession threw portal

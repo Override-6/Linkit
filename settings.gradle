@@ -14,4 +14,14 @@ rootProject.name = "Linkit"
 
 
 include 'Playground'
+include 'Base'
+include 'Base:API'
+include 'Base:Server'
+include 'Base:Client'
+
+include 'Engine'
+include 'API'
+include 'Base:API'
+include 'GNOM'
+include 'GNOM:Linkage'
 
